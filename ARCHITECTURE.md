@@ -25,23 +25,18 @@ This project follows a Clean Architecture pattern, separating business logic fro
 - Implements domain interfaces
 - Provides concrete implementations for repositories and services
 
-## Key Principles
+## Configuration System
 
-### SOLID Principles
-1. **Single Responsibility Principle**: Each class has one reason to change
-2. **Open/Closed Principle**: Open for extension, closed for modification
-3. **Liskov Substitution Principle**: Subtypes must be substitutable for their base types
-4. **Interface Segregation Principle**: Clients should not be forced to depend on interfaces they don't use
-5. **Dependency Inversion Principle**: Depend on abstractions, not concretions
+### Enterprise Configuration Manager
+The project now includes a comprehensive enterprise configuration system with the following features:
 
-### Repository Pattern
-- Abstracts data access operations
-- Provides a clean interface between domain and infrastructure layers
-- Enables testability through mocking
+1. **YAML Support** - Configuration files in YAML format
+2. **.env Support** - Environment variable file support
+3. **Environment Overrides** - Runtime environment-specific configurations
+4. **Development/Production Configurations** - Separate configs for different environments
+5. **Secret Management** - Secure handling of sensitive information
+6. **Validation** - Input validation and error checking
+7. **Strong Typing** - Type-safe configuration objects
+8. **Configuration Caching** - Performance optimization through caching
 
-### Event Bus
-- Facilitates loose coupling between components
-- Supports publish/subscribe communication patterns
-- Enables asynchronous processing of business events
-
-## File Structure
+### Configuration Structure
