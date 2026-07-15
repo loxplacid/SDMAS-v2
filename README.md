@@ -1,17 +1,27 @@
-# Enterprise Logging Framework
+# Enterprise Dependency Injection Container
 
-This project includes a comprehensive enterprise logging framework with the following features:
+This project implements a comprehensive dependency injection container for enterprise applications.
 
 ## Features
 
-1. **Rotating Logs** - Automatic log rotation to manage disk space
-2. **Structured Logging** - JSON-formatted logs for easy parsing and analysis  
-3. **Colored Console Output** - Colorized console output for better readability
-4. **File Logs** - Persistent logging to files with automatic management
-5. **Audit Logs** - Specialized logging for security-sensitive operations
-6. **Exception Logging** - Comprehensive exception handling and logging
-7. **Performance Logging** - Detailed performance metrics collection
-8. **Startup Logging** - Automatic application startup information
+- Full dependency resolution with automatic injection
+- Singleton support for stateful services
+- Modular architecture following SOLID principles
+- Comprehensive test coverage
+- Type-safe service registration and resolution
+
+## Components Implemented
+
+1. **Configuration Manager** - Centralized configuration management
+2. **Logger** - Structured logging system
+3. **Database Connector** - Database abstraction layer
+4. **Repository Pattern** - Data access layer
+5. **Service Layer** - Business logic implementation
+6. **Session Manager** - User session handling
+7. **Security Manager** - Authentication and authorization
+8. **Theme Manager** - UI theming system
+9. **AI Manager** - Artificial intelligence processing
+10. **Event Bus** - Publish-subscribe messaging
 
 ## Usage
 
