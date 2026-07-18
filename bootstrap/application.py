@@ -6,6 +6,7 @@ Handles application lifecycle management and dependency injection setup.
 from typing import Dict, Any, Optional
 import time
 import logging
+from dataclasses import dataclass
 
 from .lifecycle import LifecycleManager
 from .bootstrapper import Bootstrapper
