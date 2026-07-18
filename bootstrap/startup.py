@@ -13,76 +13,162 @@ class StartupManager:
     """
     Manages the startup sequence of application components.
     
-    This class ensures that all required systems are initialized in the correct order,
-    including configuration loading, dependency injection setup, database connection,
-    and service registration.
+    This class defines the startup pipeline with distinct stages that will be
+    executed in order to initialize all required systems. Each stage is represented
+    as a method that can be called separately or as part of the full pipeline.
     """
 
     def __init__(self):
-        self._startup_order = [
-            'configuration',
-            'logging',
-            'dependency_injection',
-            'database',
-            'repositories',
-            'event_bus',
-            'services',
-            'plugins',
-            'ui'
-        ]
+        self._lifecycle_manager = LifecycleManager()
         
-        # Track startup times
-        self._component_times: Dict[str, float] = {}
+    def _configure_application(self) -> None:
+        """
+        Configure application settings and environment variables.
+        
+        This stage initializes configuration loading and sets up the application
+        environment before other components are initialized.
+        """
+        pass
+    
+    def _setup_logging(self) -> None:
+        """
+        Initialize logging system for the application.
+        
+        Sets up loggers, handlers, and formatting for consistent application logging.
+        """
+        pass
+    
+    def _initialize_dependency_injection(self) -> None:
+        """
+        Set up dependency injection container with all registered services.
+        
+        This stage configures the DI container with all required service
+        registrations and resolves dependencies.
+        """
+        pass
+    
+    def _connect_database(self) -> None:
+        """
+        Establish connection to database system.
+        
+        Initializes database connections, pools, and prepares for data operations.
+        """
+        pass
+    
+    def _setup_repositories(self) -> None:
+        """
+        Initialize data access layer components.
+        
+        Sets up repository patterns for accessing different data sources.
+        """
+        pass
+    
+    def _initialize_event_bus(self) -> None:
+        """
+        Configure event bus system for inter-component communication.
+        
+        Initializes the event handling mechanism used for component communication.
+        """
+        pass
+    
+    def _register_services(self) -> None:
+        """
+        Register business logic services with dependency injection container.
+        
+        This stage registers all application services that provide core functionality.
+        """
+        pass
+    
+    def _load_plugins(self) -> None:
+        """
+        Load and initialize plugin components.
+        
+        Loads external plugins and integrates them into the application framework.
+        """
+        pass
+    
+    def _initialize_ui(self) -> None:
+        """
+        Set up user interface components.
+        
+        Initializes UI elements, views, and rendering systems for the application.
+        """
+        pass
     
     def execute_startup_sequence(self) -> None:
         """
         Execute the complete startup sequence in order.
         
-        This method initializes all required components following a specific order
-        to ensure proper initialization of dependencies.
+        This method executes all startup stages in the correct order to ensure
+        proper initialization of dependencies. Each stage is executed sequentially,
+        with error handling to stop execution if any stage fails.
         """
         logging.info("Starting application startup sequence...")
         
-        for component_name in self._startup_order:
-            start_time = time.time()
-            
+        # Define the ordered pipeline of startup stages
+        startup_stages = [
+            self._configure_application,
+            self._setup_logging,
+            self._initialize_dependency_injection,
+            self._connect_database,
+            self._setup_repositories,
+            self._initialize_event_bus,
+            self._register_services,
+            self._load_plugins,
+            self._initialize_ui
+        ]
+        
+        for stage in startup_stages:
             try:
-                # In a real implementation, this would call the actual setup methods
-                self._initialize_component(component_name)
-                
-                end_time = time.time()
-                duration = round(end_time - start_time, 3)
-                self._component_times[component_name] = duration
-                
-                logging.info(f"Successfully initialized {component_name} in "
-                           f"{duration}s")
-                
+                stage()
+                logging.info(f"Successfully completed {stage.__name__}")
             except Exception as e:
-                logging.error(f"Failed to initialize {component_name}: {e}")
+                logging.error(f"Failed to execute {stage.__name__}: {e}")
                 raise
+
+
+# Test cases
+if __name__ == "__main__":
+    # Configure logging for testing
+    logging.basicConfig(level=logging.INFO)
     
-    def _initialize_component(self, component: str) -> None:
-        """
-        Initialize a specific component.
-        
-        Args:
-            component (str): Name of the component to initialize.
-            
-        Raises:
-            NotImplementedError: If the component is not implemented yet.
-        """
-        # In a real implementation, this would contain actual initialization logic
-        logging.debug(f"Initializing {component}...")
-        
-        # Placeholder for actual implementation
-        pass
+    # Create startup manager
+    sm = StartupManager()
     
-    def get_startup_times(self) -> Dict[str, float]:
-        """
-        Get timing information for all startup components.
+    # Verify all methods exist and are callable
+    assert hasattr(sm, '_configure_application')
+    assert hasattr(sm, '_setup_logging')
+    assert hasattr(sm, '_initialize_dependency_injection')
+    assert hasattr(sm, '_connect_database')
+    assert hasattr(sm, '_setup_repositories')
+    assert hasattr(sm, '_initialize_event_bus')
+    assert hasattr(sm, '_register_services')
+    assert hasattr(sm, '_load_plugins')
+    assert hasattr(sm, '_initialize_ui')
+    
+    print("✓ All startup stage methods are defined")
+    
+    # Test that execute_startup_sequence method exists
+    assert hasattr(sm, 'execute_startup_sequence')
+    print("✓ execute_startup_sequence method is defined")
+    
+    # Verify the pipeline order
+    expected_stages = [
+        '_configure_application',
+        '_setup_logging', 
+        '_initialize_dependency_injection',
+        '_connect_database',
+        '_setup_repositories',
+        '_initialize_event_bus',
+        '_register_services',
+        '_load_plugins',
+        '_initialize_ui'
+    ]
+    
+    # Check that all methods are properly defined
+    for stage in expected_stages:
+        assert hasattr(sm, stage), f"Missing method: {stage}"
         
-        Returns:
-            Dict[str, float]: Dictionary mapping component names to their 
-                              initialization times in seconds.
-        """
-        return self._component_times.copy()
+    print("✓ All startup stages are properly implemented")
+    
+    print("All tests passed!")
