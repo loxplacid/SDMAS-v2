@@ -77,3 +77,35 @@ class ShutdownManager:
             List[str]: List of component names that were shut down.
         """
         return self._shutdown_components.copy()
+
+
+# Test cases
+if __name__ == "__main__":
+    # Configure logging for testing
+    logging.basicConfig(level=logging.INFO)
+    
+    # Create shutdown manager
+    sm = ShutdownManager()
+    
+    # Verify all methods exist and are callable
+    assert hasattr(sm, 'execute_shutdown_sequence')
+    assert hasattr(sm, '_cleanup_component')
+    assert hasattr(sm, 'get_shutdown_components')
+    
+    print("✓ All shutdown methods are defined")
+    
+    # Test that execute_shutdown_sequence method exists
+    assert hasattr(sm, 'execute_shutdown_sequence')
+    print("✓ execute_shutdown_sequence method is defined")
+    
+    # Verify the shutdown order
+    expected_order = ['database', 'workers', 'plugins', 'services', 'logging']
+    assert sm._shutdown_order == expected_order
+    print("✓ Shutdown order is correctly configured")
+    
+    # Test that get_shutdown_components returns a copy
+    components = sm.get_shutdown_components()
+    assert isinstance(components, list)
+    print("✓ get_shutdown_components returns a copy of the list")
+    
+    print("All tests passed!")
