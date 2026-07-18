@@ -39,7 +39,7 @@ class Bootstrapper:
         logging.info("Starting bootstrapping process...")
         
         # Set initial state
-        self.lifecycle_manager.set_state('startup')
+        self.lifecycle_manager.set_state('starting')
         
         try:
             for step in self._startup_steps:
