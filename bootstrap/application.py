@@ -29,9 +29,24 @@ class Application:
     This class owns the application lifecycle, dependency injection startup,
     configuration loading, logging initialization, plugin initialization,
     and service registration.
+    
+    The Application class composes all core bootstrap components:
+    - LifecycleManager: Manages application states
+    - Bootstrapper: Coordinates startup activities
+    - StartupManager: Defines startup pipeline stages
+    - ShutdownManager: Handles graceful termination
+    
+    All components are wired together to provide a cohesive application lifecycle
+    management system.
     """
 
     def __init__(self, config: ApplicationConfig):
+        """
+        Initialize the application with configuration.
+        
+        Args:
+            config (ApplicationConfig): Application configuration settings
+        """
         self.config = config
         self.lifecycle_manager = LifecycleManager()
         self.bootstrapper = Bootstrapper(self.lifecycle_manager)
@@ -46,16 +61,20 @@ class Application:
         """
         Initialize the application by running all startup procedures.
         
+        This method orchestrates the complete initialization process using
+        the composed components. It runs bootstrapping activities followed
+        by the full startup sequence.
+        
         Returns:
             bool: True if initialization was successful, False otherwise.
         """
         try:
             self._startup_start_time = time.time()
             
-            # Run bootstrapping process
+            # Run bootstrapping process - this coordinates all startup activities
             self.bootstrapper.bootstrap()
             
-            # Execute startup sequence
+            # Execute startup sequence - this runs the defined pipeline stages
             self.startup_manager.execute_startup_sequence()
             
             self._startup_end_time = time.time()
@@ -71,6 +90,8 @@ class Application:
         Run the application in its main loop.
         
         This method should be called after successful initialization.
+        It sets the lifecycle to running state and would contain
+        the main event loop in a real implementation.
         """
         self.lifecycle_manager.set_state('running')
         
@@ -81,12 +102,14 @@ class Application:
         """
         Gracefully shut down the application.
         
-        This method ensures all resources are properly cleaned up.
+        This method ensures all resources are properly cleaned up using
+        the composed shutdown manager which handles proper cleanup order.
         """
         try:
-            self.lifecycle_manager.set_state('shutdown')
+            # Set lifecycle to stopping state
+            self.lifecycle_manager.set_state('stopping')
             
-            # Execute shutdown sequence
+            # Execute shutdown sequence - this cleans up components in reverse order
             self.shutdown_manager.execute_shutdown_sequence()
             
             print("Application has been shut down successfully.")
@@ -108,3 +131,55 @@ class Application:
             return time.time() - self._startup_start_time
             
         return self._startup_end_time - self._startup_start_time
+
+
+# Test cases
+if __name__ == "__main__":
+    # Configure logging for testing
+    logging.basicConfig(level=logging.INFO)
+    
+    # Create application with minimal config
+    config = ApplicationConfig(name="TestApp", version="1.0.0")
+    app = Application(config)
+    
+    # Verify all components are properly composed
+    assert hasattr(app, 'lifecycle_manager')
+    assert hasattr(app, 'bootstrapper')
+    assert hasattr(app, 'startup_manager')
+    assert hasattr(app, 'shutdown_manager')
+    
+    print("✓ All bootstrap components are properly composed")
+    
+    # Test that methods exist and are callable
+    assert hasattr(app, 'initialize')
+    assert hasattr(app, 'run')
+    assert hasattr(app, 'shutdown')
+    assert hasattr(app, 'get_startup_time')
+    
+    print("✓ All application methods are defined")
+    
+    # Verify component types
+    assert isinstance(app.lifecycle_manager, LifecycleManager)
+    assert isinstance(app.bootstrapper, Bootstrapper)
+    assert isinstance(app.startup_manager, StartupManager)
+    assert isinstance(app.shutdown_manager, ShutdownManager)
+    
+    print("✓ All components are of correct types")
+    
+    # Test that initialization method exists and is callable
+    assert callable(app.initialize)
+    print("✓ initialize() method is callable")
+    
+    # Test that run method exists and is callable
+    assert callable(app.run)
+    print("✓ run() method is callable")
+    
+    # Test that shutdown method exists and is callable
+    assert callable(app.shutdown)
+    print("✓ shutdown() method is callable")
+    
+    # Test that get_startup_time method exists and is callable
+    assert callable(app.get_startup_time)
+    print("✓ get_startup_time() method is callable")
+    
+    print("All tests passed!")
