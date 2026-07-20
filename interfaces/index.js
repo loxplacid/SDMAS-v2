@@ -3,6 +3,10 @@ class IConfiguration {
   get(key) { throw new Error('Not implemented'); }
   set(key, value) { throw new Error('Not implemented'); }
   getAll() { throw new Error('Not implemented'); }
+  loadFromFile(filePath) { throw new Error('Not implemented'); }
+  addWatcher(watcher) { throw new Error('Not implemented'); }
+  removeWatcher(watcher) { throw new Error('Not implemented'); }
+  getWatchers() { throw new Error('Not implemented'); }
 }
 
 // Logger interface
