@@ -1,10 +1,9 @@
-class ConfigurationLoader {
-  constructor() {
-    // This is a placeholder - actual implementation would need to be in a separate file
-  }
+const fs = require('fs');
+const path = require('path');
 
+class ConfigurationLoader {
   static load(configPath) {
-    // Check if file exists (in real implementation, this would use fs)
+    // Validate file existence
     if (!this.fileExists(configPath)) {
       throw new Error(`Configuration file not found: ${configPath}`);
     }
@@ -17,23 +16,21 @@ class ConfigurationLoader {
     return this.deserialize(parsedConfig);
   }
 
-  static fileExists(path) {
-    // In a real implementation, this would check if the file exists
-    // For now, we'll assume it's valid for testing purposes
-    return true;
+  static fileExists(filePath) {
+    try {
+      return fs.existsSync(filePath);
+    } catch (error) {
+      throw new Error(`Error checking file existence: ${error.message}`);
+    }
   }
 
-  static readFile(path) {
-    // In a real implementation, this would read the actual file content
-    // For now, returning mock data for testing
-    return JSON.stringify({
-      application: {},
-      database: {},
-      logging: {},
-      security: {},
-      theme: {},
-      ai: {}
-    });
+  static readFile(filePath) {
+    try {
+      const data = fs.readFileSync(filePath, 'utf8');
+      return data;
+    } catch (error) {
+      throw new Error(`Error reading configuration file: ${error.message}`);
+    }
   }
 
   static deserialize(configData) {
@@ -72,3 +69,5 @@ class ConfigurationLoader {
     return config;
   }
 }
+
+module.exports = ConfigurationLoader;

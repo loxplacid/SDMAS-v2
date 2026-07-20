@@ -1,4 +1,10 @@
-const { 
+const fs = require('fs');
+const path = require('path');
+
+// Mock the file system operations for testing
+jest.mock('fs');
+
+const {
   ApplicationConfig,
   DatabaseConfig,
   LoggingConfig,
@@ -7,7 +13,7 @@ const {
   AIConfig
 } = require('./config');
 
-// Mock the ConfigurationLoader class for testing purposes
+// Mock ConfigurationLoader implementation for tests
 class MockConfigurationLoader {
   static load(configPath) {
     // Return mock configuration objects
@@ -22,10 +28,28 @@ class MockConfigurationLoader {
   }
 }
 
-// Test suite for ConfigurationLoader
 describe('ConfigurationLoader', () => {
+  beforeEach(() => {
+    // Clear all mocks before each test
+    jest.clearAllMocks();
+  });
+
   test('should load configuration from JSON file', () => {
-    // Mock the file system operations
+    const mockConfigData = {
+      application: {},
+      database: {},
+      logging: {},
+      security: {},
+      theme: {},
+      ai: {}
+    };
+
+    // Mock fs.readFileSync to return valid JSON
+    fs.readFileSync.mockReturnValue(JSON.stringify(mockConfigData));
+    
+    // Mock fs.existsSync to return true
+    fs.existsSync.mockReturnValue(true);
+    
     const config = MockConfigurationLoader.load('./config.json');
     
     expect(config).toBeDefined();
@@ -35,6 +59,15 @@ describe('ConfigurationLoader', () => {
     expect(config.security).toBeInstanceOf(SecurityConfig);
     expect(config.theme).toBeInstanceOf(ThemeConfig);
     expect(config.ai).toBeInstanceOf(AIConfig);
+  });
+
+  test('should throw error when file does not exist', () => {
+    // Mock fs.existsSync to return false
+    fs.existsSync.mockReturnValue(false);
+    
+    expect(() => {
+      MockConfigurationLoader.load('./nonexistent.json');
+    }).toThrow(/Configuration file not found/);
   });
 
   test('should create immutable configuration objects', () => {
