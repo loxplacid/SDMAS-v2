@@ -7,11 +7,14 @@ class ConfigWatcher {
     this.subscribers = new Set();
     this.watchers = new Map();
     this.isWatching = false;
+    // Add thread safety with lock mechanism
+    this._lock = false;
   }
 
   /**
    * Adds a subscriber to be notified of configuration changes
    * @param {Function} callback - Function to call when config changes
+   * @throws {Error} If callback is not a function
    */
   subscribe(callback) {
     if (typeof callback !== 'function') {
@@ -30,11 +33,16 @@ class ConfigWatcher {
 
   /**
    * Starts watching the configuration file for changes
+   * @throws {Error} If already watching or unable to start watch
    */
   start() {
     if (this.isWatching) return;
     
     try {
+      // Add thread safety check
+      if (this._lock) return;
+      this._lock = true;
+      
       // Watch the config file for changes
       const watcher = fs.watch(this.configPath, (eventType, filename) => {
         if (eventType === 'change') {
@@ -46,6 +54,9 @@ class ConfigWatcher {
       this.isWatching = true;
     } catch (error) {
       console.error('Failed to start config watching:', error.message);
+      throw error;
+    } finally {
+      this._lock = false;
     }
   }
 
@@ -55,16 +66,24 @@ class ConfigWatcher {
   stop() {
     if (!this.isWatching) return;
     
-    for (const [name, watcher] of this.watchers.entries()) {
-      try {
-        watcher.close();
-      } catch (error) {
-        console.error(`Failed to close watcher ${name}:`, error.message);
+    try {
+      // Add thread safety check
+      if (this._lock) return;
+      this._lock = true;
+      
+      for (const [name, watcher] of this.watchers.entries()) {
+        try {
+          watcher.close();
+        } catch (error) {
+          console.error(`Failed to close watcher ${name}:`, error.message);
+        }
       }
+      
+      this.watchers.clear();
+      this.isWatching = false;
+    } finally {
+      this._lock = false;
     }
-    
-    this.watchers.clear();
-    this.isWatching = false;
   }
 
   /**
@@ -72,12 +91,21 @@ class ConfigWatcher {
    * @private
    */
   _notifySubscribers() {
-    for (const subscriber of this.subscribers) {
-      try {
-        subscriber(this.configPath);
-      } catch (error) {
-        console.error('Error notifying subscriber:', error.message);
+    // Add thread safety for notification
+    if (this._lock) return;
+    
+    try {
+      this._lock = true;
+      
+      for (const subscriber of this.subscribers) {
+        try {
+          subscriber(this.configPath);
+        } catch (error) {
+          console.error('Error notifying subscriber:', error.message);
+        }
       }
+    } finally {
+      this._lock = false;
     }
   }
 

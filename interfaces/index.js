@@ -1,11 +1,50 @@
 // Configuration interface
 class IConfiguration {
+  /**
+   * Gets a configuration value by key
+   * @param {string} key - The configuration key
+   * @returns {*} The configuration value or undefined if not found
+   */
   get(key) { throw new Error('Not implemented'); }
+  
+  /**
+   * Sets a configuration value
+   * @param {string} key - The configuration key
+   * @param {*} value - The configuration value
+   * @throws {Error} If validation fails
+   */
   set(key, value) { throw new Error('Not implemented'); }
+  
+  /**
+   * Gets all configuration values
+   * @returns {Object} A copy of the entire configuration object
+   */
   getAll() { throw new Error('Not implemented'); }
+  
+  /**
+   * Loads configuration from file
+   * @param {string} filePath - Path to the config file
+   * @throws {Error} If loading fails or file is invalid
+   */
   loadFromFile(filePath) { throw new Error('Not implemented'); }
+  
+  /**
+   * Adds a config watcher to monitor file changes
+   * @param {Object} watcher - ConfigWatcher instance
+   * @throws {Error} If watcher is invalid
+   */
   addWatcher(watcher) { throw new Error('Not implemented'); }
+  
+  /**
+   * Removes a config watcher
+   * @param {Object} watcher - ConfigWatcher instance to remove
+   */
   removeWatcher(watcher) { throw new Error('Not implemented'); }
+  
+  /**
+   * Gets all active watchers
+   * @returns {Set} Set of active watchers
+   */
   getWatchers() { throw new Error('Not implemented'); }
 }
 

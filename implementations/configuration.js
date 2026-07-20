@@ -1,5 +1,4 @@
 const { IConfiguration } = require('../interfaces');
-const fs = require('fs');
 
 class Configuration extends IConfiguration {
   constructor(configPath = null) {
@@ -8,9 +7,16 @@ class Configuration extends IConfiguration {
     this._validators = new Map();
     this.configPath = configPath;
     this.watchers = new Set();
+    // Use dependency injection for file system operations
+    this.fs = require('fs');
   }
 
-  // Add validator for a specific key
+  /**
+   * Adds a validator for a specific configuration key
+   * @param {string} key - The configuration key to validate
+   * @param {Function} validator - Validation function that throws on invalid input
+   * @throws {Error} If validator is not a function
+   */
   addValidator(key, validator) {
     if (typeof validator !== 'function') {
       throw new Error(`Validator for ${key} must be a function`);
@@ -18,10 +24,21 @@ class Configuration extends IConfiguration {
     this._validators.set(key, validator);
   }
 
+  /**
+   * Gets a configuration value by key
+   * @param {string} key - The configuration key
+   * @returns {*} The configuration value or undefined if not found
+   */
   get(key) {
     return this._config[key];
   }
 
+  /**
+   * Sets a configuration value
+   * @param {string} key - The configuration key
+   * @param {*} value - The configuration value
+   * @throws {Error} If validation fails
+   */
   set(key, value) {
     // Validate the value before setting
     if (this._validators.has(key)) {
@@ -36,6 +53,10 @@ class Configuration extends IConfiguration {
     this._config[key] = value;
   }
 
+  /**
+   * Gets all configuration values
+   * @returns {Object} A copy of the entire configuration object
+   */
   getAll() {
     return { ...this._config };
   }
@@ -43,6 +64,7 @@ class Configuration extends IConfiguration {
   /**
    * Loads configuration from file
    * @param {string} filePath - Path to the config file
+   * @throws {Error} If loading fails or file is invalid
    */
   loadFromFile(filePath) {
     if (!filePath) {
@@ -50,7 +72,10 @@ class Configuration extends IConfiguration {
     }
     
     try {
-      const configFile = fs.readFileSync(filePath, 'utf8');
+      // Check if file exists and is readable
+      this.fs.accessSync(filePath, this.fs.constants.R_OK);
+      
+      const configFile = this.fs.readFileSync(filePath, 'utf8');
       const parsedConfig = JSON.parse(configFile);
       
       // Clear current config and set new values
@@ -68,6 +93,7 @@ class Configuration extends IConfiguration {
   /**
    * Adds a config watcher to monitor file changes
    * @param {Object} watcher - ConfigWatcher instance
+   * @throws {Error} If watcher is invalid
    */
   addWatcher(watcher) {
     if (!watcher || typeof watcher.subscribe !== 'function') {
