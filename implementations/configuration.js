@@ -9,6 +9,7 @@ class Configuration extends IConfiguration {
     this.watchers = new Set();
     // Use dependency injection for file system operations
     this.fs = require('fs');
+    this.path = require('path');
   }
 
   /**
@@ -130,6 +131,44 @@ class Configuration extends IConfiguration {
    */
   getWatchers() {
     return new Set(this.watchers);
+  }
+
+  /**
+   * Saves current configuration to file
+   * @param {string} filePath - Path to save the config file
+   * @throws {Error} If saving fails
+   */
+  saveToFile(filePath) {
+    if (!filePath) {
+      throw new Error('File path is required for saving configuration');
+    }
+
+    try {
+      const configString = JSON.stringify(this._config, null, 2);
+      this.fs.writeFileSync(filePath, configString, 'utf8');
+      this.configPath = filePath;
+    } catch (error) {
+      throw new Error(`Failed to save configuration to ${filePath}: ${error.message}`);
+    }
+  }
+
+  /**
+   * Gets a configuration value with default fallback
+   * @param {string} key - The configuration key
+   * @param {*} defaultValue - Default value if key not found
+   * @returns {*} The configuration value or default if not found
+   */
+  getWithDefault(key, defaultValue) {
+    return this._config[key] !== undefined ? this._config[key] : defaultValue;
+  }
+
+  /**
+   * Checks if a configuration key exists
+   * @param {string} key - The configuration key
+   * @returns {boolean} True if the key exists, false otherwise
+   */
+  has(key) {
+    return this._config.hasOwnProperty(key);
   }
 }
 

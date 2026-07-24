@@ -129,6 +129,21 @@ class LifecycleManager:
         """
         return self._current_state == ApplicationState.FAILED
 
+    def get_state_history(self) -> list:
+        """
+        Get the history of state transitions.
+        
+        Returns:
+            list: A copy of the state transition history.
+        """
+        return self._state_history.copy()
+
+    def reset_state_history(self) -> None:
+        """
+        Clear the state transition history.
+        """
+        self._state_history.clear()
+
 
 # Test cases
 if __name__ == "__main__":
