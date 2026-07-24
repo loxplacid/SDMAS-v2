@@ -10,6 +10,26 @@ class Configuration extends IConfiguration {
     // Use dependency injection for file system operations
     this.fs = require('fs');
     this.path = require('path');
+    
+    // Add validation for configuration values
+    this.addValidator('database_url', (value) => {
+      if (!value || typeof value !== 'string') {
+        throw new Error('Database URL must be a non-empty string');
+      }
+    });
+    
+    this.addValidator('port', (value) => {
+      if (typeof value !== 'number' || value < 1 || value > 65535) {
+        throw new Error('Port must be a number between 1 and 65535');
+      }
+    });
+    
+    this.addValidator('log_level', (value) => {
+      const validLevels = ['debug', 'info', 'warn', 'error'];
+      if (!validLevels.includes(value)) {
+        throw new Error(`Log level must be one of: ${validLevels.join(', ')}`);
+      }
+    });
   }
 
   /**
@@ -169,6 +189,31 @@ class Configuration extends IConfiguration {
    */
   has(key) {
     return this._config.hasOwnProperty(key);
+  }
+  
+  /**
+   * Validates current configuration against all registered validators
+   * @throws {Error} If any validation fails
+   */
+  validate() {
+    for (const [key, value] of Object.entries(this._config)) {
+      if (this._validators.has(key)) {
+        const validator = this._validators.get(key);
+        try {
+          validator(value);
+        } catch (error) {
+          throw new Error(`Validation failed for ${key}: ${error.message}`);
+        }
+      }
+    }
+  }
+
+  /**
+   * Gets the current configuration path
+   * @returns {string|null} The path to the config file or null if not set
+   */
+  getPath() {
+    return this.configPath;
   }
 }
 

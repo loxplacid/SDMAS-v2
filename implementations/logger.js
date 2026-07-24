@@ -6,6 +6,21 @@ class Logger extends ILogger {
     this.level = 'info';
     this.formatters = new Map();
     this.transports = [];
+    
+    // Add default formatters
+    this.addFormatter('json', (message) => {
+      const timestamp = new Date().toISOString();
+      return JSON.stringify({
+        level: this.level,
+        timestamp,
+        message
+      });
+    });
+    
+    this.addFormatter('simple', (message) => {
+      const timestamp = new Date().toISOString();
+      return `[${timestamp}] ${this.level.toUpperCase()}: ${message}`;
+    });
   }
 
   /**
@@ -38,24 +53,30 @@ class Logger extends ILogger {
    */
   _output(level, message) {
     const timestamp = new Date().toISOString();
-    const formattedMessage = `[${level.toUpperCase()}] ${timestamp} - ${message}`;
     
-    // Apply default formatter if available
-    const defaultFormatter = this.formatters.get('default');
-    const finalMessage = defaultFormatter ? 
-      defaultFormatter(formattedMessage) : 
-      formattedMessage;
-      
+    // Apply formatter based on configuration or default to simple format
+    let formattedMessage;
+    if (this.formatters.has(this.level)) {
+      const formatter = this.formatters.get(this.level);
+      formattedMessage = formatter(message);
+    } else {
+      const defaultFormatter = this.formatters.get('simple');
+      formattedMessage = defaultFormatter ? 
+        defaultFormatter(`[${level.toUpperCase()}] ${timestamp} - ${message}`) : 
+        `[${level.toUpperCase()}] ${timestamp} - ${message}`;
+    }
+    
     // Output to all transports
     for (const transport of this.transports) {
       try {
-        transport.write(finalMessage);
+        transport.write(formattedMessage);
       } catch (error) {
+        // In case of transport failure, log to console as fallback
         console.error('Error in log transport:', error.message);
       }
     }
     
-    // Also output to console by default
+    // Also output to console by default if no transports configured
     if (this.transports.length === 0) {
       console.log(formattedMessage);
     }
@@ -127,6 +148,28 @@ class Logger extends ILogger {
    */
   getLevel() {
     return this.level;
+  }
+  
+  /**
+   * Sets a custom formatter for a specific log level
+   * @param {string} level - The log level to set formatter for
+   * @param {Function} formatter - Formatter function
+   */
+  setFormatterForLevel(level, formatter) {
+    if (typeof formatter !== 'function') {
+      throw new Error('Formatter must be a function');
+    }
+    
+    // Store the formatter with the specific level as key
+    this.formatters.set(`${level}_formatter`, formatter);
+  }
+
+  /**
+   * Gets all registered formatters
+   * @returns {Map} Map of all registered formatters
+   */
+  getFormatters() {
+    return new Map(this.formatters);
   }
 }
 

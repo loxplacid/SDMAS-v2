@@ -3,7 +3,7 @@ Lifecycle management for application states.
 """
 
 from enum import Enum
-from typing import Dict, Any
+from typing import Dict, Any, List
 import logging
 
 
@@ -27,7 +27,7 @@ class LifecycleManager:
 
     def __init__(self):
         self._current_state: ApplicationState = ApplicationState.STOPPED
-        self._state_history: list = []
+        self._state_history: List[ApplicationState] = []
         
     @property
     def current_state(self) -> ApplicationState:
@@ -53,11 +53,16 @@ class LifecycleManager:
             # Convert string to enum
             state_enum = ApplicationState(new_state)
             
-            # Log state change
-            logging.info(f"Transitioning from {self._current_state.value} "
-                        f"to {state_enum.value}")
+            # Log state change with more context
+            logging.info(
+                f"Application state transition: "
+                f"{self._current_state.value} -> {state_enum.value}"
+            )
             
-            # Update history
+            # Update history - keep only last 100 transitions for memory management
+            if len(self._state_history) >= 100:
+                self._state_history.pop(0)
+                
             self._state_history.append(self._current_state)
             
             # Set new current state
@@ -129,7 +134,7 @@ class LifecycleManager:
         """
         return self._current_state == ApplicationState.FAILED
 
-    def get_state_history(self) -> list:
+    def get_state_history(self) -> List[ApplicationState]:
         """
         Get the history of state transitions.
         
@@ -143,6 +148,18 @@ class LifecycleManager:
         Clear the state transition history.
         """
         self._state_history.clear()
+    
+    def get_recent_states(self, count: int = 5) -> List[ApplicationState]:
+        """
+        Get recent state transitions.
+        
+        Args:
+            count (int): Number of recent states to return
+            
+        Returns:
+            list: Recent state transitions
+        """
+        return self._state_history[-count:] if self._state_history else []
 
 
 # Test cases
