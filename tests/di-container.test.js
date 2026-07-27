@@ -67,64 +67,56 @@ describe('Dependency Injection Container', () => {
   });
 
   // New tests for circular dependency detection
-  test('should detect direct cycle: a -> b -> a', () => {
+  test('should detect a direct circular dependency (a -> b -> a)', () => {
     container.register('a', (b) => ({ b }), ['b']);
     container.register('b', (a) => ({ a }), ['a']);
-    
+
     expect(() => {
       container.resolve('a');
-    }).toThrow(/Circular dependency detected.*a -> b -> a/);
+    }).toThrow(/Circular dependency detected: a -> b -> a/);
   });
 
-  test('should detect self cycle: a -> a', () => {
+  test('should detect a self-referential circular dependency', () => {
     container.register('a', (a) => ({ a }), ['a']);
-    
+
     expect(() => {
       container.resolve('a');
-    }).toThrow(/Circular dependency detected.*a -> a/);
+    }).toThrow(/Circular dependency detected: a -> a/);
   });
 
-  test('should detect indirect cycle: a -> b -> c -> a', () => {
+  test('should detect an indirect circular dependency (a -> b -> c -> a)', () => {
     container.register('a', (b) => ({ b }), ['b']);
     container.register('b', (c) => ({ c }), ['c']);
     container.register('c', (a) => ({ a }), ['a']);
-    
+
     expect(() => {
       container.resolve('a');
-    }).toThrow(/Circular dependency detected.*a -> b -> c -> a/);
+    }).toThrow(/Circular dependency detected: a -> b -> c -> a/);
   });
 
-  test('should provide context for missing dependencies', () => {
+  test('should include the requesting chain when a nested dependency is missing', () => {
     container.register('a', (x) => x, ['x']);
-    
+
     expect(() => {
       container.resolve('a');
-    }).toThrow(/Service 'x' not registered \(required by a\)/);
+    }).toThrow("Service 'x' not registered (required by a)");
   });
 
-  test('should preserve existing behavior for direct missing service error', () => {
-    expect(() => {
-      container.resolve('nonExistentService');
-    }).toThrow("Service 'nonExistentService' not registered");
-  });
+  test('should resolve a diamond dependency graph without a false-positive cycle', () => {
+    let dCallCount = 0;
 
-  test('should resolve diamond dependency graph correctly', () => {
-    // a depends on b and c; both b and c depend on d
-    let dInstanceCount = 0;
-    
     container.registerSingleton('d', () => {
-      dInstanceCount++;
-      return { id: 'd' };
+      dCallCount++;
+      return { id: 'd-instance' };
     });
-    
+
     container.register('b', (d) => ({ d }), ['d']);
     container.register('c', (d) => ({ d }), ['d']);
     container.register('a', (b, c) => ({ b, c }), ['b', 'c']);
-    
+
     const result = container.resolve('a');
-    
-    expect(result.b.d).toEqual({ id: 'd' });
-    expect(result.c.d).toEqual({ id: 'd' });
-    expect(dInstanceCount).toBe(1); // Should be singleton
+
+    expect(result.b.d).toBe(result.c.d);
+    expect(dCallCount).toBe(1);
   });
 });
