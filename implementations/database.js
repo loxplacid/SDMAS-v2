@@ -4,6 +4,7 @@ class Database extends IDatabase {
   constructor() {
     super();
     this.connection = null;
+    this.inTransaction = false;
   }
 
   /**
@@ -12,6 +13,7 @@ class Database extends IDatabase {
   connect() {
     // Simulate database connection
     this.connection = { status: 'connected' };
+    this.inTransaction = false;
     console.log('Database connected');
   }
 
@@ -23,6 +25,7 @@ class Database extends IDatabase {
       this.connection.status = 'disconnected';
     }
     this.connection = null;
+    this.inTransaction = false;
     console.log('Database disconnected');
   }
 
@@ -32,6 +35,70 @@ class Database extends IDatabase {
    */
   isConnected() {
     return Boolean(this.connection && this.connection.status === 'connected');
+  }
+
+  /**
+   * Begins a database transaction
+   */
+  beginTransaction() {
+    if (!this.isConnected()) {
+      throw new Error('Not connected to database');
+    }
+    if (this.inTransaction) {
+      throw new Error('Transaction is already in progress');
+    }
+    this.inTransaction = true;
+    console.log('Transaction started');
+  }
+
+  /**
+   * Commits the current database transaction
+   */
+  commit() {
+    if (!this.isConnected()) {
+      throw new Error('Not connected to database');
+    }
+    if (!this.inTransaction) {
+      throw new Error('No active transaction to commit');
+    }
+    this.inTransaction = false;
+    console.log('Transaction committed');
+  }
+
+  /**
+   * Rolls back the current database transaction
+   */
+  rollback() {
+    if (!this.isConnected()) {
+      throw new Error('Not connected to database');
+    }
+    if (!this.inTransaction) {
+      throw new Error('No active transaction to roll back');
+    }
+    this.inTransaction = false;
+    console.log('Transaction rolled back');
+  }
+
+  /**
+   * Executes a callback within an atomic transaction block.
+   * Automatically commits on success or rolls back on error.
+   * @param {Function} callback - Function to execute inside transaction
+   * @returns {*} Result of the callback
+   */
+  transaction(callback) {
+    if (typeof callback !== 'function') {
+      throw new Error('Transaction callback must be a function');
+    }
+
+    this.beginTransaction();
+    try {
+      const result = callback(this);
+      this.commit();
+      return result;
+    } catch (error) {
+      this.rollback();
+      throw error;
+    }
   }
 
   /**
