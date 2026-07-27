@@ -20,18 +20,48 @@ class DependencyInjectionContainer {
    * @returns {*} Resolved service instance
    */
   resolve(name) {
+    // Create a new chain for each top-level resolution
+    return this._resolveWithChain(name, []);
+  }
+
+  /**
+   * Internal recursive resolver with chain tracking
+   * @private
+   * @param {string} name - Service name to resolve
+   * @param {Array<string>} chain - Current resolution chain
+   * @returns {*} Resolved service instance
+   */
+  _resolveWithChain(name, chain) {
+    // Check for circular dependency
+    if (chain.includes(name)) {
+      const cyclePath = [...chain, name].join(' -> ');
+      throw new Error(`Circular dependency detected: ${cyclePath}`);
+    }
+
+    // Check if already resolved as singleton
     if (this._singletons.has(name)) {
       return this._singletons.get(name);
     }
 
+    // Look up service
     const service = this._services.get(name);
     if (!service) {
-      throw new Error(`Service '${name}' not registered`);
+      // If we're at the top level, throw original error format
+      if (chain.length === 0) {
+        throw new Error(`Service '${name}' not registered`);
+      }
+      
+      // Otherwise provide context about who required it
+      const chainPath = chain.join(' -> ');
+      throw new Error(`Service '${name}' not registered (required by ${chainPath})`);
     }
+
+    // Build the next chain with current service added
+    const nextChain = [...chain, name];
 
     // Resolve dependencies first
     const resolvedDependencies = service.dependencies.map(depName => 
-      this.resolve(depName)
+      this._resolveWithChain(depName, nextChain)
     );
 
     // Create instance with dependencies injected
