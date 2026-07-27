@@ -99,10 +99,22 @@ class Configuration extends IConfiguration {
       const configFile = this.fs.readFileSync(filePath, 'utf8');
       const parsedConfig = JSON.parse(configFile);
       
-      // Clear current config and set new values
+      // Validate all key-value pairs before mutating configuration
+      for (const [key, value] of Object.entries(parsedConfig)) {
+        if (this._validators.has(key)) {
+          const validator = this._validators.get(key);
+          try {
+            validator(value);
+          } catch (error) {
+            throw new Error(`Validation failed for configuration key "${key}": ${error.message}`);
+          }
+        }
+      }
+      
+      // Clear current config and commit new validated values
       this._config = {};
       for (const [key, value] of Object.entries(parsedConfig)) {
-        this.set(key, value);
+        this._config[key] = value;
       }
       
       this.configPath = filePath;
