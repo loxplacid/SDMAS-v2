@@ -17,21 +17,28 @@ class DependencyInjectionContainer {
   /**
    * Resolve a service by name with all its dependencies injected
    * @param {string} name - Service name to resolve
-   * @param {Array<string>} chain - Current resolution chain
    * @returns {*} Resolved service instance
    */
-  resolve(name, chain = []) {
-    // Check for circular dependency
+  resolve(name) {
+    return this._resolveInternal(name, []);
+  }
+
+  /**
+   * Internal recursive helper for resolving dependencies with chain tracking
+   * @param {string} name - Service name to resolve
+   * @param {Array<string>} chain - Current resolution chain
+   * @returns {*} Resolved service instance
+   * @private
+   */
+  _resolveInternal(name, chain) {
     if (chain.includes(name)) {
       throw new Error(`Circular dependency detected: ${chain.join(' -> ')} -> ${name}`);
     }
 
-    // Check if already resolved as singleton
     if (this._singletons.has(name)) {
       return this._singletons.get(name);
     }
 
-    // Look up service
     const service = this._services.get(name);
     if (!service) {
       if (chain.length === 0) {
@@ -40,18 +47,14 @@ class DependencyInjectionContainer {
       throw new Error(`Service '${name}' not registered (required by ${chain.join(' -> ')})`);
     }
 
-    // Build the next resolution chain
     const nextChain = [...chain, name];
 
-    // Resolve dependencies first
-    const resolvedDependencies = service.dependencies.map(depName => 
-      this.resolve(depName, nextChain)
+    const resolvedDependencies = service.dependencies.map(depName =>
+      this._resolveInternal(depName, nextChain)
     );
 
-    // Create instance with dependencies injected
     const instance = service.factory(...resolvedDependencies);
 
-    // Cache singleton instances
     if (service.singleton) {
       this._singletons.set(name, instance);
     }
