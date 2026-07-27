@@ -66,14 +66,14 @@ describe('Dependency Injection Container', () => {
     }).toThrow("Service 'nonExistentService' not registered");
   });
 
-  // New tests for circular dependency detection
+  // Test cases for circular dependency detection & missing nested dependencies
   test('should detect a direct circular dependency (a -> b -> a)', () => {
     container.register('a', (b) => ({ b }), ['b']);
     container.register('b', (a) => ({ a }), ['a']);
 
     expect(() => {
       container.resolve('a');
-    }).toThrow(/Circular dependency detected: a -> b -> a/);
+    }).toThrow('Circular dependency detected: a -> b -> a');
   });
 
   test('should detect a self-referential circular dependency', () => {
@@ -81,7 +81,7 @@ describe('Dependency Injection Container', () => {
 
     expect(() => {
       container.resolve('a');
-    }).toThrow(/Circular dependency detected: a -> a/);
+    }).toThrow('Circular dependency detected: a -> a');
   });
 
   test('should detect an indirect circular dependency (a -> b -> c -> a)', () => {
@@ -91,7 +91,7 @@ describe('Dependency Injection Container', () => {
 
     expect(() => {
       container.resolve('a');
-    }).toThrow(/Circular dependency detected: a -> b -> c -> a/);
+    }).toThrow('Circular dependency detected: a -> b -> c -> a');
   });
 
   test('should include the requesting chain when a nested dependency is missing', () => {
