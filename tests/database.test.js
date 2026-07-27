@@ -9,6 +9,7 @@ describe('Database Implementation', () => {
 
   test('should initially be disconnected', () => {
     expect(db.isConnected()).toBe(false);
+    expect(db.isSchemaInitialized()).toBe(false);
   });
 
   test('should throw error when executing query without connecting', () => {
@@ -83,5 +84,47 @@ describe('Database Implementation', () => {
     }).toThrow('Transaction is already in progress');
 
     db.rollback();
+  });
+
+  test('should initialize schema atomically', () => {
+    db.connect();
+    const schemaSqls = [
+      'CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));',
+      'CREATE TABLE items (id INT PRIMARY KEY, title VARCHAR(100));'
+    ];
+
+    db.initializeSchema(schemaSqls);
+    expect(db.isSchemaInitialized()).toBe(true);
+  });
+
+  test('should roll back and keep schemaInitialized false if schema statement fails', () => {
+    db.connect();
+    const schemaSqls = [
+      'CREATE TABLE users (id INT PRIMARY KEY);',
+      '' // invalid query
+    ];
+
+    expect(() => {
+      db.initializeSchema(schemaSqls);
+    }).toThrow('Invalid SQL query provided');
+
+    expect(db.isSchemaInitialized()).toBe(false);
+    expect(db.inTransaction).toBe(false);
+  });
+
+  test('should throw error if initializeSchema is called without connection or with invalid statements', () => {
+    expect(() => {
+      db.initializeSchema(['CREATE TABLE test (id INT);']);
+    }).toThrow('Not connected to database');
+
+    db.connect();
+
+    expect(() => {
+      db.initializeSchema([]);
+    }).toThrow('Schema statements must be a non-empty array of SQL strings');
+
+    expect(() => {
+      db.initializeSchema('CREATE TABLE test (id INT);');
+    }).toThrow('Schema statements must be a non-empty array of SQL strings');
   });
 });
