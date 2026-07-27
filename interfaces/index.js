@@ -50,10 +50,10 @@ class IConfiguration {
 
 // Logger interface
 class ILogger {
-  log(message) { throw new Error('Not implemented'); }
-  info(message) { throw new Error('Not implemented'); }
-  warn(message) { throw new Error('Not implemented'); }
-  error(message) { throw new Error('Not implemented'); }
+  log(message, meta = {}) { throw new Error('Not implemented'); }
+  info(message, meta = {}) { throw new Error('Not implemented'); }
+  warn(message, meta = {}) { throw new Error('Not implemented'); }
+  error(message, meta = {}) { throw new Error('Not implemented'); }
 }
 
 // Database interface

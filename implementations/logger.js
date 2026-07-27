@@ -8,12 +8,13 @@ class Logger extends ILogger {
     this.transports = [];
     
     // Add default formatters
-    this.addFormatter('json', (message) => {
+    this.addFormatter('json', (message, meta = {}) => {
       const timestamp = new Date().toISOString();
       return JSON.stringify({
         level: this.level,
         timestamp,
-        message
+        message,
+        ...meta
       });
     });
     
@@ -50,15 +51,16 @@ class Logger extends ILogger {
    * Formats and outputs a log message
    * @param {string} level - The log level
    * @param {string} message - The log message
+   * @param {Object} meta - Additional metadata to include in the log
    */
-  _output(level, message) {
+  _output(level, message, meta = {}) {
     const timestamp = new Date().toISOString();
     
     // Apply formatter based on configuration or default to simple format
     let formattedMessage;
     if (this.formatters.has(this.level)) {
       const formatter = this.formatters.get(this.level);
-      formattedMessage = formatter(message);
+      formattedMessage = formatter(message, meta);
     } else {
       const defaultFormatter = this.formatters.get('simple');
       formattedMessage = defaultFormatter ? 
@@ -83,40 +85,44 @@ class Logger extends ILogger {
   }
 
   /**
-   * Logs a message at the specified level
+   * Logs a message at the specified level with optional metadata
    * @param {string} message - The log message
+   * @param {Object} meta - Additional metadata to include in the log
    */
-  log(message) {
-    this._output('log', message);
+  log(message, meta = {}) {
+    this._output('log', message, meta);
   }
 
   /**
-   * Logs an info message
+   * Logs an info message with optional metadata
    * @param {string} message - The log message
+   * @param {Object} meta - Additional metadata to include in the log
    */
-  info(message) {
+  info(message, meta = {}) {
     if (this._shouldLog('info')) {
-      this._output('info', message);
+      this._output('info', message, meta);
     }
   }
 
   /**
-   * Logs a warning message
+   * Logs a warning message with optional metadata
    * @param {string} message - The log message
+   * @param {Object} meta - Additional metadata to include in the log
    */
-  warn(message) {
+  warn(message, meta = {}) {
     if (this._shouldLog('warn')) {
-      this._output('warn', message);
+      this._output('warn', message, meta);
     }
   }
 
   /**
-   * Logs an error message
+   * Logs an error message with optional metadata
    * @param {string} message - The log message
+   * @param {Object} meta - Additional metadata to include in the log
    */
-  error(message) {
+  error(message, meta = {}) {
     if (this._shouldLog('error')) {
-      this._output('error', message);
+      this._output('error', message, meta);
     }
   }
 
