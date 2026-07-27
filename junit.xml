@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="8" failures="0" errors="0" time="0.931">
+  <testsuite name="Database Implementation" errors="0" failures="0" skipped="0" timestamp="2026-07-27T13:22:01" time="0.775" tests="8">
+    <testcase classname="Database Implementation should initially be disconnected" name="Database Implementation should initially be disconnected" time="0.004">
+    </testcase>
+    <testcase classname="Database Implementation should throw error when executing query without connecting" name="Database Implementation should throw error when executing query without connecting" time="0.021">
+    </testcase>
+    <testcase classname="Database Implementation should successfully execute query when connected" name="Database Implementation should successfully execute query when connected" time="0.039">
+    </testcase>
+    <testcase classname="Database Implementation should throw error if connection status becomes disconnected" name="Database Implementation should throw error if connection status becomes disconnected" time="0.005">
+    </testcase>
+    <testcase classname="Database Implementation should throw error when query SQL is empty or invalid" name="Database Implementation should throw error when query SQL is empty or invalid" time="0.004">
+    </testcase>
+    <testcase classname="Database Implementation should handle transactions and commit on success" name="Database Implementation should handle transactions and commit on success" time="0.012">
+    </testcase>
+    <testcase classname="Database Implementation should automatically roll back transaction on error and rethrow" name="Database Implementation should automatically roll back transaction on error and rethrow" time="0.013">
+    </testcase>
+    <testcase classname="Database Implementation should throw error if nested or duplicate transaction is started" name="Database Implementation should throw error if nested or duplicate transaction is started" time="0.007">
+    </testcase>
+  </testsuite>
+</testsuites>
