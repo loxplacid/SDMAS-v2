@@ -1,47 +1,66 @@
-# Project Architecture
+# SDMAS v2 — Architecture
 
 ## Overview
-This project follows a Clean Architecture pattern, separating business logic from infrastructure concerns. The architecture is divided into distinct layers that maintain clear boundaries and dependencies flowing inward toward the core domain.
 
-## Layered Structure
+SDMAS (School Data Management & Analytics System) v2 is a flagship-level rewrite of the existing SDMAS v1 JavaScript implementation. The new backend is built with Python + FastAPI, following clean architecture principles.
 
-### 1. Presentation Layer (UI)
-- Handles user interaction and display
-- Contains controllers, views, and UI components
-- Depends on application services for business operations
+## Phase 1 Scope (Current)
 
-### 2. Application Layer
-- Contains use cases and application logic
-- Coordinates between presentation and domain layers
-- Uses dependency injection for service composition
+The goal of Phase 1 is to establish a production-ready Python backend foundation.
 
-### 3. Domain Layer (Core)
-- Contains core business logic and entities
-- Defines interfaces that other layers implement
-- Independent of external frameworks or databases
+**Completed:**
+- Repository scaffolding (`apps/api/`)
+- Project configuration (`pyproject.toml`, `requirements.txt`)
+- Configuration management (Pydantic Settings, `.env` support)
+- Async SQLAlchemy infrastructure (engine, session factory, session dependency)
+- FastAPI application with `/health` and `/ready` endpoints
+- Core foundation (exception hierarchy, pagination primitives)
+- Alembic configuration (async, settings-based)
+- Test infrastructure (pytest, async fixtures, httpx)
+- Docker Compose development environment (PostgreSQL, Redis, API)
+- Documentation (README, architecture, migration plan)
 
-### 4. Infrastructure Layer
-- Handles technical details like database access, file systems, etc.
-- Implements domain interfaces
-- Provides concrete implementations for repositories and services
+**Not yet implemented (later phases):**
+- Domain models (Student, Academic, Attendance, Fees)
+- Domain migrations
+- Authentication / authorization
+- API routers for domain entities
+- AI / Analytics services
+- Frontend
 
-## Key Principles
+## Project Structure
 
-### SOLID Principles
-1. **Single Responsibility Principle**: Each class has one reason to change
-2. **Open/Closed Principle**: Open for extension, closed for modification
-3. **Liskov Substitution Principle**: Subtypes must be substitutable for their base types
-4. **Interface Segregation Principle**: Clients should not be forced to depend on interfaces they don't use
-5. **Dependency Inversion Principle**: Depend on abstractions, not concretions
+```
+sdmas-v2/
+├── apps/api/            # Python FastAPI backend
+├── infrastructure/      # Docker, CI/CD configs
+├── docs/                # Architecture & migration docs
+├── legacy/              # Future home of JS reference
+├── backend/             # Existing Python foundation (preserved)
+├── tests/               # Existing JS tests (preserved)
+├── ...JS files...       # Legacy JS implementation
+```
 
-### Repository Pattern
-- Abstracts data access operations
-- Provides a clean interface between domain and infrastructure layers
-- Enables testability through mocking
+## JavaScript Legacy
 
-### Event Bus
-- Facilitates loose coupling between components
-- Supports publish/subscribe communication patterns
-- Enables asynchronous processing of business events
+The existing JavaScript implementation in the repository root is the **legacy behavioral reference**. It contains ~488 tests across ~6200 lines. It remains in place and will be archived into `legacy/` only after Python behavioral parity is verified.
 
-## File Structure
+## Technology Stack
+
+| Component       | Technology                        |
+|----------------|-----------------------------------|
+| Framework       | FastAPI                           |
+| ASGI Server     | Uvicorn                           |
+| ORM             | SQLAlchemy 2.x (async)            |
+| Database        | PostgreSQL (asyncpg)              |
+| Migrations      | Alembic                           |
+| Validation      | Pydantic v2                       |
+| Config          | Pydantic Settings                 |
+| Testing         | pytest, pytest-asyncio, httpx     |
+| Linting         | Ruff                              |
+| Type Checking   | mypy                              |
+| Container       | Docker + Docker Compose           |
+
+## Configuration
+
+Configuration is managed via Pydantic Settings, reading from environment variables and `.env` files. See `.env.example` for available settings.

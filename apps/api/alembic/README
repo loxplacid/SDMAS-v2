@@ -1,0 +1,28 @@
+# Alembic Migrations — SDMAS v2
+
+This directory contains database migration scripts managed by Alembic.
+
+## Current Status
+
+- Alembic is configured for async SQLAlchemy.
+- The `versions/` directory is intentionally empty.
+- No domain migrations have been created yet (Phase 1 — Foundation only).
+- Domain migrations (Student, Academic, Attendance, Fees) will be added in later phases.
+
+## Usage
+
+```bash
+# Create a new migration
+alembic revision --autogenerate -m "description"
+
+# Apply pending migrations
+alembic upgrade head
+
+# Roll back one migration
+alembic downgrade -1
+
+# View migration history
+alembic history
+```
+
+**Warning:** Do not run domain migrations until the domain models have been implemented in a later phase.

@@ -74,7 +74,7 @@ class Logger extends ILogger {
         transport.write(formattedMessage);
       } catch (error) {
         // In case of transport failure, log to console as fallback
-        console.error('Error in log transport:', error.message);
+        console.error('Error in log transport:', error);
       }
     }
     

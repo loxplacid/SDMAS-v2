@@ -77,9 +77,15 @@ class DependencyInjectionContainer {
   }
 
   /**
-   * Clear all registered services and singletons
+   * Clear all registered services and singletons,
+   * disposing any singleton that provides a disconnect method.
    */
   clear() {
+    for (const instance of this._singletons.values()) {
+      if (typeof instance.disconnect === 'function') {
+        instance.disconnect();
+      }
+    }
     this._services.clear();
     this._singletons.clear();
   }

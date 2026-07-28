@@ -1,9 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+*.db
+
+# mypy
+.mypy_cache/
+
+# pytest
+.pytest_cache/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# Testing
+coverage/
+htmlcov/
+junit.xml
+
+# Aider
 .aider*
-.env
-.env
-.env
-.env
-.env
-.env
-.env
-.env
+
+# Docker
+*.log

@@ -11,13 +11,22 @@ class EventBus extends IEventBus {
       this.subscribers.set(event, []);
     }
     
-    this.subscribers.get(event).push(handler);
+    const handlers = this.subscribers.get(event);
+    if (!handlers.includes(handler)) {
+      handlers.push(handler);
+    }
   }
 
   publish(event, data) {
     const handlers = this.subscribers.get(event);
     if (handlers && handlers.length > 0) {
-      handlers.forEach(handler => handler(data));
+      [...handlers].forEach(handler => {
+        try {
+          handler(data);
+        } catch (error) {
+          console.error(`Error in event handler for "${event}":`, error);
+        }
+      });
     }
   }
 

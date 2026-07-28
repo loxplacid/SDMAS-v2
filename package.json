@@ -7,7 +7,15 @@
     "test": "jest --verbose",
     "test:coverage": "jest --coverage",
     "start": "node examples/usage-example.js",
-    "example": "node examples/complete-example.js"
+    "example": "node examples/complete-example.js",
+    "student": "node student-cli.js",
+    "student:create": "node student-cli.js create",
+    "student:list": "node student-cli.js list",
+    "student:search": "node student-cli.js search",
+    "academic": "node academic-cli.js",
+    "academic:year-list": "node academic-cli.js year-list",
+    "academic:class-list": "node academic-cli.js class-list",
+    "academic:subject-list": "node academic-cli.js subject-list"
   },
   "keywords": [
     "dependency-injection",

@@ -101,6 +101,16 @@ describe('Dependency Injection Container', () => {
     }).toThrow("Service 'x' not registered (required by a)");
   });
 
+  test('should disconnect singletons on clear', () => {
+    const disconnect = jest.fn();
+    container.registerSingleton('disposable', () => ({ disconnect }));
+
+    container.resolve('disposable');
+    container.clear();
+
+    expect(disconnect).toHaveBeenCalledTimes(1);
+  });
+
   test('should resolve a diamond dependency graph without a false-positive cycle', () => {
     let dCallCount = 0;
 
