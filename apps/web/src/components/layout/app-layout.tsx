@@ -4,6 +4,8 @@ import { Sidebar } from './sidebar'
 import { Header } from './header'
 import { CommandPalette } from '../ui/command-palette'
 import { KeyboardShortcutsDialog } from '../ui/keyboard-shortcuts-dialog'
+import { InstallPWA } from '../ui/install-pwa'
+import { SystemThemeToast } from '../ui/system-theme-toast'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { RouteTransition } from '../ui/route-transition'
 
@@ -122,6 +124,12 @@ export function AppLayout() {
       >
         ?
       </button>
+
+      {/* PWA Install Prompt */}
+      <InstallPWA />
+
+      {/* System Theme Change Toast */}
+      <SystemThemeToast />
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAuth } from '../../api/auth/auth-context'
 import { NotificationBell } from '../notifications/notification-bell'
 import { cn } from '../../lib/utils'
+import { ThemeToggle } from '../ui/theme-toggle'
 
 interface HeaderProps {
   onOpenCommandPalette?: () => void
@@ -79,6 +80,8 @@ export function Header({ onOpenCommandPalette, onOpenSearch, onOpenShortcuts }: 
         >
           ?
         </button>
+
+        <ThemeToggle />
 
         <div className="w-px h-5 bg-[var(--color-border)] mx-1 hidden sm:block" />
 

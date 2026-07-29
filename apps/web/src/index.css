@@ -171,6 +171,82 @@
   --nav-icon-active: #ffffff;
 }
 
+/* ============================================================
+   DARK MODE
+   ============================================================ */
+[data-theme="dark"] {
+  /* Surfaces */
+  --color-bg: #0b0f1e;
+  --color-bg-warm: #0f1325;
+  --color-surface: #13183a;
+  --color-surface-hover: #1a2050;
+  --color-surface-elevated: #1a2050;
+
+  --color-border: #1e2456;
+  --color-border-light: #181e45;
+  --color-border-subtle: #151b3d;
+  --color-divider: #1e2456;
+
+  /* Text */
+  --color-text-primary: #e8eaef;
+  --color-text-secondary: #a5aabf;
+  --color-text-tertiary: #6b7293;
+  --color-text-muted: #4a5070;
+  --color-text-inverse: #0b0f1e;
+  --color-text-on-accent: #ffffff;
+
+  /* Semantic */
+  --color-success-light: #064e3b;
+  --color-warning-light: #451a03;
+  --color-danger-light: #450a0a;
+  --color-info-light: #164e63;
+
+  /* Accent */
+  --color-brand-accent-light: rgba(79, 122, 255, 0.15);
+  --color-brand-accent-subtle: rgba(79, 122, 255, 0.12);
+
+  /* Shadows - deeper in dark mode */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 30px rgba(0, 0, 0, 0.6), 0 8px 16px rgba(0, 0, 0, 0.3);
+  --shadow-2xl: 0 30px 50px rgba(0, 0, 0, 0.7);
+}
+
+/* System preference auto-detection when no explicit theme is set */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --color-bg: #0b0f1e;
+    --color-bg-warm: #0f1325;
+    --color-surface: #13183a;
+    --color-surface-hover: #1a2050;
+    --color-surface-elevated: #1a2050;
+    --color-border: #1e2456;
+    --color-border-light: #181e45;
+    --color-border-subtle: #151b3d;
+    --color-divider: #1e2456;
+    --color-text-primary: #e8eaef;
+    --color-text-secondary: #a5aabf;
+    --color-text-tertiary: #6b7293;
+    --color-text-muted: #4a5070;
+    --color-text-inverse: #0b0f1e;
+    --color-text-on-accent: #ffffff;
+    --color-success-light: #064e3b;
+    --color-warning-light: #451a03;
+    --color-danger-light: #450a0a;
+    --color-info-light: #164e63;
+    --color-brand-accent-light: rgba(79, 122, 255, 0.15);
+    --color-brand-accent-subtle: rgba(79, 122, 255, 0.12);
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3);
+    --shadow-xl: 0 20px 30px rgba(0, 0, 0, 0.6), 0 8px 16px rgba(0, 0, 0, 0.3);
+    --shadow-2xl: 0 30px 50px rgba(0, 0, 0, 0.7);
+  }
+}
+
 /* ---- Base Reset ---- */
 *, *::before, *::after {
   box-sizing: border-box;
