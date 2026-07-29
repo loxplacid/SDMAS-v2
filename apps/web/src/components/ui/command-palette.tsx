@@ -16,10 +16,22 @@ interface CommandGroup {
   items: CommandItem[]
 }
 
+interface SmartSearchResult {
+  id: string
+  label: string
+  description: string
+  type: string
+  icon: string
+  action: () => void
+  keywords: string[]
+}
+
 interface CommandPaletteProps {
   open: boolean
   onClose: () => void
   groups: CommandGroup[]
+  smartSearch?: (query: string) => SmartSearchResult[]
+  searchLoaded?: boolean
   placeholder?: string
   emptyMessage?: string
 }
@@ -28,6 +40,8 @@ export function CommandPalette({
   open,
   onClose,
   groups,
+  smartSearch,
+  searchLoaded = false,
   placeholder = 'Search pages and actions...',
   emptyMessage = 'No results found.',
 }: CommandPaletteProps) {
@@ -38,20 +52,26 @@ export function CommandPalette({
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
-  const allItems = groups.flatMap((g) => g.items)
+  const smartResults = smartSearch ? smartSearch(query) : []
 
   const filteredGroups = groups
     .map((g) => ({
       ...g,
       items: g.items.filter(
         (item) =>
+          !query ||
           item.label.toLowerCase().includes(query.toLowerCase()) ||
           item.keywords?.some((k) => k.toLowerCase().includes(query.toLowerCase()))
       ),
     }))
     .filter((g) => g.items.length > 0)
 
-  const flatFiltered = filteredGroups.flatMap((g) => g.items)
+  // Build display groups: smart results first (if query is active), then nav groups
+  const displayGroups = query && smartResults.length > 0
+    ? [{ label: 'Search Results', items: smartResults }, ...filteredGroups]
+    : filteredGroups
+
+  const flatFiltered = displayGroups.flatMap((g) => g.items)
 
   useEffect(() => {
     if (open) {
@@ -174,19 +194,23 @@ export function CommandPalette({
           role="listbox"
           aria-label="Commands"
         >
-          {filteredGroups.length === 0 ? (
+          {displayGroups.length === 0 ? (
             <div className="flex flex-col items-center py-8 text-center">
               <svg className="h-8 w-8 text-[var(--color-text-muted)] mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <p className="text-sm text-[var(--color-text-muted)]">{emptyMessage}</p>
+              {!searchLoaded && query ? (
+                <p className="text-sm text-[var(--color-text-muted)]">Loading search index...</p>
+              ) : (
+                <p className="text-sm text-[var(--color-text-muted)]">{emptyMessage}</p>
+              )}
             </div>
           ) : (
-            filteredGroups.map((group, gi) => {
+            displayGroups.map((group, gi) => {
               let globalIndex = 0
               // Calculate starting index for this group
               for (let g = 0; g < gi; g++) {
-                globalIndex += filteredGroups[g].items.length
+                globalIndex += displayGroups[g].items.length
               }
 
               return (

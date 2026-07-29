@@ -7,6 +7,7 @@ import { KeyboardShortcutsDialog } from '../ui/keyboard-shortcuts-dialog'
 import { InstallPWA } from '../ui/install-pwa'
 import { SystemThemeToast } from '../ui/system-theme-toast'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
+import { useSmartSearch } from '../../hooks/use-smart-search'
 import { RouteTransition } from '../ui/route-transition'
 
 const navIcons: Record<string, string> = {
@@ -80,6 +81,9 @@ export function AppLayout() {
     reactNavigate(path)
   }, [reactNavigate])
 
+  // Smart search across entities
+  const { search: smartSearch, loaded: searchLoaded } = useSmartSearch(navigate)
+
   // `?` opens the keyboard shortcuts dialog
   useKeyboardShortcut({ '?': () => setShortcutsOpen(true) }, [])
 
@@ -106,6 +110,8 @@ export function AppLayout() {
         open={commandOpen}
         onClose={() => setCommandOpen(false)}
         groups={buildCommandGroups(navigate)}
+        smartSearch={smartSearch}
+        searchLoaded={searchLoaded}
       />
 
       {/* Keyboard Shortcuts Help */}
