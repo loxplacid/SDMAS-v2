@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { attendanceApi } from '../../api/attendance/attendance-api'
 import type { AttendanceRecordResponse, StudentAttendanceSummary } from '../../api/generated/types'
-import { Card, Table, Pagination, Badge, Button, Input, Select, Loading, ErrorState } from '../../components/ui'
+import { Card, Table, Pagination, Badge, Button, Input, Select, ErrorState } from '../../components/ui'
 import { ATTENDANCE_STATUSES, capitalize } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
@@ -55,13 +55,14 @@ export function StudentAttendancePage() {
   }, [sid, startDate, endDate])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       <div>
-        <button onClick={() => navigate('/attendance/records')} className="text-sm text-blue-600 hover:text-blue-800 mb-1">
+        <button onClick={() => navigate('/attendance/records')} className="text-sm text-[var(--color-brand-accent)] hover:text-[var(--color-brand-accent-hover)] transition-colors mb-1">
           &larr; Back to Records
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">Student Attendance</h1>
-        <p className="text-gray-500">Student ID: {sid}</p>
+        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider mt-1">Attendance</div>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Student Attendance</h1>
+        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Student ID: {sid}</p>
       </div>
 
       <div className="flex flex-wrap gap-4 items-end">
@@ -88,16 +89,16 @@ export function StudentAttendancePage() {
 
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <Card><div className="text-center"><p className="text-2xl font-bold">{summary.total}</p><p className="text-xs text-gray-500">Total</p></div></Card>
-          <Card><div className="text-center"><p className="text-2xl font-bold text-green-600">{summary.present}</p><p className="text-xs text-gray-500">Present</p></div></Card>
-          <Card><div className="text-center"><p className="text-2xl font-bold text-red-600">{summary.absent}</p><p className="text-xs text-gray-500">Absent</p></div></Card>
-          <Card><div className="text-center"><p className="text-2xl font-bold text-yellow-600">{summary.late}</p><p className="text-xs text-gray-500">Late</p></div></Card>
-          <Card><div className="text-center"><p className="text-2xl font-bold text-blue-600">{summary.excused}</p><p className="text-xs text-gray-500">Excused</p></div></Card>
+          <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-[var(--color-text-primary)]">{summary.total}</p><p className="text-xs text-[var(--color-text-tertiary)]">Total</p></div></Card>
+          <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-green-600">{summary.present}</p><p className="text-xs text-[var(--color-text-tertiary)]">Present</p></div></Card>
+          <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-red-600">{summary.absent}</p><p className="text-xs text-[var(--color-text-tertiary)]">Absent</p></div></Card>
+          <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-yellow-600">{summary.late}</p><p className="text-xs text-[var(--color-text-tertiary)]">Late</p></div></Card>
+          <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-blue-600">{summary.excused}</p><p className="text-xs text-[var(--color-text-tertiary)]">Excused</p></div></Card>
         </div>
       )}
 
-      <Card>
-        {loading ? <Loading text="Loading records..." /> : error ? <ErrorState message={error} /> : (
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
+        {loading ? <Table columns={[]} data={[]} loading={true} keyExtractor={() => ''} emptyMessage="" /> : error ? <ErrorState message={error} /> : (
           <>
             <Table
               columns={[

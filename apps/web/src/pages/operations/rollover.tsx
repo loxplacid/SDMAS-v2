@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { academicYearApi } from '../../api/academic/academic-year-api'
 import { rolloverApi } from '../../api/reports/rollover-api'
 import type { RolloverPreview, RolloverResult } from '../../api/reports/types'
-import { Card, Button, Alert, Loading, Table, Input } from '../../components/ui'
+import { Card, Button, Alert, Table, Input, AnimatedCount } from '../../components/ui'
 
 export function RolloverPage() {
   const [academicYears, setAcademicYears] = useState<{ id: number; name: string }[]>([])
@@ -65,16 +65,17 @@ export function RolloverPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Academic Year Rollover</h1>
-        <p className="text-gray-500 mt-1">Roll over to a new academic year with classes, sections, and enrollments</p>
+        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Data Operations</div>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Academic Year Rollover</h1>
+        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Roll over to a new academic year with classes, sections, and enrollments</p>
       </div>
 
-      <Card>
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Source Academic Year</label>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Source Academic Year</label>
             <select
               value={selectedYearId}
               onChange={(e) => setSelectedYearId(e.target.value)}
@@ -113,30 +114,30 @@ export function RolloverPage() {
         {error && <Alert variant="error" onClose={() => setError(null)} className="mt-3">{error}</Alert>}
       </Card>
 
-      {loading && <Loading text="Generating preview..." />}
+      {loading && <div className="h-24 bg-[var(--color-surface)] rounded-xl animate-pulse" />}
 
       {preview && (
-        <Card title="Rollover Preview">
+        <Card title="Rollover Preview" className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
             <div>
-              <p className="text-sm text-gray-500">From</p>
-              <p className="font-semibold">{preview.from_year_name}</p>
+              <p className="text-sm text-[var(--color-text-tertiary)]">From</p>
+              <p className="font-semibold text-[var(--color-text-primary)]">{preview.from_year_name}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">To</p>
-              <p className="font-semibold">{preview.to_year_name}</p>
+              <p className="text-sm text-[var(--color-text-tertiary)]">To</p>
+              <p className="font-semibold text-[var(--color-text-primary)]">{preview.to_year_name}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Classes</p>
-              <p className="font-semibold">{preview.classes.length}</p>
+              <p className="text-sm text-[var(--color-text-tertiary)]">Classes</p>
+              <p className="font-semibold text-[var(--color-text-primary)]"><AnimatedCount value={preview.classes.length} duration={800} /></p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Sections</p>
-              <p className="font-semibold">{preview.sections.length}</p>
+              <p className="text-sm text-[var(--color-text-tertiary)]">Sections</p>
+              <p className="font-semibold text-[var(--color-text-primary)]"><AnimatedCount value={preview.sections.length} duration={800} /></p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Enrolled Students</p>
-              <p className="font-semibold">{preview.enrolled_students}</p>
+              <p className="text-sm text-[var(--color-text-tertiary)]">Enrolled Students</p>
+              <p className="font-semibold text-[var(--color-text-primary)]"><AnimatedCount value={preview.enrolled_students} duration={800} /></p>
             </div>
           </div>
           <Button onClick={handleExecute} loading={executing} variant="primary" className="bg-green-600 hover:bg-green-700">
@@ -146,25 +147,25 @@ export function RolloverPage() {
       )}
 
       {result && (
-        <Card title="Rollover Result">
+        <Card title="Rollover Result" className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
           <div className="space-y-2">
             <p className="text-green-600 font-semibold">{result.message}</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
               <div>
-                <p className="text-sm text-gray-500">New Year ID</p>
-                <p className="font-semibold">{result.academic_year_id}</p>
+                <p className="text-sm text-[var(--color-text-tertiary)]">New Year ID</p>
+                <p className="font-semibold text-[var(--color-text-primary)]">{result.academic_year_id}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Classes Created</p>
-                <p className="font-semibold">{result.classes_created}</p>
+              <p className="text-sm text-[var(--color-text-tertiary)]">Classes Created</p>
+              <p className="font-semibold text-[var(--color-text-primary)]"><AnimatedCount value={result.classes_created} duration={800} /></p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Sections Created</p>
-                <p className="font-semibold">{result.sections_created}</p>
+              <p className="text-sm text-[var(--color-text-tertiary)]">Sections Created</p>
+              <p className="font-semibold text-[var(--color-text-primary)]"><AnimatedCount value={result.sections_created} duration={800} /></p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Enrollments Created</p>
-                <p className="font-semibold">{result.enrollments_created}</p>
+              <p className="text-sm text-[var(--color-text-tertiary)]">Enrollments Created</p>
+              <p className="font-semibold text-[var(--color-text-primary)]"><AnimatedCount value={result.enrollments_created} duration={800} /></p>
               </div>
             </div>
           </div>

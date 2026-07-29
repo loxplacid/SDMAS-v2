@@ -5,7 +5,8 @@ import { academicYearApi } from '../../api/academic/academic-year-api'
 import { classApi } from '../../api/academic/class-api'
 import { sectionApi } from '../../api/academic/section-api'
 import type { EnrollmentResponse, EnrollmentCreate, EnrollmentUpdate, StudentResponse, AcademicYearResponse, ClassResponse, SectionResponse } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, Loading, EmptyState, ErrorState, useToast } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast } from '../../components/ui'
+import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { ENROLLMENT_STATUSES, capitalize } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = { active: 'success', inactive: 'danger' }
@@ -20,6 +21,8 @@ const columns = [
 
 export function EnrollmentListPage() {
   const { showToast } = useToast()
+
+  useKeyboardShortcut({ 'n': () => openCreateModal() }, [])
   const [data, setData] = useState<EnrollmentResponse[]>([])
   const [total, setTotal] = useState(0); const [pages, setPages] = useState(0)
   const [page, setPage] = useState(1); const [size, setSize] = useState(20)
@@ -90,10 +93,17 @@ export function EnrollmentListPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div><h1 className="text-2xl font-bold text-gray-900">Enrollments</h1><p className="text-gray-500 mt-1">{total} enrollment{total !== 1 ? 's' : ''}</p></div>
-        <Button onClick={openCreateModal}>Add Enrollment</Button>
+    <div className="space-y-6 animate-fade-in-up">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide mb-1">Academics</p>
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Enrollments</h1>
+          <p className="text-sm text-[var(--color-text-tertiary)] mt-1">{total} enrollment{total !== 1 ? 's' : ''}</p>
+        </div>
+        <Button onClick={openCreateModal}>
+          Add Enrollment
+          <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+        </Button>
       </div>
       <div className="flex items-center gap-4">
         <Select options={students.slice(0, 100).map((s) => ({ value: String(s.id), label: `${s.first_name} ${s.last_name} (#${s.student_number})` }))} placeholder="All students" value={studentFilter}
@@ -101,16 +111,16 @@ export function EnrollmentListPage() {
         <Select options={years.map((y) => ({ value: String(y.id), label: y.name }))} placeholder="All years" value={yearFilter}
           onChange={(e) => { setYearFilter(e.target.value); setPage(1) }} />
       </div>
-      <Card>
-        {loading ? <Loading text="Loading enrollments..." /> : error ? <ErrorState message={error} onRetry={() => fetch({ page, size, student_id: studentFilter ? Number(studentFilter) : undefined, academic_year_id: yearFilter ? Number(yearFilter) : undefined })} /> : (
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
+        {error ? <ErrorState message={error} onRetry={() => fetch({ page, size, student_id: studentFilter ? Number(studentFilter) : undefined, academic_year_id: yearFilter ? Number(yearFilter) : undefined })} /> : (
           <>
-            <Table columns={[...columns, { key: 'actions', header: 'Actions', render: (e: EnrollmentResponse) => (<div className="flex gap-2" onClick={(ev) => ev.stopPropagation()}><Button variant="ghost" size="sm" onClick={() => openEditModal(e)}>Edit</Button><Button variant="danger" size="sm" onClick={() => handleDelete(e)}>Delete</Button></div>) }]} data={data} keyExtractor={(e) => e.id} emptyMessage="No enrollments found." />
+            <Table columns={[...columns, { key: 'actions', header: 'Actions', render: (e: EnrollmentResponse) => (<div className="flex gap-2" onClick={(ev) => ev.stopPropagation()}><Button variant="ghost" size="sm" onClick={() => openEditModal(e)}>Edit</Button><Button variant="danger" size="sm" onClick={() => handleDelete(e)}>Delete</Button></div>) }]} data={data} keyExtractor={(e) => e.id} emptyMessage="No enrollments found." loading={loading} />
             <Pagination page={page} size={size} total={total} pages={pages} onPageChange={setPage} onSizeChange={(s) => { setSize(s); setPage(1) }} />
           </>
         )}
       </Card>
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Enrollment' : 'Add Enrollment'}
-        footer={<><Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button><Button onClick={handleSubmit} loading={saving}>{editing ? 'Save Changes' : 'Create'}</Button></>}
+        footer={<>            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button><Button onClick={handleSubmit} loading={saving}>{editing ? 'Save Changes' : 'Create'}</Button></>}
       >
         {apiError && <Alert variant="error" onClose={() => setApiError(null)}>{apiError}</Alert>}
         <Form onSubmit={handleSubmit}>

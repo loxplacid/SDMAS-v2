@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { sectionApi, type SectionListParams } from '../../api/academic/section-api'
 import { classApi } from '../../api/academic/class-api'
 import type { SectionResponse, SectionCreate, SectionUpdate, ClassResponse } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, Loading, EmptyState, ErrorState, useToast } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast } from '../../components/ui'
+import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { ACADEMIC_STATUSES, capitalize } from '../../lib/utils'
 
 type SectionFormData = { name: string; class_id: number | null; status?: string | null }
@@ -19,6 +20,8 @@ const columns = [
 export function SectionListPage() {
   const navigate = useNavigate()
   const { showToast } = useToast()
+
+  useKeyboardShortcut({ 'n': () => openCreateModal() }, [])
   const [data, setData] = useState<SectionResponse[]>([])
   const [total, setTotal] = useState(0); const [pages, setPages] = useState(0)
   const [page, setPage] = useState(1); const [size, setSize] = useState(20)
@@ -67,10 +70,17 @@ export function SectionListPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div><h1 className="text-2xl font-bold text-gray-900">Sections</h1><p className="text-gray-500 mt-1">{total} section{total !== 1 ? 's' : ''}</p></div>
-        <Button onClick={openCreateModal}>Add Section</Button>
+    <div className="space-y-6 animate-fade-in-up">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide mb-1">Academics</p>
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Sections</h1>
+          <p className="text-sm text-[var(--color-text-tertiary)] mt-1">{total} section{total !== 1 ? 's' : ''}</p>
+        </div>
+        <Button onClick={openCreateModal}>
+          Add Section
+          <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+        </Button>
       </div>
       <div className="flex items-center gap-4">
         <Select options={classes.map((c) => ({ value: String(c.id), label: c.name }))} placeholder="All classes" value={classFilter}
@@ -78,16 +88,16 @@ export function SectionListPage() {
         <Select options={ACADEMIC_STATUSES.map((s) => ({ value: s, label: capitalize(s) }))} placeholder="All statuses" value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }} />
       </div>
-      <Card>
-        {loading ? <Loading text="Loading sections..." /> : error ? <ErrorState message={error} onRetry={() => fetch({ page, size, class_id: classFilter ? Number(classFilter) : undefined, status: statusFilter || undefined })} /> : (
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
+        {error ? <ErrorState message={error} onRetry={() => fetch({ page, size, class_id: classFilter ? Number(classFilter) : undefined, status: statusFilter || undefined })} /> : (
           <>
-            <Table columns={[...columns, { key: 'actions', header: 'Actions', render: (s: SectionResponse) => (<div className="flex gap-2" onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="sm" onClick={() => openEditModal(s)}>Edit</Button></div>) }]} data={data} keyExtractor={(s) => s.id} emptyMessage="No sections found." />
+            <Table columns={[...columns, { key: 'actions', header: 'Actions', render: (s: SectionResponse) => (<div className="flex gap-2" onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="sm" onClick={() => openEditModal(s)}>Edit</Button></div>) }]} data={data} keyExtractor={(s) => s.id} emptyMessage="No sections found." loading={loading} />
             <Pagination page={page} size={size} total={total} pages={pages} onPageChange={setPage} onSizeChange={(s) => { setSize(s); setPage(1) }} />
           </>
         )}
       </Card>
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Section' : 'Add Section'}
-        footer={<><Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button><Button onClick={handleSubmit} loading={saving}>{editing ? 'Save Changes' : 'Create'}</Button></>}
+        footer={<>            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button><Button onClick={handleSubmit} loading={saving}>{editing ? 'Save Changes' : 'Create'}</Button></>}
       >
         {apiError && <Alert variant="error" onClose={() => setApiError(null)}>{apiError}</Alert>}
         <Form onSubmit={handleSubmit}>

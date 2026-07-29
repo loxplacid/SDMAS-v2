@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { academicYearApi } from '../../api/academic/academic-year-api'
 import { batchApi } from '../../api/reports/batch-api'
 import type { BatchEnrollItem, BatchEnrollResult, BatchEnrollResultItem } from '../../api/reports/types'
-import { Card, Button, Input, Alert, Loading, Table, Badge, Select } from '../../components/ui'
+import { Card, Button, Input, Alert, Table, Badge, Select, AnimatedCount } from '../../components/ui'
 
 export function BatchEnrollPage() {
   const [academicYears, setAcademicYears] = useState<{ id: number; name: string }[]>([])
@@ -54,13 +54,14 @@ export function BatchEnrollPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Batch Enroll Students</h1>
-        <p className="text-gray-500 mt-1">Enroll multiple students in one operation</p>
+        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Data Operations</div>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Batch Enroll Students</h1>
+        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Enroll multiple students in one operation</p>
       </div>
 
-      <Card>
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="space-y-4">
           <Select
             options={academicYears.map((y) => ({ value: String(y.id), label: y.name }))}
@@ -70,7 +71,7 @@ export function BatchEnrollPage() {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Student Entries</label>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Student Entries</label>
             <p className="text-xs text-gray-500 mb-2">
               One per line: student_id, class_id, section_id (optional)
             </p>
@@ -92,22 +93,22 @@ export function BatchEnrollPage() {
         {error && <Alert variant="error" onClose={() => setError(null)} className="mt-3">{error}</Alert>}
       </Card>
 
-      {loading && <Loading text="Processing enrollment..." />}
+      {loading && <div className="h-24 bg-[var(--color-surface)] rounded-xl animate-pulse" />}
 
       {result && (
-        <Card>
+        <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div>
-              <p className="text-sm text-gray-500">Total</p>
-              <p className="text-2xl font-bold">{result.total}</p>
+              <p className="text-sm text-[var(--color-text-tertiary)]">Total</p>
+              <p className="text-2xl font-bold text-[var(--color-text-primary)]"><AnimatedCount value={result.total} duration={800} /></p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Succeeded</p>
-              <p className="text-2xl font-bold text-green-600">{result.succeeded}</p>
+              <p className="text-sm text-[var(--color-text-tertiary)]">Succeeded</p>
+              <p className="text-2xl font-bold text-green-600"><AnimatedCount value={result.succeeded} duration={800} /></p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Failed</p>
-              <p className="text-2xl font-bold text-red-600">{result.failed}</p>
+              <p className="text-sm text-[var(--color-text-tertiary)]">Failed</p>
+              <p className="text-2xl font-bold text-red-600"><AnimatedCount value={result.failed} duration={800} /></p>
             </div>
           </div>
 

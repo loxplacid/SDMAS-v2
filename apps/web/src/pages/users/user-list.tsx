@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adminUserApi } from '../../api/auth/auth-api'
 import type { UserResponse, UserCreate } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, Loading, ErrorState, useToast } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, ErrorState, useToast } from '../../components/ui'
+import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { capitalize, formatDateTime } from '../../lib/utils'
 
 const roleBadge: Record<string, 'info' | 'success'> = { admin: 'info', staff: 'success' }
@@ -11,6 +12,8 @@ const activeBadge: Record<string, 'success' | 'danger'> = { true: 'success', fal
 export function UserListPage() {
   const navigate = useNavigate()
   const { showToast } = useToast()
+
+  useKeyboardShortcut({ 'n': () => openCreateModal() }, [])
 
   const [data, setData] = useState<UserResponse[]>([])
   const [total, setTotal] = useState(0)
@@ -103,13 +106,17 @@ export function UserListPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 animate-fade-in-up">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Users</h1>
-          <p className="text-gray-500 mt-1">{total} user{total !== 1 ? 's' : ''}</p>
+          <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide mb-1">Administration</p>
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Users</h1>
+          <p className="text-sm text-[var(--color-text-tertiary)] mt-1">{total} user{total !== 1 ? 's' : ''}</p>
         </div>
-        <Button onClick={openCreateModal}>Add User</Button>
+        <Button onClick={openCreateModal}>
+          Add User
+          <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+        </Button>
       </div>
 
       <div className="flex items-center gap-4">
@@ -121,8 +128,8 @@ export function UserListPage() {
         />
       </div>
 
-      <Card>
-        {loading ? <Loading text="Loading users..." /> : error ? <ErrorState message={error} onRetry={() => fetch({ page, size })} /> : (
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
+        {error ? <ErrorState message={error} onRetry={() => fetch({ page, size })} /> : (
           <>
             <Table
               columns={[
@@ -144,6 +151,7 @@ export function UserListPage() {
               data={data}
               keyExtractor={(u) => u.id}
               emptyMessage="No users found."
+              loading={loading}
             />
             <Pagination page={page} size={size} total={total} pages={pages} onPageChange={setPage} onSizeChange={(s) => { setSize(s); setPage(1) }} />
           </>
@@ -154,7 +162,7 @@ export function UserListPage() {
         title={editing ? 'Edit User' : 'Add User'}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
             <Button onClick={handleSubmit} loading={saving}>{editing ? 'Save Changes' : 'Create User'}</Button>
           </>
         }

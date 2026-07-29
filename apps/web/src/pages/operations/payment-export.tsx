@@ -43,16 +43,17 @@ export function PaymentExportPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Export Payments</h1>
-        <p className="text-gray-500 mt-1">Download payment records as CSV</p>
+        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Data Operations</div>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Export Payments</h1>
+        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Download payment records as CSV</p>
       </div>
 
-      <Card>
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year (optional)</label>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Academic Year (optional)</label>
             <Select
               options={academicYears.map((y) => ({ value: String(y.id), label: y.name }))}
               value={selectedYearId}
@@ -61,7 +62,7 @@ export function PaymentExportPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Start Date</label>
             <input
               type="date"
               value={startDate}
@@ -70,7 +71,7 @@ export function PaymentExportPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">End Date</label>
             <input
               type="date"
               value={endDate}

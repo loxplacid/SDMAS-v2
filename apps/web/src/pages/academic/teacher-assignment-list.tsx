@@ -4,7 +4,8 @@ import { teacherApi } from '../../api/academic/teacher-api'
 import { classApi } from '../../api/academic/class-api'
 import { subjectApi } from '../../api/academic/subject-api'
 import type { TeacherAssignmentResponse, TeacherAssignmentCreate, TeacherResponse, ClassResponse, SubjectResponse } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, Loading, EmptyState, ErrorState, useToast } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast } from '../../components/ui'
+import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { capitalize } from '../../lib/utils'
 
 const columns = [
@@ -16,6 +17,8 @@ const columns = [
 
 export function TeacherAssignmentListPage() {
   const { showToast } = useToast()
+
+  useKeyboardShortcut({ 'n': () => openCreateModal() }, [])
   const [data, setData] = useState<TeacherAssignmentResponse[]>([])
   const [total, setTotal] = useState(0); const [pages, setPages] = useState(0)
   const [page, setPage] = useState(1); const [size, setSize] = useState(20)
@@ -75,10 +78,13 @@ export function TeacherAssignmentListPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-2xl font-bold text-gray-900">Teacher Assignments</h1><p className="text-gray-500 mt-1">{total} assignment{total !== 1 ? 's' : ''}</p></div>
-        <Button onClick={openCreateModal}>Add Assignment</Button>
+        <div><div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Academics</div><h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Teacher Assignments</h1><p className="text-[var(--color-text-tertiary)] text-sm mt-1">{total} assignment{total !== 1 ? 's' : ''}</p></div>
+        <Button onClick={openCreateModal}>
+          Add Assignment
+          <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+        </Button>
       </div>
       <div className="flex items-center gap-4">
         <Select options={classes.map((c) => ({ value: String(c.id), label: c.name }))} placeholder="All classes" value={classFilter}
@@ -86,8 +92,8 @@ export function TeacherAssignmentListPage() {
         <Select options={teachers.map((t) => ({ value: String(t.id), label: `${t.first_name} ${t.last_name}` }))} placeholder="All teachers" value={teacherFilter}
           onChange={(e) => { setTeacherFilter(e.target.value); setPage(1) }} />
       </div>
-      <Card>
-        {loading ? <Loading text="Loading assignments..." /> : error ? <ErrorState message={error} onRetry={() => fetch({ page, size, class_id: classFilter ? Number(classFilter) : undefined, teacher_id: teacherFilter ? Number(teacherFilter) : undefined })} /> : (
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
+        {loading ? <Table columns={[]} data={[]} loading={true} keyExtractor={() => ''} emptyMessage="" /> : error ? <ErrorState message={error} onRetry={() => fetch({ page, size, class_id: classFilter ? Number(classFilter) : undefined, teacher_id: teacherFilter ? Number(teacherFilter) : undefined })} /> : (
           <>
             <Table columns={[...columns, { key: 'actions', header: 'Actions', render: (a: TeacherAssignmentResponse) => (<div className="flex gap-2" onClick={(e) => e.stopPropagation()}><Button variant="danger" size="sm" onClick={() => handleDelete(a)}>Delete</Button></div>) }]} data={data} keyExtractor={(a) => a.id} emptyMessage="No assignments found." />
             <Pagination page={page} size={size} total={total} pages={pages} onPageChange={setPage} onSizeChange={(s) => { setSize(s); setPage(1) }} />
@@ -95,7 +101,7 @@ export function TeacherAssignmentListPage() {
         )}
       </Card>
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Add Teacher Assignment"
-        footer={<><Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button><Button onClick={handleSubmit} loading={saving}>Create</Button></>}
+        footer={<><Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button><Button onClick={handleSubmit} loading={saving}>Create</Button></>}
       >
         {apiError && <Alert variant="error" onClose={() => setApiError(null)}>{apiError}</Alert>}
         <Form onSubmit={handleSubmit}>

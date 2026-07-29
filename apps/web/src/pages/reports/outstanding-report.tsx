@@ -3,7 +3,7 @@ import { academicYearApi } from '../../api/academic/academic-year-api'
 import { classApi } from '../../api/academic/class-api'
 import { feeReportApi } from '../../api/reports/fee-reports'
 import type { OutstandingReportItem } from '../../api/reports/types'
-import { Card, Select, Button, Loading, ErrorState, Table, Badge, Pagination } from '../../components/ui'
+import { Card, Select, Button, ErrorState, Table, Badge, Pagination, AnimatedCount } from '../../components/ui'
 import { formatCurrency, capitalize } from '../../lib/utils'
 
 const PAGE_SIZE = 20
@@ -55,16 +55,17 @@ export function OutstandingReportPage() {
   const totalPages = Math.ceil(report.length / PAGE_SIZE)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Outstanding Fees Report</h1>
-        <p className="text-gray-500 mt-1">Students with outstanding fee balances</p>
+        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Reports</div>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Outstanding Fees Report</h1>
+        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Students with outstanding fee balances</p>
       </div>
 
-      <Card>
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Academic Year</label>
             <Select
               options={academicYears.map((y) => ({ value: String(y.id), label: y.name }))}
               value={selectedYearId}
@@ -73,7 +74,7 @@ export function OutstandingReportPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Class (optional)</label>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Class (optional)</label>
             <Select
               options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
               value={selectedClassId}
@@ -88,11 +89,11 @@ export function OutstandingReportPage() {
       </Card>
 
       {error && <ErrorState message={error} onRetry={fetchReport} />}
-      {loading && <Loading text="Generating report..." />}
+      {loading && <div className="h-48 bg-[var(--color-surface)] rounded-xl animate-pulse" />}
 
       {report.length > 0 && (
-        <Card>
-          <p className="text-sm text-gray-500 mb-4">{report.length} student{report.length !== 1 ? 's' : ''} with outstanding fees</p>
+        <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
+          <p className="text-sm text-[var(--color-text-tertiary)] mb-4"><AnimatedCount value={report.length} duration={800} /> student{report.length !== 1 ? 's' : ''} with outstanding fees</p>
           <Table
             columns={[
               { key: 'student_number', header: 'Student #' },
@@ -140,8 +141,8 @@ export function OutstandingReportPage() {
       )}
 
       {!loading && !error && report.length === 0 && selectedYearId && (
-        <Card>
-          <p className="text-gray-500 text-center py-4">No outstanding fees found. All students are up to date.</p>
+        <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
+          <p className="text-[var(--color-text-tertiary)] text-center py-4">No outstanding fees found. All students are up to date.</p>
         </Card>
       )}
     </div>

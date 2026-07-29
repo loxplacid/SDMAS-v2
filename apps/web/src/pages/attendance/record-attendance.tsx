@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { attendanceApi } from '../../api/attendance/attendance-api'
 import type { AttendanceRecordCreate } from '../../api/generated/types'
-import { Card, Input, Select, Button, Modal, Form, Alert, Loading, useToast } from '../../components/ui'
+import { Card, Input, Select, Button, Modal, Form, Alert, useToast } from '../../components/ui'
 import { ATTENDANCE_STATUSES, capitalize } from '../../lib/utils'
 
 export function RecordAttendancePage() {
@@ -50,15 +50,16 @@ export function RecordAttendancePage() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-2xl animate-fade-in-up">
       <div>
-        <button onClick={() => navigate('/attendance/records')} className="text-sm text-blue-600 hover:text-blue-800 mb-1">
+        <button onClick={() => navigate('/attendance/records')} className="text-sm text-[var(--color-brand-accent)] hover:text-[var(--color-brand-accent-hover)] transition-colors mb-1">
           &larr; Back to Records
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">Record Attendance</h1>
+        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider mt-1">Attendance</div>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Record Attendance</h1>
       </div>
 
-      <Card>
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         {apiError && <Alert variant="error" onClose={() => setApiError(null)}>{apiError}</Alert>}
         <Form onSubmit={handleSubmit}>
           <Input
@@ -114,7 +115,7 @@ export function RecordAttendancePage() {
           />
           <div className="flex gap-3 pt-2">
             <Button type="submit" loading={saving}>Record Attendance</Button>
-            <Button variant="secondary" onClick={() => navigate('/attendance/records')}>Cancel</Button>
+            <Button variant="outline" onClick={() => navigate('/attendance/records')}>Cancel</Button>
           </div>
         </Form>
       </Card>

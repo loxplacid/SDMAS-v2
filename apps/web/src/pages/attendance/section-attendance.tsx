@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { attendanceApi } from '../../api/attendance/attendance-api'
 import type { AttendanceRecordResponse, SectionAttendanceSummary } from '../../api/generated/types'
-import { Card, Input, Button, Badge, Loading, ErrorState } from '../../components/ui'
+import { Card, Input, Button, Badge, ErrorState, Table } from '../../components/ui'
 import { capitalize, ATTENDANCE_STATUSES } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
@@ -33,15 +33,16 @@ export function SectionAttendancePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       <div>
-        <button onClick={() => navigate('/attendance')} className="text-sm text-blue-600 hover:text-blue-800 mb-1">
+        <button onClick={() => navigate('/attendance')} className="text-sm text-[var(--color-brand-accent)] hover:text-[var(--color-brand-accent-hover)] transition-colors mb-1">
           &larr; Back to Attendance
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">Section Attendance</h1>
+        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider mt-1">Attendance</div>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Section Attendance</h1>
       </div>
 
-      <Card>
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="flex gap-4 items-end">
           <Input label="Section ID" type="number" value={sectionId} onChange={(e) => setSectionId(e.target.value)} required />
           <Input label="Date" type="date" value={attendanceDate} onChange={(e) => setAttendanceDate(e.target.value)} required />
@@ -53,23 +54,23 @@ export function SectionAttendancePage() {
 
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <Card><div className="text-center"><p className="text-2xl font-bold">{summary.total_students}</p><p className="text-xs text-gray-500">Total</p></div></Card>
-          <Card><div className="text-center"><p className="text-2xl font-bold text-green-600">{summary.present}</p><p className="text-xs text-gray-500">Present</p></div></Card>
-          <Card><div className="text-center"><p className="text-2xl font-bold text-red-600">{summary.absent}</p><p className="text-xs text-gray-500">Absent</p></div></Card>
-          <Card><div className="text-center"><p className="text-2xl font-bold text-yellow-600">{summary.late}</p><p className="text-xs text-gray-500">Late</p></div></Card>
-          <Card><div className="text-center"><p className="text-2xl font-bold text-blue-600">{summary.total_marked}</p><p className="text-xs text-gray-500">Marked</p></div></Card>
+          <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-[var(--color-text-primary)]">{summary.total_students}</p><p className="text-xs text-[var(--color-text-tertiary)]">Total</p></div></Card>
+          <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-green-600">{summary.present}</p><p className="text-xs text-[var(--color-text-tertiary)]">Present</p></div></Card>
+          <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-red-600">{summary.absent}</p><p className="text-xs text-[var(--color-text-tertiary)]">Absent</p></div></Card>
+          <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-yellow-600">{summary.late}</p><p className="text-xs text-[var(--color-text-tertiary)]">Late</p></div></Card>
+          <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-blue-600">{summary.total_marked}</p><p className="text-xs text-[var(--color-text-tertiary)]">Marked</p></div></Card>
         </div>
       )}
 
       {records.length > 0 && (
-        <Card title={`Records for Section ${sectionId} on ${attendanceDate}`}>
+        <Card title={`Records for Section ${sectionId} on ${attendanceDate}`} className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500">Student ID</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500">Status</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500">Notes</th>
+                  <th className="px-4 py-2 text-left font-medium text-[var(--color-text-tertiary)]">Student ID</th>
+                  <th className="px-4 py-2 text-left font-medium text-[var(--color-text-tertiary)]">Status</th>
+                  <th className="px-4 py-2 text-left font-medium text-[var(--color-text-tertiary)]">Notes</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -87,7 +88,7 @@ export function SectionAttendancePage() {
       )}
 
       {!loading && !error && sectionId && records.length === 0 && (
-        <Card><p className="text-gray-500 text-center py-4">No attendance records found for this section and date.</p></Card>
+        <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><p className="text-[var(--color-text-tertiary)] text-center py-4">No attendance records found for this section and date.</p></Card>
       )}
     </div>
   )

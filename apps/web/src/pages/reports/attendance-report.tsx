@@ -4,7 +4,7 @@ import { classApi } from '../../api/academic/class-api'
 import { sectionApi } from '../../api/academic/section-api'
 import { attendanceReportApi } from '../../api/reports/attendance-reports'
 import type { ClassAttendanceSummaryReport, SectionAttendanceSummaryReport } from '../../api/reports/types'
-import { Card, Select, Button, Loading, ErrorState, Badge, Table } from '../../components/ui'
+import { Card, Select, Button, ErrorState, Badge, Table, AnimatedCount } from '../../components/ui'
 
 export function AttendanceReportPage() {
   const [academicYears, setAcademicYears] = useState<{ id: number; name: string }[]>([])
@@ -74,16 +74,17 @@ export function AttendanceReportPage() {
   }, [reportType, selectedYearId, selectedClassId, selectedSectionId, startDate, endDate])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Attendance Report</h1>
-        <p className="text-gray-500 mt-1">View attendance summary for a class or section</p>
+        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Reports</div>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Attendance Report</h1>
+        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">View attendance summary for a class or section</p>
       </div>
 
-      <Card>
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Report Type</label>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Report Type</label>
             <Select
               options={[{ value: 'class', label: 'By Class' }, { value: 'section', label: 'By Section' }]}
               value={reportType}
@@ -91,7 +92,7 @@ export function AttendanceReportPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Academic Year</label>
             <Select
               options={academicYears.map((y) => ({ value: String(y.id), label: y.name }))}
               value={selectedYearId}
@@ -101,7 +102,7 @@ export function AttendanceReportPage() {
           </div>
           {reportType === 'class' ? (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Class</label>
               <Select
                 options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
                 value={selectedClassId}
@@ -111,7 +112,7 @@ export function AttendanceReportPage() {
             </div>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Section</label>
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Section</label>
               <Select
                 options={sections.map((s) => ({ value: String(s.id), label: s.name }))}
                 value={selectedSectionId}
@@ -121,7 +122,7 @@ export function AttendanceReportPage() {
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Start Date</label>
             <input
               type="date"
               value={startDate}
@@ -130,7 +131,7 @@ export function AttendanceReportPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">End Date</label>
             <input
               type="date"
               value={endDate}
@@ -146,40 +147,40 @@ export function AttendanceReportPage() {
 
       {error && <ErrorState message={error} onRetry={fetchReport} />}
 
-      {loading && <Loading text="Generating report..." />}
+      {loading && <div className="h-48 bg-[var(--color-surface)] rounded-xl animate-pulse" />}
 
       {report && (
-        <Card>
+        <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
             <div>
-              <p className="text-sm text-gray-500">Students</p>
-              <p className="text-2xl font-bold">{report.total_students}</p>
+              <p className="text-sm text-[var(--color-text-tertiary)]">Students</p>
+              <p className="text-2xl font-bold"><AnimatedCount value={report.total_students} duration={800} /></p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Total Records</p>
-              <p className="text-2xl font-bold">{report.total_records}</p>
+              <p className="text-sm text-[var(--color-text-tertiary)]">Total Records</p>
+              <p className="text-2xl font-bold"><AnimatedCount value={report.total_records} duration={800} /></p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Present</p>
-              <p className="text-2xl font-bold text-green-600">{report.present}</p>
+              <p className="text-sm text-[var(--color-text-tertiary)]">Present</p>
+              <p className="text-2xl font-bold text-green-600"><AnimatedCount value={report.present} duration={800} /></p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Absent</p>
-              <p className="text-2xl font-bold text-red-600">{report.absent}</p>
+              <p className="text-sm text-[var(--color-text-tertiary)]">Absent</p>
+              <p className="text-2xl font-bold text-red-600"><AnimatedCount value={report.absent} duration={800} /></p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Present %</p>
-              <p className="text-2xl font-bold text-blue-600">{report.present_percentage}%</p>
+              <p className="text-sm text-[var(--color-text-tertiary)]">Present %</p>
+              <p className="text-2xl font-bold text-blue-600"><AnimatedCount value={report.present_percentage} duration={800} suffix="%" /></p>
             </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div>
-              <p className="text-sm text-gray-500">Late</p>
-              <p className="text-xl font-semibold text-yellow-600">{report.late}</p>
+              <p className="text-sm text-[var(--color-text-tertiary)]">Late</p>
+              <p className="text-xl font-semibold text-yellow-600"><AnimatedCount value={report.late} duration={800} /></p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Excused</p>
-              <p className="text-xl font-semibold text-purple-600">{report.excused}</p>
+              <p className="text-sm text-[var(--color-text-tertiary)]">Excused</p>
+              <p className="text-xl font-semibold text-purple-600"><AnimatedCount value={report.excused} duration={800} /></p>
             </div>
           </div>
         </Card>

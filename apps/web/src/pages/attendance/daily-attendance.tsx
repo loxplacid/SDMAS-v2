@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { attendanceApi } from '../../api/attendance/attendance-api'
 import type { AttendanceRecordResponse, DailyAttendanceItem } from '../../api/generated/types'
-import { Card, Input, Select, Button, Table, Badge, Alert, Form, Loading, ErrorState, useToast } from '../../components/ui'
+import { Card, Input, Select, Button, Badge, Alert, Form, ErrorState, useToast } from '../../components/ui'
 import { ATTENDANCE_STATUSES, capitalize } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
@@ -112,15 +112,16 @@ export function DailyAttendancePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       <div>
-        <button onClick={() => navigate('/attendance/records')} className="text-sm text-blue-600 hover:text-blue-800 mb-1">
+        <button onClick={() => navigate('/attendance/records')} className="text-sm text-[var(--color-brand-accent)] hover:text-[var(--color-brand-accent-hover)] transition-colors mb-1">
           &larr; Back to Records
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">Daily Attendance</h1>
+        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider mt-1">Attendance</div>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Daily Attendance</h1>
       </div>
 
-      <Card>
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <Form onSubmit={handleSubmit}>
           <div className="flex gap-4 items-end">
             <Input
@@ -137,7 +138,7 @@ export function DailyAttendancePage() {
               onChange={(e) => { setAttendanceDate(e.target.value); setLoaded(false) }}
               required
             />
-            <Button variant="secondary" onClick={loadSectionRecords} loading={loading}>
+            <Button variant="outline" onClick={loadSectionRecords} loading={loading}>
               Load
             </Button>
           </div>
@@ -152,7 +153,7 @@ export function DailyAttendancePage() {
                   {existingRecords.length > 0 ? 'Update Existing Records' : 'New Records'}
                   <span className="text-sm text-gray-500 ml-2">({dailyRecords.length} student{dailyRecords.length !== 1 ? 's' : ''})</span>
                 </h3>
-                <Button variant="secondary" size="sm" onClick={addStudent}>Add Student</Button>
+                <Button variant="outline" size="sm" onClick={addStudent}>Add Student</Button>
               </div>
 
               <div className="overflow-x-auto">

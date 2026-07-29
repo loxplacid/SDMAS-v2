@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { feeDueApi } from '../../api/fees/fee-due-api'
 import type { FeeDueResponse } from '../../api/generated/types'
-import { Card, Input, Button, Badge, Loading, ErrorState } from '../../components/ui'
+import { Card, Input, Button, Badge, ErrorState } from '../../components/ui'
 import { formatCurrency, capitalize } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger'> = {
@@ -33,15 +33,17 @@ export function StudentFeesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       <div>
-        <button onClick={() => navigate('/fees')} className="text-sm text-blue-600 hover:text-blue-800 mb-1">
+        <button onClick={() => navigate('/fees')} className="text-sm text-[var(--color-brand-accent)] hover:text-[var(--color-brand-accent-hover)] transition-colors mb-1">
           &larr; Back to Fees
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">Student Fees</h1>
+        <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide mt-2 mb-1">Fees</p>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Student Fees</h1>
+        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">View fee structures and dues for individual students.</p>
       </div>
 
-      <Card>
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="flex gap-4 items-end">
           <Input label="Student ID" type="number" value={studentId} onChange={(e) => setStudentId(e.target.value)} required />
           <Input label="Academic Year ID" type="number" value={ayId} onChange={(e) => setAyId(e.target.value)} required />

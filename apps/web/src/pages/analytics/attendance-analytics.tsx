@@ -120,10 +120,10 @@ export function AttendanceAnalyticsPage() {
           {/* KPI Cards */}
           {overview && (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-              <KpiCard title="Total Records" value={overview.total_records.toLocaleString()} color="blue" />
-              <KpiCard title="Present" value={overview.present.toLocaleString()} color="green" />
-              <KpiCard title="Absent" value={overview.absent.toLocaleString()} color="red" />
-              <KpiCard title="Late" value={overview.late.toLocaleString()} color="yellow" />
+              <KpiCard title="Total Records" value={overview.total_records} color="blue" />
+              <KpiCard title="Present" value={overview.present} color="green" />
+              <KpiCard title="Absent" value={overview.absent} color="red" />
+              <KpiCard title="Late" value={overview.late} color="yellow" />
               <KpiCard title="Attendance %" value={`${overview.attendance_percentage}%`} color="purple" />
             </div>
           )}

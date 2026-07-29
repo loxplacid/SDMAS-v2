@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { feeDueApi, type FeeDueListParams } from '../../api/fees/fee-due-api'
 import type { FeeDueResponse } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Alert, Loading, ErrorState, useToast } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Alert, ErrorState, useToast } from '../../components/ui'
+import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { FEE_DUE_STATUSES, capitalize, formatCurrency } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger'> = {
@@ -18,6 +19,12 @@ const statusLabel: Record<string, string> = {
 
 export function FeeDueListPage() {
   const { showToast } = useToast()
+  const firstFilterRef = useRef<HTMLInputElement>(null)
+
+  useKeyboardShortcut({
+    '/': (e) => { e.preventDefault(); firstFilterRef.current?.focus(); },
+    'n': () => { setGenModalOpen(true); setGenError(null) },
+  }, [])
 
   const [data, setData] = useState<FeeDueResponse[]>([])
   const [total, setTotal] = useState(0)
@@ -74,23 +81,27 @@ export function FeeDueListPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 animate-fade-in-up">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Fee Dues</h1>
-          <p className="text-gray-500 mt-1">{total} due{total !== 1 ? 's' : ''}</p>
+          <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide mb-1">Fees</p>
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Fee Dues</h1>
+          <p className="text-sm text-[var(--color-text-tertiary)] mt-1">{total} due{total !== 1 ? 's' : ''}</p>
         </div>
-        <Button onClick={() => { setGenModalOpen(true); setGenError(null) }}>Generate Dues</Button>
+        <Button onClick={() => { setGenModalOpen(true); setGenError(null) }}>
+          Generate Dues
+          <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+        </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-4">
-        <Input type="number" placeholder="Student ID" value={studentFilter} onChange={(e) => { setStudentFilter(e.target.value); setPage(1) }} className="w-32" />
+        <Input ref={firstFilterRef} type="number" placeholder="Student ID" value={studentFilter} onChange={(e) => { setStudentFilter(e.target.value); setPage(1) }} className="w-32" />
         <Input type="number" placeholder="Academic Year ID" value={ayFilter} onChange={(e) => { setAyFilter(e.target.value); setPage(1) }} className="w-36" />
         <Select options={FEE_DUE_STATUSES.map((s) => ({ value: s, label: statusLabel[s] || capitalize(s) }))} placeholder="All statuses" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }} />
       </div>
 
-      <Card>
-        {loading ? <Loading text="Loading fee dues..." /> : error ? <ErrorState message={error} onRetry={() => fetch({ page, size })} /> : (
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
+        {error ? <ErrorState message={error} onRetry={() => fetch({ page, size })} /> : (
           <>
             <Table
               columns={[
@@ -105,6 +116,7 @@ export function FeeDueListPage() {
               data={data}
               keyExtractor={(d) => d.id}
               emptyMessage="No fee dues found."
+              loading={loading}
             />
             <Pagination page={page} size={size} total={total} pages={pages} onPageChange={setPage} onSizeChange={(s) => { setSize(s); setPage(1) }} />
           </>
@@ -115,7 +127,7 @@ export function FeeDueListPage() {
         title="Generate Fee Dues"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setGenModalOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setGenModalOpen(false)}>Cancel</Button>
             <Button onClick={handleGenerateDues} loading={generating}>Generate</Button>
           </>
         }

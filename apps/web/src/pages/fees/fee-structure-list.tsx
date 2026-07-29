@@ -4,13 +4,20 @@ import { feeTypeApi } from '../../api/fees/fee-type-api'
 import { academicYearApi } from '../../api/academic/academic-year-api'
 import { classApi } from '../../api/academic/class-api'
 import type { FeeStructureResponse, FeeStructureCreate, FeeStructureUpdate } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, Loading, ErrorState, useToast } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, ErrorState, useToast } from '../../components/ui'
+import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { FEE_STRUCTURE_STATUSES, capitalize, formatCurrency } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'danger'> = { active: 'success', inactive: 'danger' }
 
 export function FeeStructureListPage() {
   const { showToast } = useToast()
+  const firstFilterRef = useRef<HTMLInputElement>(null)
+
+  useKeyboardShortcut({
+    '/': (e) => { e.preventDefault(); firstFilterRef.current?.focus(); },
+    'n': () => openCreateModal(),
+  }, [])
 
   const [data, setData] = useState<FeeStructureResponse[]>([])
   const [total, setTotal] = useState(0)
@@ -102,23 +109,27 @@ export function FeeStructureListPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 animate-fade-in-up">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Fee Structures</h1>
-          <p className="text-gray-500 mt-1">{total} structure{total !== 1 ? 's' : ''}</p>
+          <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide mb-1">Fees</p>
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Fee Structures</h1>
+          <p className="text-sm text-[var(--color-text-tertiary)] mt-1">{total} structure{total !== 1 ? 's' : ''}</p>
         </div>
-        <Button onClick={openCreateModal}>Add Fee Structure</Button>
+        <Button onClick={openCreateModal}>
+          Add Fee Structure
+          <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+        </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-4">
-        <Input type="number" placeholder="Academic Year ID" value={ayFilter} onChange={(e) => { setAyFilter(e.target.value); setPage(1) }} className="w-36" />
+        <Input ref={firstFilterRef} type="number" placeholder="Academic Year ID" value={ayFilter} onChange={(e) => { setAyFilter(e.target.value); setPage(1) }} className="w-36" />
         <Input type="number" placeholder="Class ID" value={classFilter} onChange={(e) => { setClassFilter(e.target.value); setPage(1) }} className="w-28" />
         <Select options={FEE_STRUCTURE_STATUSES.map((s) => ({ value: s, label: capitalize(s) }))} placeholder="All statuses" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }} />
       </div>
 
-      <Card>
-        {loading ? <Loading text="Loading fee structures..." /> : error ? <ErrorState message={error} onRetry={() => fetch({ page, size })} /> : (
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
+        {error ? <ErrorState message={error} onRetry={() => fetch({ page, size })} /> : (
           <>
             <Table
               columns={[
@@ -141,6 +152,7 @@ export function FeeStructureListPage() {
               data={data}
               keyExtractor={(fs) => fs.id}
               emptyMessage="No fee structures found."
+              loading={loading}
             />
             <Pagination page={page} size={size} total={total} pages={pages} onPageChange={setPage} onSizeChange={(s) => { setSize(s); setPage(1) }} />
           </>
@@ -151,7 +163,7 @@ export function FeeStructureListPage() {
         title={editing ? 'Edit Fee Structure' : 'Add Fee Structure'}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
             <Button onClick={handleSubmit} loading={saving}>{editing ? 'Save Changes' : 'Create'}</Button>
           </>
         }

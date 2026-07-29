@@ -4,7 +4,7 @@ import { summaryApi } from '../../api/fees/summary-api'
 import { paymentApi } from '../../api/fees/payment-api'
 import { feeDueApi } from '../../api/fees/fee-due-api'
 import type { StudentFinancialSummary, ClassFinancialSummary } from '../../api/generated/types'
-import { Card, Input, Button, Select, Table, Loading, ErrorState, Badge } from '../../components/ui'
+import { Card, Input, Button, Select, Table, ErrorState, Badge } from '../../components/ui'
 import { formatCurrency, capitalize, FEE_DUE_STATUSES } from '../../lib/utils'
 
 const statusLabel: Record<string, string> = { paid: 'Paid', partially_paid: 'Partial', unpaid: 'Unpaid' }
@@ -53,10 +53,11 @@ export function FinancialSummaryPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Financial Summary</h1>
+          <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Fees</div>
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Financial Summary</h1>
         </div>
         <div className="flex gap-2">
           <Button variant={tab === 'student' ? 'primary' : 'secondary'} onClick={() => setTab('student')}>Student</Button>
@@ -66,7 +67,7 @@ export function FinancialSummaryPage() {
 
       {tab === 'student' ? (
         <div className="space-y-4">
-          <Card>
+          <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
             <div className="flex gap-4 items-end">
               <Input label="Student ID" type="number" value={studentId} onChange={(e) => setStudentId(e.target.value)} required />
               <Input label="Academic Year ID" type="number" value={ayId} onChange={(e) => setAyId(e.target.value)} required />
@@ -79,15 +80,15 @@ export function FinancialSummaryPage() {
           {studentSummary && (
             <>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <Card><div className="text-center"><p className="text-2xl font-bold">{formatCurrency(studentSummary.total_fees_assigned)}</p><p className="text-xs text-gray-500">Total Assigned</p></div></Card>
-                <Card><div className="text-center"><p className="text-2xl font-bold text-green-600">{formatCurrency(studentSummary.total_paid)}</p><p className="text-xs text-gray-500">Paid</p></div></Card>
-                <Card><div className="text-center"><p className="text-2xl font-bold text-red-600">{formatCurrency(studentSummary.total_outstanding)}</p><p className="text-xs text-gray-500">Outstanding</p></div></Card>
-                <Card><div className="text-center"><p className="text-2xl font-bold text-blue-600">{studentSummary.paid_count}</p><p className="text-xs text-gray-500">Paid Dues</p></div></Card>
-                <Card><div className="text-center"><p className="text-2xl font-bold text-yellow-600">{studentSummary.partially_paid_count + studentSummary.unpaid_count}</p><p className="text-xs text-gray-500">Pending Dues</p></div></Card>
+                <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-[var(--color-text-primary)]">{formatCurrency(studentSummary.total_fees_assigned)}</p><p className="text-xs text-[var(--color-text-tertiary)]">Total Assigned</p></div></Card>
+                <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-green-600">{formatCurrency(studentSummary.total_paid)}</p><p className="text-xs text-[var(--color-text-tertiary)]">Paid</p></div></Card>
+                <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-red-600">{formatCurrency(studentSummary.total_outstanding)}</p><p className="text-xs text-[var(--color-text-tertiary)]">Outstanding</p></div></Card>
+                <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-blue-600">{studentSummary.paid_count}</p><p className="text-xs text-[var(--color-text-tertiary)]">Paid Dues</p></div></Card>
+                <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-yellow-600">{studentSummary.partially_paid_count + studentSummary.unpaid_count}</p><p className="text-xs text-[var(--color-text-tertiary)]">Pending Dues</p></div></Card>
               </div>
 
               {studentDues.length > 0 && (
-                <Card title="Fee Dues">
+                <Card title="Fee Dues" className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
                   <Table
                     columns={[
                       { key: 'id', header: 'ID', render: (d: any) => `#${d.id}` },
@@ -104,7 +105,7 @@ export function FinancialSummaryPage() {
               )}
 
               {studentPayments.length > 0 && (
-                <Card title="Payment History">
+                <Card title="Payment History" className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
                   <Table
                     columns={[
                       { key: 'id', header: 'ID', render: (p: any) => `#${p.id}` },
@@ -125,7 +126,7 @@ export function FinancialSummaryPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          <Card>
+          <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
             <div className="flex gap-4 items-end">
               <Input label="Class ID" type="number" value={classId} onChange={(e) => setClassId(e.target.value)} required />
               <Input label="Academic Year ID" type="number" value={ayId} onChange={(e) => setAyId(e.target.value)} required />
@@ -137,11 +138,11 @@ export function FinancialSummaryPage() {
 
           {classSummary && (
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <Card><div className="text-center"><p className="text-2xl font-bold">{classSummary.total_students}</p><p className="text-xs text-gray-500">Students</p></div></Card>
-              <Card><div className="text-center"><p className="text-2xl font-bold">{formatCurrency(classSummary.total_fees_assigned)}</p><p className="text-xs text-gray-500">Total Fees</p></div></Card>
-              <Card><div className="text-center"><p className="text-2xl font-bold text-green-600">{formatCurrency(classSummary.total_collected)}</p><p className="text-xs text-gray-500">Collected</p></div></Card>
-              <Card><div className="text-center"><p className="text-2xl font-bold text-red-600">{formatCurrency(classSummary.total_outstanding)}</p><p className="text-xs text-gray-500">Outstanding</p></div></Card>
-              <Card><div className="text-center"><p className="text-2xl font-bold text-yellow-600">{classSummary.students_with_outstanding}</p><p className="text-xs text-gray-500">Students w/ Outstanding</p></div></Card>
+              <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-[var(--color-text-primary)]">{classSummary.total_students}</p><p className="text-xs text-[var(--color-text-tertiary)]">Students</p></div></Card>
+              <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-[var(--color-text-primary)]">{formatCurrency(classSummary.total_fees_assigned)}</p><p className="text-xs text-[var(--color-text-tertiary)]">Total Fees</p></div></Card>
+              <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-green-600">{formatCurrency(classSummary.total_collected)}</p><p className="text-xs text-[var(--color-text-tertiary)]">Collected</p></div></Card>
+              <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-red-600">{formatCurrency(classSummary.total_outstanding)}</p><p className="text-xs text-[var(--color-text-tertiary)]">Outstanding</p></div></Card>
+              <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"><div className="text-center"><p className="text-2xl font-bold text-yellow-600">{classSummary.students_with_outstanding}</p><p className="text-xs text-[var(--color-text-tertiary)]">Students w/ Outstanding</p></div></Card>
             </div>
           )}
         </div>

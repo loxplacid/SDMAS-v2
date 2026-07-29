@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { paymentApi, type PaymentListParams } from '../../api/fees/payment-api'
 import type { PaymentResponse, PaymentCreate, PaymentResult } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, Loading, ErrorState, useToast } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, ErrorState, useToast } from '../../components/ui'
 import { PAYMENT_METHODS, capitalize, formatCurrency, formatDateTime } from '../../lib/utils'
 
-const methodBadge: Record<string, 'info' | 'success' | 'warning' | 'default'> = {
+const methodBadge: Record<string, 'info' | 'success' | 'warning' | 'neutral'> = {
   cash: 'success',
   bank_transfer: 'info',
   cheque: 'warning',
@@ -81,11 +81,12 @@ export function PaymentListPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
-          <p className="text-gray-500 mt-1">{total} payment{total !== 1 ? 's' : ''}</p>
+          <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Fees</div>
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Payments</h1>
+          <p className="text-[var(--color-text-tertiary)] text-sm mt-1">{total} payment{total !== 1 ? 's' : ''}</p>
         </div>
         <Button onClick={openCreateModal}>Record Payment</Button>
       </div>
@@ -94,8 +95,8 @@ export function PaymentListPage() {
         <Input type="number" placeholder="Student ID" value={studentFilter} onChange={(e) => { setStudentFilter(e.target.value); setPage(1) }} className="w-32" />
       </div>
 
-      <Card>
-        {loading ? <Loading text="Loading payments..." /> : error ? <ErrorState message={error} onRetry={() => fetch({ page, size })} /> : (
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
+        {loading ? <Table columns={[]} data={[]} loading={true} keyExtractor={() => ''} emptyMessage="" /> : error ? <ErrorState message={error} onRetry={() => fetch({ page, size })} /> : (
           <>
             <Table
               columns={[
@@ -103,7 +104,7 @@ export function PaymentListPage() {
                 { key: 'student_id', header: 'Student' },
                 { key: 'fee_due_id', header: 'Fee Due' },
                 { key: 'amount', header: 'Amount', render: (p: PaymentResponse) => formatCurrency(p.amount) },
-                { key: 'payment_method', header: 'Method', render: (p: PaymentResponse) => p.payment_method ? <Badge variant={methodBadge[p.payment_method] || 'default'}>{capitalize(p.payment_method.replace('_', ' '))}</Badge> : '-' },
+                { key: 'payment_method', header: 'Method', render: (p: PaymentResponse) => p.payment_method ? <Badge variant={methodBadge[p.payment_method] || 'neutral'}>{capitalize(p.payment_method.replace('_', ' '))}</Badge> : '-' },
                 { key: 'receipt_number', header: 'Receipt', render: (p: PaymentResponse) => p.receipt_number || '-' },
                 { key: 'payment_date', header: 'Date', render: (p: PaymentResponse) => p.payment_date || '-' },
                 { key: 'created_at', header: 'Recorded', render: (p: PaymentResponse) => formatDateTime(p.created_at) },
@@ -121,7 +122,7 @@ export function PaymentListPage() {
         title="Record Payment"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
             <Button onClick={handleSubmit} loading={saving}>Record Payment</Button>
           </>
         }

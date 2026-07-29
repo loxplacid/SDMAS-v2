@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { exportApi } from '../../api/reports/export-api'
 import { studentApi } from '../../api/student/student-api'
-import { Card, Button, Select, Input, Alert, Loading } from '../../components/ui'
+import { Card, Button, Select, Input, Alert } from '../../components/ui'
 import { STUDENT_STATUSES, capitalize } from '../../lib/utils'
 
 export function StudentExportPage() {
@@ -49,13 +49,14 @@ export function StudentExportPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Export Students</h1>
-        <p className="text-gray-500 mt-1">Download student records as CSV</p>
+        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Data Operations</div>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Export Students</h1>
+        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Download student records as CSV</p>
       </div>
 
-      <Card>
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select
             options={STUDENT_STATUSES.map((s) => ({ value: s, label: capitalize(s) }))}
@@ -74,7 +75,7 @@ export function StudentExportPage() {
           <Button onClick={handleExport} loading={loading}>Export CSV</Button>
         </div>
         {studentCount !== null && (
-          <p className="text-sm text-gray-500 mt-3">{studentCount} student{studentCount !== 1 ? 's' : ''} will be exported</p>
+          <p className="text-sm text-[var(--color-text-tertiary)] mt-3">{studentCount} student{studentCount !== 1 ? 's' : ''} will be exported</p>
         )}
         {error && <Alert variant="error" onClose={() => setError(null)} className="mt-3">{error}</Alert>}
         {success && <Alert variant="success" onClose={() => setSuccess(false)} className="mt-3">Export started successfully.</Alert>}

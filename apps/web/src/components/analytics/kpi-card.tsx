@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Card } from '../ui'
+import { Card, AnimatedCount } from '../ui'
 
 interface KpiCardProps {
   title: string
@@ -33,12 +33,18 @@ const trendColors = {
 }
 
 export function KpiCard({ title, value, subtitle, trend, icon, color = 'blue' }: KpiCardProps) {
+  const renderValue = typeof value === 'number' ? (
+    <AnimatedCount value={value} duration={800} />
+  ) : (
+    value
+  )
+
   return (
     <Card className="relative overflow-hidden transition-shadow hover:shadow-md">
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-gray-500 truncate">{title}</p>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{value}</p>
+          <p className="mt-1 text-2xl font-bold text-gray-900 tabular-nums">{renderValue}</p>
           {subtitle && (
             <p className="mt-1 text-xs text-gray-400">{subtitle}</p>
           )}

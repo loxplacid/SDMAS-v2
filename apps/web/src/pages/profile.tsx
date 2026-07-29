@@ -51,12 +51,16 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="space-y-6 max-w-lg">
-      <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
+    <div className="space-y-6 max-w-lg animate-fade-in-up">
+      <div>
+        <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide mb-1">Account</p>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Profile</h1>
+        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Manage your personal information and security.</p>
+      </div>
 
       {error && <Alert variant="error" onClose={() => setError(null)}>{error}</Alert>}
 
-      <Card title="Account Information">
+      <Card title="Account Information" className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="space-y-2 text-sm">
           <p><span className="font-medium text-gray-500">Username:</span> {user?.username}</p>
           <p><span className="font-medium text-gray-500">Role:</span> <span className="capitalize">{user?.role}</span></p>
@@ -64,7 +68,7 @@ export function ProfilePage() {
         </div>
       </Card>
 
-      <Card title="Edit Profile">
+      <Card title="Edit Profile" className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <form onSubmit={handleUpdateProfile} className="space-y-4">
           <Input label="Display Name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
           <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -72,7 +76,7 @@ export function ProfilePage() {
         </form>
       </Card>
 
-      <Card title="Change Password">
+      <Card title="Change Password" className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <form onSubmit={handleChangePassword} className="space-y-4">
           <Input label="Current Password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required />
           <Input label="New Password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />

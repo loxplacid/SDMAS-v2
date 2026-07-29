@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { termApi } from '../../api/academic/term-api'
 import { academicYearApi } from '../../api/academic/academic-year-api'
 import type { TermResponse, TermCreate, TermUpdate, AcademicYearResponse } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, Loading, EmptyState, ErrorState, useToast } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast } from '../../components/ui'
+import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { TERM_STATUSES, capitalize } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = { active: 'success', inactive: 'danger' }
@@ -20,6 +21,8 @@ type TermFormData = { name: string; start_date: string; end_date: string; status
 export function TermListPage() {
   const navigate = useNavigate()
   const { showToast } = useToast()
+
+  useKeyboardShortcut({ 'n': () => openCreateModal() }, [])
   const [data, setData] = useState<TermResponse[]>([])
   const [total, setTotal] = useState(0); const [pages, setPages] = useState(0)
   const [page, setPage] = useState(1); const [size, setSize] = useState(20)
@@ -81,17 +84,20 @@ export function TermListPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-2xl font-bold text-gray-900">Terms</h1><p className="text-gray-500 mt-1">{total} term{total !== 1 ? 's' : ''}</p></div>
-        <Button onClick={openCreateModal}>Add Term</Button>
+        <div><div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Academics</div><h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Terms</h1><p className="text-[var(--color-text-tertiary)] text-sm mt-1">{total} term{total !== 1 ? 's' : ''}</p></div>
+        <Button onClick={openCreateModal}>
+          Add Term
+          <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+        </Button>
       </div>
       <div className="flex items-center gap-4">
         <Select options={years.map((y) => ({ value: String(y.id), label: y.name }))} placeholder="Select an academic year" value={yearFilter}
           onChange={(e) => { setYearFilter(e.target.value); setPage(1) }} />
       </div>
-      <Card>
-        {!yearFilter ? <EmptyState title="Select an academic year" description="Choose a year above to view its terms." /> : loading ? <Loading text="Loading terms..." /> : error ? <ErrorState message={error} onRetry={() => fetch()} /> : (
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
+        {!yearFilter ? <EmptyState title="Select an academic year" description="Choose a year above to view its terms." /> : loading ? <Table columns={[]} data={[]} loading={true} keyExtractor={() => ''} emptyMessage="" /> : error ? <ErrorState message={error} onRetry={() => fetch()} /> : (
           <>
             <Table columns={[...columns, { key: 'actions', header: 'Actions', render: (t: TermResponse) => (<div className="flex gap-2" onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="sm" onClick={() => openEditModal(t)}>Edit</Button></div>) }]} data={data} keyExtractor={(t) => t.id} emptyMessage="No terms found for this year." />
             <Pagination page={page} size={size} total={total} pages={pages} onPageChange={setPage} onSizeChange={(s) => { setSize(s); setPage(1) }} />
@@ -99,7 +105,7 @@ export function TermListPage() {
         )}
       </Card>
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Term' : 'Add Term'}
-        footer={<><Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button><Button onClick={handleSubmit} loading={saving}>{editing ? 'Save Changes' : 'Create'}</Button></>}
+        footer={<><Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button><Button onClick={handleSubmit} loading={saving}>{editing ? 'Save Changes' : 'Create'}</Button></>}
       >
         {apiError && <Alert variant="error" onClose={() => setApiError(null)}>{apiError}</Alert>}
         <Form onSubmit={handleSubmit}>

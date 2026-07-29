@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { studentApi } from '../../api/student/student-api'
 import type { StudentResponse } from '../../api/generated/types'
-import { Card, Badge, Button, Loading, ErrorState } from '../../components/ui'
-import { formatDate, formatDateTime, capitalize } from '../../lib/utils'
+import { Card, Button, ErrorState, Breadcrumbs, PageHeader, StatusBadge } from '../../components/ui'
+import { formatDate, formatDateTime } from '../../lib/utils'
 
 export function StudentDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -22,88 +22,72 @@ export function StudentDetailPage() {
       .finally(() => setLoading(false))
   }, [id])
 
-  if (loading) return <Loading text="Loading student details..." />
+  if (loading) return (
+    <div className="space-y-6 animate-fade-in-up">
+      <div className="h-4 bg-gray-200 rounded w-64 animate-pulse" />
+      <div className="h-8 bg-gray-200 rounded w-48 animate-pulse" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="h-64 bg-[var(--color-surface)] rounded-xl animate-pulse" />
+        <div className="h-64 bg-[var(--color-surface)] rounded-xl animate-pulse" />
+      </div>
+    </div>
+  )
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />
   if (!student) return <ErrorState message="Student not found" />
 
-  const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
-    active: 'success',
-    inactive: 'danger',
-    graduated: 'info',
-    transferred: 'warning',
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <button
-            onClick={() => navigate('/students')}
-            className="text-sm text-blue-600 hover:text-blue-800 mb-1"
-          >
-            &larr; Back to Students
-          </button>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {student.first_name} {student.last_name}
-          </h1>
-          <p className="text-gray-500">Student #{student.student_number}</p>
-        </div>
-        <Badge variant={statusBadge[student.status] || 'default'}>
-          {capitalize(student.status)}
-        </Badge>
-      </div>
+    <div className="space-y-6 animate-fade-in-up">
+      <Breadcrumbs items={[
+        { label: 'Students', href: '/students' },
+        { label: `${student.first_name} ${student.last_name}` },
+      ]} />
+
+      <PageHeader
+        title={`${student.first_name} ${student.last_name}`}
+        subtitle={`Student #${student.student_number}`}
+        actions={<StatusBadge status={student.status} />}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card title="Personal Information">
-          <dl className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <dt className="text-gray-500">First Name</dt>
-              <dd className="font-medium">{student.first_name}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-500">Last Name</dt>
-              <dd className="font-medium">{student.last_name}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-500">Student Number</dt>
-              <dd className="font-medium">{student.student_number}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-500">Email</dt>
-              <dd className="font-medium">{student.email || '-'}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-500">Date of Birth</dt>
-              <dd className="font-medium">{formatDate(student.date_of_birth)}</dd>
-            </div>
+        <Card title="Personal Information" className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
+          <dl className="space-y-4 text-sm">
+            {[
+              ['First Name', student.first_name],
+              ['Last Name', student.last_name],
+              ['Student Number', student.student_number],
+              ['Email', student.email || '-'],
+              ['Date of Birth', formatDate(student.date_of_birth)],
+            ].map(([label, value]) => (
+              <div key={label as string} className="flex justify-between items-center">
+                <dt className="text-[var(--color-text-muted)]">{label as string}</dt>
+                <dd className="font-medium text-[var(--color-text-primary)] text-right">{value as string}</dd>
+              </div>
+            ))}
           </dl>
         </Card>
 
-        <Card title="System Information">
-          <dl className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <dt className="text-gray-500">Status</dt>
-              <dd>
-                <Badge variant={statusBadge[student.status] || 'default'}>
-                  {capitalize(student.status)}
-                </Badge>
-              </dd>
+        <Card title="System Information" className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
+          <dl className="space-y-4 text-sm">
+            <div className="flex justify-between items-center">
+              <dt className="text-[var(--color-text-muted)]">Status</dt>
+              <dd><StatusBadge status={student.status} /></dd>
             </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-500">Created</dt>
-              <dd className="font-medium">{formatDateTime(student.created_at)}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-gray-500">Updated</dt>
-              <dd className="font-medium">{formatDateTime(student.updated_at)}</dd>
-            </div>
+            {[
+              ['Created', formatDateTime(student.created_at)],
+              ['Updated', formatDateTime(student.updated_at)],
+            ].map(([label, value]) => (
+              <div key={label as string} className="flex justify-between items-center">
+                <dt className="text-[var(--color-text-muted)]">{label as string}</dt>
+                <dd className="font-medium text-[var(--color-text-primary)]">{value as string}</dd>
+              </div>
+            ))}
           </dl>
         </Card>
       </div>
 
       <div className="flex gap-3">
         <Button onClick={() => navigate(`/students/${id}/edit`)}>Edit Student</Button>
-        <Button variant="secondary" onClick={() => navigate('/students')}>Back to List</Button>
+        <Button variant="outline" onClick={() => navigate('/students')}>Back to List</Button>
       </div>
     </div>
   )

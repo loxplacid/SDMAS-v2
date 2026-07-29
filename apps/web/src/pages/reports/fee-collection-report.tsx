@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { academicYearApi } from '../../api/academic/academic-year-api'
 import { feeReportApi } from '../../api/reports/fee-reports'
 import type { CollectionReportItem } from '../../api/reports/types'
-import { Card, Select, Button, Loading, ErrorState, Table, Badge } from '../../components/ui'
+import { Card, Select, Button, ErrorState, Table, Badge } from '../../components/ui'
 import { formatCurrency } from '../../lib/utils'
 
 export function FeeCollectionReportPage() {
@@ -42,16 +42,17 @@ export function FeeCollectionReportPage() {
   }, [selectedYearId, startDate, endDate])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Fee Collection Report</h1>
-        <p className="text-gray-500 mt-1">Fee collection summary grouped by class</p>
+        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Reports</div>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Fee Collection Report</h1>
+        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Fee collection summary grouped by class</p>
       </div>
 
-      <Card>
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Academic Year</label>
             <Select
               options={academicYears.map((y) => ({ value: String(y.id), label: y.name }))}
               value={selectedYearId}
@@ -60,7 +61,7 @@ export function FeeCollectionReportPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Start Date</label>
             <input
               type="date"
               value={startDate}
@@ -69,7 +70,7 @@ export function FeeCollectionReportPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">End Date</label>
             <input
               type="date"
               value={endDate}
@@ -84,10 +85,10 @@ export function FeeCollectionReportPage() {
       </Card>
 
       {error && <ErrorState message={error} onRetry={fetchReport} />}
-      {loading && <Loading text="Generating report..." />}
+      {loading && <div className="h-48 bg-[var(--color-surface)] rounded-xl animate-pulse" />}
 
       {report.length > 0 && (
-        <Card>
+        <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
           <Table
             columns={[
               { key: 'class_name', header: 'Class' },

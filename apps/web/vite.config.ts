@@ -10,6 +10,22 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core React framework
+          'vendor-react': ['react', 'react-dom'],
+          // Routing
+          'vendor-router': ['react-router-dom'],
+          // Chart library
+          'vendor-charts': ['recharts'],
+        },
+      },
+    },
+    // Increase chunk size warning limit — code-split pages will be naturally smaller
+    chunkSizeWarningLimit: 400,
+  },
   server: {
     port: 5173,
     proxy: {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { subjectApi, type SubjectListParams } from '../../api/academic/subject-api'
 import type { SubjectResponse, SubjectCreate, SubjectUpdate } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, Loading, EmptyState, ErrorState, useToast } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast } from '../../components/ui'
 import { SUBJECT_STATUSES, capitalize } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = { active: 'success', inactive: 'danger' }
@@ -59,24 +59,28 @@ export function SubjectListPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div><h1 className="text-2xl font-bold text-gray-900">Subjects</h1><p className="text-gray-500 mt-1">{total} subject{total !== 1 ? 's' : ''}</p></div>
+    <div className="space-y-6 animate-fade-in-up">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide mb-1">Academics</p>
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Subjects</h1>
+          <p className="text-sm text-[var(--color-text-tertiary)] mt-1">{total} subject{total !== 1 ? 's' : ''}</p>
+        </div>
         <Button onClick={openCreateModal}>Add Subject</Button>
       </div>
       <div className="flex items-center gap-4">
         <Select options={SUBJECT_STATUSES.map((s) => ({ value: s, label: capitalize(s) }))} placeholder="All statuses" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }} />
       </div>
-      <Card>
-        {loading ? <Loading text="Loading subjects..." /> : error ? <ErrorState message={error} onRetry={() => fetch({ page, size, status: statusFilter || undefined })} /> : (
+      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
+        {error ? <ErrorState message={error} onRetry={() => fetch({ page, size, status: statusFilter || undefined })} /> : (
           <>
-            <Table columns={[...columns, { key: 'actions', header: 'Actions', render: (s: SubjectResponse) => (<div className="flex gap-2" onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="sm" onClick={() => openEditModal(s)}>Edit</Button></div>) }]} data={data} keyExtractor={(s) => s.id} emptyMessage="No subjects found." />
+            <Table columns={[...columns, { key: 'actions', header: 'Actions', render: (s: SubjectResponse) => (<div className="flex gap-2" onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="sm" onClick={() => openEditModal(s)}>Edit</Button></div>) }]} data={data} keyExtractor={(s) => s.id} emptyMessage="No subjects found." loading={loading} />
             <Pagination page={page} size={size} total={total} pages={pages} onPageChange={setPage} onSizeChange={(s) => { setSize(s); setPage(1) }} />
           </>
         )}
       </Card>
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Subject' : 'Add Subject'}
-        footer={<><Button variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button><Button onClick={handleSubmit} loading={saving}>{editing ? 'Save Changes' : 'Create'}</Button></>}
+        footer={<><Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button><Button onClick={handleSubmit} loading={saving}>{editing ? 'Save Changes' : 'Create'}</Button></>}
       >
         {apiError && <Alert variant="error" onClose={() => setApiError(null)}>{apiError}</Alert>}
         <Form onSubmit={handleSubmit}>

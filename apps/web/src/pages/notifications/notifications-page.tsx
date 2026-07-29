@@ -81,11 +81,12 @@ export function NotificationsPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-3xl mx-auto animate-fade-in-up">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">System</div>
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1 tracking-tight">Notifications</h1>
+          <p className="text-sm text-[var(--color-text-tertiary)] mt-1">
             {total} {total === 1 ? 'notification' : 'notifications'}
           </p>
         </div>

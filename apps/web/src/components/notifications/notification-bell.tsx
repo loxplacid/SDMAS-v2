@@ -6,7 +6,9 @@ import { cn } from '../../lib/utils'
 export function NotificationBell() {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
+  const [closing, setClosing] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const prevUnreadCountRef = useRef(0)
   const [notifications, setNotifications] = useState<Array<{
     id: number
     title: string
@@ -22,6 +24,7 @@ export function NotificationBell() {
   const fetchUnreadCount = useCallback(async () => {
     try {
       const res = await notificationApi.getUnreadCount()
+      prevUnreadCountRef.current = unreadCount
       setUnreadCount(res.count)
     } catch {
       // Silently fail — not critical
@@ -46,21 +49,34 @@ export function NotificationBell() {
     return () => clearInterval(interval)
   }, [fetchUnreadCount])
 
+  const closeMenu = useCallback(() => {
+    if (open) {
+      setClosing(true)
+      setTimeout(() => {
+        setClosing(false)
+        setOpen(false)
+      }, 120)
+    }
+  }, [open])
+
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false)
+        closeMenu()
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  }, [closeMenu])
 
   function handleToggle() {
-    if (!open) {
+    if (open) {
+      closeMenu()
+    } else {
+      setOpen(true)
+      setClosing(false)
       fetchRecent()
     }
-    setOpen(!open)
   }
 
   async function handleMarkAllRead() {
@@ -74,9 +90,12 @@ export function NotificationBell() {
   }
 
   function handleViewAll() {
-    setOpen(false)
-    navigate('/notifications')
+    closeMenu()
+    // Navigate after animation
+    setTimeout(() => navigate('/notifications'), 120)
   }
+
+  const hasNewNotifications = unreadCount > prevUnreadCountRef.current && prevUnreadCountRef.current > 0
 
   const formatTime = (iso: string) => {
     const d = new Date(iso)
@@ -93,11 +112,17 @@ export function NotificationBell() {
     return d.toLocaleDateString()
   }
 
+  const showMenu = open
+
   return (
     <div className="relative" ref={ref}>
       <button
         onClick={handleToggle}
-        className="relative p-2 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md"
+        className={cn(
+          'relative p-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-accent)]',
+          'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]',
+          hasNewNotifications && 'animate-attention-ring'
+        )}
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
         aria-expanded={open}
         aria-haspopup="true"
@@ -106,23 +131,32 @@ export function NotificationBell() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center h-4 min-w-[1rem] px-1 rounded-full bg-red-500 text-[10px] font-bold text-white leading-none">
+          <span
+            key={unreadCount}
+            className={cn(
+              'absolute -top-0.5 -right-0.5 inline-flex items-center justify-center h-4 min-w-[1rem] px-1 rounded-full bg-red-500 text-[10px] font-bold text-white leading-none',
+              'animate-badge-pop'
+            )}
+          >
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>
 
-      {open && (
+      {showMenu && (
         <div
-          className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg border border-gray-200 z-50"
+          className={cn(
+            'absolute right-0 mt-2 w-80 bg-[var(--color-surface)] rounded-2xl shadow-xl border border-[var(--color-border)] z-50 origin-top-right',
+            closing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'
+          )}
           role="menu"
         >
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
+            <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">Notifications</h3>
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllRead}
-                className="text-xs text-blue-600 hover:text-blue-800 focus:outline-none"
+                className="text-xs font-medium text-[var(--color-brand-accent)] hover:text-[var(--color-brand-accent-hover)] focus:outline-none transition-colors"
               >
                 Mark all read
               </button>
@@ -131,34 +165,45 @@ export function NotificationBell() {
 
           <div className="max-h-72 overflow-y-auto">
             {loading ? (
-              <div className="px-4 py-8 text-center text-sm text-gray-500">
-                Loading...
+              <div className="px-4 py-8 text-center text-sm text-[var(--color-text-tertiary)]">
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-start gap-3 px-4">
+                      <div className="h-8 w-8 rounded-full bg-[var(--color-border)] animate-skeleton flex-shrink-0" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 w-3/4 bg-[var(--color-border)] animate-skeleton rounded" />
+                        <div className="h-2 w-1/2 bg-[var(--color-border)] animate-skeleton rounded" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm text-gray-500">
-                <svg className="mx-auto h-8 w-8 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <div className="px-4 py-8 text-center text-sm text-[var(--color-text-tertiary)]">
+                <svg className="mx-auto h-8 w-8 text-[var(--color-text-muted)] mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
                 <p>No new notifications</p>
               </div>
             ) : (
-              notifications.map((n) => (
+              notifications.map((n, idx) => (
                 <div
                   key={n.id}
                   className={cn(
-                    'px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors',
-                    !n.read_at ? 'bg-blue-50/50' : ''
+                    'px-4 py-3 border-b border-[var(--color-border-light)] hover:bg-[var(--color-surface-hover)] transition-colors animate-fade-in',
+                    !n.read_at ? 'bg-[var(--color-brand-accent-light)]/50' : ''
                   )}
+                  style={{ animationDelay: `${idx * 30}ms`, animationFillMode: 'both' }}
                 >
-                  <div className="flex items-start gap-2">
+                  <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{n.title}</p>
-                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.message}</p>
-                      <p className="text-[10px] text-gray-400 mt-1">{formatTime(n.created_at)}</p>
+                      <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{n.title}</p>
+                      <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5 line-clamp-2">{n.message}</p>
+                      <p className="text-[10px] text-[var(--color-text-muted)] mt-1">{formatTime(n.created_at)}</p>
                     </div>
                     <span className={cn(
                       'inline-block h-2 w-2 rounded-full mt-1.5 flex-shrink-0',
-                      !n.read_at ? 'bg-blue-500' : 'bg-transparent'
+                      !n.read_at ? 'bg-[var(--color-brand-accent)]' : 'bg-transparent'
                     )} />
                   </div>
                 </div>
@@ -166,10 +211,10 @@ export function NotificationBell() {
             )}
           </div>
 
-          <div className="px-4 py-2 border-t border-gray-100">
+          <div className="px-4 py-2 border-t border-[var(--color-border)]">
             <button
               onClick={handleViewAll}
-              className="w-full text-center text-sm text-blue-600 hover:text-blue-800 py-1 focus:outline-none"
+              className="w-full text-center text-sm font-medium text-[var(--color-brand-accent)] hover:text-[var(--color-brand-accent-hover)] py-1.5 focus:outline-none transition-colors rounded-lg hover:bg-[var(--color-brand-accent-light)]"
             >
               View all notifications
             </button>
