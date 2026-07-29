@@ -5,6 +5,7 @@ import { feeReportApi } from '../../api/reports/fee-reports'
 import type { OutstandingReportItem } from '../../api/reports/types'
 import { Card, Select, Button, ErrorState, Table, Badge, Pagination, AnimatedCount } from '../../components/ui'
 import { formatCurrency, capitalize } from '../../lib/utils'
+import { useExport } from '../../hooks/use-export'
 
 const PAGE_SIZE = 20
 
@@ -18,6 +19,7 @@ export function OutstandingReportPage() {
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const fetchIdRef = useRef(0)
+  const { exportPDF, exportExcel, exporting } = useExport()
 
   useEffect(() => {
     academicYearApi.list({ size: 100 }).then((r) => {
@@ -93,7 +95,36 @@ export function OutstandingReportPage() {
 
       {report.length > 0 && (
         <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
-          <p className="text-sm text-[var(--color-text-tertiary)] mb-4"><AnimatedCount value={report.length} duration={800} /> student{report.length !== 1 ? 's' : ''} with outstanding fees</p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold">Outstanding Fees</h2>
+              <p className="text-sm text-[var(--color-text-tertiary)]"><AnimatedCount value={report.length} duration={800} /> student{report.length !== 1 ? 's' : ''} with outstanding fees</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" loading={exporting === 'pdf'}
+                onClick={() => exportPDF('Outstanding Fees Report', [
+                  { key: 'student_number', header: 'Student #' },
+                  { key: 'student_name', header: 'Name' },
+                  { key: 'class_name', header: 'Class' },
+                  { key: 'total_fees', header: 'Total Fees', render: (r: any) => formatCurrency(r.total_fees) },
+                  { key: 'total_paid', header: 'Paid', render: (r: any) => formatCurrency(r.total_paid) },
+                  { key: 'outstanding', header: 'Outstanding', render: (r: any) => formatCurrency(r.outstanding) },
+                  { key: 'status', header: 'Status', render: (r: any) => `${r.unpaid_count > 0 ? `${r.unpaid_count} unpaid` : ''} ${r.partially_paid_count > 0 ? `${r.partially_paid_count} partial` : ''}` },
+                ], report, 'outstanding-fees')}
+              >Export PDF</Button>
+              <Button variant="outline" size="sm" loading={exporting === 'excel'}
+                onClick={() => exportExcel('Outstanding Fees Report', [
+                  { key: 'student_number', header: 'Student #' },
+                  { key: 'student_name', header: 'Name' },
+                  { key: 'class_name', header: 'Class' },
+                  { key: 'total_fees', header: 'Total Fees', render: (r: any) => formatCurrency(r.total_fees) },
+                  { key: 'total_paid', header: 'Paid', render: (r: any) => formatCurrency(r.total_paid) },
+                  { key: 'outstanding', header: 'Outstanding', render: (r: any) => formatCurrency(r.outstanding) },
+                  { key: 'status', header: 'Status', render: (r: any) => `${r.unpaid_count > 0 ? `${r.unpaid_count} unpaid` : ''} ${r.partially_paid_count > 0 ? `${r.partially_paid_count} partial` : ''}` },
+                ], report, 'outstanding-fees')}
+              >Export Excel</Button>
+            </div>
+          </div>
           <Table
             columns={[
               { key: 'student_number', header: 'Student #' },

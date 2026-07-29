@@ -4,6 +4,7 @@ import { feeReportApi } from '../../api/reports/fee-reports'
 import type { CollectionReportItem } from '../../api/reports/types'
 import { Card, Select, Button, ErrorState, Table, Badge } from '../../components/ui'
 import { formatCurrency } from '../../lib/utils'
+import { useExport } from '../../hooks/use-export'
 
 export function FeeCollectionReportPage() {
   const [academicYears, setAcademicYears] = useState<{ id: number; name: string }[]>([])
@@ -14,6 +15,7 @@ export function FeeCollectionReportPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fetchIdRef = useRef(0)
+  const { exportPDF, exportExcel, exporting } = useExport()
 
   useEffect(() => {
     academicYearApi.list({ size: 100 }).then((r) => {
@@ -89,6 +91,31 @@ export function FeeCollectionReportPage() {
 
       {report.length > 0 && (
         <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Collection Summary</h2>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" loading={exporting === 'pdf'}
+                onClick={() => exportPDF('Fee Collection Report', [
+                  { key: 'class_name', header: 'Class' },
+                  { key: 'total_students', header: 'Students' },
+                  { key: 'total_fees_assigned', header: 'Total Fees', render: (r: any) => formatCurrency(r.total_fees_assigned) },
+                  { key: 'total_collected', header: 'Collected', render: (r: any) => formatCurrency(r.total_collected) },
+                  { key: 'total_outstanding', header: 'Outstanding', render: (r: any) => formatCurrency(r.total_outstanding) },
+                  { key: 'collection_percentage', header: 'Collection %', render: (r: any) => `${r.collection_percentage}%` },
+                ], report, 'fee-collection-report')}
+              >Export PDF</Button>
+              <Button variant="outline" size="sm" loading={exporting === 'excel'}
+                onClick={() => exportExcel('Fee Collection Report', [
+                  { key: 'class_name', header: 'Class' },
+                  { key: 'total_students', header: 'Students' },
+                  { key: 'total_fees_assigned', header: 'Total Fees', render: (r: any) => formatCurrency(r.total_fees_assigned) },
+                  { key: 'total_collected', header: 'Collected', render: (r: any) => formatCurrency(r.total_collected) },
+                  { key: 'total_outstanding', header: 'Outstanding', render: (r: any) => formatCurrency(r.total_outstanding) },
+                  { key: 'collection_percentage', header: 'Collection %', render: (r: any) => `${r.collection_percentage}%` },
+                ], report, 'fee-collection-report')}
+              >Export Excel</Button>
+            </div>
+          </div>
           <Table
             columns={[
               { key: 'class_name', header: 'Class' },

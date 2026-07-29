@@ -5,6 +5,7 @@ import { sectionApi } from '../../api/academic/section-api'
 import { attendanceReportApi } from '../../api/reports/attendance-reports'
 import type { ClassAttendanceSummaryReport, SectionAttendanceSummaryReport } from '../../api/reports/types'
 import { Card, Select, Button, ErrorState, Badge, Table, AnimatedCount } from '../../components/ui'
+import { useExport } from '../../hooks/use-export'
 
 export function AttendanceReportPage() {
   const [academicYears, setAcademicYears] = useState<{ id: number; name: string }[]>([])
@@ -22,6 +23,7 @@ export function AttendanceReportPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fetchIdRef = useRef(0)
+  const { exportPDF, exportExcel, exporting } = useExport()
 
   useEffect(() => {
     academicYearApi.list({ size: 100 }).then((r) => {
@@ -151,6 +153,59 @@ export function AttendanceReportPage() {
 
       {report && (
         <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Report Results</h2>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                loading={exporting === 'pdf'}
+                onClick={() => {
+                  const r = report as any
+                  const summaryCols = [
+                    { key: 'metric', header: 'Metric' },
+                    { key: 'value', header: 'Value', render: (row: any) => String(row.value) },
+                  ]
+                  const summaryData = [
+                    { metric: 'Total Students', value: r.total_students },
+                    { metric: 'Total Records', value: r.total_records },
+                    { metric: 'Present', value: r.present },
+                    { metric: 'Absent', value: r.absent },
+                    { metric: 'Late', value: r.late },
+                    { metric: 'Excused', value: r.excused },
+                    { metric: 'Present %', value: r.present_percentage },
+                  ]
+                  exportPDF('Attendance Report', summaryCols, summaryData, 'attendance-report')
+                }}
+              >
+                Export PDF
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                loading={exporting === 'excel'}
+                onClick={() => {
+                  const r = report as any
+                  const summaryCols = [
+                    { key: 'metric', header: 'Metric' },
+                    { key: 'value', header: 'Value', render: (row: any) => String(row.value) },
+                  ]
+                  const summaryData = [
+                    { metric: 'Total Students', value: r.total_students },
+                    { metric: 'Total Records', value: r.total_records },
+                    { metric: 'Present', value: r.present },
+                    { metric: 'Absent', value: r.absent },
+                    { metric: 'Late', value: r.late },
+                    { metric: 'Excused', value: r.excused },
+                    { metric: 'Present %', value: r.present_percentage },
+                  ]
+                  exportExcel('Attendance Report', summaryCols, summaryData, 'attendance-report')
+                }}
+              >
+                Export Excel
+              </Button>
+            </div>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
             <div>
               <p className="text-sm text-[var(--color-text-tertiary)]">Students</p>

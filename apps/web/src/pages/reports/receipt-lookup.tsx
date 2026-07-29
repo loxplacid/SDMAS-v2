@@ -3,12 +3,14 @@ import { feeReportApi } from '../../api/reports/fee-reports'
 import type { DetailedReceipt } from '../../api/reports/types'
 import { Card, Button, ErrorState, Input, Badge } from '../../components/ui'
 import { formatCurrency, formatDateTime } from '../../lib/utils'
+import { useExport } from '../../hooks/use-export'
 
 export function ReceiptLookupPage() {
   const [paymentId, setPaymentId] = useState('')
   const [receipt, setReceipt] = useState<DetailedReceipt | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { exportPDF, exporting } = useExport()
 
   const handleSearch = async () => {
     if (!paymentId.trim()) return
@@ -56,9 +58,30 @@ export function ReceiptLookupPage() {
           <div className="border-b border-gray-200 pb-4 mb-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold">Payment Receipt</h2>
-              {receipt.receipt_number && (
-                <Badge variant="success">#{receipt.receipt_number}</Badge>
-              )}
+              <div className="flex items-center gap-2">
+                {receipt.receipt_number && <Badge variant="success">#{receipt.receipt_number}</Badge>}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  loading={exporting === 'pdf'}
+                  onClick={() => exportPDF('Payment Receipt', [
+                    { key: 'field', header: 'Field' },
+                    { key: 'value', header: 'Value' },
+                  ], [
+                    { field: 'Receipt #', value: receipt.receipt_number || '-' },
+                    { field: 'Student', value: receipt.student_name },
+                    { field: 'Student #', value: receipt.student_number },
+                    { field: 'Academic Year', value: receipt.academic_year_name },
+                    { field: 'Fee Type', value: receipt.fee_type_name },
+                    { field: 'Payment Method', value: receipt.payment_method || '-' },
+                    { field: 'Amount', value: formatCurrency(receipt.amount) },
+                    { field: 'Payment Date', value: receipt.payment_date || '-' },
+                    { field: 'Recorded At', value: formatDateTime(receipt.created_at) },
+                  ], `receipt-${receipt.receipt_number || receipt.payment_id}`)}
+                >
+                  Export PDF
+                </Button>
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
