@@ -1,6 +1,8 @@
 import type { ApiError } from '../generated/types'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+// In development, use relative URLs (go through Vite proxy).
+// In production, set VITE_API_BASE_URL to the backend origin.
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
 let accessToken: string | null = null
 let refreshToken: string | null = null
@@ -30,9 +32,10 @@ async function tryRefresh(): Promise<boolean> {
   if (refreshPromise) return refreshPromise
   refreshPromise = (async () => {
     try {
-      const res = await fetch(`${BASE_URL}/auth/refresh?refresh_token=${encodeURIComponent(refreshToken!)}`, {
-        method: 'POST',
-      })
+      const url = BASE_URL
+        ? `${BASE_URL}/auth/refresh?refresh_token=${encodeURIComponent(refreshToken!)}`
+        : `/auth/refresh?refresh_token=${encodeURIComponent(refreshToken!)}`
+      const res = await fetch(url, { method: 'POST' })
       if (!res.ok) return false
       const data = await res.json()
       storeTokens(data.access_token, data.refresh_token)
@@ -70,7 +73,9 @@ type RequestOptions = {
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, params, skipAuth = false } = options
 
-  const url = new URL(`${BASE_URL}${path}`)
+  // Build the URL — relative in dev (via Vite proxy), absolute in production
+  const urlStr = BASE_URL ? `${BASE_URL}${path}` : path
+  const url = new URL(urlStr, BASE_URL ? undefined : window.location.origin)
   if (params) {
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined && value !== null && value !== '') {
