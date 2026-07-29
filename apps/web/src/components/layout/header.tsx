@@ -3,11 +3,24 @@ import { useAuth } from '../../api/auth/auth-context'
 import { NotificationBell } from '../notifications/notification-bell'
 import { cn } from '../../lib/utils'
 import { ThemeToggle } from '../ui/theme-toggle'
+import { WorkspaceSwitcher } from '../ui/workspace-switcher'
+import { ROLE_CONFIG } from '../../types/roles'
+import type { UserRole } from '../../types/roles'
 
 interface HeaderProps {
   onOpenCommandPalette?: () => void
   onOpenSearch?: () => void
   onOpenShortcuts?: () => void
+}
+
+function roleBadgeClass(role: string): string {
+  switch (role) {
+    case 'admin': return 'bg-[var(--color-brand-accent-light)] text-[var(--color-brand-accent)]'
+    case 'teacher': return 'bg-emerald-50 text-emerald-700'
+    case 'student': return 'bg-violet-50 text-violet-700'
+    case 'parent': return 'bg-amber-50 text-amber-700'
+    default: return 'bg-[var(--color-brand-accent-light)] text-[var(--color-brand-accent)]'
+  }
 }
 
 export function Header({ onOpenCommandPalette, onOpenSearch, onOpenShortcuts }: HeaderProps) {
@@ -83,6 +96,9 @@ export function Header({ onOpenCommandPalette, onOpenSearch, onOpenShortcuts }: 
 
         <ThemeToggle />
 
+        {/* Workspace Switcher (admin only) */}
+        <WorkspaceSwitcher />
+
         <div className="w-px h-5 bg-[var(--color-border)] mx-1 hidden sm:block" />
 
         <NotificationBell />
@@ -124,8 +140,8 @@ export function Header({ onOpenCommandPalette, onOpenSearch, onOpenShortcuts }: 
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   {user?.role && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-[var(--color-brand-accent-light)] text-[var(--color-brand-accent)]">
-                      {user.role}
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider ${roleBadgeClass(user.role)}`}>
+                      {ROLE_CONFIG[user.role as UserRole]?.label || user.role}
                     </span>
                   )}
                   <span className="text-xs text-[var(--color-text-tertiary)] truncate">{user?.email}</span>

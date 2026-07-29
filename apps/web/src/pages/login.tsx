@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../api/auth/auth-context'
 import { Button, Alert } from '../components/ui'
+import { getHomeRoute } from '../types/roles'
 
 export function LoginPage() {
   const { login, isLoading } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as any)?.from?.pathname || '/dashboard'
+  const from = (location.state as any)?.from?.pathname || null
 
   const [loginValue, setLoginValue] = useState('')
   const [password, setPassword] = useState('')
@@ -27,8 +28,10 @@ export function LoginPage() {
     }
 
     try {
-      await login(loginValue, password)
-      navigate(from, { replace: true })
+      const loggedInUser = await login(loginValue, password)
+      // Redirect to role-specific home page or the original requested page
+      const redirectTo = from || getHomeRoute(loggedInUser?.role)
+      navigate(redirectTo, { replace: true })
     } catch (err: any) {
       if (err?.status === 401) {
         setError('The username or password you entered is incorrect.')

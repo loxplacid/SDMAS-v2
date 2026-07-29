@@ -10,7 +10,7 @@ type AuthState = {
 }
 
 type AuthContextType = AuthState & {
-  login: (login: string, password: string) => Promise<void>
+  login: (login: string, password: string) => Promise<UserResponse>
   logout: () => void
   updateUser: (user: UserResponse) => void
 }
@@ -54,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await api.login(login, password)
       const user = await authApi.getMe()
       setState({ user, isLoading: false, isAuthenticated: true, error: null })
+      return user
     } catch (err: any) {
       const message = err?.detail || 'Login failed'
       setState({ user: null, isLoading: false, isAuthenticated: false, error: message })

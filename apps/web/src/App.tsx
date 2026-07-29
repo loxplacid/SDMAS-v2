@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './api/auth/auth-context'
 import { ToastProvider } from './components/ui/toast'
 import { ProtectedRoute } from './components/protected-route'
+import { RoleGuard } from './components/auth/role-guard'
 import { AppLayout } from './components/layout'
 
 // ── Lazy-loaded page components ──
@@ -86,6 +87,12 @@ const RolloverPage = lazy(() => import('./pages/operations/rollover'))
 const BatchEnrollPage = lazy(() => import('./pages/operations/batch-enroll'))
 const BatchFeeDuesPage = lazy(() => import('./pages/operations/batch-fee-dues'))
 
+// ── Workspace-specific dashboards ──
+const TeacherDashboardPage = lazy(() => import('./pages/teacher/teacher-dashboard').then((m) => ({ default: m.TeacherDashboardPage })))
+const StudentDashboardPage = lazy(() => import('./pages/student/student-dashboard').then((m) => ({ default: m.StudentDashboardPage })))
+const ParentDashboardPage = lazy(() => import('./pages/parent/parent-dashboard').then((m) => ({ default: m.ParentDashboardPage })))
+const ParentChildrenPage = lazy(() => import('./pages/parent/parent-children').then((m) => ({ default: m.ParentChildrenPage })))
+
 // ── Fallback shown while a lazy page is loading ──
 function PageFallback() {
   return (
@@ -151,6 +158,51 @@ export default function App() {
               <Route path="/fees/summary" element={<Suspense fallback={null}><FinancialSummaryPage /></Suspense>} />
               <Route path="/users" element={<Suspense fallback={null}><UserListPage /></Suspense>} />
               <Route path="/profile" element={<Suspense fallback={null}><ProfilePage /></Suspense>} />
+
+              {/* ── Role-based Workspace Routes ── */}
+              {/* Teacher workspace */}
+              <Route path="/teacher" element={
+                <RoleGuard roles={['teacher']}>
+                  <Suspense fallback={<PageFallback />}><TeacherDashboardPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/teacher/classes" element={<Navigate to="/teacher" replace />} />
+              <Route path="/teacher/students" element={<Navigate to="/students" replace />} />
+
+              {/* Student workspace */}
+              <Route path="/student" element={
+                <RoleGuard roles={['student']}>
+                  <Suspense fallback={<PageFallback />}><StudentDashboardPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/student/attendance" element={<Navigate to="/attendance/student" replace />} />
+              <Route path="/student/fees" element={<Navigate to="/fees/student-fees" replace />} />
+              <Route path="/student/schedule" element={
+                <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in">
+                  <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-[var(--color-surface-hover)] mb-4">
+                    <svg className="h-8 w-8 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">Schedule</h3>
+                  <p className="text-sm text-[var(--color-text-tertiary)] text-center max-w-sm">
+                    Your class schedule will appear here once it's configured.
+                  </p>
+                </div>
+              } />
+
+              {/* Parent workspace */}
+              <Route path="/parent" element={
+                <RoleGuard roles={['parent']}>
+                  <Suspense fallback={<PageFallback />}><ParentDashboardPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/parent/children" element={
+                <RoleGuard roles={['parent']}>
+                  <Suspense fallback={<PageFallback />}><ParentChildrenPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/parent/payments" element={<Navigate to="/fees/dues" replace />} />
               <Route path="/reports" element={<Suspense fallback={null}><ReportsHubPage /></Suspense>} />
               <Route path="/reports/attendance" element={<Suspense fallback={null}><AttendanceReportPage /></Suspense>} />
               <Route path="/reports/fees/collection" element={<Suspense fallback={null}><FeeCollectionReportPage /></Suspense>} />
