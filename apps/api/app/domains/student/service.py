@@ -98,16 +98,18 @@ class StudentService:
     async def list_students(
         self,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Student], int]:
         if status is not None and status not in VALID_STATUSES:
             raise ValidationError(f"Invalid status filter: {status}")
-        return await self.repository.list(status=status, skip=skip, limit=limit)
+        return await self.repository.list(status=status, campus_id=campus_id, skip=skip, limit=limit)
 
     async def search_students(
         self,
         query: str,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Student], int]:

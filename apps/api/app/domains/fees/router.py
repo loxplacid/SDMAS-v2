@@ -132,10 +132,14 @@ async def list_fee_types(
     status_filter: Optional[str] = Query(
         default=None, alias="status", description="Filter by status"
     ),
+    campus_id: Optional[int] = Query(
+        default=None, alias="campus_id", description="Filter by campus"
+    ),
     service: FeeTypeService = Depends(get_fee_type_service),
 ) -> Page[FeeTypeResponse]:
     items, total = await service.list(
         status=status_filter,
+        campus_id=campus_id,
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -212,6 +216,9 @@ async def list_fee_structures(
     status_filter: Optional[str] = Query(
         default=None, alias="status"
     ),
+    campus_id: Optional[int] = Query(
+        default=None, alias="campus_id"
+    ),
     service: FeeStructureService = Depends(get_fee_structure_service),
 ) -> Page[FeeStructureResponse]:
     items, total = await service.list(
@@ -219,6 +226,7 @@ async def list_fee_structures(
         class_id=class_id,
         fee_type_id=fee_type_id,
         status=status_filter,
+        campus_id=campus_id,
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -300,12 +308,16 @@ async def list_fee_dues(
     status_filter: Optional[str] = Query(
         default=None, alias="status"
     ),
+    campus_id: Optional[int] = Query(
+        default=None, alias="campus_id"
+    ),
     service: FeeDueService = Depends(get_fee_due_service),
 ) -> Page[FeeDueResponse]:
     items, total = await service.list(
         student_id=student_id,
         academic_year_id=academic_year_id,
         status=status_filter,
+        campus_id=campus_id,
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -375,11 +387,15 @@ async def list_payments(
     fee_due_id: Optional[int] = Query(
         default=None, alias="fee_due_id"
     ),
+    campus_id: Optional[int] = Query(
+        default=None, alias="campus_id"
+    ),
     service: PaymentService = Depends(get_payment_service),
 ) -> Page[PaymentResponse]:
     items, total = await service.repo.list(
         student_id=student_id,
         fee_due_id=fee_due_id,
+        campus_id=campus_id,
         skip=pagination.offset,
         limit=pagination.limit,
     )

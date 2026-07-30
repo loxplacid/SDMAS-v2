@@ -8,6 +8,21 @@ export const FEE_STRUCTURE_STATUSES = ['active', 'inactive'] as const
 export const FEE_DUE_STATUSES = ['unpaid', 'partially_paid', 'paid'] as const
 export const ENROLLMENT_STATUSES = ['active', 'inactive'] as const
 export const TERM_STATUSES = ['active', 'inactive'] as const
+export const ADMISSION_STATUSES = [
+  'inquiry',
+  'application_submitted',
+  'documents_uploaded',
+  'verified',
+  'interview_scheduled',
+  'interview_completed',
+  'merit_listed',
+  'seat_allocated',
+  'fee_paid',
+  'enrolled',
+  'student_created',
+  'rejected',
+] as const
+
 export const PAYMENT_METHODS = ['cash', 'bank_transfer', 'cheque', 'card', 'mobile_money', 'other'] as const
 export const DEFAULT_PAGE_SIZE = 20
 

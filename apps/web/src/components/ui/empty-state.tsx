@@ -22,6 +22,10 @@ const defaultIcons: Record<string, string> = {
 export type DomainContext = keyof typeof defaultIcons
 
 const contextualMessages: Record<string, { title: string; description: string }> = {
+  admissions: {
+    title: 'No admissions yet',
+    description: 'Your admissions pipeline is empty. Create your first inquiry to start tracking prospective students.',
+  },
   students: {
     title: 'No students yet',
     description: 'Your student directory is empty. Add your first student to begin building your school.',

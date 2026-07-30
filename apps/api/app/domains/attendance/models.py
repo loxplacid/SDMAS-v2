@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 from datetime import timezone
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.database import Base
@@ -21,6 +21,9 @@ class AttendanceRecord(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     student_id: Mapped[int] = mapped_column(
         ForeignKey("students.id"), nullable=False
+    )
+    campus_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True
     )
     academic_year_id: Mapped[int] = mapped_column(
         ForeignKey("academic_years.id"), nullable=False

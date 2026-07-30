@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 from datetime import timezone
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.database import Base
@@ -15,6 +15,9 @@ class FeeType(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    campus_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True
+    )
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="active"
     )
@@ -52,6 +55,9 @@ class FeeStructure(Base):
     )
     fee_type_id: Mapped[int] = mapped_column(
         ForeignKey("fee_types.id"), nullable=False
+    )
+    campus_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True
     )
     amount: Mapped[int] = mapped_column(nullable=False)
     frequency: Mapped[str] = mapped_column(
@@ -101,6 +107,9 @@ class FeeDue(Base):
         ForeignKey("fee_structures.id"), nullable=False
     )
     original_amount: Mapped[int] = mapped_column(nullable=False)
+    campus_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True
+    )
     amount_paid: Mapped[int] = mapped_column(nullable=False, default=0)
     due_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
     status: Mapped[str] = mapped_column(
@@ -136,6 +145,9 @@ class Payment(Base):
     )
     fee_due_id: Mapped[int] = mapped_column(
         ForeignKey("fee_dues.id"), nullable=False
+    )
+    campus_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True
     )
     amount: Mapped[int] = mapped_column(nullable=False)
     payment_date: Mapped[str | None] = mapped_column(

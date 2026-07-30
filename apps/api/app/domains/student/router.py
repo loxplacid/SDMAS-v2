@@ -51,17 +51,22 @@ async def list_students(
     search: Optional[str] = Query(
         default=None, description="Search across name, number, email"
     ),
+    campus_id: Optional[int] = Query(
+        default=None, alias="campus_id", description="Filter by campus"
+    ),
     service: StudentService = Depends(get_student_service),
 ) -> Page[StudentResponse]:
     if search:
         students, total = await service.search_students(
             query=search,
+            campus_id=campus_id,
             skip=pagination.offset,
             limit=pagination.limit,
         )
     else:
         students, total = await service.list_students(
             status=status_filter,
+            campus_id=campus_id,
             skip=pagination.offset,
             limit=pagination.limit,
         )

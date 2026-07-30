@@ -42,6 +42,7 @@ class FeeTypeRepository:
     async def list(
         self,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[FeeType], int]:
@@ -51,6 +52,9 @@ class FeeTypeRepository:
         if status is not None:
             query = query.where(FeeType.status == status)
             count_query = count_query.where(FeeType.status == status)
+        if campus_id is not None:
+            query = query.where(FeeType.campus_id == campus_id)
+            count_query = count_query.where(FeeType.campus_id == campus_id)
 
         query = query.offset(skip).limit(limit).order_by(FeeType.name)
 
@@ -111,6 +115,7 @@ class FeeStructureRepository:
         class_id: Optional[int] = None,
         fee_type_id: Optional[int] = None,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[FeeStructure], int]:
@@ -138,6 +143,11 @@ class FeeStructureRepository:
             query = query.where(FeeStructure.status == status)
             count_query = count_query.where(
                 FeeStructure.status == status
+            )
+        if campus_id is not None:
+            query = query.where(FeeStructure.campus_id == campus_id)
+            count_query = count_query.where(
+                FeeStructure.campus_id == campus_id
             )
 
         query = query.offset(skip).limit(limit).order_by(FeeStructure.id)
@@ -205,6 +215,7 @@ class FeeDueRepository:
         student_id: Optional[int] = None,
         academic_year_id: Optional[int] = None,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[FeeDue], int]:
@@ -226,6 +237,9 @@ class FeeDueRepository:
         if status is not None:
             query = query.where(FeeDue.status == status)
             count_query = count_query.where(FeeDue.status == status)
+        if campus_id is not None:
+            query = query.where(FeeDue.campus_id == campus_id)
+            count_query = count_query.where(FeeDue.campus_id == campus_id)
 
         query = query.offset(skip).limit(limit).order_by(FeeDue.id)
 
@@ -310,6 +324,7 @@ class PaymentRepository:
         self,
         student_id: Optional[int] = None,
         fee_due_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Payment], int]:
@@ -325,6 +340,11 @@ class PaymentRepository:
             query = query.where(Payment.fee_due_id == fee_due_id)
             count_query = count_query.where(
                 Payment.fee_due_id == fee_due_id
+            )
+        if campus_id is not None:
+            query = query.where(Payment.campus_id == campus_id)
+            count_query = count_query.where(
+                Payment.campus_id == campus_id
             )
 
         query = query.offset(skip).limit(limit).order_by(Payment.created_at)

@@ -4,7 +4,7 @@ import datetime
 from datetime import timezone
 from typing import List, Optional
 
-from sqlalchemy import Date, DateTime, ForeignKey, String, UniqueConstraint
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.database import Base
@@ -17,6 +17,9 @@ class AcademicYear(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     start_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
     end_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    campus_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True
+    )
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="active"
     )
@@ -54,6 +57,9 @@ class Class(Base):
     academic_year_id: Mapped[int] = mapped_column(
         ForeignKey("academic_years.id"), nullable=False
     )
+    campus_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True
+    )
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="active"
     )
@@ -88,6 +94,9 @@ class Section(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     class_id: Mapped[int] = mapped_column(
         ForeignKey("classes.id"), nullable=False
+    )
+    campus_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True
     )
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="active"
@@ -131,6 +140,9 @@ class Enrollment(Base):
     section_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("sections.id"), nullable=True
     )
+    campus_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True
+    )
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="active"
     )
@@ -172,6 +184,9 @@ class Teacher(Base):
         String(50), nullable=False, unique=True
     )
     email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    campus_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True
+    )
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="active"
     )
@@ -205,6 +220,9 @@ class Subject(Base):
         String(50), nullable=False, unique=True
     )
     description: Mapped[Optional[str]] = mapped_column(nullable=True)
+    campus_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True
+    )
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="active"
     )
@@ -237,6 +255,9 @@ class Term(Base):
         ForeignKey("academic_years.id"), nullable=False
     )
     name: Mapped[str] = mapped_column(String(100), nullable=False)
+    campus_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True
+    )
     start_date: Mapped[str] = mapped_column(String(10), nullable=False)
     end_date: Mapped[str] = mapped_column(String(10), nullable=False)
     status: Mapped[str] = mapped_column(
@@ -281,6 +302,9 @@ class TeacherAssignment(Base):
     )
     class_id: Mapped[int] = mapped_column(
         ForeignKey("classes.id"), nullable=False
+    )
+    campus_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True
     )
     subject_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("subjects.id"), nullable=True

@@ -99,6 +99,9 @@ async def list_attendance(
     attendance_date: Optional[str] = Query(
         default=None, alias="attendance_date", description="Filter by date"
     ),
+    campus_id: Optional[int] = Query(
+        default=None, alias="campus_id", description="Filter by campus"
+    ),
     service: AttendanceService = Depends(get_attendance_service),
 ) -> Page[AttendanceRecordResponse]:
     records, total = await service.repo.list(
@@ -106,6 +109,7 @@ async def list_attendance(
         section_id=section_id,
         status=status_filter,
         attendance_date=attendance_date,
+        campus_id=campus_id,
         skip=pagination.offset,
         limit=pagination.limit,
     )

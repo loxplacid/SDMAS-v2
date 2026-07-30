@@ -8,7 +8,19 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.config import settings
 from app.domains.academic.models import AcademicYear, Class, Section, Enrollment, Teacher, Subject, Term, TeacherAssignment  # noqa: F401
+from app.domains.admission.models import (  # noqa: F401
+    AdmissionApplication, AdmissionDocument, AdmissionInterview,
+    AdmissionMeritEntry, AdmissionSeatAllocation,
+)
 from app.domains.attendance.models import AttendanceRecord  # noqa: F401
+from app.domains.leave.models import LeaveRequest  # noqa: F401
+from app.domains.workflow.models import (  # noqa: F401
+    Workflow, WorkflowStep, WorkflowTransition, WorkflowAction,
+    WorkflowInstance, ApprovalHistory,
+)
+from app.domains.institution.models import (  # noqa: F401
+    Institution, Campus, School, Department, Program, Branch, Semester,
+)
 from app.domains.notifications.models import Notification  # noqa: F401
 from app.domains.auth.models import User  # noqa: F401
 from app.domains.fees.models import FeeDue, FeeStructure, FeeType, Payment  # noqa: F401

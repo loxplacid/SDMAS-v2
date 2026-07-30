@@ -14,6 +14,11 @@ from sqlalchemy.ext.asyncio import (
 
 from app.infrastructure.database import Base, get_session
 
+# Import all models so Base.metadata can resolve cross-module foreign keys
+from app.domains.institution.models import (  # noqa: F401
+    Institution, Campus, School, Department, Program, Branch, Semester,
+)
+
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 

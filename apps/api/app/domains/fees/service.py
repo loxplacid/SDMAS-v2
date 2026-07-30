@@ -86,12 +86,13 @@ class FeeTypeService:
     async def list(
         self,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[FeeType], int]:
         if status is not None and status not in VALID_FEE_TYPE_STATUSES:
             raise ValidationError("Invalid status filter for fee types")
-        return await self.repo.list(status=status, skip=skip, limit=limit)
+        return await self.repo.list(status=status, campus_id=campus_id, skip=skip, limit=limit)
 
 
 # ---------------------------------------------------------------------------
@@ -199,6 +200,7 @@ class FeeStructureService:
         class_id: Optional[int] = None,
         fee_type_id: Optional[int] = None,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[FeeStructure], int]:
@@ -211,6 +213,7 @@ class FeeStructureService:
             class_id=class_id,
             fee_type_id=fee_type_id,
             status=status,
+            campus_id=campus_id,
             skip=skip,
             limit=limit,
         )
@@ -314,6 +317,7 @@ class FeeDueService:
         student_id: Optional[int] = None,
         academic_year_id: Optional[int] = None,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[FeeDue], int]:
@@ -321,6 +325,7 @@ class FeeDueService:
             student_id=student_id,
             academic_year_id=academic_year_id,
             status=status,
+            campus_id=campus_id,
             skip=skip,
             limit=limit,
         )

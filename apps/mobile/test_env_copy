@@ -1,0 +1,17 @@
+# SDMAS Mobile — Environment Configuration
+# ===========================================
+# Copy this file to .env and fill in your values.
+#
+# DEVELOPMENT (Android Emulator):
+#   Android emulator → http://10.0.2.2:8000  (maps to host localhost)
+#   iOS simulator   → http://localhost:8000
+#
+# PHYSICAL DEVICE:
+#   Use your machine's LAN IP address.
+#   Find it with: ipconfig (Windows) or ifconfig (Mac/Linux)
+#   Example: http://192.168.1.100:8000
+#
+# PRODUCTION:
+#   Set to the deployed backend URL.
+
+EXPO_PUBLIC_API_URL=http://10.0.2.2:8000

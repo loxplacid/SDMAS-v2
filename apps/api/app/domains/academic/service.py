@@ -120,12 +120,13 @@ class AcademicYearService:
     async def list_years(
         self,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[AcademicYear], int]:
         if status is not None and status not in VALID_ACADEMIC_STATUSES:
             raise ValidationError(f"Invalid status filter: {status}")
-        return await self.repo.list(status=status, skip=skip, limit=limit)
+        return await self.repo.list(status=status, campus_id=campus_id, skip=skip, limit=limit)
 
 
 # ---------------------------------------------------------------------------
@@ -204,13 +205,14 @@ class ClassService:
         self,
         year_id: Optional[int] = None,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Class], int]:
         if status is not None and status not in VALID_ACADEMIC_STATUSES:
             raise ValidationError(f"Invalid status filter: {status}")
         return await self.repo.list(
-            year_id=year_id, status=status, skip=skip, limit=limit
+            year_id=year_id, status=status, campus_id=campus_id, skip=skip, limit=limit
         )
 
 
@@ -290,13 +292,14 @@ class SectionService:
         self,
         class_id: Optional[int] = None,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Section], int]:
         if status is not None and status not in VALID_ACADEMIC_STATUSES:
             raise ValidationError(f"Invalid status filter: {status}")
         return await self.repo.list(
-            class_id=class_id, status=status, skip=skip, limit=limit
+            class_id=class_id, status=status, campus_id=campus_id, skip=skip, limit=limit
         )
 
 
@@ -396,6 +399,7 @@ class EnrollmentService:
         academic_year_id: Optional[int] = None,
         class_id: Optional[int] = None,
         section_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Enrollment], int]:
@@ -404,6 +408,7 @@ class EnrollmentService:
             academic_year_id=academic_year_id,
             class_id=class_id,
             section_id=section_id,
+            campus_id=campus_id,
             skip=skip,
             limit=limit,
         )
@@ -566,10 +571,11 @@ class SubjectService:
     async def list_subjects(
         self,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Subject], int]:
-        return await self.repo.list(status=status, skip=skip, limit=limit)
+        return await self.repo.list(status=status, campus_id=campus_id, skip=skip, limit=limit)
 
 
 # ---------------------------------------------------------------------------
@@ -622,10 +628,11 @@ class TeacherService:
     async def list_teachers(
         self,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Teacher], int]:
-        return await self.repo.list(status=status, skip=skip, limit=limit)
+        return await self.repo.list(status=status, campus_id=campus_id, skip=skip, limit=limit)
 
 
 # ---------------------------------------------------------------------------

@@ -162,6 +162,7 @@ class AttendanceRepository:
         section_id: Optional[int] = None,
         status: Optional[str] = None,
         attendance_date: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[AttendanceRecord], int]:
@@ -189,6 +190,11 @@ class AttendanceRepository:
             )
             count_query = count_query.where(
                 AttendanceRecord.attendance_date == attendance_date
+            )
+        if campus_id is not None:
+            query = query.where(AttendanceRecord.campus_id == campus_id)
+            count_query = count_query.where(
+                AttendanceRecord.campus_id == campus_id
             )
 
         query = query.offset(skip).limit(limit).order_by(AttendanceRecord.attendance_date, AttendanceRecord.id)

@@ -79,6 +79,17 @@ const NotificationsPage = lazy(() => import('./pages/notifications/notifications
 // Operations hub
 const OperationsHubPage = lazy(() => import('./pages/operations/operations-hub').then((m) => ({ default: m.OperationsHubPage })))
 
+// Leave
+const LeaveListPage = lazy(() => import('./pages/leave/leave-list').then((m) => ({ default: m.LeaveListPage })))
+const NewLeavePage = lazy(() => import('./pages/leave/new-leave').then((m) => ({ default: m.NewLeavePage })))
+const LeaveDetailPage = lazy(() => import('./pages/leave/leave-detail').then((m) => ({ default: m.LeaveDetailPage })))
+
+// Admissions
+const AdmissionsPage = lazy(() => import('./pages/admission').then((m) => ({ default: m.AdmissionsPage })))
+const ApplicationListPage = lazy(() => import('./pages/admission/application-list').then((m) => ({ default: m.ApplicationListPage })))
+const ApplicationDetailPage = lazy(() => import('./pages/admission/application-detail').then((m) => ({ default: m.ApplicationDetailPage })))
+const NewInquiryPage = lazy(() => import('./pages/admission/new-inquiry').then((m) => ({ default: m.NewInquiryPage })))
+
 // Operations - these have default exports so simple import works
 const StudentExportPage = lazy(() => import('./pages/operations/student-export'))
 const AttendanceExportPage = lazy(() => import('./pages/operations/attendance-export'))
@@ -221,6 +232,17 @@ export default function App() {
               <Route path="/operations/rollover" element={<Suspense fallback={null}><RolloverPage /></Suspense>} />
               <Route path="/operations/batch/enroll" element={<Suspense fallback={null}><BatchEnrollPage /></Suspense>} />
               <Route path="/operations/batch/fee-dues" element={<Suspense fallback={null}><BatchFeeDuesPage /></Suspense>} />
+
+              {/* Leave */}
+              <Route path="/leave" element={<Suspense fallback={null}><LeaveListPage /></Suspense>} />
+              <Route path="/leave/new" element={<Suspense fallback={null}><NewLeavePage /></Suspense>} />
+              <Route path="/leave/:id" element={<Suspense fallback={null}><LeaveDetailPage /></Suspense>} />
+
+              {/* Admissions */}
+              <Route path="/admissions" element={<Suspense fallback={null}><AdmissionsPage /></Suspense>} />
+              <Route path="/admissions/applications" element={<Suspense fallback={null}><ApplicationListPage /></Suspense>} />
+              <Route path="/admissions/new" element={<Suspense fallback={null}><NewInquiryPage /></Suspense>} />
+              <Route path="/admissions/:id" element={<Suspense fallback={null}><ApplicationDetailPage /></Suspense>} />
             </Route>
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>

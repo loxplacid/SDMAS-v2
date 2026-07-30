@@ -29,8 +29,13 @@ from app.domains.attendance.router import router as attendance_router
 from app.domains.auth.router import router as auth_router
 from app.domains.auth.admin_router import router as admin_router
 from app.domains.fees.router import router as fees_router
+from app.domains.admission.router import router as admission_router
 from app.domains.analytics.router import router as analytics_router
+from app.domains.leave.router import router as leave_router
+from app.domains.workflow.router import router as workflow_router
+from app.domains.institution.router import router as institution_router
 from app.domains.notifications.router import router as notifications_router
+from app.domains.notifications.push_router import router as push_router
 from app.domains.reports.router import router as reports_router
 from app.domains.student.router import router as student_router
 from app.infrastructure.database import check_database_connection, close_db
@@ -87,8 +92,13 @@ app.include_router(academic_router)
 app.include_router(attendance_router)
 app.include_router(fees_router)
 app.include_router(notifications_router)
+app.include_router(push_router)
 app.include_router(analytics_router)
 app.include_router(reports_router)
+app.include_router(institution_router)
+app.include_router(admission_router)
+app.include_router(workflow_router)
+app.include_router(leave_router)
 
 
 class HealthResponse(BaseModel):

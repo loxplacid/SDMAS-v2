@@ -160,10 +160,14 @@ async def list_academic_years(
     status_filter: Optional[str] = Query(
         default=None, alias="status", description="Filter by status"
     ),
+    campus_id: Optional[int] = Query(
+        default=None, alias="campus_id", description="Filter by campus"
+    ),
     service: AcademicYearService = Depends(get_year_service),
 ) -> Page[AcademicYearResponse]:
     years, total = await service.list_years(
         status=status_filter,
+        campus_id=campus_id,
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -230,11 +234,15 @@ async def list_classes(
     status_filter: Optional[str] = Query(
         default=None, alias="status", description="Filter by status"
     ),
+    campus_id: Optional[int] = Query(
+        default=None, alias="campus_id", description="Filter by campus"
+    ),
     service: ClassService = Depends(get_class_service),
 ) -> Page[ClassResponse]:
     classes, total = await service.list_classes(
         year_id=year_id,
         status=status_filter,
+        campus_id=campus_id,
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -301,11 +309,15 @@ async def list_sections(
     status_filter: Optional[str] = Query(
         default=None, alias="status", description="Filter by status"
     ),
+    campus_id: Optional[int] = Query(
+        default=None, alias="campus_id", description="Filter by campus"
+    ),
     service: SectionService = Depends(get_section_service),
 ) -> Page[SectionResponse]:
     sections, total = await service.list_sections(
         class_id=class_id,
         status=status_filter,
+        campus_id=campus_id,
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -380,6 +392,9 @@ async def list_enrollments(
     section_id: Optional[int] = Query(
         default=None, alias="section_id", description="Filter by section"
     ),
+    campus_id: Optional[int] = Query(
+        default=None, alias="campus_id", description="Filter by campus"
+    ),
     service: EnrollmentService = Depends(get_enrollment_service),
 ) -> Page[EnrollmentResponse]:
     enrollments, total = await service.list_enrollments(
@@ -387,6 +402,7 @@ async def list_enrollments(
         academic_year_id=academic_year_id,
         class_id=class_id,
         section_id=section_id,
+        campus_id=campus_id,
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -510,10 +526,14 @@ async def list_subjects(
     status_filter: Optional[str] = Query(
         default=None, alias="status", description="Filter by status"
     ),
+    campus_id: Optional[int] = Query(
+        default=None, alias="campus_id", description="Filter by campus"
+    ),
     service: SubjectService = Depends(get_subject_service),
 ) -> Page[SubjectResponse]:
     subjects, total = await service.list_subjects(
         status=status_filter,
+        campus_id=campus_id,
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -569,10 +589,14 @@ async def list_teachers(
     status_filter: Optional[str] = Query(
         default=None, alias="status", description="Filter by status"
     ),
+    campus_id: Optional[int] = Query(
+        default=None, alias="campus_id", description="Filter by campus"
+    ),
     service: TeacherService = Depends(get_teacher_service),
 ) -> Page[TeacherResponse]:
     teachers, total = await service.list_teachers(
         status=status_filter,
+        campus_id=campus_id,
         skip=pagination.offset,
         limit=pagination.limit,
     )

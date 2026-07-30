@@ -39,6 +39,7 @@ class StudentRepository:
     async def list(
         self,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Student], int]:
@@ -48,6 +49,9 @@ class StudentRepository:
         if status is not None:
             query = query.where(Student.status == status)
             count_query = count_query.where(Student.status == status)
+        if campus_id is not None:
+            query = query.where(Student.campus_id == campus_id)
+            count_query = count_query.where(Student.campus_id == campus_id)
 
         query = query.offset(skip).limit(limit).order_by(Student.id)
 
@@ -62,6 +66,7 @@ class StudentRepository:
     async def search(
         self,
         query: str,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Student], int]:
@@ -72,6 +77,9 @@ class StudentRepository:
             | Student.student_number.ilike(like_term)
             | Student.email.ilike(like_term)
         )
+        if campus_id is not None:
+            where_clause = where_clause & (Student.campus_id == campus_id)
+
         stmt = (
             select(Student)
             .where(where_clause)

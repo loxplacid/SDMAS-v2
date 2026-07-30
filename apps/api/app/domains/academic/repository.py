@@ -51,6 +51,7 @@ class AcademicYearRepository:
     async def list(
         self,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[AcademicYear], int]:
@@ -60,6 +61,9 @@ class AcademicYearRepository:
         if status is not None:
             query = query.where(AcademicYear.status == status)
             count_query = count_query.where(AcademicYear.status == status)
+        if campus_id is not None:
+            query = query.where(AcademicYear.campus_id == campus_id)
+            count_query = count_query.where(AcademicYear.campus_id == campus_id)
 
         query = query.offset(skip).limit(limit).order_by(AcademicYear.start_date)
 
@@ -139,6 +143,7 @@ class ClassRepository:
         self,
         year_id: Optional[int] = None,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Class], int]:
@@ -151,6 +156,9 @@ class ClassRepository:
         if status is not None:
             query = query.where(Class.status == status)
             count_query = count_query.where(Class.status == status)
+        if campus_id is not None:
+            query = query.where(Class.campus_id == campus_id)
+            count_query = count_query.where(Class.campus_id == campus_id)
 
         query = query.offset(skip).limit(limit).order_by(Class.name)
 
@@ -230,6 +238,7 @@ class SectionRepository:
         self,
         class_id: Optional[int] = None,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Section], int]:
@@ -242,6 +251,9 @@ class SectionRepository:
         if status is not None:
             query = query.where(Section.status == status)
             count_query = count_query.where(Section.status == status)
+        if campus_id is not None:
+            query = query.where(Section.campus_id == campus_id)
+            count_query = count_query.where(Section.campus_id == campus_id)
 
         query = query.offset(skip).limit(limit).order_by(Section.name)
 
@@ -312,6 +324,7 @@ class EnrollmentRepository:
         academic_year_id: Optional[int] = None,
         class_id: Optional[int] = None,
         section_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Enrollment], int]:
@@ -332,6 +345,9 @@ class EnrollmentRepository:
         if section_id is not None:
             query = query.where(Enrollment.section_id == section_id)
             count_query = count_query.where(Enrollment.section_id == section_id)
+        if campus_id is not None:
+            query = query.where(Enrollment.campus_id == campus_id)
+            count_query = count_query.where(Enrollment.campus_id == campus_id)
 
         query = query.offset(skip).limit(limit).order_by(Enrollment.id)
 
@@ -449,6 +465,7 @@ class SubjectRepository:
     async def list(
         self,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Subject], int]:
@@ -458,6 +475,9 @@ class SubjectRepository:
         if status is not None:
             query = query.where(Subject.status == status)
             count_query = count_query.where(Subject.status == status)
+        if campus_id is not None:
+            query = query.where(Subject.campus_id == campus_id)
+            count_query = count_query.where(Subject.campus_id == campus_id)
 
         query = query.offset(skip).limit(limit).order_by(Subject.name)
 
@@ -510,6 +530,7 @@ class TeacherRepository:
     async def list(
         self,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Teacher], int]:
@@ -519,6 +540,9 @@ class TeacherRepository:
         if status is not None:
             query = query.where(Teacher.status == status)
             count_query = count_query.where(Teacher.status == status)
+        if campus_id is not None:
+            query = query.where(Teacher.campus_id == campus_id)
+            count_query = count_query.where(Teacher.campus_id == campus_id)
 
         query = (
             query.offset(skip)

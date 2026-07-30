@@ -50,6 +50,9 @@ class Notification(Base):
     read_at: Mapped[Optional[datetime.datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    campus_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -67,3 +70,32 @@ class Notification(Base):
     @property
     def is_read(self) -> bool:
         return self.read_at is not None
+
+
+class DeviceToken(Base):
+    """Stores Expo push tokens for delivering push notifications."""
+
+    __tablename__ = "device_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    token: Mapped[str] = mapped_column(
+        String(255), nullable=False, unique=True, index=True
+    )
+    platform: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="android"
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.datetime.now(timezone.utc),
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<DeviceToken id={self.id} "
+            f"user_id={self.user_id} "
+            f"platform={self.platform}>"
+        )
