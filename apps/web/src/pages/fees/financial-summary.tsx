@@ -4,7 +4,7 @@ import { summaryApi } from '../../api/fees/summary-api'
 import { paymentApi } from '../../api/fees/payment-api'
 import { feeDueApi } from '../../api/fees/fee-due-api'
 import type { StudentFinancialSummary, ClassFinancialSummary } from '../../api/generated/types'
-import { Card, Input, Button, Select, Table, ErrorState, Badge } from '../../components/ui'
+import { Card, Input, Button, Select, Table, ErrorState, Badge, TabGroup } from '../../components/ui'
 import { formatCurrency, capitalize, FEE_DUE_STATUSES } from '../../lib/utils'
 
 const statusLabel: Record<string, string> = { paid: 'Paid', partially_paid: 'Partial', unpaid: 'Unpaid' }
@@ -59,10 +59,16 @@ export function FinancialSummaryPage() {
           <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Fees</div>
           <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Financial Summary</h1>
         </div>
-        <div className="flex gap-2">
-          <Button variant={tab === 'student' ? 'primary' : 'secondary'} onClick={() => setTab('student')}>Student</Button>
-          <Button variant={tab === 'class' ? 'primary' : 'secondary'} onClick={() => setTab('class')}>Class</Button>
-        </div>
+        <TabGroup
+          tabs={[
+            { id: 'student', label: 'Student' },
+            { id: 'class', label: 'Class' },
+          ]}
+          activeTab={tab}
+          onChange={(id) => setTab(id as 'student' | 'class')}
+          variant="pills"
+          size="sm"
+        />
       </div>
 
       {tab === 'student' ? (

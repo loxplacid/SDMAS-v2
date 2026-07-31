@@ -1,0 +1,7 @@
+from app.domains.report_builder.builders.attendance import AttendanceSummaryReport
+from app.domains.report_builder.builders.fees import FeeCollectionReport
+from app.domains.report_builder.builders.payments import PaymentJournalReport
+from app.domains.report_builder.builders.students import StudentDirectoryReport
+from app.domains.report_builder.builders.academic import AcademicPerformanceReport
+from app.domains.report_builder.builders.teacher_workload import TeacherWorkloadReport
+from app.domains.report_builder.builders.enrollment import EnrollmentSummaryReport

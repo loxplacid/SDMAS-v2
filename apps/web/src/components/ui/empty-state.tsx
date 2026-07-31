@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { cn } from '../../lib/utils'
 
 interface EmptyStateProps {
   title?: string
@@ -22,73 +23,40 @@ const defaultIcons: Record<string, string> = {
 export type DomainContext = keyof typeof defaultIcons
 
 const contextualMessages: Record<string, { title: string; description: string }> = {
-  admissions: {
-    title: 'No admissions yet',
-    description: 'Your admissions pipeline is empty. Create your first inquiry to start tracking prospective students.',
-  },
-  students: {
-    title: 'No students yet',
-    description: 'Your student directory is empty. Add your first student to begin building your school.',
-  },
-  attendance: {
-    title: 'No attendance records',
-    description: 'Attendance data will appear here once records are created. Start by recording daily attendance for a section.',
-  },
-  fees: {
-    title: 'No fee data',
-    description: 'Fee information will appear once fee types and structures are configured for the academic year.',
-  },
-  academic: {
-    title: 'No academic data',
-    description: 'Configure academic years, classes, and sections to build your school\'s academic structure.',
-  },
-  payments: {
-    title: 'No payments recorded',
-    description: 'Payment records will appear once fee payments are processed for students.',
-  },
-  teachers: {
-    title: 'No teachers yet',
-    description: 'Add teaching staff to begin assigning them to classes and subjects.',
-  },
-  reports: {
-    title: 'No reports available',
-    description: 'Generate attendance or fee reports to view summaries here.',
-  },
-  data: {
-    title: 'No data found',
-    description: 'The data you are looking for is not available yet.',
-  },
+  admissions: { title: 'No admissions yet', description: 'Your admissions pipeline is empty. Create your first inquiry to start tracking prospective students.' },
+  students: { title: 'No students yet', description: 'Your student directory is empty. Add your first student to begin building your school.' },
+  attendance: { title: 'No attendance records', description: 'Attendance data will appear here once records are created.' },
+  fees: { title: 'No fee data', description: 'Fee information will appear once fee types and structures are configured.' },
+  academic: { title: 'No academic data', description: 'Configure academic years, classes, and sections to build your school\'s academic structure.' },
+  payments: { title: 'No payments recorded', description: 'Payment records will appear once fee payments are processed.' },
+  teachers: { title: 'No teachers yet', description: 'Add teaching staff to begin assigning them to classes and subjects.' },
+  reports: { title: 'No reports available', description: 'Generate attendance or fee reports to view summaries here.' },
+  data: { title: 'No data found', description: 'The data you are looking for is not available yet.' },
 }
 
-export function EmptyState({
-  title,
-  description,
-  action,
-  icon,
-  compact = false,
-}: EmptyStateProps) {
+export function EmptyState({ title, description, action, icon, compact = false }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center text-center animate-fade-in">
-      <div className={compact ? 'py-6' : 'py-12'}>
+    <div className="flex flex-col items-center justify-center text-center animate-fade-in-up">
+      <div className={compact ? 'py-8' : 'py-16'}>
         {icon || (
-          <div className={`mx-auto rounded-full bg-[var(--color-bg)] flex items-center justify-center ${compact ? 'h-10 w-10' : 'h-16 w-16'}`}>
-            <svg className={compact ? 'h-5 w-5' : 'h-8 w-8'} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+          <div className={cn('mx-auto rounded-2xl bg-[var(--color-bg)] flex items-center justify-center', compact ? 'h-10 w-10' : 'h-14 w-14')}>
+            <svg className={compact ? 'h-5 w-5' : 'h-7 w-7'} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
           </div>
         )}
-        <h3 className={`font-semibold text-[var(--color-text-primary)] ${compact ? 'text-sm mt-3' : 'text-base mt-4'}`}>
-          {title}
+        <h3 className={cn('font-semibold text-[var(--color-text-primary)]', compact ? 'text-sm mt-3' : 'text-base mt-5')}>
+          {title || 'No data found'}
         </h3>
         {description && (
-          <p className={`text-[var(--color-text-tertiary)] max-w-sm mx-auto ${compact ? 'text-xs mt-1' : 'text-sm mt-1.5'}`}>
+          <p className={cn('text-[var(--color-text-tertiary)] max-w-sm mx-auto leading-relaxed', compact ? 'text-xs mt-1' : 'text-sm mt-1.5')}>
             {description}
           </p>
         )}
         {action && (
           <button
             onClick={action.onClick}
-            className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-brand-accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--color-brand-accent-hover)] transition-colors mt-5"
+            className="inline-flex items-center gap-2 rounded-[10px] bg-[var(--color-brand-accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--color-brand-accent-hover)] motion-safe:transition-colors mt-6"
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

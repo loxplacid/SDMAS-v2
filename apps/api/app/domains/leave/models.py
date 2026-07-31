@@ -18,6 +18,9 @@ class LeaveRequest(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    campus_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     leave_type: Mapped[str] = mapped_column(String(50), nullable=False)
     start_date: Mapped[str] = mapped_column(String(10), nullable=False)
     end_date: Mapped[str] = mapped_column(String(10), nullable=False)

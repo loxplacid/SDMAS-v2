@@ -12,17 +12,17 @@ interface BadgeProps {
 }
 
 const variants: Record<BadgeVariant, string> = {
-  success: 'bg-[var(--color-success-light)] text-[var(--color-success-dark)] ring-1 ring-inset ring-[var(--color-success)]/20',
-  warning: 'bg-[var(--color-warning-light)] text-[var(--color-warning-dark)] ring-1 ring-inset ring-[var(--color-warning)]/20',
-  danger: 'bg-[var(--color-danger-light)] text-[var(--color-danger-dark)] ring-1 ring-inset ring-[var(--color-danger)]/20',
-  info: 'bg-[var(--color-info-light)] text-[var(--color-info-dark)] ring-1 ring-inset ring-[var(--color-info)]/20',
-  neutral: 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)] ring-1 ring-inset ring-[var(--color-border)]',
-  primary: 'bg-[var(--color-primary-light)] text-[var(--color-primary-dark)] ring-1 ring-inset ring-[var(--color-primary)]/20',
+  success: 'bg-[var(--color-success-light)] text-[var(--color-success-dark)]',
+  warning: 'bg-[var(--color-warning-light)] text-[var(--color-warning-dark)]',
+  danger: 'bg-[var(--color-danger-light)] text-[var(--color-danger-dark)]',
+  info: 'bg-[var(--color-info-light)] text-[var(--color-info-dark)]',
+  neutral: 'bg-[var(--color-surface-hover)] text-[var(--color-text-secondary)]',
+  primary: 'bg-[var(--color-brand-accent-subtle)] text-[var(--color-brand-accent)]',
 }
 
 const sizes: Record<string, string> = {
-  sm: 'px-1.5 py-0.5 text-[10px]',
-  md: 'px-2 py-0.5 text-xs',
+  sm: 'px-1.5 py-0.5 text-[10px] leading-none',
+  md: 'px-2 py-0.5 text-xs leading-none',
 }
 
 const dotColors: Record<BadgeVariant, string> = {
@@ -31,14 +31,14 @@ const dotColors: Record<BadgeVariant, string> = {
   danger: 'bg-[var(--color-danger)]',
   info: 'bg-[var(--color-info)]',
   neutral: 'bg-[var(--color-text-muted)]',
-  primary: 'bg-[var(--color-primary)]',
+  primary: 'bg-[var(--color-brand-accent)]',
 }
 
 export function Badge({ variant = 'neutral', children, size = 'md', dot, className }: BadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full font-medium leading-none',
+        'inline-flex items-center gap-1.5 rounded-full font-medium',
         variants[variant],
         sizes[size],
         className

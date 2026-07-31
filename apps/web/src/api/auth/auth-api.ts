@@ -40,4 +40,7 @@ export const adminUserApi = {
 
   update: (userId: number, data: AdminUserUpdate) =>
     api.patch<UserResponse>(`/admin/users/${userId}`, data),
+
+  setRoles: (userId: number, roleCodes: string[]) =>
+    api.post<UserResponse>(`/admin/users/${userId}/roles`, roleCodes),
 }

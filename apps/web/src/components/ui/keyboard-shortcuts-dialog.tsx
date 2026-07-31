@@ -16,7 +16,8 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
   {
     label: 'Global',
     shortcuts: [
-      { keys: ['⌘K'], label: 'Command Palette', description: 'Search pages and take actions' },
+      { keys: ['⌘K'], label: 'Command Palette', description: 'Navigate pages and take actions' },
+      { keys: ['⌘⇧K'], label: 'Global Search', description: 'Search across all entities (students, teachers, fees, etc.)' },
       { keys: ['?'], label: 'Keyboard Shortcuts', description: 'Show this help dialog' },
     ],
   },

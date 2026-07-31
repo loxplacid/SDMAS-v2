@@ -29,6 +29,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_access_token(
     data: dict[str, Any],
     expires_delta: timedelta | None = None,
+    *,
+    campus_id: int | None = None,
 ) -> str:
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (
@@ -36,6 +38,8 @@ def create_access_token(
         or timedelta(minutes=settings.access_token_expire_minutes)
     )
     to_encode.update({"exp": expire, "type": "access"})
+    if campus_id is not None:
+        to_encode["campus_id"] = campus_id
     return jwt.encode(
         to_encode,
         settings.jwt_secret.get_secret_value(),
@@ -46,12 +50,16 @@ def create_access_token(
 def create_refresh_token(
     data: dict[str, Any],
     expires_delta: timedelta | None = None,
+    *,
+    campus_id: int | None = None,
 ) -> str:
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (
         expires_delta or timedelta(days=settings.refresh_token_expire_days)
     )
     to_encode.update({"exp": expire, "type": "refresh"})
+    if campus_id is not None:
+        to_encode["campus_id"] = campus_id
     return jwt.encode(
         to_encode,
         settings.jwt_secret.get_secret_value(),

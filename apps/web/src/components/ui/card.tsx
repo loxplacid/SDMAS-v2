@@ -16,15 +16,15 @@ interface CardProps {
 const paddings = {
   none: '',
   sm: 'p-3',
-  md: 'p-4',
-  lg: 'p-6',
+  md: 'p-5',
+  lg: 'p-7',
 }
 
 const variants = {
   default: 'bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm',
-  elevated: 'bg-[var(--color-surface)] border border-[var(--color-border)] shadow-md',
+  elevated: 'bg-[var(--color-surface-elevated)] border border-[var(--color-border)] shadow-md',
   bordered: 'bg-[var(--color-surface)] border-2 border-[var(--color-border)]',
-  flat: 'bg-[var(--color-bg)] border border-[var(--color-border)]',
+  flat: 'bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl',
 }
 
 export function Card({
@@ -42,12 +42,11 @@ export function Card({
     <div
       style={style}
       className={cn(
-        'rounded-xl overflow-hidden',
-        'transition-all motion-reduce:transition-none',
-        'duration-[var(--motion-base)] ease-[var(--ease-standard)]',
+        'rounded-2xl overflow-hidden',
+        'motion-safe:transition-all motion-safe:duration-[var(--motion-base)] motion-safe:ease-[var(--ease-standard)]',
         variants[variant],
         onClick
-          ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:border-[var(--color-brand-accent)]/30 motion-reduce:hover:translate-y-0'
+          ? 'cursor-pointer motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-lg hover:border-[var(--color-brand-accent)]/30'
           : '',
         className
       )}
@@ -66,13 +65,11 @@ export function Card({
       }
     >
       {(title || subtitle || actions) && (
-        <div
-          className={cn(
-            'flex items-start justify-between gap-4',
-            padding !== 'none' ? `px-${padding === 'lg' ? 6 : padding === 'sm' ? 3 : 4}` : 'px-4',
-            'pt-4 pb-0'
-          )}
-        >
+        <div className={cn(
+          'flex items-start justify-between gap-4',
+          paddings[padding],
+          'pb-0'
+        )}>
           <div className="min-w-0 flex-1">
             {title && (
               <h3 className="text-base font-semibold text-[var(--color-text-primary)] truncate">
@@ -80,7 +77,7 @@ export function Card({
               </h3>
             )}
             {subtitle && (
-              <p className="text-sm text-[var(--color-text-muted)] mt-0.5">{subtitle}</p>
+              <p className="text-sm text-[var(--color-text-tertiary)] mt-0.5">{subtitle}</p>
             )}
           </div>
           {actions && <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>}

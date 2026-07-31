@@ -18,6 +18,18 @@ from app.infrastructure.database import Base, get_session
 from app.domains.institution.models import (  # noqa: F401
     Institution, Campus, School, Department, Program, Branch, Semester,
 )
+from app.domains.auth.models import (  # noqa: F401
+    User,
+)
+from app.domains.notifications.models import (  # noqa: F401
+    Notification, DeviceToken,
+)
+from app.domains.notifications.preferences import (  # noqa: F401
+    NotificationPreference,
+)
+from app.domains.audit.models import (  # noqa: F401
+    AuditLog,
+)
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 

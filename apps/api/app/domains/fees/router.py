@@ -256,16 +256,16 @@ async def update_fee_structure(
 # ---------------------------------------------------------------------------
 
 
-@router.get("/students/{student_id}/fees")
+@router.get("/students/{student_id}/fees", response_model=list[StudentFeeResponse])
 async def get_student_fees(
     student_id: int,
     academic_year_id: int = Query(
         ..., alias="academic_year_id", description="Academic year ID"
     ),
     service: FeeDueService = Depends(get_fee_due_service),
-):
+) -> list[StudentFeeResponse]:
     fees = await service.get_student_fees(student_id, academic_year_id)
-    return fees
+    return [StudentFeeResponse(**f) for f in fees]
 
 
 # ---------------------------------------------------------------------------

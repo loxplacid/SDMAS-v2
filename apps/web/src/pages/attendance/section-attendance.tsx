@@ -64,26 +64,15 @@ export function SectionAttendancePage() {
 
       {records.length > 0 && (
         <Card title={`Records for Section ${sectionId} on ${attendanceDate}`} className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 text-left font-medium text-[var(--color-text-tertiary)]">Student ID</th>
-                  <th className="px-4 py-2 text-left font-medium text-[var(--color-text-tertiary)]">Status</th>
-                  <th className="px-4 py-2 text-left font-medium text-[var(--color-text-tertiary)]">Notes</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {records.map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2">{r.student_id}</td>
-                    <td className="px-4 py-2"><Badge variant={statusBadge[r.status]}>{capitalize(r.status)}</Badge></td>
-                    <td className="px-4 py-2">{r.notes || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            columns={[
+              { key: 'student_id', header: 'Student ID' },
+              { key: 'status', header: 'Status', render: (r: AttendanceRecordResponse) => <Badge variant={statusBadge[r.status]}>{capitalize(r.status)}</Badge> },
+              { key: 'notes', header: 'Notes', render: (r: AttendanceRecordResponse) => r.notes || '-' },
+            ]}
+            data={records}
+            keyExtractor={(r: AttendanceRecordResponse) => r.id}
+          />
         </Card>
       )}
 

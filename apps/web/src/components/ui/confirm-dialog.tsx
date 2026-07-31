@@ -14,21 +14,15 @@ interface ConfirmDialogProps {
 }
 
 export function ConfirmDialog({
-  open,
-  onClose,
-  onConfirm,
-  title,
-  message,
-  confirmLabel = 'Delete',
-  cancelLabel = 'Cancel',
-  variant = 'danger',
-  loading = false,
+  open, onClose, onConfirm, title, message,
+  confirmLabel = 'Delete', cancelLabel = 'Cancel',
+  variant = 'danger', loading = false,
 }: ConfirmDialogProps) {
   return (
     <Modal open={open} onClose={onClose} title={title} size="sm">
-      <p className="text-sm text-[var(--color-text-secondary)]">{message}</p>
-      <div className="flex items-center justify-end gap-3 mt-6">
-        <Button variant="outline" size="sm" onClick={onClose} disabled={loading}>
+      <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">{message}</p>
+      <div className="flex items-center justify-end gap-3 mt-7">
+        <Button variant="secondary" size="sm" onClick={onClose} disabled={loading}>
           {cancelLabel}
         </Button>
         <Button variant={variant === 'danger' ? 'danger' : 'primary'} size="sm" onClick={onConfirm} loading={loading}>

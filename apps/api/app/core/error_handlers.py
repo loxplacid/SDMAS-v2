@@ -8,6 +8,7 @@ from app.core.exceptions import (
     AuthorizationError,
     ConflictError,
     NotFoundError,
+    PaymentRequiredError,
     ValidationError,
 )
 
@@ -44,5 +45,12 @@ async def auth_error_handler(_request: Request, exc: Exception) -> JSONResponse:
 async def forbidden_handler(_request: Request, exc: Exception) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_403_FORBIDDEN,
+        content={"detail": str(exc)},
+    )
+
+
+async def payment_required_handler(_request: Request, exc: Exception) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_402_PAYMENT_REQUIRED,
         content={"detail": str(exc)},
     )

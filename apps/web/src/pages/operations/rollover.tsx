@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { academicYearApi } from '../../api/academic/academic-year-api'
 import { rolloverApi } from '../../api/reports/rollover-api'
 import type { RolloverPreview, RolloverResult } from '../../api/reports/types'
-import { Card, Button, Alert, Table, Input, AnimatedCount } from '../../components/ui'
+import { Card, Button, Alert, Table, Input, AnimatedCount, Select } from '../../components/ui'
 
 export function RolloverPage() {
   const [academicYears, setAcademicYears] = useState<{ id: number; name: string }[]>([])
@@ -74,19 +74,13 @@ export function RolloverPage() {
 
       <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Source Academic Year</label>
-            <select
-              value={selectedYearId}
-              onChange={(e) => setSelectedYearId(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select year</option>
-              {academicYears.map((y) => (
-                <option key={y.id} value={y.id}>{y.name}</option>
-              ))}
-            </select>
-          </div>
+          <Select
+            label="Source Academic Year"
+            options={academicYears.map((y) => ({ value: String(y.id), label: y.name }))}
+            value={selectedYearId}
+            onChange={(e) => setSelectedYearId(e.target.value)}
+            placeholder="Select year"
+          />
           <Input
             label="New Academic Year Name"
             value={newYearName}

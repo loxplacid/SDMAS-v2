@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 import datetime
+import logging
 from datetime import timezone
 from typing import Optional, Sequence
 
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
+from app.domains.audit.constants import APPROVE, UPDATE, WORKFLOW
+from app.domains.audit.service import AuditService
+from app.domains.notifications import dispatcher as notification_dispatcher
+from app.domains.notifications.events import ImportantAdminEvent
 from app.domains.workflow.models import (
     ApprovalHistory,
     Workflow,
@@ -22,6 +27,8 @@ from app.domains.workflow.repository import (
     WorkflowTransitionRepository,
 )
 from app.domains.workflow.schemas import AvailableTransition
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -355,6 +362,52 @@ class WorkflowExecutionService:
             comment=comment,
         )
         await self.history_repo.create(history)
+
+        # Fire audit entry
+        try:
+            audit_svc = AuditService(self.history_repo.session)
+            await audit_svc.record(
+                action=APPROVE if action == "approve" else UPDATE,
+                resource_type=WORKFLOW,
+                resource_id=str(instance_id),
+                user_id=actor_id,
+                details={
+                    "instance_id": instance_id,
+                    "entity_type": instance.entity_type,
+                    "entity_id": instance.entity_id,
+                    "action": action,
+                    "from_step_id": current_step.id,
+                    "to_step_id": instance.current_step_id,
+                    "instance_status": instance.status,
+                    "comment": comment,
+                },
+            )
+            await self.history_repo.session.flush()
+        except Exception:
+            logger.warning("Failed to write audit entry for workflow action (non-fatal)", exc_info=True)
+
+        # Fire notification event
+        try:
+            event = ImportantAdminEvent(
+                tenant_id=getattr(instance, "campus_id", None),
+                event_type=f"workflow_{action}",
+                title=f"Workflow {action}: {instance.entity_type}#{instance.entity_id}",
+                message=f"Workflow instance {instance.id} was {action}d "
+                        f"(step: {current_step.name} → {instance.current_step.name if instance.current_step else '?'})"
+                        f"{(' — ' + comment) if comment else ''}",
+                target_user_id=instance.created_by,
+                metadata={
+                    "instance_id": instance.id,
+                    "workflow_id": instance.workflow_id,
+                    "action": action,
+                    "entity_type": instance.entity_type,
+                    "entity_id": instance.entity_id,
+                    "status": instance.status,
+                },
+            )
+            await notification_dispatcher.dispatch(event, session=self.history_repo.session)
+        except Exception:
+            logger.warning("Failed to dispatch workflow notification (non-fatal)", exc_info=True)
 
         return instance
 

@@ -43,26 +43,27 @@ async def get_current_user(
         return await service.get_current_user(token)
 
 
+# ---------------------------------------------------------------------------
+# Multi-tenancy — deprecated stub replaced by app.multi_tenant.dependencies
+# ---------------------------------------------------------------------------
+
+
 async def get_school_context():
-    """Multi-tenancy / school context.
+    """DEPRECATED — Use ``app.multi_tenant.dependencies.get_current_tenant``
+    instead.
 
-    DEFERRED — The legacy implementation (SDMAS v1) does not include
-    multi-tenant support. All data is school-scoped implicitly through
-    enrollment relationships rather than an explicit tenant identifier.
+    This stub exists only to preserve backward compatibility until all
+    callers have been migrated to the new dependency.
 
-    When multi-tenancy is required in a future phase, this dependency
-    should:
-      1. Extract the school/tenant ID from the authenticated user's
-         token or a separate header.
-      2. Inject the school context into every domain service/repository
-         to scope all queries.
-      3. Require a schema-level migration (school_id column on every
-         domain table) and a tenant registry.
-
-    This placeholder raises NotImplementedError to make any accidental
-    use fail at runtime rather than silently producing unscoped results.
+    See ``app/multi_tenant/`` for the current implementation.
     """
+    from app.multi_tenant.dependencies import get_current_tenant as _new
+    from app.domains.auth.dependencies import get_current_user as _get_user
+    from app.infrastructure.database import get_session as _get_db
+
+    # Approximate the new dependency pipeline — requires the caller
+    # to provide user + session via override, which they already do.
     raise NotImplementedError(
-        "get_school_context is not implemented — multi-tenancy has been "
-        "deferred. See the docstring for details."
+        "get_school_context is deprecated. Use "
+        "app.multi_tenant.dependencies.get_current_tenant instead."
     )

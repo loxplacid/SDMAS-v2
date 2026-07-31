@@ -66,15 +66,15 @@ export function BatchFeeDuesPage() {
 
           <div>
             <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Student IDs</label>
-            <p className="text-xs text-gray-500 mb-2">One student ID per line</p>
+            <p className="text-xs text-[var(--color-text-tertiary)] mb-2">One student ID per line</p>
             <textarea
               value={studentIdsText}
               onChange={(e) => setStudentIdsText(e.target.value)}
               rows={8}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-[10px] border border-[var(--color-border)] px-3.5 py-2.5 text-sm font-mono bg-[var(--color-surface)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-accent-ring)] focus-visible:border-[var(--color-brand-accent)] motion-safe:transition-colors motion-safe:duration-[var(--motion-fast)]"
               placeholder={`1\n2\n3\n4\n5`}
             />
-            <p className="text-xs text-gray-400 mt-1">{parseIds().length} valid IDs</p>
+            <p className="text-xs text-[var(--color-text-muted)] mt-1">{parseIds().length} valid IDs</p>
           </div>
 
           <Button onClick={handleSubmit} loading={loading} disabled={!selectedYearId || parseIds().length === 0}>

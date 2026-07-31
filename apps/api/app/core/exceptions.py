@@ -31,3 +31,9 @@ class AuthorizationError(SDMASError):
 
 class DatabaseError(SDMASError):
     """Raised when a database operation fails."""
+
+
+class PaymentRequiredError(SDMASError):
+    """Raised when the tenant's plan does not cover the requested action.
+    Maps to HTTP 402 Payment Required.
+    """

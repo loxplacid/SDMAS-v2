@@ -6,6 +6,8 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.pagination import Page, PaginationParams
+from app.domains.auth.dependencies import require_permission
+from app.domains.auth.permissions import STUDENTS_DELETE
 from app.domains.student.repository import StudentRepository
 from app.domains.student.schemas import (
     StudentCreate,
@@ -94,5 +96,6 @@ async def update_student(
 async def delete_student(
     student_id: int,
     service: StudentService = Depends(get_student_service),
+    _user=Depends(require_permission(STUDENTS_DELETE)),  # noqa
 ) -> None:
     await service.delete_student(student_id)

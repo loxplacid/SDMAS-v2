@@ -90,8 +90,8 @@ export function AttendanceAnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Attendance Analytics</h1>
-        <p className="text-gray-500 mt-1">Comprehensive attendance metrics and trends</p>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">Attendance Analytics</h1>
+        <p className="text-[var(--color-text-tertiary)] mt-1">Comprehensive attendance metrics and trends</p>
       </div>
 
       <Card>
@@ -189,7 +189,7 @@ export function AttendanceAnalyticsPage() {
 
           {!overview && !error && (
             <Card>
-              <p className="text-gray-500 text-center py-8">Select filters and click "Generate Report" to view attendance analytics.</p>
+              <p className="text-[var(--color-text-tertiary)] text-center py-8">Select filters and click "Generate Report" to view attendance analytics.</p>
             </Card>
           )}
         </>

@@ -3,10 +3,19 @@ import { useNavigate } from 'react-router-dom'
 import { adminUserApi } from '../../api/auth/auth-api'
 import type { UserResponse, UserCreate } from '../../api/generated/types'
 import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, ErrorState, useToast } from '../../components/ui'
+import { RoleMultiSelect } from '../../components/admin/role-multi-select'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
-import { capitalize, formatDateTime } from '../../lib/utils'
+import { capitalize, formatDateTime, cn } from '../../lib/utils'
 
-const roleBadge: Record<string, 'info' | 'success'> = { admin: 'info', staff: 'success' }
+const roleColor: Record<string, string> = {
+  admin: 'bg-[var(--color-brand-accent)] text-white',
+  principal: 'bg-indigo-500 text-white',
+  accountant: 'bg-blue-500 text-white',
+  staff: 'bg-teal-500 text-white',
+  teacher: 'bg-emerald-500 text-white',
+  student: 'bg-violet-500 text-white',
+  parent: 'bg-amber-500 text-white',
+}
 const activeBadge: Record<string, 'success' | 'danger'> = { true: 'success', false: 'danger' }
 
 export function UserListPage() {
@@ -28,6 +37,7 @@ export function UserListPage() {
   const [editing, setEditing] = useState<UserResponse | null>(null)
   const [formData, setFormData] = useState<UserCreate>({ email: '', username: '', password: '', display_name: '' })
   const [editRole, setEditRole] = useState('staff')
+  const [editRoles, setEditRoles] = useState<string[]>([])
   const [editActive, setEditActive] = useState(true)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
@@ -56,14 +66,14 @@ export function UserListPage() {
 
   const openCreateModal = () => {
     setEditing(null); setFormData({ email: '', username: '', password: '', display_name: '' })
-    setEditRole('staff'); setEditActive(true)
+    setEditRole('staff'); setEditRoles([]); setEditActive(true)
     setFormErrors({}); setApiError(null); setModalOpen(true)
   }
 
   const openEditModal = (user: UserResponse) => {
     setEditing(user)
     setFormData({ email: user.email, username: user.username, password: '', display_name: user.display_name })
-    setEditRole(user.role); setEditActive(user.is_active)
+    setEditRole(user.role); setEditRoles(user.roles || []); setEditActive(user.is_active)
     setFormErrors({}); setApiError(null); setModalOpen(true)
   }
 
@@ -87,10 +97,13 @@ export function UserListPage() {
     setSaving(true); setApiError(null)
     try {
       if (editing) {
+        // Update core fields + M2M roles in a single call
+        // (the backend's PATCH /admin/users/{id} handles both)
         const updated = await adminUserApi.update(editing.id, {
           display_name: formData.display_name || null,
           email: formData.email || null,
           role: editRole,
+          roles: editRoles,
           is_active: editActive,
         })
         setData((prev) => prev.map((u) => (u.id === updated.id ? updated : u)))
@@ -136,8 +149,29 @@ export function UserListPage() {
                 { key: 'username', header: 'Username' },
                 { key: 'display_name', header: 'Display Name' },
                 { key: 'email', header: 'Email' },
-                { key: 'role', header: 'Role', render: (u: UserResponse) => <Badge variant={roleBadge[u.role] || 'default'}>{capitalize(u.role)}</Badge> },
-                { key: 'is_active', header: 'Status', render: (u: UserResponse) => <Badge variant={activeBadge[String(u.is_active)] || 'default'}>{u.is_active ? 'Active' : 'Inactive'}</Badge> },
+              {
+                key: 'role', header: 'Roles',
+                render: (u: UserResponse) => {
+                  const allRoles = [u.role, ...(u.roles || [])]
+                  const unique = [...new Set(allRoles)]
+                  return (
+                    <div className="flex flex-wrap gap-1">
+                      {unique.map((r) => (
+                        <span
+                          key={r}
+                          className={cn(
+                            'inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wider',
+                            roleColor[r] || 'bg-[var(--color-surface-hover)] text-[var(--color-text-tertiary)]',
+                          )}
+                        >
+                          {capitalize(r)}
+                        </span>
+                      ))}
+                    </div>
+                  )
+                },
+              },
+              { key: 'is_active', header: 'Status', render: (u: UserResponse) => <Badge variant={activeBadge[String(u.is_active)] || 'default'}>{u.is_active ? 'Active' : 'Inactive'}</Badge> },
                 { key: 'created_at', header: 'Created', render: (u: UserResponse) => formatDateTime(u.created_at) },
                 {
                   key: 'actions', header: 'Actions',
@@ -160,6 +194,7 @@ export function UserListPage() {
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}
         title={editing ? 'Edit User' : 'Add User'}
+        size="lg"
         footer={
           <>
             <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
@@ -185,8 +220,22 @@ export function UserListPage() {
           )}
           {editing && (
             <>
-              <Select label="Role" value={editRole} onChange={(e) => setEditRole(e.target.value)}
-                options={[{ value: 'staff', label: 'Staff' }, { value: 'admin', label: 'Admin' }]} />
+              <Select label="Primary Role" value={editRole} onChange={(e) => setEditRole(e.target.value)}
+                options={[
+                  { value: 'admin', label: 'Administrator' },
+                  { value: 'principal', label: 'Principal' },
+                  { value: 'accountant', label: 'Accountant' },
+                  { value: 'staff', label: 'Staff' },
+                  { value: 'teacher', label: 'Teacher' },
+                  { value: 'student', label: 'Student' },
+                  { value: 'parent', label: 'Parent' },
+                ]} />
+              <RoleMultiSelect
+                primaryRole={editRole}
+                selected={editRoles}
+                onChange={setEditRoles}
+                label="Additional Roles"
+              />
               <Select label="Status" value={String(editActive)} onChange={(e) => setEditActive(e.target.value === 'true')}
                 options={[{ value: 'true', label: 'Active' }, { value: 'false', label: 'Inactive' }]} />
             </>

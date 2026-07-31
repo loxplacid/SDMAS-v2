@@ -151,25 +151,25 @@ export function DailyAttendancePage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium">
                   {existingRecords.length > 0 ? 'Update Existing Records' : 'New Records'}
-                  <span className="text-sm text-gray-500 ml-2">({dailyRecords.length} student{dailyRecords.length !== 1 ? 's' : ''})</span>
+                  <span className="text-sm text-[var(--color-text-tertiary)] ml-2">({dailyRecords.length} student{dailyRecords.length !== 1 ? 's' : ''})</span>
                 </h3>
                 <Button variant="outline" size="sm" onClick={addStudent}>Add Student</Button>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                  <thead className="bg-gray-50">
+              <div className="border border-[var(--color-border)] rounded-[var(--radius-lg)] overflow-hidden">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-[var(--color-surface-hover)]">
                     <tr>
-                      <th className="px-4 py-2 text-left font-medium text-gray-500">Student ID</th>
-                      <th className="px-4 py-2 text-left font-medium text-gray-500">Status</th>
-                      <th className="px-4 py-2 text-left font-medium text-gray-500">Notes</th>
-                      <th className="px-4 py-2"></th>
+                      <th className="px-4 py-3 text-left font-medium text-[var(--color-text-tertiary)]">Student ID</th>
+                      <th className="px-4 py-3 text-left font-medium text-[var(--color-text-tertiary)]">Status</th>
+                      <th className="px-4 py-3 text-left font-medium text-[var(--color-text-tertiary)]">Notes</th>
+                      <th className="px-4 py-3"></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-[var(--color-divider)]">
                     {dailyRecords.map((record, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50">
-                        <td className="px-4 py-2">
+                      <tr key={idx} className="hover:bg-[var(--color-surface-hover)]">
+                        <td className="px-4 py-3">
                           <Input
                             type="number"
                             value={record.student_id || ''}
@@ -180,21 +180,21 @@ export function DailyAttendancePage() {
                             className="w-24"
                           />
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="px-4 py-3">
                           <Select
                             value={record.status}
                             onChange={(e) => updateRecordStatus(record.student_id, e.target.value)}
                             options={ATTENDANCE_STATUSES.map((s) => ({ value: s, label: capitalize(s) }))}
                           />
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="px-4 py-3">
                           <Input
                             value={record.notes || ''}
                             onChange={(e) => updateRecordNotes(record.student_id, e.target.value)}
                             placeholder="Optional"
                           />
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="px-4 py-3">
                           <Button variant="danger" size="sm" onClick={() => removeStudent(record.student_id)}>Remove</Button>
                         </td>
                       </tr>

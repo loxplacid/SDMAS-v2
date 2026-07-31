@@ -4,7 +4,7 @@ import { classApi } from '../../api/academic/class-api'
 import { sectionApi } from '../../api/academic/section-api'
 import { attendanceReportApi } from '../../api/reports/attendance-reports'
 import type { ClassAttendanceSummaryReport, SectionAttendanceSummaryReport } from '../../api/reports/types'
-import { Card, Select, Button, ErrorState, Badge, Table, AnimatedCount } from '../../components/ui'
+import { Card, Select, Button, ErrorState, Badge, Table, AnimatedCount, Input } from '../../components/ui'
 import { useExport } from '../../hooks/use-export'
 
 export function AttendanceReportPage() {
@@ -123,24 +123,8 @@ export function AttendanceReportPage() {
               />
             </div>
           )}
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Start Date</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">End Date</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          <Input label="Start Date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          <Input label="End Date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
         </div>
         <div className="mt-4">
           <Button onClick={fetchReport} loading={loading}>Generate Report</Button>

@@ -1,16 +1,24 @@
 from __future__ import annotations
 
+import asyncio
+
 from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.pagination import Page
 from app.domains.auth.dependencies import get_current_user, require_role
 from app.domains.auth.models import User
 from app.domains.notifications.schemas import (
+    NotificationPreferenceBulkUpdate,
+    NotificationPreferenceResponse,
+    NotificationPreferenceUpdate,
     NotificationResponse,
     UnreadCountResponse,
 )
 from app.domains.notifications.service import NotificationService
+from app.domains.notifications.preferences import NotificationPreferenceService
+from app.domains.notifications.sse_manager import sse_manager
 from app.infrastructure.database import get_session
 
 router = APIRouter(prefix="/api/notifications", tags=["notifications"])
@@ -50,6 +58,39 @@ async def get_unread_count(
     return UnreadCountResponse(count=count)
 
 
+@router.get("/events")
+async def notification_events(
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+) -> StreamingResponse:
+    """SSE endpoint for real-time notification updates.
+
+    Replaces 30-second polling.  The client connects once and receives
+    ``unread_count`` events whenever a new notification is created.
+    A 30-second heartbeat keeps the connection alive.
+    """
+    queue = sse_manager.subscribe(current_user.id)
+
+    async def event_generator() -> None:
+        try:
+            svc = NotificationService(session)
+            count = await svc.get_unread_count(current_user.id)
+            yield f"event: unread_count\ndata: {count}\n\n"
+
+            while True:
+                try:
+                    data = await asyncio.wait_for(queue.get(), timeout=30.0)
+                    yield data
+                except asyncio.TimeoutError:
+                    yield ": keepalive\n\n"
+        except asyncio.CancelledError:
+            pass
+        finally:
+            sse_manager.unsubscribe(current_user.id, queue)
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
 @router.patch("/{notification_id}/read", response_model=NotificationResponse)
 async def mark_notification_read(
     notification_id: int,
@@ -82,3 +123,58 @@ async def delete_notification(
 ) -> None:
     svc = NotificationService(session)
     await svc.delete_notification(notification_id)
+
+
+# ---------------------------------------------------------------------------
+# Notification Preferences
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/preferences",
+    response_model=list[NotificationPreferenceResponse],
+)
+async def list_preferences(
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+) -> list[NotificationPreferenceResponse]:
+    svc = NotificationPreferenceService(session)
+    prefs = await svc.get_preferences(current_user.id)
+    return [NotificationPreferenceResponse.model_validate(p) for p in prefs]
+
+
+@router.put(
+    "/preferences",
+    response_model=list[NotificationPreferenceResponse],
+)
+async def update_preferences(
+    data: NotificationPreferenceBulkUpdate,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+) -> list[NotificationPreferenceResponse]:
+    svc = NotificationPreferenceService(session)
+    prefs = await svc.bulk_update(
+        current_user.id,
+        [p.model_dump() for p in data.preferences],
+    )
+    return [NotificationPreferenceResponse.model_validate(p) for p in prefs]
+
+
+@router.put(
+    "/preferences/{event_type}",
+    response_model=NotificationPreferenceResponse,
+)
+async def update_preference(
+    event_type: str,
+    data: NotificationPreferenceUpdate,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+) -> NotificationPreferenceResponse:
+    svc = NotificationPreferenceService(session)
+    pref = await svc.update_preference(
+        user_id=current_user.id,
+        event_type=data.event_type,
+        channel=data.channel,
+        enabled=data.enabled,
+    )
+    return NotificationPreferenceResponse.model_validate(pref)

@@ -81,6 +81,9 @@ class DeviceToken(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    campus_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     token: Mapped[str] = mapped_column(
         String(255), nullable=False, unique=True, index=True
     )

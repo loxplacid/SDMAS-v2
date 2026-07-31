@@ -40,6 +40,35 @@ engine, async_session_factory = create_engine_and_factory(
     echo=settings.database_echo if settings.database_echo is not None else settings.debug,
 )
 
+# ---------------------------------------------------------------------------
+# Overridable session factory for tests (e.g. audit middleware integration)
+# ---------------------------------------------------------------------------
+
+_async_session_factory_override: async_sessionmaker[AsyncSession] | None = None
+
+
+def get_async_session_factory() -> async_sessionmaker[AsyncSession]:
+    """Return the active async session factory.
+
+    Tests can call ``override_async_session_factory()`` to redirect
+    database writes made by code that imports this function (e.g.
+    the audit middleware) to an in-memory SQLite database.
+    """
+    if _async_session_factory_override is not None:
+        return _async_session_factory_override
+    return async_session_factory
+
+
+def override_async_session_factory(
+    factory: async_sessionmaker[AsyncSession] | None,
+) -> None:
+    """Set or clear the override for the global session factory.
+
+    Pass ``None`` to restore the original factory.
+    """
+    global _async_session_factory_override
+    _async_session_factory_override = factory
+
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_session_factory() as session:

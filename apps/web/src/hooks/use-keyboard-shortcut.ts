@@ -1,38 +1,26 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 
 type KeyMap = Record<string, (e: KeyboardEvent) => void>
 
-/**
- * Registers global keyboard shortcuts via a keymap object.
- * Keys like 'k' trigger when that key is pressed.
- * Combine with ctrl/meta: 'mod+k' matches either Cmd (macOS) or Ctrl (Windows/Linux).
- * 
- * @example
- * useKeyboardShortcut({
- *   '/': () => searchRef.current?.focus(),
- *   'n': () => setModalOpen(true),
- *   'mod+s': (e) => { e.preventDefault(); handleSave() },
- * })
- */
 export function useKeyboardShortcut(keymap: KeyMap, deps: any[] = []) {
+  const keymapRef = useRef(keymap)
+  keymapRef.current = keymap
+
   const handler = useCallback(
     (e: KeyboardEvent) => {
       const target = e.target as HTMLElement
-      // Don't trigger shortcuts when typing in input/textarea/select
       if (
         target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
         target.tagName === 'SELECT' ||
         target.isContentEditable
       ) {
-        // Exception: allow '/' when NOT in a search/input field (to focus search)
-        // Actually, '/' should also work from inputs... let's handle this case
         if (e.key !== '/' || target.tagName !== 'INPUT') {
           return
         }
       }
 
-      for (const [keyCombo, callback] of Object.entries(keymap)) {
+      for (const [keyCombo, callback] of Object.entries(keymapRef.current)) {
         const parts = keyCombo.split('+')
         const hasMod = parts.includes('mod')
         const hasCtrl = parts.includes('ctrl')
@@ -57,8 +45,7 @@ export function useKeyboardShortcut(keymap: KeyMap, deps: any[] = []) {
         }
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [keymap, ...deps]
+    deps,
   )
 
   useEffect(() => {

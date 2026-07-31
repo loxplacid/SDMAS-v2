@@ -21,10 +21,13 @@ export function NotificationBell() {
   const [loading, setLoading] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
+  const unreadCountRef = useRef(0)
+
   const fetchUnreadCount = useCallback(async () => {
     try {
       const res = await notificationApi.getUnreadCount()
-      prevUnreadCountRef.current = unreadCount
+      prevUnreadCountRef.current = unreadCountRef.current
+      unreadCountRef.current = res.count
       setUnreadCount(res.count)
     } catch {
       // Silently fail — not critical
@@ -45,8 +48,14 @@ export function NotificationBell() {
 
   useEffect(() => {
     fetchUnreadCount()
-    const interval = setInterval(fetchUnreadCount, 30_000)
-    return () => clearInterval(interval)
+    const eventSource = new EventSource('/api/notifications/events', { withCredentials: true })
+    eventSource.addEventListener('unread_count', (e) => {
+      const count = Number(e.data)
+      prevUnreadCountRef.current = unreadCountRef.current
+      unreadCountRef.current = count
+      setUnreadCount(count)
+    })
+    return () => eventSource.close()
   }, [fetchUnreadCount])
 
   const closeMenu = useCallback(() => {

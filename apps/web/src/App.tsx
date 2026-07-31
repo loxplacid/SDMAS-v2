@@ -17,6 +17,7 @@ const DashboardPage = lazy(() => import('./pages/dashboard').then((m) => ({ defa
 // Students
 const StudentListPage = lazy(() => import('./pages/students/student-list').then((m) => ({ default: m.StudentListPage })))
 const StudentDetailPage = lazy(() => import('./pages/students/student-detail').then((m) => ({ default: m.StudentDetailPage })))
+const Student360Page = lazy(() => import('./pages/students/student-360').then((m) => ({ default: m.Student360Page })))
 
 // Academic
 const AcademicPage = lazy(() => import('./pages/academic').then((m) => ({ default: m.AcademicPage })))
@@ -35,6 +36,16 @@ const TeacherDetailPage = lazy(() => import('./pages/teachers/teacher-detail').t
 // Subjects
 const SubjectListPage = lazy(() => import('./pages/subjects/subject-list').then((m) => ({ default: m.SubjectListPage })))
 
+// School Finance
+const SchoolFinancePage = lazy(() => import('./pages/school-finance').then((m) => ({ default: m.SchoolFinancePage })))
+const SchoolFinanceDashboardPage = lazy(() => import('./pages/school-finance/dashboard').then((m) => ({ default: m.SchoolFinanceDashboardPage })))
+const FeeSchedulesPage = lazy(() => import('./pages/school-finance/fee-schedules').then((m) => ({ default: m.FeeSchedulesPage })))
+const ReconciliationPage = lazy(() => import('./pages/school-finance/reconciliation').then((m) => ({ default: m.ReconciliationPage })))
+const ReceiptsPage = lazy(() => import('./pages/school-finance/receipts').then((m) => ({ default: m.ReceiptsPage })))
+const TransactionsPage = lazy(() => import('./pages/school-finance/transactions').then((m) => ({ default: m.TransactionsPage })))
+const OutstandingBalancesPage = lazy(() => import('./pages/school-finance/outstanding-balances').then((m) => ({ default: m.OutstandingBalancesPage })))
+const FinanceReportsPage = lazy(() => import('./pages/school-finance/reports').then((m) => ({ default: m.FinanceReportsPage })))
+
 // Attendance
 const AttendancePage = lazy(() => import('./pages/attendance').then((m) => ({ default: m.AttendancePage })))
 const AttendanceRecordsPage = lazy(() => import('./pages/attendance/attendance-records').then((m) => ({ default: m.AttendanceRecordsPage })))
@@ -43,6 +54,11 @@ const RecordAttendancePage = lazy(() => import('./pages/attendance/record-attend
 const DailyAttendancePage = lazy(() => import('./pages/attendance/daily-attendance').then((m) => ({ default: m.DailyAttendancePage })))
 const StudentAttendancePage = lazy(() => import('./pages/attendance/student-attendance').then((m) => ({ default: m.StudentAttendancePage })))
 const SectionAttendancePage = lazy(() => import('./pages/attendance/section-attendance').then((m) => ({ default: m.SectionAttendancePage })))
+const AttendanceIntelligencePage = lazy(() => import('./pages/attendance-intelligence').then((m) => ({ default: m.AttendanceIntelligencePage })))
+const AttendanceIntelligenceDashboardPage = lazy(() => import('./pages/attendance-intelligence/dashboard').then((m) => ({ default: m.AttendanceIntelligenceDashboardPage })))
+const PeriodAttendancePage = lazy(() => import('./pages/attendance-intelligence/period-attendance').then((m) => ({ default: m.PeriodAttendancePage })))
+const AttendanceCorrectionsPage = lazy(() => import('./pages/attendance-intelligence/corrections').then((m) => ({ default: m.AttendanceCorrectionsPage })))
+const AttendanceThresholdsPage = lazy(() => import('./pages/attendance-intelligence/thresholds').then((m) => ({ default: m.AttendanceThresholdsPage })))
 
 // Fees
 const FeesPage = lazy(() => import('./pages/fees').then((m) => ({ default: m.FeesPage })))
@@ -90,6 +106,18 @@ const ApplicationListPage = lazy(() => import('./pages/admission/application-lis
 const ApplicationDetailPage = lazy(() => import('./pages/admission/application-detail').then((m) => ({ default: m.ApplicationDetailPage })))
 const NewInquiryPage = lazy(() => import('./pages/admission/new-inquiry').then((m) => ({ default: m.NewInquiryPage })))
 
+// Admin
+const AuditLogViewerPage = lazy(() => import('./pages/admin/audit-log-viewer'))
+
+// Workflow
+const ApprovalInboxPage = lazy(() => import('./pages/workflow').then((m) => ({ default: m.ApprovalInboxPage })))
+
+// Report Builder
+const ReportBuilderHubPage = lazy(() => import('./pages/report-builder').then((m) => ({ default: m.ReportBuilderPage })))
+const ReportBuilderWorkspace = lazy(() => import('./pages/report-builder/builder').then((m) => ({ default: m.ReportBuilderPage })))
+const ExportJobsPage = lazy(() => import('./pages/report-builder/exports').then((m) => ({ default: m.ExportJobsPage })))
+const SavedReportsPage = lazy(() => import('./pages/report-builder/saved').then((m) => ({ default: m.SavedReportsPage })))
+
 // Operations - these have default exports so simple import works
 const StudentExportPage = lazy(() => import('./pages/operations/student-export'))
 const AttendanceExportPage = lazy(() => import('./pages/operations/attendance-export'))
@@ -103,6 +131,32 @@ const TeacherDashboardPage = lazy(() => import('./pages/teacher/teacher-dashboar
 const StudentDashboardPage = lazy(() => import('./pages/student/student-dashboard').then((m) => ({ default: m.StudentDashboardPage })))
 const ParentDashboardPage = lazy(() => import('./pages/parent/parent-dashboard').then((m) => ({ default: m.ParentDashboardPage })))
 const ParentChildrenPage = lazy(() => import('./pages/parent/parent-children').then((m) => ({ default: m.ParentChildrenPage })))
+const PrincipalDashboardPage = lazy(() => import('./pages/principal/principal-dashboard').then((m) => ({ default: m.PrincipalDashboardPage })))
+const AccountantDashboardPage = lazy(() => import('./pages/accountant/accountant-dashboard').then((m) => ({ default: m.AccountantDashboardPage })))
+const StaffDashboardPage = lazy(() => import('./pages/staff/staff-dashboard').then((m) => ({ default: m.StaffDashboardPage })))
+
+// Communications
+const CommunicationsHubPage = lazy(() => import('./pages/communications').then((m) => ({ default: m.CommunicationsHubPage })))
+const ComposerPage = lazy(() => import('./pages/communications/composer').then((m) => ({ default: m.ComposerPage })))
+const CommunicationsTemplatesPage = lazy(() => import('./pages/communications/templates').then((m) => ({ default: m.TemplatesPage })))
+const SentMessagesPage = lazy(() => import('./pages/communications/sent').then((m) => ({ default: m.SentMessagesPage })))
+
+// Parent Portal pages
+const ParentAttendancePage = lazy(() => import('./pages/parent/parent-attendance').then((m) => ({ default: m.ParentAttendancePage })))
+const ParentFeesPage = lazy(() => import('./pages/parent/parent-fees').then((m) => ({ default: m.ParentFeesPage })))
+const ParentAcademicPage = lazy(() => import('./pages/parent/parent-academic').then((m) => ({ default: m.ParentAcademicPage })))
+const ParentAnnouncementsPage = lazy(() => import('./pages/parent/parent-announcements').then((m) => ({ default: m.ParentAnnouncementsPage })))
+const ParentDocumentsPage = lazy(() => import('./pages/parent/parent-documents').then((m) => ({ default: m.ParentDocumentsPage })))
+const ParentCommunicationPage = lazy(() => import('./pages/parent/parent-communication').then((m) => ({ default: m.ParentCommunicationPage })))
+
+// Student Portal pages
+const StudentTimetablePage = lazy(() => import('./pages/student/student-timetable').then((m) => ({ default: m.StudentTimetablePage })))
+const StudentPortalAttendancePage = lazy(() => import('./pages/student/student-attendance').then((m) => ({ default: m.StudentAttendancePage })))
+const StudentSubjectsPage = lazy(() => import('./pages/student/student-subjects').then((m) => ({ default: m.StudentSubjectsPage })))
+const StudentResultsPage = lazy(() => import('./pages/student/student-results').then((m) => ({ default: m.StudentResultsPage })))
+const StudentAssignmentsPage = lazy(() => import('./pages/student/student-assignments').then((m) => ({ default: m.StudentAssignmentsPage })))
+const StudentAnnouncementsPage = lazy(() => import('./pages/student/student-announcements').then((m) => ({ default: m.StudentAnnouncementsPage })))
+const StudentDocumentsPage = lazy(() => import('./pages/student/student-documents').then((m) => ({ default: m.StudentDocumentsPage })))
 
 // ── Fallback shown while a lazy page is loading ──
 function PageFallback() {
@@ -140,6 +194,7 @@ export default function App() {
               <Route path="/dashboard" element={<Suspense fallback={null}><DashboardPage /></Suspense>} />
               <Route path="/students" element={<Suspense fallback={null}><StudentListPage /></Suspense>} />
               <Route path="/students/:id" element={<Suspense fallback={null}><StudentDetailPage /></Suspense>} />
+              <Route path="/students/:id/360" element={<Suspense fallback={null}><Student360Page /></Suspense>} />
               <Route path="/academic" element={<Suspense fallback={null}><AcademicPage /></Suspense>} />
               <Route path="/academic/years" element={<Suspense fallback={null}><AcademicYearListPage /></Suspense>} />
               <Route path="/academic/years/:id" element={<Suspense fallback={null}><AcademicYearDetailPage /></Suspense>} />
@@ -160,6 +215,11 @@ export default function App() {
               <Route path="/attendance/student/:studentId" element={<Suspense fallback={null}><StudentAttendancePage /></Suspense>} />
               <Route path="/attendance/section" element={<Suspense fallback={null}><SectionAttendancePage /></Suspense>} />
               <Route path="/attendance/section/:sectionId" element={<Suspense fallback={null}><SectionAttendancePage /></Suspense>} />
+              <Route path="/attendance-intelligence" element={<Suspense fallback={null}><AttendanceIntelligencePage /></Suspense>} />
+              <Route path="/attendance-intelligence/dashboard" element={<Suspense fallback={null}><AttendanceIntelligenceDashboardPage /></Suspense>} />
+              <Route path="/attendance-intelligence/period" element={<Suspense fallback={null}><PeriodAttendancePage /></Suspense>} />
+              <Route path="/attendance-intelligence/corrections" element={<Suspense fallback={null}><AttendanceCorrectionsPage /></Suspense>} />
+              <Route path="/attendance-intelligence/thresholds" element={<Suspense fallback={null}><AttendanceThresholdsPage /></Suspense>} />
               <Route path="/fees" element={<Suspense fallback={null}><FeesPage /></Suspense>} />
               <Route path="/fees/fee-types" element={<Suspense fallback={null}><FeeTypeListPage /></Suspense>} />
               <Route path="/fees/structures" element={<Suspense fallback={null}><FeeStructureListPage /></Suspense>} />
@@ -167,10 +227,40 @@ export default function App() {
               <Route path="/fees/dues" element={<Suspense fallback={null}><FeeDueListPage /></Suspense>} />
               <Route path="/fees/payments" element={<Suspense fallback={null}><PaymentListPage /></Suspense>} />
               <Route path="/fees/summary" element={<Suspense fallback={null}><FinancialSummaryPage /></Suspense>} />
+              <Route path="/school-finance" element={<Suspense fallback={null}><SchoolFinancePage /></Suspense>} />
+              <Route path="/school-finance/dashboard" element={<Suspense fallback={null}><SchoolFinanceDashboardPage /></Suspense>} />
+              <Route path="/school-finance/fee-schedules" element={<Suspense fallback={null}><FeeSchedulesPage /></Suspense>} />
+              <Route path="/school-finance/reconciliation" element={<Suspense fallback={null}><ReconciliationPage /></Suspense>} />
+              <Route path="/school-finance/receipts" element={<Suspense fallback={null}><ReceiptsPage /></Suspense>} />
+              <Route path="/school-finance/transactions" element={<Suspense fallback={null}><TransactionsPage /></Suspense>} />
+              <Route path="/school-finance/outstanding" element={<Suspense fallback={null}><OutstandingBalancesPage /></Suspense>} />
+              <Route path="/school-finance/reports" element={<Suspense fallback={null}><FinanceReportsPage /></Suspense>} />
               <Route path="/users" element={<Suspense fallback={null}><UserListPage /></Suspense>} />
               <Route path="/profile" element={<Suspense fallback={null}><ProfilePage /></Suspense>} />
 
               {/* ── Role-based Workspace Routes ── */}
+
+              {/* Principal workspace */}
+              <Route path="/principal" element={
+                <RoleGuard roles={['principal']}>
+                  <Suspense fallback={<PageFallback />}><PrincipalDashboardPage /></Suspense>
+                </RoleGuard>
+              } />
+
+              {/* Accountant workspace */}
+              <Route path="/accountant" element={
+                <RoleGuard roles={['accountant']}>
+                  <Suspense fallback={<PageFallback />}><AccountantDashboardPage /></Suspense>
+                </RoleGuard>
+              } />
+
+              {/* Staff workspace */}
+              <Route path="/staff" element={
+                <RoleGuard roles={['staff']}>
+                  <Suspense fallback={<PageFallback />}><StaffDashboardPage /></Suspense>
+                </RoleGuard>
+              } />
+
               {/* Teacher workspace */}
               <Route path="/teacher" element={
                 <RoleGuard roles={['teacher']}>
@@ -186,21 +276,43 @@ export default function App() {
                   <Suspense fallback={<PageFallback />}><StudentDashboardPage /></Suspense>
                 </RoleGuard>
               } />
-              <Route path="/student/attendance" element={<Navigate to="/attendance/student" replace />} />
-              <Route path="/student/fees" element={<Navigate to="/fees/student-fees" replace />} />
-              <Route path="/student/schedule" element={
-                <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in">
-                  <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-[var(--color-surface-hover)] mb-4">
-                    <svg className="h-8 w-8 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">Schedule</h3>
-                  <p className="text-sm text-[var(--color-text-tertiary)] text-center max-w-sm">
-                    Your class schedule will appear here once it's configured.
-                  </p>
-                </div>
+              <Route path="/student/timetable" element={
+                <RoleGuard roles={['student']}>
+                  <Suspense fallback={<PageFallback />}><StudentTimetablePage /></Suspense>
+                </RoleGuard>
               } />
+              <Route path="/student/attendance" element={
+                <RoleGuard roles={['student']}>
+                  <Suspense fallback={<PageFallback />}><StudentPortalAttendancePage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/student/subjects" element={
+                <RoleGuard roles={['student']}>
+                  <Suspense fallback={<PageFallback />}><StudentSubjectsPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/student/results" element={
+                <RoleGuard roles={['student']}>
+                  <Suspense fallback={<PageFallback />}><StudentResultsPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/student/assignments" element={
+                <RoleGuard roles={['student']}>
+                  <Suspense fallback={<PageFallback />}><StudentAssignmentsPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/student/announcements" element={
+                <RoleGuard roles={['student']}>
+                  <Suspense fallback={<PageFallback />}><StudentAnnouncementsPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/student/documents" element={
+                <RoleGuard roles={['student']}>
+                  <Suspense fallback={<PageFallback />}><StudentDocumentsPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/student/fees" element={<Navigate to="/fees/student-fees" replace />} />
+              <Route path="/student/schedule" element={<Navigate to="/student/timetable" replace />} />
 
               {/* Parent workspace */}
               <Route path="/parent" element={
@@ -213,12 +325,46 @@ export default function App() {
                   <Suspense fallback={<PageFallback />}><ParentChildrenPage /></Suspense>
                 </RoleGuard>
               } />
-              <Route path="/parent/payments" element={<Navigate to="/fees/dues" replace />} />
+              <Route path="/parent/attendance" element={
+                <RoleGuard roles={['parent']}>
+                  <Suspense fallback={<PageFallback />}><ParentAttendancePage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/parent/fees" element={
+                <RoleGuard roles={['parent']}>
+                  <Suspense fallback={<PageFallback />}><ParentFeesPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/parent/academic" element={
+                <RoleGuard roles={['parent']}>
+                  <Suspense fallback={<PageFallback />}><ParentAcademicPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/parent/announcements" element={
+                <RoleGuard roles={['parent']}>
+                  <Suspense fallback={<PageFallback />}><ParentAnnouncementsPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/parent/documents" element={
+                <RoleGuard roles={['parent']}>
+                  <Suspense fallback={<PageFallback />}><ParentDocumentsPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/parent/messages" element={
+                <RoleGuard roles={['parent']}>
+                  <Suspense fallback={<PageFallback />}><ParentCommunicationPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/parent/payments" element={<Navigate to="/parent/fees" replace />} />
               <Route path="/reports" element={<Suspense fallback={null}><ReportsHubPage /></Suspense>} />
               <Route path="/reports/attendance" element={<Suspense fallback={null}><AttendanceReportPage /></Suspense>} />
               <Route path="/reports/fees/collection" element={<Suspense fallback={null}><FeeCollectionReportPage /></Suspense>} />
               <Route path="/reports/fees/outstanding" element={<Suspense fallback={null}><OutstandingReportPage /></Suspense>} />
               <Route path="/reports/receipts" element={<Suspense fallback={null}><ReceiptLookupPage /></Suspense>} />
+              <Route path="/reports/builder" element={<Suspense fallback={null}><ReportBuilderHubPage /></Suspense>} />
+              <Route path="/reports/builder/new" element={<Suspense fallback={null}><ReportBuilderWorkspace /></Suspense>} />
+              <Route path="/reports/builder/exports" element={<Suspense fallback={null}><ExportJobsPage /></Suspense>} />
+              <Route path="/reports/builder/saved" element={<Suspense fallback={null}><SavedReportsPage /></Suspense>} />
               <Route path="/analytics" element={<Suspense fallback={null}><AnalyticsHubPage /></Suspense>} />
               <Route path="/analytics/attendance" element={<Suspense fallback={null}><AttendanceAnalyticsPage /></Suspense>} />
               <Route path="/analytics/finance" element={<Suspense fallback={null}><FinanceAnalyticsPage /></Suspense>} />
@@ -233,6 +379,18 @@ export default function App() {
               <Route path="/operations/batch/enroll" element={<Suspense fallback={null}><BatchEnrollPage /></Suspense>} />
               <Route path="/operations/batch/fee-dues" element={<Suspense fallback={null}><BatchFeeDuesPage /></Suspense>} />
 
+              {/* Admin */}
+              <Route path="/admin/audit-logs" element={
+                <RoleGuard roles={['admin']}>
+                  <Suspense fallback={<PageFallback />}><AuditLogViewerPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/admin/approvals" element={
+                <RoleGuard roles={['admin']}>
+                  <Suspense fallback={<PageFallback />}><ApprovalInboxPage /></Suspense>
+                </RoleGuard>
+              } />
+
               {/* Leave */}
               <Route path="/leave" element={<Suspense fallback={null}><LeaveListPage /></Suspense>} />
               <Route path="/leave/new" element={<Suspense fallback={null}><NewLeavePage /></Suspense>} />
@@ -243,6 +401,12 @@ export default function App() {
               <Route path="/admissions/applications" element={<Suspense fallback={null}><ApplicationListPage /></Suspense>} />
               <Route path="/admissions/new" element={<Suspense fallback={null}><NewInquiryPage /></Suspense>} />
               <Route path="/admissions/:id" element={<Suspense fallback={null}><ApplicationDetailPage /></Suspense>} />
+
+              {/* Communications */}
+              <Route path="/communications" element={<Suspense fallback={null}><CommunicationsHubPage /></Suspense>} />
+              <Route path="/communications/compose" element={<Suspense fallback={null}><ComposerPage /></Suspense>} />
+              <Route path="/communications/templates" element={<Suspense fallback={null}><CommunicationsTemplatesPage /></Suspense>} />
+              <Route path="/communications/sent" element={<Suspense fallback={null}><SentMessagesPage /></Suspense>} />
             </Route>
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>

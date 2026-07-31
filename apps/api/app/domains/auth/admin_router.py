@@ -73,3 +73,19 @@ async def update_user(
 ) -> UserResponse:
     user = await service.admin_update_user(user_id, data)
     return UserResponse.model_validate(user)
+
+
+@router.post("/{user_id}/roles", response_model=UserResponse)
+async def set_user_roles(
+    user_id: int,
+    role_codes: list[str],
+    service: UserService = Depends(_admin_user),
+) -> UserResponse:
+    """Replace all M2M role assignments for a user.
+
+    The user's ``role`` field (primary role) is *not* changed by this
+    endpoint.  To change the primary role, use PATCH ``/admin/users/{id}``
+    with ``{"role": "..."}``.
+    """
+    user = await service.set_user_roles(user_id, role_codes)
+    return UserResponse.model_validate(user)

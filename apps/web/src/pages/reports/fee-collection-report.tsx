@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { academicYearApi } from '../../api/academic/academic-year-api'
 import { feeReportApi } from '../../api/reports/fee-reports'
 import type { CollectionReportItem } from '../../api/reports/types'
-import { Card, Select, Button, ErrorState, Table, Badge } from '../../components/ui'
+import { Card, Select, Button, ErrorState, Table, Badge, Input } from '../../components/ui'
 import { formatCurrency } from '../../lib/utils'
 import { useExport } from '../../hooks/use-export'
 
@@ -62,24 +62,8 @@ export function FeeCollectionReportPage() {
               placeholder="Select year"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Start Date</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">End Date</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          <Input label="Start Date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          <Input label="End Date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
         </div>
         <div className="mt-4">
           <Button onClick={fetchReport} loading={loading} disabled={!selectedYearId}>Generate Report</Button>

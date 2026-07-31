@@ -177,6 +177,9 @@ class WorkflowInstance(Base):
     current_step_id: Mapped[int] = mapped_column(
         ForeignKey("workflow_steps.id", ondelete="CASCADE"), nullable=False
     )
+    campus_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     entity_type: Mapped[str] = mapped_column(
         String(100), nullable=False,
         comment="Polymorphic entity type (e.g., 'leave_request')"

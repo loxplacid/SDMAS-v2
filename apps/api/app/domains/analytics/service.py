@@ -68,19 +68,20 @@ class AnalyticsService:
         )
         active_year = active_year_result.scalar_one_or_none()
 
-        # Academic structure counts (separate queries to avoid cartesian product)
-        total_classes = (
-            await self.session.execute(select(func.count(Class.id)))
-        ).scalar() or 0
-        total_sections = (
-            await self.session.execute(select(func.count(Section.id)))
-        ).scalar() or 0
-        total_teachers = (
-            await self.session.execute(select(func.count(Teacher.id)))
-        ).scalar() or 0
-        total_subjects = (
-            await self.session.execute(select(func.count(Subject.id)))
-        ).scalar() or 0
+        # Academic structure counts in one round-trip
+        counts_result = await self.session.execute(
+            select(
+                func.count(Class.id).label("classes"),
+                func.count(Section.id).label("sections"),
+                func.count(Teacher.id).label("teachers"),
+                func.count(Subject.id).label("subjects"),
+            )
+        )
+        row = counts_result.one()
+        total_classes = row.classes or 0
+        total_sections = row.sections or 0
+        total_teachers = row.teachers or 0
+        total_subjects = row.subjects or 0
 
         # Overall attendance percentage
         att_result = await self.session.execute(
@@ -589,35 +590,85 @@ class AnalyticsService:
         self,
         academic_year_id: Optional[int] = None,
     ) -> list[dict]:
-        """Get attendance analytics for all terms via efficient batch query."""
+        """Get attendance analytics for all terms via single batch query."""
         conditions = []
         if academic_year_id is not None:
             conditions.append(Term.academic_year_id == academic_year_id)
 
-        terms_query = select(Term)
-        if conditions:
-            terms_query = terms_query.where(and_(*conditions))
-        terms_result = await self.session.execute(terms_query)
+        terms_result = await self.session.execute(
+            select(Term).where(and_(*conditions)) if conditions else select(Term)
+        )
         terms = terms_result.scalars().all()
 
         if not terms:
             return []
 
-        # Batch query: get attendance counts per term using date ranges
-        or_conditions = []
-        for term in terms:
-            or_conditions.append(
-                and_(
-                    AttendanceRecord.attendance_date >= term.start_date,
-                    AttendanceRecord.attendance_date <= term.end_date,
-                )
-            )
+        min_date = min(t.start_date for t in terms)
+        max_date = max(t.end_date for t in terms)
 
+        term_case_expr = case(
+            *[
+                (
+                    and_(
+                        AttendanceRecord.attendance_date >= t.start_date,
+                        AttendanceRecord.attendance_date <= t.end_date,
+                    ),
+                    t.id,
+                )
+                for t in terms
+            ],
+            else_=None,
+        )
+
+        query = select(
+            term_case_expr.label("term_id"),
+            func.count(AttendanceRecord.id).label("total"),
+            func.sum(case((AttendanceRecord.status == "present", 1), else_=0)).label("present"),
+            func.sum(case((AttendanceRecord.status == "absent", 1), else_=0)).label("absent"),
+            func.sum(case((AttendanceRecord.status == "late", 1), else_=0)).label("late"),
+            func.sum(case((AttendanceRecord.status == "excused", 1), else_=0)).label("excused"),
+        ).where(
+            AttendanceRecord.attendance_date >= min_date,
+            AttendanceRecord.attendance_date <= max_date,
+        ).group_by(term_case_expr)
+
+        result = await self.session.execute(query)
+        rows = result.all()
+
+        term_map = {t.id: t for t in terms}
         results = []
-        for term in terms:
-            att = await self.get_term_attendance(term.id)
-            if att:
-                results.append(att)
+        for row in rows:
+            t = term_map.get(row.term_id)
+            if t is None:
+                continue
+            total = row.total or 0
+            present = row.present or 0
+            pct = round((present / total) * 10000) / 100 if total > 0 else 0.0
+            results.append({
+                "term_id": t.id,
+                "term_name": t.name,
+                "total_records": total,
+                "present": present,
+                "absent": row.absent or 0,
+                "late": row.late or 0,
+                "excused": row.excused or 0,
+                "attendance_percentage": pct,
+            })
+
+        seen_ids = {r["term_id"] for r in results}
+        for t in terms:
+            if t.id not in seen_ids:
+                results.append({
+                    "term_id": t.id,
+                    "term_name": t.name,
+                    "total_records": 0,
+                    "present": 0,
+                    "absent": 0,
+                    "late": 0,
+                    "excused": 0,
+                    "attendance_percentage": 0.0,
+                })
+
         return results
 
     # ------------------------------------------------------------------

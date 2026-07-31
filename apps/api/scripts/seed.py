@@ -33,6 +33,7 @@ from app.domains.attendance.models import AttendanceRecord
 from app.domains.auth.models import User
 from app.domains.fees.models import FeeType, FeeStructure, FeeDue
 from app.domains.student.models import Student
+from app.domains.workflow.models import Workflow, WorkflowStep, WorkflowTransition
 from app.infrastructure.database import create_engine_and_factory
 
 

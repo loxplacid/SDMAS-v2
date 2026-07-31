@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { exportApi } from '../../api/reports/export-api'
 import { sectionApi } from '../../api/academic/section-api'
-import { Card, Button, Select, Alert } from '../../components/ui'
+import { Card, Button, Select, Alert, Input } from '../../components/ui'
 
 export function AttendanceExportPage() {
   const [sections, setSections] = useState<{ id: number; name: string }[]>([])
@@ -66,24 +66,8 @@ export function AttendanceExportPage() {
               placeholder="All sections"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Start Date</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">End Date</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          <Input label="Start Date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          <Input label="End Date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
         </div>
         <div className="mt-4">
           <Button onClick={handleExport} loading={loading}>Export CSV</Button>

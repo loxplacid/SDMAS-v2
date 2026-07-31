@@ -9,6 +9,8 @@ let refreshToken: string | null = null
 let onLogout: (() => void) | null = null
 let refreshPromise: Promise<boolean> | null = null
 
+const inflightRequests = new Map<string, Promise<unknown>>()
+
 function storeTokens(access: string, refresh: string) {
   accessToken = access
   refreshToken = refresh
@@ -32,10 +34,12 @@ async function tryRefresh(): Promise<boolean> {
   if (refreshPromise) return refreshPromise
   refreshPromise = (async () => {
     try {
-      const url = BASE_URL
-        ? `${BASE_URL}/auth/refresh?refresh_token=${encodeURIComponent(refreshToken!)}`
-        : `/auth/refresh?refresh_token=${encodeURIComponent(refreshToken!)}`
-      const res = await fetch(url, { method: 'POST' })
+      const url = BASE_URL ? `${BASE_URL}/auth/refresh` : '/auth/refresh'
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken! }),
+      })
       if (!res.ok) return false
       const data = await res.json()
       storeTokens(data.access_token, data.refresh_token)
@@ -73,7 +77,6 @@ type RequestOptions = {
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, params, skipAuth = false } = options
 
-  // Build the URL — relative in dev (via Vite proxy), absolute in production
   const urlStr = BASE_URL ? `${BASE_URL}${path}` : path
   const url = new URL(urlStr, BASE_URL ? undefined : window.location.origin)
   if (params) {
@@ -84,62 +87,80 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     }
   }
 
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+  const cacheKey = method === 'GET' ? url.toString() : null
+  if (cacheKey) {
+    const existing = inflightRequests.get(cacheKey)
+    if (existing) return existing as Promise<T>
   }
 
-  if (!skipAuth && accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`
-  }
-
-  let res = await fetch(url.toString(), {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  })
-
-  if (res.status === 401 && !skipAuth && refreshToken) {
-    const refreshed = await tryRefresh()
-    if (refreshed) {
-      headers['Authorization'] = `Bearer ${accessToken}`
-      res = await fetch(url.toString(), {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : undefined,
-      })
-    } else {
-      clearTokens()
-      onLogout?.()
-      throw { status: 401, detail: 'Session expired. Please log in again.' } as ApiError
+  const execute = async (): Promise<T> => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
     }
-  }
 
-  if (res.status === 204) {
+    if (!skipAuth && accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`
+    }
+
+    let res = await fetch(url.toString(), {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    })
+
+    if (res.status === 401 && !skipAuth && refreshToken) {
+      const refreshed = await tryRefresh()
+      if (refreshed) {
+        headers['Authorization'] = `Bearer ${accessToken}`
+        res = await fetch(url.toString(), {
+          method,
+          headers,
+          body: body ? JSON.stringify(body) : undefined,
+        })
+      } else {
+        clearTokens()
+        onLogout?.()
+        throw { status: 401, detail: 'Session expired. Please log in again.' } as ApiError
+      }
+    }
+
+    if (res.status === 204) {
+      return undefined as T
+    }
+
+    const contentType = res.headers.get('content-type')
+    const isJson = contentType && contentType.includes('application/json')
+
+    if (!res.ok) {
+      const errorBody = isJson ? await res.json() : { detail: `HTTP ${res.status}: ${res.statusText}` }
+
+      if (res.status === 403) {
+        throw { status: 403, detail: errorBody?.detail || 'Access denied' } as ApiError
+      }
+
+      throw parseApiError(res.status, errorBody)
+    }
+
+    if (isJson) {
+      return res.json() as Promise<T>
+    }
+
+    if (contentType && contentType.includes('text/csv')) {
+      return res.blob() as Promise<T>
+    }
+
     return undefined as T
   }
 
-  const contentType = res.headers.get('content-type')
-  const isJson = contentType && contentType.includes('application/json')
+  const promise = execute().finally(() => {
+    if (cacheKey) inflightRequests.delete(cacheKey)
+  })
 
-  if (!res.ok) {
-    const errorBody = isJson ? await res.json() : { detail: `HTTP ${res.status}: ${res.statusText}` }
-
-    if (res.status === 403) {
-      throw { status: 403, detail: errorBody?.detail || 'Access denied' } as ApiError
-    }
-
-    throw parseApiError(res.status, errorBody)
+  if (cacheKey) {
+    inflightRequests.set(cacheKey, promise)
   }
 
-  if (isJson) {
-    return res.json() as Promise<T>
-  }
-
-  if (contentType && contentType.includes('text/csv')) {
-    return res.blob() as Promise<T>
-  }
-
-  return undefined as T
+  return promise
 }
 
 export const api = {

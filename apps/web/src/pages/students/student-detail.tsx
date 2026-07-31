@@ -24,8 +24,8 @@ export function StudentDetailPage() {
 
   if (loading) return (
     <div className="space-y-6 animate-fade-in-up">
-      <div className="h-4 bg-gray-200 rounded w-64 animate-pulse" />
-      <div className="h-8 bg-gray-200 rounded w-48 animate-pulse" />
+      <div className="h-4 bg-[var(--color-border)] rounded w-64 animate-pulse" />
+      <div className="h-8 bg-[var(--color-border)] rounded w-48 animate-pulse" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="h-64 bg-[var(--color-surface)] rounded-xl animate-pulse" />
         <div className="h-64 bg-[var(--color-surface)] rounded-xl animate-pulse" />
@@ -85,8 +85,9 @@ export function StudentDetailPage() {
         </Card>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex gap-3 flex-wrap">
         <Button onClick={() => navigate(`/students/${id}/edit`)}>Edit Student</Button>
+        <Button onClick={() => navigate(`/students/${id}/360`)}>360° View</Button>
         <Button variant="outline" onClick={() => navigate('/students')}>Back to List</Button>
       </div>
     </div>

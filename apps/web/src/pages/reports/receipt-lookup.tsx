@@ -54,8 +54,7 @@ export function ReceiptLookupPage() {
       {loading && <div className="h-48 bg-[var(--color-surface)] rounded-xl animate-pulse" />}
 
       {receipt && (
-        <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
-          <div className="border-b border-gray-200 pb-4 mb-4">
+        <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">            <div className="border-b border-[var(--color-divider)] pb-4 mb-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold">Payment Receipt</h2>
               <div className="flex items-center gap-2">
@@ -88,7 +87,7 @@ export function ReceiptLookupPage() {
             <div>
               <p className="text-sm text-[var(--color-text-tertiary)]">Student</p>
               <p className="font-medium">{receipt.student_name}</p>
-              <p className="text-sm text-gray-400">{receipt.student_number}</p>
+              <p className="text-sm text-[var(--color-text-muted)]">{receipt.student_number}</p>
             </div>
             <div>
               <p className="text-sm text-[var(--color-text-tertiary)]">Academic Year</p>
@@ -111,7 +110,7 @@ export function ReceiptLookupPage() {
               <p className="font-medium">{receipt.payment_date || '-'}</p>
             </div>
           </div>
-          <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="mt-4 pt-4 border-t border-[var(--color-divider)]">
             <p className="text-sm text-[var(--color-text-tertiary)]">Recorded At</p>
             <p className="font-medium">{formatDateTime(receipt.created_at)}</p>
           </div>

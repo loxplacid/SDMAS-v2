@@ -23,6 +23,65 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = Field(default=30, ge=1)
     refresh_token_expire_days: int = Field(default=7, ge=1)
 
+    # ── SendGrid (Email Notifications) ────────────────────────────
+    sendgrid_api_key: str = Field(
+        default="",
+        description="SendGrid API key for transactional email delivery",
+    )
+    email_from_address: str = Field(
+        default="noreply@sdmas.app",
+        description="Sender email address for outgoing notifications",
+    )
+    email_from_name: str = Field(
+        default="SDMAS Notifications",
+        description="Sender display name for outgoing notifications",
+    )
+
+    # ── Payment Provider (Razorpay) ──────────────────────────────────
+    razorpay_key_id: str = Field(
+        default="",
+        description="Razorpay API Key ID for payment processing",
+    )
+    razorpay_key_secret: str = Field(
+        default="",
+        description="Razorpay API Key Secret for payment processing",
+    )
+
+    # ── Document Storage ───────────────────────────────────────────
+    storage_backend: str = Field(
+        default="local",
+        description="Storage backend: 'local' or 's3'",
+    )
+    storage_root: str = Field(
+        default="storage/documents",
+        description="Root directory for local file storage",
+    )
+    s3_endpoint: str | None = Field(
+        default=None,
+        description="S3-compatible endpoint URL (e.g. https://s3.amazonaws.com)",
+    )
+    s3_access_key_id: str | None = Field(default=None)
+    s3_secret_access_key: SecretStr | None = Field(default=None)
+    s3_bucket_name: str | None = Field(default=None)
+    s3_region: str = Field(default="us-east-1")
+    s3_use_ssl: bool = Field(default=True)
+    max_file_size_mb: int = Field(default=20)
+    allowed_mime_types: list[str] = Field(
+        default=[
+            "application/pdf",
+            "image/jpeg", "image/png", "image/gif", "image/webp",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "text/csv", "text/plain",
+        ]
+    )
+    document_storage_secret: SecretStr = Field(
+        default=SecretStr("change-me-doc-secret"),
+        description="Secret key for signing document URLs",
+    )
+
     log_level: str = Field(default="INFO")
     cors_origins: List[str] = Field(
         default=["http://localhost:3000", "http://localhost:5173"]

@@ -82,3 +82,28 @@ class PushTicketResponse(BaseModel):
     status: str
     id: Optional[str] = None
     message: Optional[str] = None
+
+
+# ---------------------------------------------------------------------------
+# Notification Preference Schemas
+# ---------------------------------------------------------------------------
+
+
+class NotificationPreferenceResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    user_id: int
+    event_type: str
+    channel: str
+    enabled: bool
+
+
+class NotificationPreferenceUpdate(BaseModel):
+    event_type: str
+    channel: str = "in_app"
+    enabled: bool = True
+
+
+class NotificationPreferenceBulkUpdate(BaseModel):
+    preferences: list[NotificationPreferenceUpdate]

@@ -1,0 +1,570 @@
+"""Tests for the workflow and approval engine.
+
+Covers:
+- Workflow definition CRUD (admin)
+- Starting workflow instances
+- Approval transitions (approve, reject, return, submit)
+- Authorization role enforcement
+- Duplicate instance prevention
+- Audit integration
+- History recording
+- Invalid state transitions
+"""
+
+from __future__ import annotations
+
+import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.domains.workflow.models import (
+    Workflow,
+    WorkflowInstance,
+    WorkflowStep,
+    WorkflowTransition,
+    ApprovalHistory,
+)
+from app.domains.workflow.repository import (
+    ApprovalHistoryRepository,
+    WorkflowActionRepository,
+    WorkflowInstanceRepository,
+    WorkflowRepository,
+    WorkflowStepRepository,
+    WorkflowTransitionRepository,
+)
+from app.domains.workflow.service import (
+    WorkflowAdminService,
+    WorkflowExecutionService,
+)
+from app.domains.workflow.schemas import AvailableTransition
+
+
+# ---------------------------------------------------------------------------
+# Fixtures: build a test workflow with steps + transitions
+# ---------------------------------------------------------------------------
+
+
+async def _create_minimal_workflow(session: AsyncSession) -> dict:
+    """Create a 3-step workflow (submitted → approved | rejected) and return IDs."""
+    import datetime
+    now = datetime.datetime.now(datetime.timezone.utc)
+
+    wf = Workflow(
+        name="Test Workflow",
+        code="TEST_WF",
+        description="Test",
+        entity_type="test_entity",
+        status="active",
+        created_at=now,
+        updated_at=now,
+    )
+    session.add(wf)
+    await session.flush()  # assign wf.id
+
+    step1 = WorkflowStep(workflow_id=wf.id, name="submitted", label="Submitted",
+                         step_order=1, is_initial=True, is_final=False)
+    step2 = WorkflowStep(workflow_id=wf.id, name="approved", label="Approved",
+                         step_order=2, is_initial=False, is_final=True)
+    step3 = WorkflowStep(workflow_id=wf.id, name="rejected", label="Rejected",
+                         step_order=3, is_initial=False, is_final=True)
+    session.add_all([step1, step2, step3])
+    await session.flush()  # assign step ids
+
+    session.add(WorkflowTransition(workflow_id=wf.id, from_step_id=step1.id,
+                                   to_step_id=step2.id, label="Approve"))
+    session.add(WorkflowTransition(workflow_id=wf.id, from_step_id=step1.id,
+                                   to_step_id=step3.id, label="Reject"))
+    await session.flush()  # assign transition ids
+
+    return {
+        "workflow_id": wf.id,
+        "step_submitted": step1.id,
+        "step_approved": step2.id,
+        "step_rejected": step3.id,
+    }
+
+
+def _exec_service(session: AsyncSession) -> WorkflowExecutionService:
+    return WorkflowExecutionService(
+        instance_repo=WorkflowInstanceRepository(session),
+        workflow_repo=WorkflowRepository(session),
+        step_repo=WorkflowStepRepository(session),
+        transition_repo=WorkflowTransitionRepository(session),
+        action_repo=WorkflowActionRepository(session),
+        history_repo=ApprovalHistoryRepository(session),
+    )
+
+
+def _admin_service(session: AsyncSession) -> WorkflowAdminService:
+    return WorkflowAdminService(
+        workflow_repo=WorkflowRepository(session),
+        step_repo=WorkflowStepRepository(session),
+        transition_repo=WorkflowTransitionRepository(session),
+        action_repo=WorkflowActionRepository(session),
+    )
+
+
+# ===========================================================================
+# Workflow Definition Tests
+# ===========================================================================
+
+
+class TestWorkflowDefinition:
+    async def test_create_workflow(self, db_session):
+        svc = _admin_service(db_session)
+        wf = await svc.create_workflow(
+            name="Approval WF", code="APPROVAL_TEST",
+            entity_type="purchase_order",
+            description="Test workflow",
+        )
+        assert wf.id is not None
+        assert wf.code == "APPROVAL_TEST"
+        assert wf.status == "active"
+
+    async def test_create_duplicate_workflow_raises(self, db_session):
+        svc = _admin_service(db_session)
+        await svc.create_workflow(name="WF", code="DUP", entity_type="test")
+        from app.core.exceptions import ConflictError
+
+        with pytest.raises(ConflictError, match="already exists"):
+            await svc.create_workflow(name="WF2", code="DUP", entity_type="test")
+
+    async def test_get_workflow_by_code(self, db_session):
+        svc = _admin_service(db_session)
+        await svc.create_workflow(name="Get Test", code="GET_TEST", entity_type="test")
+        wf = await svc.get_workflow_by_code("GET_TEST")
+        assert wf.name == "Get Test"
+
+    async def test_get_workflow_by_code_not_found(self, db_session):
+        svc = _admin_service(db_session)
+        from app.core.exceptions import NotFoundError
+
+        with pytest.raises(NotFoundError):
+            await svc.get_workflow_by_code("NONEXISTENT")
+
+    async def test_list_workflows(self, db_session):
+        svc = _admin_service(db_session)
+        for i in range(3):
+            await svc.create_workflow(
+                name=f"WF {i}", code=f"LIST_{i}", entity_type="test"
+            )
+        items, total = await svc.list_workflows()
+        assert total >= 3
+
+    async def test_list_workflows_filter_by_status(self, db_session):
+        svc = _admin_service(db_session)
+        wf = await svc.create_workflow(name="Active", code="ACTIVE", entity_type="test")
+        await svc.update_workflow(wf.id, status="inactive")
+
+        items, total = await svc.list_workflows(status="inactive")
+        assert total >= 1
+
+    async def test_delete_workflow(self, db_session):
+        svc = _admin_service(db_session)
+        wf = await svc.create_workflow(name="Delete", code="DELETE", entity_type="test")
+        await svc.delete_workflow(wf.id)
+
+        from app.core.exceptions import NotFoundError
+        with pytest.raises(NotFoundError):
+            await svc.get_workflow(wf.id)
+
+
+# ===========================================================================
+# Workflow Step & Transition Tests
+# ===========================================================================
+
+
+class TestWorkflowSteps:
+    async def test_create_step(self, db_session):
+        ids = await _create_minimal_workflow(db_session)
+        svc = _admin_service(db_session)
+        from app.domains.workflow.schemas import WorkflowStepCreate
+
+        step = await svc.create_step(WorkflowStepCreate(
+            workflow_id=ids["workflow_id"],
+            name="extra_step",
+            step_order=4,
+            is_final=True,
+            assigned_role="admin",
+        ))
+        assert step.name == "extra_step"
+        assert step.assigned_role == "admin"
+
+    async def test_create_step_missing_workflow(self, db_session):
+        svc = _admin_service(db_session)
+        from app.domains.workflow.schemas import WorkflowStepCreate
+        from app.core.exceptions import NotFoundError
+
+        with pytest.raises(NotFoundError):
+            await svc.create_step(WorkflowStepCreate(
+                workflow_id=99999, name="ghost", step_order=1
+            ))
+
+
+# ===========================================================================
+# Workflow Instance & Transition Tests
+# ===========================================================================
+
+
+class TestWorkflowExecution:
+    async def test_start_instance(self, db_session):
+        ids = await _create_minimal_workflow(db_session)
+        svc = _exec_service(db_session)
+
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity",
+            entity_id=100,
+            created_by=1,
+        )
+        assert instance.id is not None
+        assert instance.status == "active"
+        assert instance.current_step_id == ids["step_submitted"]
+        assert instance.created_by == 1
+
+    async def test_start_instance_inactive_workflow(self, db_session):
+        """Starting an instance on an inactive workflow should fail."""
+        ids = await _create_minimal_workflow(db_session)
+        wf_repo = WorkflowRepository(db_session)
+        wf = await wf_repo.get_by_id(ids["workflow_id"])
+        wf.status = "inactive"
+        await wf_repo.update(wf)
+
+        svc = _exec_service(db_session)
+        from app.core.exceptions import ValidationError
+
+        with pytest.raises(ValidationError, match="not active"):
+            await svc.start_instance(
+                workflow_id=ids["workflow_id"],
+                entity_type="test_entity", entity_id=101,
+            )
+
+    async def test_duplicate_instance_prevented(self, db_session):
+        """Cannot start a second active instance for the same entity."""
+        ids = await _create_minimal_workflow(db_session)
+        svc = _exec_service(db_session)
+
+        await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=200, created_by=1,
+        )
+        from app.core.exceptions import ConflictError
+
+        with pytest.raises(ConflictError, match="already exists"):
+            await svc.start_instance(
+                workflow_id=ids["workflow_id"],
+                entity_type="test_entity", entity_id=200, created_by=1,
+            )
+
+    async def test_approve_transition_moves_to_next_step(self, db_session):
+        ids = await _create_minimal_workflow(db_session)
+        svc = _exec_service(db_session)
+
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=300, created_by=1,
+        )
+
+        # Approve → should move to 'approved'
+        instance = await svc.perform_action(
+            instance_id=instance.id,
+            action="approve",
+            actor_id=2,
+            comment="Looks good",
+        )
+        assert instance.current_step_id == ids["step_approved"]
+        assert instance.status == "completed"  # approved is final
+        assert len(instance.history) == 2  # submit + approve
+
+    async def test_reject_marks_as_cancelled(self, db_session):
+        ids = await _create_minimal_workflow(db_session)
+        svc = _exec_service(db_session)
+
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=400, created_by=1,
+        )
+
+        # Move to approve step first to have a transition
+        transitions = await svc.get_available_transitions(instance.id)
+        reject_transition = [t for t in transitions
+                             if t.to_step_id == ids["step_rejected"]]
+        assert len(reject_transition) == 1
+
+        instance = await svc.perform_action(
+            instance_id=instance.id,
+            action="reject",
+            actor_id=2,
+            comment="Not approved",
+            to_step_id=reject_transition[0].to_step_id,
+        )
+        assert instance.status == "cancelled"
+
+    async def test_approve_with_specific_step(self, db_session):
+        """Approving with a specific to_step_id should respect it."""
+        ids = await _create_minimal_workflow(db_session)
+        svc = _exec_service(db_session)
+
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=500, created_by=1,
+        )
+
+        instance = await svc.perform_action(
+            instance_id=instance.id,
+            action="approve",
+            actor_id=2,
+            to_step_id=ids["step_approved"],
+        )
+        assert instance.current_step_id == ids["step_approved"]
+        assert instance.status == "completed"
+
+    async def test_action_on_completed_instance_fails(self, db_session):
+        """Cannot perform actions on already completed instances."""
+        ids = await _create_minimal_workflow(db_session)
+        svc = _exec_service(db_session)
+
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=600, created_by=1,
+        )
+        await svc.perform_action(
+            instance_id=instance.id, action="approve", actor_id=2,
+        )
+
+        from app.core.exceptions import ValidationError
+        with pytest.raises(ValidationError, match="Cannot perform action on a"):
+            await svc.perform_action(
+                instance_id=instance.id, action="approve", actor_id=2,
+            )
+
+    async def test_invalid_action_name(self, db_session):
+        ids = await _create_minimal_workflow(db_session)
+        svc = _exec_service(db_session)
+
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=700, created_by=1,
+        )
+        from app.core.exceptions import ValidationError
+
+        with pytest.raises(ValidationError, match="Invalid action"):
+            await svc.perform_action(
+                instance_id=instance.id, action="destroy", actor_id=2,
+            )
+
+    async def test_return_action_requires_to_step(self, db_session):
+        ids = await _create_minimal_workflow(db_session)
+        svc = _exec_service(db_session)
+
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=800, created_by=1,
+        )
+        from app.core.exceptions import ValidationError
+
+        with pytest.raises(ValidationError, match="requires a 'to_step_id'"):
+            await svc.perform_action(
+                instance_id=instance.id, action="return", actor_id=2,
+            )
+
+
+# ===========================================================================
+# Available Transitions & History Tests
+# ===========================================================================
+
+
+class TestTransitionsAndHistory:
+    async def test_available_transitions(self, db_session):
+        ids = await _create_minimal_workflow(db_session)
+        svc = _exec_service(db_session)
+
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=900, created_by=1,
+        )
+
+        transitions = await svc.get_available_transitions(instance.id)
+        assert len(transitions) == 2
+        assert any(t.to_step_id == ids["step_approved"] for t in transitions)
+        assert any(t.to_step_id == ids["step_rejected"] for t in transitions)
+
+    async def test_history_recorded(self, db_session):
+        ids = await _create_minimal_workflow(db_session)
+        svc = _exec_service(db_session)
+
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=950, created_by=1,
+        )
+        await svc.perform_action(
+            instance_id=instance.id, action="approve",
+            actor_id=2, comment="Approved!",
+        )
+
+        # Reload to get fresh history
+        instance2 = await svc.get_instance(instance.id)
+        assert len(instance2.history) == 2
+
+        submit_event = instance2.history[0]
+        assert submit_event.action == "submit"
+        assert submit_event.from_step_id is None
+
+        approve_event = instance2.history[1]
+        assert approve_event.action == "approve"
+        assert approve_event.actor_id == 2
+        assert approve_event.comment == "Approved!"
+
+    async def test_get_instance_by_entity(self, db_session):
+        ids = await _create_minimal_workflow(db_session)
+        svc = _exec_service(db_session)
+
+        await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=980, created_by=1,
+        )
+
+        instance = await svc.get_instance_by_entity("test_entity", 980)
+        assert instance is not None
+        assert instance.entity_id == 980
+
+        missing = await svc.get_instance_by_entity("test_entity", 99999)
+        assert missing is None
+
+    async def test_list_instances(self, db_session):
+        ids = await _create_minimal_workflow(db_session)
+        svc = _exec_service(db_session)
+
+        for i in range(3):
+            await svc.start_instance(
+                workflow_id=ids["workflow_id"],
+                entity_type="list_test", entity_id=1000 + i, created_by=1,
+            )
+
+        items, total = await svc.list_instances(
+            entity_type="list_test",
+        )
+        assert total >= 3
+
+
+# ===========================================================================
+# Audit & Notification Integration Tests
+# ===========================================================================
+
+
+class TestAuditIntegration:
+    async def test_audit_recorded_on_approve(self, db_session):
+        """Approval actions should produce audit entries."""
+        ids = await _create_minimal_workflow(db_session)
+        svc = _exec_service(db_session)
+
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=1100, created_by=1,
+        )
+        await svc.perform_action(
+            instance_id=instance.id, action="approve", actor_id=2,
+        )
+
+        # Verify audit entries exist
+        from app.domains.audit.repository import AuditRepository
+        audit_repo = AuditRepository(db_session)
+        items, total = await audit_repo.list()
+        audit_workflow_entries = [
+            a for a in items
+            if a.resource_type == "workflow"
+        ]
+        assert len(audit_workflow_entries) >= 1
+        entry = audit_workflow_entries[-1]
+        assert entry.action == "APPROVE"
+
+    async def test_audit_recorded_on_reject(self, db_session):
+        """Rejection should produce audit entries."""
+        ids = await _create_minimal_workflow(db_session)
+        svc = _exec_service(db_session)
+
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=1200, created_by=1,
+        )
+        transitions = await svc.get_available_transitions(instance.id)
+        reject_t = [t for t in transitions
+                    if t.to_step_id == ids["step_rejected"]][0]
+
+        await svc.perform_action(
+            instance_id=instance.id, action="reject",
+            actor_id=3, to_step_id=reject_t.to_step_id,
+        )
+
+        from app.domains.audit.repository import AuditRepository
+        audit_repo = AuditRepository(db_session)
+        items, total = await audit_repo.list()
+        audit_workflow_entries = [
+            a for a in items
+            if a.resource_type == "workflow" and a.action == "UPDATE"
+        ]
+        # Reject records UPDATE action
+        assert len(audit_workflow_entries) >= 1
+
+
+# ===========================================================================
+# Full Integration Test
+# ===========================================================================
+
+
+class TestFullWorkflowCycle:
+    async def test_complete_workflow_cycle(self, db_session):
+        """Full cycle: create workflow definition → start → approve → complete."""
+        admin = _admin_service(db_session)
+        exec_svc = _exec_service(db_session)
+
+        # 1. Create workflow definition
+        wf = await admin.create_workflow(
+            name="Integration WF", code="INT_WF", entity_type="integration_test"
+        )
+
+        # 2. Create steps
+        from app.domains.workflow.schemas import WorkflowStepCreate, WorkflowTransitionCreate
+
+        step1 = await admin.create_step(WorkflowStepCreate(
+            workflow_id=wf.id, name="draft", step_order=1, is_initial=True,
+        ))
+        step2 = await admin.create_step(WorkflowStepCreate(
+            workflow_id=wf.id, name="reviewed", step_order=2,
+        ))
+        step3 = await admin.create_step(WorkflowStepCreate(
+            workflow_id=wf.id, name="finalized", step_order=3, is_final=True,
+        ))
+
+        # 3. Create transitions
+        await admin.create_transition(WorkflowTransitionCreate(
+            workflow_id=wf.id, from_step_id=step1.id, to_step_id=step2.id,
+        ))
+        await admin.create_transition(WorkflowTransitionCreate(
+            workflow_id=wf.id, from_step_id=step2.id, to_step_id=step3.id,
+        ))
+
+        # 4. Start instance
+        instance = await exec_svc.start_instance(
+            workflow_id=wf.id, entity_type="integration_test",
+            entity_id=2000, created_by=1,
+        )
+        assert instance.current_step_id == step1.id
+
+        # 5. Approve once (move from draft → reviewed)
+        instance = await exec_svc.perform_action(
+            instance_id=instance.id, action="approve", actor_id=2,
+        )
+        assert instance.current_step_id == step2.id
+        assert instance.status == "active"  # not final yet
+
+        # 6. Approve twice (move from reviewed → finalized)
+        instance = await exec_svc.perform_action(
+            instance_id=instance.id, action="approve", actor_id=3,
+        )
+        assert instance.current_step_id == step3.id
+        assert instance.status == "completed"
+
+        # 7. Verify history has 3 entries
+        instance = await exec_svc.get_instance(instance.id)
+        assert len(instance.history) == 3
+        assert [h.action for h in instance.history] == ["submit", "approve", "approve"]

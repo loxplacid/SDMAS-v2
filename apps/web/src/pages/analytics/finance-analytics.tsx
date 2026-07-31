@@ -67,14 +67,14 @@ export function FinanceAnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Financial Analytics</h1>
-        <p className="text-gray-500 mt-1">Fee collection metrics and financial insights</p>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">Financial Analytics</h1>
+        <p className="text-[var(--color-text-tertiary)] mt-1">Fee collection metrics and financial insights</p>
       </div>
 
       <Card>
         <div className="flex flex-wrap gap-3">
           <div className="min-w-[200px]">
-            <label className="block text-xs font-medium text-gray-600 mb-1">Academic Year</label>
+            <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Academic Year</label>
             <Select
               options={academicYears}
               value={selectedYearId}
@@ -83,7 +83,7 @@ export function FinanceAnalyticsPage() {
             />
           </div>
           <div className="min-w-[160px]">
-            <label className="block text-xs font-medium text-gray-600 mb-1">Granularity</label>
+            <label className="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Granularity</label>
             <Select
               options={[{ value: 'daily', label: 'Daily' }, { value: 'weekly', label: 'Weekly' }, { value: 'monthly', label: 'Monthly' }]}
               value={granularity}
@@ -136,7 +136,7 @@ export function FinanceAnalyticsPage() {
                   emptyMessage="No data."
                 />
               ) : (
-                <p className="text-gray-400 text-sm text-center py-8">No fee due data available.</p>
+                <p className="text-[var(--color-text-muted)] text-sm text-center py-8">No fee due data available.</p>
               )}
             </Card>
           </div>

@@ -1,12 +1,21 @@
 from __future__ import annotations
 
 import datetime
+import datetime
+import logging
 from datetime import timezone
 from typing import List, Optional, Sequence
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
+from app.domains.audit.constants import ACADEMIC, CREATE, FEE, PAYMENT, RECORD_PAYMENT, UPDATE
+from app.domains.audit.service import AuditService
+from app.domains.notifications import dispatcher as notification_dispatcher
+from app.domains.notifications.events import FeeDueCreatedEvent, PaymentReceivedEvent
+
+logger = logging.getLogger(__name__)
 from app.domains.academic.repository import (
     AcademicYearRepository,
     ClassRepository,
@@ -148,7 +157,28 @@ class FeeStructureService:
             frequency=data.frequency or "annual",
             status="active",
         )
-        return await self.repo.create(structure)
+        created = await self.repo.create(structure)
+
+        # Audit: fee structure created
+        try:
+            audit_svc = AuditService(self.repo.session)
+            await audit_svc.record(
+                action=CREATE,
+                resource_type=FEE,
+                resource_id=str(created.id),
+                details={
+                    "academic_year_id": data.academic_year_id,
+                    "class_id": data.class_id,
+                    "fee_type_id": data.fee_type_id,
+                    "amount": float(data.amount),
+                    "frequency": data.frequency or "annual",
+                },
+            )
+            await self.repo.session.flush()
+        except Exception:
+            logger.warning("Failed to write audit entry for fee structure creation (non-fatal)", exc_info=True)
+
+        return created
 
     async def get(self, structure_id: int) -> FeeStructure:
         return await self.repo.get_by_id(structure_id)
@@ -192,7 +222,29 @@ class FeeStructureService:
                 raise ValidationError("Invalid fee structure status")
             fs.status = data.status
 
-        return await self.repo.update(fs)
+        updated_fs = await self.repo.update(fs)
+
+        # Audit: fee structure updated (only include actually-changed fields)
+        try:
+            audit_svc = AuditService(self.repo.session)
+            await audit_svc.record(
+                action=UPDATE,
+                resource_type=FEE,
+                resource_id=str(structure_id),
+                details={k: v for k, v in {
+                    "academic_year_id": data.academic_year_id,
+                    "class_id": data.class_id,
+                    "fee_type_id": data.fee_type_id,
+                    "amount": float(data.amount) if data.amount is not None else None,
+                    "frequency": data.frequency,
+                    "status": data.status,
+                }.items() if v is not None},
+            )
+            await self.repo.session.flush()
+        except Exception:
+            logger.warning("Failed to write audit entry for fee structure update (non-fatal)", exc_info=True)
+
+        return updated_fs
 
     async def list(
         self,
@@ -282,17 +334,24 @@ class FeeDueService:
                 f"No active fee structures found for class {enrollment.class_id} in academic year {academic_year_id}"
             )
 
-        created_dues: list[FeeDue] = []
-        for fs in structures:
-            existing = await self.repo.get_by_student_and_structure(
-                student_id, fs.id
+        structure_ids = [fs.id for fs in structures]
+
+        existing_result = await self.repo.session.execute(
+            select(FeeDue.fee_structure_id).where(
+                FeeDue.student_id == student_id,
+                FeeDue.fee_structure_id.in_(structure_ids),
             )
-            if existing is not None:
+        )
+        existing_ids = {row[0] for row in existing_result.all()}
+        for fs in structures:
+            if fs.id in existing_ids:
                 raise ConflictError(
                     f"Fee due already exists for student {student_id} and fee structure {fs.id}"
                 )
 
-            now = datetime.datetime.now(timezone.utc)
+        created_dues: list[FeeDue] = []
+        now = datetime.datetime.now(timezone.utc)
+        for fs in structures:
             due = FeeDue(
                 student_id=student_id,
                 academic_year_id=academic_year_id,
@@ -306,6 +365,21 @@ class FeeDueService:
             )
             created = await self.repo.create(due)
             created_dues.append(created)
+
+            # Fire event: fee dues created
+        if created_dues:
+            try:
+                total_amount = sum(d.original_amount for d in created_dues)
+                event = FeeDueCreatedEvent(
+                    student_id=student_id,
+                    academic_year_id=academic_year_id,
+                    due_ids=[d.id for d in created_dues],
+                    total_amount=float(total_amount),
+                    due_count=len(created_dues),
+                )
+                await notification_dispatcher.dispatch(event, session=self.repo.session)
+            except Exception:
+                logger.warning("Failed to dispatch FeeDueCreatedEvent (non-fatal)", exc_info=True)
 
         return created_dues
 
@@ -363,24 +437,29 @@ class FeeDueService:
             limit=10000,
         )
 
-        result = []
-        for fs in structures:
-            ft = await self.fee_type_repo.get_by_id(fs.fee_type_id)
-            result.append(
-                {
-                    "id": fs.id,
-                    "academic_year_id": fs.academic_year_id,
-                    "class_id": fs.class_id,
-                    "fee_type_id": fs.fee_type_id,
-                    "fee_type_name": ft.name if ft else "Unknown",
-                    "amount": fs.amount,
-                    "frequency": fs.frequency,
-                    "status": fs.status,
-                    "created_at": fs.created_at,
-                    "updated_at": fs.updated_at,
-                }
+        fee_type_ids = {fs.fee_type_id for fs in structures if fs.fee_type_id}
+        fee_types = {}
+        if fee_type_ids:
+            ft_result = await self.repo.session.execute(
+                select(FeeType).where(FeeType.id.in_(fee_type_ids))
             )
-        return result
+            fee_types = {ft.id: ft for ft in ft_result.scalars().all()}
+
+        return [
+            {
+                "id": fs.id,
+                "academic_year_id": fs.academic_year_id,
+                "class_id": fs.class_id,
+                "fee_type_id": fs.fee_type_id,
+                "fee_type_name": fee_types[fs.fee_type_id].name if fs.fee_type_id in fee_types else "Unknown",
+                "amount": fs.amount,
+                "frequency": fs.frequency,
+                "status": fs.status,
+                "created_at": fs.created_at,
+                "updated_at": fs.updated_at,
+            }
+            for fs in structures
+        ]
 
 
 # ---------------------------------------------------------------------------
@@ -452,6 +531,41 @@ class PaymentService:
         fee_due.status = new_status
         fee_due.updated_at = now
         await self.fee_due_repo.update(fee_due)
+
+        # Audit: payment recorded
+        try:
+            audit_svc = AuditService(self.repo.session)
+            await audit_svc.record(
+                action=RECORD_PAYMENT,
+                resource_type=PAYMENT,
+                resource_id=str(saved.id),
+                details={
+                    "student_id": data.student_id,
+                    "fee_due_id": data.fee_due_id,
+                    "amount": float(data.amount),
+                    "payment_method": data.payment_method,
+                    "receipt_number": data.receipt_number,
+                    "fee_due_status_after": new_status,
+                },
+            )
+            await self.repo.session.flush()
+        except Exception:
+            logger.warning("Failed to write audit entry for payment (non-fatal)", exc_info=True)
+
+        # Fire event: payment received
+        try:
+            event = PaymentReceivedEvent(
+                student_id=data.student_id,
+                fee_due_id=data.fee_due_id,
+                payment_id=saved.id,
+                amount=float(data.amount),
+                payment_method=data.payment_method,
+                receipt_number=data.receipt_number,
+                new_due_status=new_status,
+            )
+            await notification_dispatcher.dispatch(event, session=self.repo.session)
+        except Exception:
+            logger.warning("Failed to dispatch PaymentReceivedEvent (non-fatal)", exc_info=True)
 
         return {
             "payment": saved,

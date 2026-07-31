@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import * as XLSX from 'xlsx'
+import { utils as xlsxUtils, writeFile as xlsxWriteFile } from 'xlsx'
 
 interface Column {
   key: string
@@ -73,15 +73,14 @@ export function useExport() {
       const headers = columns.map((c) => c.header)
       const rows = data.map((row) => columns.map((col) => getCellValue(row, col)))
 
-      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
+      const ws = xlsxUtils.aoa_to_sheet([headers, ...rows])
 
-      // Set column widths
       ws['!cols'] = columns.map(() => ({ wch: 20 }))
 
-      const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, ws, 'Report')
+      const wb = xlsxUtils.book_new()
+      xlsxUtils.book_append_sheet(wb, ws, 'Report')
 
-      XLSX.writeFile(wb, `${filename}.xlsx`)
+      xlsxWriteFile(wb, `${filename}.xlsx`)
     } finally {
       setExporting(null)
     }

@@ -42,8 +42,8 @@ export function AcademicAnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Academic Analytics</h1>
-        <p className="text-gray-500 mt-1">Academic structure and teacher metrics</p>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">Academic Analytics</h1>
+        <p className="text-[var(--color-text-tertiary)] mt-1">Academic structure and teacher metrics</p>
       </div>
 
       {error && <ErrorState message={error} onRetry={fetchData} />}

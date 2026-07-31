@@ -62,9 +62,9 @@ export function ProfilePage() {
 
       <Card title="Account Information" className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="space-y-2 text-sm">
-          <p><span className="font-medium text-gray-500">Username:</span> {user?.username}</p>
-          <p><span className="font-medium text-gray-500">Role:</span> <span className="capitalize">{user?.role}</span></p>
-          <p><span className="font-medium text-gray-500">Status:</span> {user?.is_active ? 'Active' : 'Inactive'}</p>
+          <p><span className="font-medium text-[var(--color-text-tertiary)]">Username:</span> {user?.username}</p>
+          <p><span className="font-medium text-[var(--color-text-tertiary)]">Role:</span> <span className="capitalize">{user?.role}</span></p>
+          <p><span className="font-medium text-[var(--color-text-tertiary)]">Status:</span> {user?.is_active ? 'Active' : 'Inactive'}</p>
         </div>
       </Card>
 

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import datetime
 from typing import Optional, Sequence
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
-from app.domains.auth.models import User
+from app.domains.auth.models import RefreshToken, User
 
 
 class UserRepository:
@@ -69,3 +70,72 @@ class UserRepository:
     async def update(self, user: User) -> User:
         await self.session.flush()
         return user
+
+    async def store_refresh_token(
+        self,
+        user_id: int,
+        token_hash: str,
+        expires_at: datetime.datetime,
+    ) -> RefreshToken:
+        token = RefreshToken(
+            user_id=user_id,
+            token_hash=token_hash,
+            expires_at=expires_at,
+        )
+        self.session.add(token)
+        await self.session.flush()
+        return token
+
+    async def get_refresh_token(
+        self, token_hash: str
+    ) -> RefreshToken | None:
+        result = await self.session.execute(
+            select(RefreshToken).where(
+                RefreshToken.token_hash == token_hash,
+                RefreshToken.is_revoked == False,
+                RefreshToken.expires_at > datetime.datetime.now(datetime.timezone.utc),
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def revoke_refresh_token(
+        self,
+        token_id: int,
+        replaced_by_hash: str | None = None,
+    ) -> None:
+        result = await self.session.execute(
+            select(RefreshToken).where(RefreshToken.id == token_id)
+        )
+        token = result.scalar_one_or_none()
+        if token:
+            token.is_revoked = True
+            token.revoked_at = datetime.datetime.now(datetime.timezone.utc)
+            token.replaced_by_token_hash = replaced_by_hash
+            await self.session.flush()
+
+    async def revoke_all_user_tokens(
+        self, user_id: int, except_hash: str | None = None
+    ) -> None:
+        query = select(RefreshToken).where(
+            RefreshToken.user_id == user_id,
+            RefreshToken.is_revoked == False,
+        )
+        if except_hash:
+            query = query.where(RefreshToken.token_hash != except_hash)
+        result = await self.session.execute(query)
+        tokens = result.scalars().all()
+        now = datetime.datetime.now(datetime.timezone.utc)
+        for token in tokens:
+            token.is_revoked = True
+            token.revoked_at = now
+        await self.session.flush()
+
+    async def count_valid_tokens(self, user_id: int) -> int:
+        result = await self.session.execute(
+            select(func.count(RefreshToken.id)).where(
+                RefreshToken.user_id == user_id,
+                RefreshToken.is_revoked == False,
+                RefreshToken.expires_at > datetime.datetime.now(datetime.timezone.utc),
+            )
+        )
+        return result.scalar() or 0

@@ -13,6 +13,10 @@ from app.domains.admission.models import (  # noqa: F401
     AdmissionMeritEntry, AdmissionSeatAllocation,
 )
 from app.domains.attendance.models import AttendanceRecord  # noqa: F401
+from app.domains.attendance_intelligence.models import (  # noqa: F401
+    AbsenceReason, AttendanceCorrection, AttendanceThreshold,
+    PeriodAttendance, PeriodAttendanceRecord,
+)
 from app.domains.leave.models import LeaveRequest  # noqa: F401
 from app.domains.workflow.models import (  # noqa: F401
     Workflow, WorkflowStep, WorkflowTransition, WorkflowAction,
@@ -21,10 +25,31 @@ from app.domains.workflow.models import (  # noqa: F401
 from app.domains.institution.models import (  # noqa: F401
     Institution, Campus, School, Department, Program, Branch, Semester,
 )
-from app.domains.notifications.models import Notification  # noqa: F401
-from app.domains.auth.models import User  # noqa: F401
+from app.domains.notifications.models import Notification, DeviceToken  # noqa: F401
+from app.domains.auth.models import User, Permission, Role, role_permissions, user_roles  # noqa: F401
 from app.domains.fees.models import FeeDue, FeeStructure, FeeType, Payment  # noqa: F401
 from app.domains.student.models import Student  # noqa: F401
+from app.domains.academic_ops.models import (  # noqa: F401
+    Room, TimeSlot, TimetableEntry, Substitution, ExamSchedule,
+    GradingStructure, GradeRecord, Curriculum,
+)
+from app.domains.school_finance.models import (  # noqa: F401
+    PaymentMethod, FeeSchedule, TransactionLog, PaymentReconciliation,
+    ReconciliationItem, Receipt, FinanceReport,
+)
+from app.domains.report_builder.models import (  # noqa: F401
+    ReportDefinition, SavedReport, ExportJob,
+)
+from app.domains.documents.models import (  # noqa: F401
+    DocumentCategory, Document, DocumentVersion, DocumentShare,
+)
+from app.domains.communications.models import (  # noqa: F401
+    CommunicationMessage, CommunicationPreference, MessageAttachment,
+    MessageRecipient, MessageSchedule, MessageTemplate, MessageThread,
+)
+from app.domains.parent.models import Guardian  # noqa: F401
+from app.domains.search.models import SearchHistory  # noqa: F401
+from app.domains.student_portal.models import Assignment, AssignmentSubmission  # noqa: F401
 from app.infrastructure.database import Base
 
 config = context.config

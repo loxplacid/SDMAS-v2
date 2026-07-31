@@ -36,31 +36,24 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: M
     }
   }, [onClose, closing])
 
-  const handleEscape = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === 'Escape') handleClose()
-    },
-    [handleClose]
-  )
-
   useEffect(() => {
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') handleClose()
+    }
     if (open) {
       setMounted(true)
       setClosing(false)
       previousFocusRef.current = document.activeElement as HTMLElement
       document.addEventListener('keydown', handleEscape)
       document.body.style.overflow = 'hidden'
-
-      // Focus the dialog
       requestAnimationFrame(() => dialogRef.current?.focus())
-
       return () => {
         document.removeEventListener('keydown', handleEscape)
         document.body.style.overflow = ''
         previousFocusRef.current?.focus()
       }
     }
-  }, [open, handleEscape])
+  }, [open, handleClose])
 
   if (!mounted && !open) return null
 
@@ -75,32 +68,35 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: M
       ref={overlayRef}
       className={cn(
         'fixed inset-0 z-50 flex items-center justify-center p-4',
-        show ? 'animate-fade-in' : 'animate-fade-out'
+        show
+          ? 'animate-fade-in'
+          : 'animate-fade-out'
       )}
       onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
     >
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
+      <div className="fixed inset-0 bg-[var(--color-surface-overlay)] backdrop-blur-[2px]" aria-hidden="true" />
       <div
         ref={dialogRef}
         tabIndex={-1}
         className={cn(
-          'relative bg-[var(--color-surface)] rounded-xl shadow-xl w-full',
-          show ? 'animate-scale-in' : 'animate-scale-out',
-          'max-h-[90vh] overflow-y-auto',
+          'relative bg-[var(--color-surface)] rounded-2xl shadow-xl w-full',
+          show ? 'animate-scale-in-spring' : 'animate-scale-out',
+          'max-h-[85vh] overflow-y-auto',
+          'focus-visible:outline-none',
           sizeClasses[size]
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
-          <h2 id="modal-title" className="text-lg font-semibold text-[var(--color-text-primary)]">
+        <div className="flex items-center justify-between px-7 py-4.5 border-b border-[var(--color-divider)]">
+          <h2 id="modal-title" className="text-lg font-semibold text-[var(--color-text-primary)] leading-snug">
             {title}
           </h2>
           <button
             onClick={handleClose}
-            className="flex items-center justify-center h-8 w-8 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] transition-colors"
+            className="flex items-center justify-center h-8 w-8 rounded-xl text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] motion-safe:transition-colors motion-safe:duration-[var(--motion-fast)]"
             aria-label="Close"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,11 +106,11 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: M
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5">{children}</div>
+        <div className="px-7 py-6">{children}</div>
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[var(--color-border)] bg-[var(--color-bg)] rounded-b-xl">
+          <div className="flex items-center justify-end gap-3 px-7 py-4.5 border-t border-[var(--color-divider)] bg-[var(--color-bg)] rounded-b-2xl">
             {footer}
           </div>
         )}

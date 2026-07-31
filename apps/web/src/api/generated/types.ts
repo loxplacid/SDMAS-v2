@@ -23,6 +23,8 @@ export interface UserResponse {
   username: string
   display_name: string
   role: string
+  roles: string[]
+  campus_id: number | null
   is_active: boolean
   created_at: string
   updated_at: string
@@ -37,6 +39,7 @@ export interface AdminUserUpdate {
   display_name?: string | null
   email?: string | null
   role?: string | null
+  roles?: string[] | null
   is_active?: boolean | null
 }
 

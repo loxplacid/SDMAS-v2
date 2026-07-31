@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { feeDueApi } from '../../api/fees/fee-due-api'
 import type { FeeDueResponse } from '../../api/generated/types'
-import { Card, Input, Button, Badge, ErrorState } from '../../components/ui'
+import { Card, Input, Button, Badge, ErrorState, Table } from '../../components/ui'
 import { formatCurrency, capitalize } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger'> = {
@@ -56,62 +56,37 @@ export function StudentFeesPage() {
       {fees && (
         <Card title="Applicable Fee Structures">
           {fees.length === 0 ? (
-            <p className="text-gray-500 text-sm">No fee structures assigned for this student and academic year.</p>
+            <p className="text-[var(--color-text-tertiary)] text-sm">No fee structures assigned for this student and academic year.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-2 text-left font-medium text-gray-500">Fee Type</th>
-                    <th className="px-4 py-2 text-left font-medium text-gray-500">Amount</th>
-                    <th className="px-4 py-2 text-left font-medium text-gray-500">Frequency</th>
-                    <th className="px-4 py-2 text-left font-medium text-gray-500">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {(fees as any[]).map((fee: any) => (
-                    <tr key={fee.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-2">{fee.fee_type_name || fee.fee_type_id}</td>
-                      <td className="px-4 py-2 font-medium">{formatCurrency(fee.amount)}</td>
-                      <td className="px-4 py-2">{capitalize(fee.frequency)}</td>
-                      <td className="px-4 py-2"><Badge variant={fee.status === 'active' ? 'success' : 'danger'}>{capitalize(fee.status)}</Badge></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Table
+              columns={[
+                { key: 'fee_type_name', header: 'Fee Type', render: (f: any) => f.fee_type_name || f.fee_type_id },
+                { key: 'amount', header: 'Amount', render: (f: any) => <span className="font-medium">{formatCurrency(f.amount)}</span> },
+                { key: 'frequency', header: 'Frequency', render: (f: any) => capitalize(f.frequency) },
+                { key: 'status', header: 'Status', render: (f: any) => <Badge variant={f.status === 'active' ? 'success' : 'danger'}>{capitalize(f.status)}</Badge> },
+              ]}
+              data={fees as any[]}
+              keyExtractor={(f: any) => f.id}
+            />
           )}
         </Card>
       )}
 
       {dues.length > 0 && (
         <Card title="Fee Dues">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500">ID</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500">Amount</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500">Paid</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500">Balance</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500">Status</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-500">Due Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {dues.map((due) => (
-                  <tr key={due.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/fees/dues/${due.id}`)}>
-                    <td className="px-4 py-2">#{due.id}</td>
-                    <td className="px-4 py-2 font-medium">{formatCurrency(due.original_amount)}</td>
-                    <td className="px-4 py-2">{formatCurrency(due.amount_paid)}</td>
-                    <td className="px-4 py-2 font-semibold">{formatCurrency(due.original_amount - due.amount_paid)}</td>
-                    <td className="px-4 py-2"><Badge variant={statusBadge[due.status]}>{capitalize(due.status.replace('_', ' '))}</Badge></td>
-                    <td className="px-4 py-2">{due.due_date || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            columns={[
+              { key: 'id', header: 'ID', render: (d: FeeDueResponse) => `#${d.id}` },
+              { key: 'original_amount', header: 'Amount', render: (d: FeeDueResponse) => <span className="font-medium">{formatCurrency(d.original_amount)}</span> },
+              { key: 'amount_paid', header: 'Paid', render: (d: FeeDueResponse) => formatCurrency(d.amount_paid) },
+              { key: 'balance', header: 'Balance', render: (d: FeeDueResponse) => <span className="font-semibold">{formatCurrency(d.original_amount - d.amount_paid)}</span> },
+              { key: 'status', header: 'Status', render: (d: FeeDueResponse) => <Badge variant={statusBadge[d.status]}>{capitalize(d.status.replace('_', ' '))}</Badge> },
+              { key: 'due_date', header: 'Due Date' },
+            ]}
+            data={dues}
+            keyExtractor={(d: FeeDueResponse) => d.id}
+            onRowClick={(d: FeeDueResponse) => navigate(`/fees/dues/${d.id}`)}
+          />
         </Card>
       )}
     </div>

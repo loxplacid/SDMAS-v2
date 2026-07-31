@@ -80,6 +80,7 @@ class AdminUserUpdate(BaseModel):
     display_name: Optional[str] = None
     email: Optional[str] = None
     role: Optional[str] = None
+    roles: Optional[list[str]] = None
     is_active: Optional[bool] = None
 
     @field_validator("email")
@@ -112,6 +113,21 @@ class AdminUserUpdate(BaseModel):
             raise ValueError(f"Role must be one of: {', '.join(sorted(allowed))}")
         return v
 
+    @field_validator("roles")
+    @classmethod
+    def valid_roles(cls, v: Optional[list[str]]) -> Optional[list[str]]:
+        if v is None:
+            return v
+        allowed = {"admin", "principal", "accountant", "staff", "teacher", "student", "parent"}
+        for r in v:
+            if r not in allowed:
+                raise ValueError(f"Invalid role '{r}'. Must be one of: {', '.join(sorted(allowed))}")
+        return v
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
 
 class PasswordChange(BaseModel):
     current_password: str
@@ -133,6 +149,8 @@ class UserResponse(BaseModel):
     username: str
     display_name: str
     role: str
+    roles: list[str] = []
+    campus_id: int | None = None
     is_active: bool
     created_at: datetime.datetime
     updated_at: datetime.datetime

@@ -1,13 +1,18 @@
-import { useState, useCallback } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { useState, useCallback, useEffect, useMemo } from 'react'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { Sidebar } from './sidebar'
 import { Header } from './header'
+import { QuickCreate } from './quick-create'
+import { OrganizationSwitcher } from './organization-switcher'
+import { ContextualPageActions } from './contextual-actions'
 import { CommandPalette } from '../ui/command-palette'
+import { GlobalSearchModal } from '../ui/global-search-modal'
 import { KeyboardShortcutsDialog } from '../ui/keyboard-shortcuts-dialog'
 import { InstallPWA } from '../ui/install-pwa'
 import { SystemThemeToast } from '../ui/system-theme-toast'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
-import { useSmartSearch } from '../../hooks/use-smart-search'
+import { useGlobalSearch } from '../../hooks/use-global-search'
+import { useNavPersistence } from '../../hooks/use-nav-persistence'
 import { RouteTransition } from '../ui/route-transition'
 
 const navIcons: Record<string, string> = {
@@ -53,6 +58,7 @@ function buildCommandGroups(navigate: (path: string) => void) {
         { id: 'nav-fees', label: 'Fees', description: 'Fee structures and payments', icon: navIcons.fees, action: () => navigate('/fees'), keywords: ['payments', 'financial'] },
         { id: 'nav-reports', label: 'Reports', description: 'Attendance and fee reports', icon: navIcons.reports, action: () => navigate('/reports'), keywords: ['summaries'] },
         { id: 'nav-analytics', label: 'Analytics', description: 'Data insights and trends', icon: navIcons.analytics, action: () => navigate('/analytics'), keywords: ['charts', 'insights'] },
+        { id: 'nav-communications', label: 'Communications', description: 'Send messages & announcements', icon: navIcons.notifications, action: () => navigate('/communications'), keywords: ['email', 'sms', 'announcement', 'bulk'] },
         { id: 'nav-notifications', label: 'Notifications', description: 'System alerts', icon: navIcons.notifications, action: () => navigate('/notifications'), keywords: ['alerts', 'messages'] },
         { id: 'nav-operations', label: 'Data Operations', description: 'Exports, rollover, batch ops', icon: navIcons.operations, action: () => navigate('/operations'), keywords: ['export', 'rollover', 'batch'] },
         { id: 'nav-users', label: 'Users', description: 'Manage system users', icon: navIcons.users, action: () => navigate('/users'), keywords: ['accounts', 'admin'] },
@@ -73,27 +79,70 @@ function buildCommandGroups(navigate: (path: string) => void) {
 
 export function AppLayout() {
   const [commandOpen, setCommandOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const location = useLocation()
 
   const reactNavigate = useNavigate()
+  const navPersistence = useNavPersistence()
 
   const navigate = useCallback((path: string) => {
     reactNavigate(path)
   }, [reactNavigate])
 
-  // Smart search across entities
-  const { search: smartSearch, loaded: searchLoaded } = useSmartSearch(navigate)
+  // Global search across all entities (backend-powered)
+  const globalSearch = useGlobalSearch({ debounceMs: 300, minQueryLength: 1 })
+
+  // Command palette groups (memoized to avoid re-creation)
+  const commandGroups = useMemo(() => buildCommandGroups(navigate), [navigate])
 
   // `?` opens the keyboard shortcuts dialog
   useKeyboardShortcut({ '?': () => setShortcutsOpen(true) }, [])
 
+  // `Cmd+Shift+K` opens global search modal
+  useKeyboardShortcut({ 'mod+shift+k': () => setSearchOpen(true) }, [])
+
+  // Track page views for recent items
+  useEffect(() => {
+    const pageLabels: Record<string, string> = {
+      '/dashboard': 'Dashboard',
+      '/students': 'Students',
+      '/teachers': 'Teachers',
+      '/academic': 'Academics',
+      '/attendance': 'Attendance',
+      '/attendance/records': 'Attendance Records',
+      '/attendance/daily': 'Daily Attendance',
+      '/communications': 'Communications',
+      '/communications/compose': 'Compose Message',
+      '/communications/templates': 'Message Templates',
+      '/communications/sent': 'Sent Messages',
+      '/fees': 'Fees',
+      '/fees/fee-types': 'Fee Types',
+      '/fees/structures': 'Fee Structures',
+      '/fees/payments': 'Payments',
+      '/reports': 'Reports',
+      '/analytics': 'Analytics',
+      '/notifications': 'Notifications',
+      '/operations': 'Operations',
+      '/users': 'Users',
+      '/profile': 'Profile',
+    }
+    const label = pageLabels[location.pathname]
+    if (label) {
+      navPersistence.addRecentItem(location.pathname, label)
+    }
+  }, [location.pathname])
+
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--color-bg)]">
-      <Sidebar />
+      <Sidebar
+        collapsed={navPersistence.sidebarCollapsed}
+        onToggle={navPersistence.toggleSidebar}
+      />
       <div className="flex-1 flex flex-col min-w-0">
         <Header
           onOpenCommandPalette={() => setCommandOpen(true)}
-          onOpenSearch={() => setCommandOpen(true)}
+          onOpenSearch={() => setSearchOpen(true)}
           onOpenShortcuts={() => setShortcutsOpen(true)}
         />
         <main className="flex-1 overflow-y-auto">
@@ -105,13 +154,26 @@ export function AppLayout() {
         </main>
       </div>
 
-      {/* Command Palette */}
+      {/* Command Palette (navigation + actions) */}
       <CommandPalette
         open={commandOpen}
         onClose={() => setCommandOpen(false)}
-        groups={buildCommandGroups(navigate)}
-        smartSearch={smartSearch}
-        searchLoaded={searchLoaded}
+        groups={commandGroups}
+      />
+
+      {/* Global Search Modal (entity search, backend-powered) */}
+      <GlobalSearchModal
+        open={searchOpen}
+        onClose={() => {
+          setSearchOpen(false)
+          globalSearch.clear()
+        }}
+        globalSearch={globalSearch}
+        onNavigate={(route) => {
+          navigate(route)
+          setSearchOpen(false)
+          globalSearch.clear()
+        }}
       />
 
       {/* Keyboard Shortcuts Help */}
@@ -126,7 +188,6 @@ export function AppLayout() {
         className="sm:hidden fixed bottom-6 left-6 z-30 flex items-center justify-center h-10 w-10 rounded-full bg-[var(--color-surface)] text-[var(--color-text-secondary)] shadow-lg border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] transition-all active:scale-95 motion-reduce:active:scale-100 text-base font-bold animate-fade-in-scale"
         style={{ animationDelay: '600ms' }}
         aria-label="Keyboard shortcuts"
-        title="Keyboard shortcuts (?)"
       >
         ?
       </button>

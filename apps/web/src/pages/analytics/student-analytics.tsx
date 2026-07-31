@@ -74,8 +74,8 @@ export function StudentAnalyticsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Student Analytics</h1>
-        <p className="text-gray-500 mt-1">Student population metrics and distribution</p>
+        <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">Student Analytics</h1>
+        <p className="text-[var(--color-text-tertiary)] mt-1">Student population metrics and distribution</p>
       </div>
 
       <Card>

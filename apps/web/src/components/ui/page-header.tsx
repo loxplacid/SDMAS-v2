@@ -14,7 +14,7 @@ export function PageHeader({ title, subtitle, actions, className, compact = fals
     <div
       className={cn(
         'flex flex-col sm:flex-row sm:items-center justify-between gap-3',
-        compact ? 'mb-4' : 'mb-6',
+        compact ? 'mb-5' : 'mb-8',
         className
       )}
     >

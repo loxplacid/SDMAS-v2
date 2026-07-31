@@ -32,11 +32,11 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
           value={value}
           onChange={onChange}
           className={cn(
-            'block w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] pl-9 pr-8 py-2 text-sm',
+            'block w-full rounded-[10px] border border-[var(--color-border)] bg-[var(--color-surface)] pl-9 pr-8 py-2 text-sm',
             'text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]',
-            'transition-all duration-150',
-            'focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20',
-            'hover:border-[var(--color-text-muted)]',
+            'motion-safe:transition-all motion-safe:duration-[var(--motion-fast)]',
+            'focus-visible:border-[var(--color-brand-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-accent-ring)]',
+            'hover:border-[var(--color-border-hover)]',
             className
           )}
           {...props}
