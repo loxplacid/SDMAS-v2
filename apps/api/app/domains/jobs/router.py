@@ -16,6 +16,13 @@ from app.domains.jobs.schemas import (
 )
 from app.domains.jobs.service import JobService
 from app.infrastructure.database import get_session
+from app.multi_tenant.dependencies import get_optional_tenant
+from app.multi_tenant.guards import (
+    assert_tenant_scope_or_owner,
+    effective_campus_id,
+    inject_campus,
+)
+from app.multi_tenant.models import TenantContext
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -31,10 +38,12 @@ async def create_job(
     data: JobCreate,
     current_user: User = Depends(get_current_user),
     service: JobService = Depends(get_job_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> JobResponse:
     if data.user_id is None:
         data.user_id = current_user.id
     job = await service.create_job(data)
+    inject_campus(job, tenant)
     return JobResponse.model_validate(job)
 
 
@@ -69,11 +78,13 @@ async def list_all_jobs(
     limit: int = Query(50, ge=1, le=200),
     _: User = Depends(require_role("admin")),
     service: JobService = Depends(get_job_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> JobListResponse:
+    effective_campus = effective_campus_id(tenant, campus_id)
     items, total = await service.list_jobs(
         status=status,
         job_type=job_type,
-        campus_id=campus_id,
+        campus_id=effective_campus,
         skip=skip,
         limit=limit,
     )
@@ -88,10 +99,14 @@ async def get_job(
     job_id: int,
     current_user: User = Depends(get_current_user),
     service: JobService = Depends(get_job_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> JobResponse:
     job = await service.get_job(job_id)
     if job is None:
         raise NotFoundError(f"Job {job_id} not found")
+    assert_tenant_scope_or_owner(
+        job, tenant, current_user.id, resource="job"
+    )
     return JobResponse.model_validate(job)
 
 
@@ -101,10 +116,14 @@ async def update_job(
     data: JobUpdate,
     current_user: User = Depends(get_current_user),
     service: JobService = Depends(get_job_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> JobResponse:
     job = await service.get_job(job_id)
     if job is None:
         raise NotFoundError(f"Job {job_id} not found")
+    assert_tenant_scope_or_owner(
+        job, tenant, current_user.id, resource="job"
+    )
     updated = await service.update_job(job_id, data)
     return JobResponse.model_validate(updated)
 
@@ -114,7 +133,14 @@ async def cancel_job(
     job_id: int,
     current_user: User = Depends(get_current_user),
     service: JobService = Depends(get_job_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> JobResponse:
+    existing = await service.get_job(job_id)
+    if existing is None:
+        raise NotFoundError(f"Job {job_id} not found")
+    assert_tenant_scope_or_owner(
+        existing, tenant, current_user.id, resource="job"
+    )
     job = await service.cancel_job(job_id)
     if job is None:
         raise NotFoundError(f"Job {job_id} not found")
@@ -126,7 +152,14 @@ async def retry_job(
     job_id: int,
     current_user: User = Depends(get_current_user),
     service: JobService = Depends(get_job_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> JobResponse:
+    existing = await service.get_job(job_id)
+    if existing is None:
+        raise NotFoundError(f"Job {job_id} not found")
+    assert_tenant_scope_or_owner(
+        existing, tenant, current_user.id, resource="job"
+    )
     job = await service.retry_job(job_id)
     if job is None:
         raise NotFoundError(f"Job {job_id} not found")

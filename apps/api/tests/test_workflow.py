@@ -466,8 +466,8 @@ class TestAuditIntegration:
         )
 
         # Verify audit entries exist
-        from app.domains.audit.repository import AuditRepository
-        audit_repo = AuditRepository(db_session)
+        from app.domains.audit.repository import AuditLogRepository
+        audit_repo = AuditLogRepository(db_session)
         items, total = await audit_repo.list()
         audit_workflow_entries = [
             a for a in items
@@ -495,8 +495,8 @@ class TestAuditIntegration:
             actor_id=3, to_step_id=reject_t.to_step_id,
         )
 
-        from app.domains.audit.repository import AuditRepository
-        audit_repo = AuditRepository(db_session)
+        from app.domains.audit.repository import AuditLogRepository
+        audit_repo = AuditLogRepository(db_session)
         items, total = await audit_repo.list()
         audit_workflow_entries = [
             a for a in items

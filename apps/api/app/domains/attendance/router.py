@@ -23,6 +23,9 @@ from app.domains.attendance.schemas import (
 from app.domains.attendance.service import AttendanceService
 from app.domains.student.repository import StudentRepository
 from app.infrastructure.database import get_session
+from app.multi_tenant.dependencies import get_optional_tenant
+from app.multi_tenant.guards import assert_tenant_scope, effective_campus_id, inject_campus
+from app.multi_tenant.models import TenantContext
 
 router = APIRouter(prefix="/attendance", tags=["attendance"])
 
@@ -47,8 +50,10 @@ async def get_attendance_service(
 async def record_attendance(
     data: AttendanceRecordCreate,
     service: AttendanceService = Depends(get_attendance_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AttendanceRecordResponse:
     record = await service.record_attendance(data)
+    inject_campus(record, tenant)
     return AttendanceRecordResponse.model_validate(record)
 
 
@@ -60,8 +65,11 @@ async def record_attendance(
 async def record_daily_attendance(
     data: DailyAttendanceCreate,
     service: AttendanceService = Depends(get_attendance_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> list[AttendanceRecordResponse]:
     records = await service.record_daily_attendance(data)
+    for r in records:
+        inject_campus(r, tenant)
     return [AttendanceRecordResponse.model_validate(r) for r in records]
 
 
@@ -69,8 +77,10 @@ async def record_daily_attendance(
 async def get_attendance(
     record_id: int,
     service: AttendanceService = Depends(get_attendance_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AttendanceRecordResponse:
     record = await service.get_attendance(record_id)
+    assert_tenant_scope(record, tenant, resource="attendance")
     return AttendanceRecordResponse.model_validate(record)
 
 
@@ -79,7 +89,10 @@ async def update_attendance(
     record_id: int,
     data: AttendanceRecordUpdate,
     service: AttendanceService = Depends(get_attendance_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AttendanceRecordResponse:
+    record = await service.get_attendance(record_id)
+    assert_tenant_scope(record, tenant, resource="attendance")
     record = await service.update_attendance(record_id, data)
     return AttendanceRecordResponse.model_validate(record)
 
@@ -103,13 +116,14 @@ async def list_attendance(
         default=None, alias="campus_id", description="Filter by campus"
     ),
     service: AttendanceService = Depends(get_attendance_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[AttendanceRecordResponse]:
     records, total = await service.repo.list(
         student_id=student_id,
         section_id=section_id,
         status=status_filter,
         attendance_date=attendance_date,
-        campus_id=campus_id,
+        campus_id=effective_campus_id(tenant, campus_id),
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -150,7 +164,13 @@ async def get_student_attendance(
         default=None, alias="end_date", description="Filter end date (inclusive)"
     ),
     service: AttendanceService = Depends(get_attendance_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[AttendanceRecordResponse]:
+    if tenant.is_tenant_scoped:
+        student = await StudentRepository(
+            (await _get_attendance_deps(service))
+        ).get_by_id(student_id)
+        assert_tenant_scope(student, tenant, resource="student")
     records, total = await service.get_student_attendance(
         student_id=student_id,
         academic_year_id=academic_year_id,

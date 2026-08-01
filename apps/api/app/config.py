@@ -2,8 +2,14 @@ from __future__ import annotations
 
 from typing import List
 
-from pydantic import Field, PostgresDsn, SecretStr, field_validator
+from pydantic import Field, PostgresDsn, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Placeholder values that must never be used outside development. If any of
+# these are still configured when the app boots in production, startup fails
+# fast instead of silently shipping with known secrets.
+_DEFAULT_JWT_SECRET = "change-me"
+_DEFAULT_DOC_SECRET = "change-me-doc-secret"
 
 
 class Settings(BaseSettings):
@@ -15,6 +21,8 @@ class Settings(BaseSettings):
         default="sqlite+aiosqlite:///./sdmas_dev.db"
     )
     database_echo: bool | None = Field(default=None)
+    db_pool_size: int = Field(default=10, ge=1)
+    db_pool_max_overflow: int = Field(default=20, ge=0)
 
     redis_url: str | None = Field(default=None)
 
@@ -123,6 +131,32 @@ class Settings(BaseSettings):
 
     def is_test(self) -> bool:
         return self.environment == "test"
+
+    @model_validator(mode="after")
+    def _reject_default_secrets_in_production(self) -> "Settings":
+        """Refuse to boot in production with placeholder secrets.
+
+        ``jwt_secret`` and ``document_storage_secret`` default to known
+        placeholder values so local dev works out of the box. Shipping
+        those defaults to a production environment would let anyone forge
+        tokens or signed document URLs, so we hard-fail instead.
+        """
+        if self.environment != "production":
+            return self
+
+        problems: list[str] = []
+        if self.jwt_secret.get_secret_value() == _DEFAULT_JWT_SECRET:
+            problems.append("JWT_SECRET")
+        if self.document_storage_secret.get_secret_value() == _DEFAULT_DOC_SECRET:
+            problems.append("DOCUMENT_STORAGE_SECRET")
+        if problems:
+            msg = (
+                "Production environment requires real secrets; "
+                f"{', '.join(problems)} still set to default value. "
+                "Refusing to start."
+            )
+            raise ValueError(msg)
+        return self
 
     model_config = SettingsConfigDict(
         env_file=".env",

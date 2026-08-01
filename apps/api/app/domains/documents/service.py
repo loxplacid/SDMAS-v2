@@ -111,6 +111,7 @@ class DocumentService:
         description: Optional[str] = None,
         tags: Optional[list[str]] = None,
         request: Any = None,
+        campus_id: Optional[int] = None,
     ) -> Document:
         category = await self.category_service.get(category_id)
         _check_role_access(category, user)
@@ -134,7 +135,7 @@ class DocumentService:
             description=description,
             tags=tags,
             lifecycle_state=LIFECYCLE_ACTIVE,
-            campus_id=getattr(user, "campus_id", None),
+            campus_id=campus_id if campus_id is not None else getattr(user, "campus_id", None),
             uploaded_by=user.id,
         )
         self.session.add(doc)
@@ -164,6 +165,7 @@ class DocumentService:
         category_code: Optional[str] = None,
         student_id: Optional[int] = None,
         lifecycle_state: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 20,
     ) -> tuple[list[Document], int]:
@@ -178,6 +180,8 @@ class DocumentService:
             conditions.append(Document.student_id == student_id)
         if lifecycle_state:
             conditions.append(Document.lifecycle_state == lifecycle_state)
+        if campus_id is not None:
+            conditions.append(Document.campus_id == campus_id)
 
         if "admin" not in user.role_codes:
             conditions.append(Document.owner_id == user.id)

@@ -90,13 +90,6 @@ class AcademicRecord(BaseModel):
     enrolled_at: str
 
 
-class TimelineEvent(BaseModel):
-    date: str
-    type: str
-    title: str
-    description: Optional[str] = None
-
-
 class StudentHealthInfo(BaseModel):
     blood_group: Optional[str] = None
     allergies: Optional[str] = None
@@ -117,6 +110,17 @@ class HostelInfo(BaseModel):
     bed_number: Optional[str] = None
 
 
+class RiskFindingBrief(BaseModel):
+    id: int
+    rule_code: str
+    category: str
+    severity: str
+    score: float
+    reason: str
+    recommended_action: str
+    detected_at: datetime.datetime
+
+
 class Student360Response(BaseModel):
     identity: StudentIdentity
     guardians: list[GuardianInfo] = []
@@ -132,7 +136,7 @@ class Student360Response(BaseModel):
     health: StudentHealthInfo = StudentHealthInfo()
     transport: Optional[TransportInfo] = None
     hostel: Optional[HostelInfo] = None
-    timeline: list[TimelineEvent] = []
     achievements: list[dict] = []
     behavior: list[dict] = []
     communications: list[dict] = []
+    risk_findings: list[RiskFindingBrief] = []

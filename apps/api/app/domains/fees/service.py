@@ -597,9 +597,14 @@ class PaymentService:
         return await self.repo.find_by_fee_due(fee_due_id)
 
     async def get_payments_by_date_range(
-        self, start_date: str, end_date: str
+        self,
+        start_date: str,
+        end_date: str,
+        campus_id: Optional[int] = None,
     ) -> Sequence[Payment]:
-        return await self.repo.find_by_date_range(start_date, end_date)
+        return await self.repo.find_by_date_range(
+            start_date, end_date, campus_id=campus_id
+        )
 
     async def get_payment_by_receipt_number(
         self, receipt_number: str

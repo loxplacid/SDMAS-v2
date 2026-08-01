@@ -65,6 +65,18 @@ class RateLimiter:
         pruned.append(now)
         return True, 0
 
+    def reset(self, key: str | None = None) -> None:
+        """Clear rate-limit state.
+
+        With no argument, clears every bucket (useful between tests so a
+        full suite run never trips shared-IP windows).  With ``key``,
+        clears only that bucket.
+        """
+        if key is None:
+            self._buckets.clear()
+        else:
+            self._buckets.pop(key, None)
+
 
 # Singleton for app-wide use
 _global_limiter = RateLimiter()

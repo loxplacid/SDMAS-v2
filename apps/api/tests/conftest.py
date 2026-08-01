@@ -64,6 +64,11 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
 @pytest_asyncio.fixture
 async def api_client() -> AsyncGenerator[AsyncClient, None]:
     """FastAPI test client with in-memory SQLite and dependency overrides."""
+    # Import the app first so every domain model is registered with
+    # Base.metadata before create_all runs — this makes table creation
+    # order-independent regardless of which test file runs first.
+    from app.main import app
+
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -71,6 +76,30 @@ async def api_client() -> AsyncGenerator[AsyncClient, None]:
     factory = async_sessionmaker(
         engine, class_=AsyncSession, expire_on_commit=False
     )
+
+    # Seed a default admin so permission-gated endpoints (e.g.
+    # DELETE /students requiring students.delete) can be exercised
+    # end-to-end through the API.
+    from sqlalchemy import select as _select
+    from app.domains.auth.models import User
+    from app.domains.auth.security import hash_password
+
+    async with factory() as seed_session:
+        existing = await seed_session.execute(
+            _select(User).where(User.username == "admin")
+        )
+        if existing.scalar_one_or_none() is None:
+            seed_session.add(
+                User(
+                    username="admin",
+                    email="admin@test.local",
+                    password_hash=hash_password("AdminPass123!"),
+                    display_name="Test Admin",
+                    role="admin",
+                    is_active=True,
+                )
+            )
+            await seed_session.commit()
 
     async def override_get_session() -> AsyncGeneratorType[AsyncSession, None]:
         async with factory() as session:
@@ -81,8 +110,6 @@ async def api_client() -> AsyncGenerator[AsyncClient, None]:
                 await session.rollback()
                 raise
 
-    from app.main import app
-
     app.dependency_overrides[get_session] = override_get_session
 
     transport = ASGITransport(app=app)
@@ -91,6 +118,21 @@ async def api_client() -> AsyncGenerator[AsyncClient, None]:
 
     app.dependency_overrides.clear()
     await engine.dispose()
+
+
+@pytest.fixture(autouse=True)
+def _reset_login_rate_limiter():
+    """Reset the shared login rate limiter before every test.
+
+    The ``_login_limiter`` in ``auth/router.py`` is a module-level singleton
+    keyed by client IP; every ``api_client``/``client`` request shares the
+    same test IP, so without a reset the 5-logins/60s window would 429 later
+    tests in a full suite run.
+    """
+    from app.domains.auth.router import _login_limiter
+
+    _login_limiter.reset()
+    yield
 
 
 # ---------------------------------------------------------------------------

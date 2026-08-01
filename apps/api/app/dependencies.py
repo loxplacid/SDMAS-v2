@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 from typing import Optional
 
-from fastapi import Header
+from fastapi import Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings, settings
@@ -12,6 +12,7 @@ from app.domains.auth.models import User
 from app.domains.auth.repository import UserRepository
 from app.domains.auth.service import UserService
 from app.infrastructure.database import async_session_factory
+from app.multi_tenant.models import TenantContext
 
 
 def get_settings() -> Settings:
@@ -44,26 +45,20 @@ async def get_current_user(
 
 
 # ---------------------------------------------------------------------------
-# Multi-tenancy — deprecated stub replaced by app.multi_tenant.dependencies
+# Multi-tenancy — canonical implementation lives in app.multi_tenant.dependencies
 # ---------------------------------------------------------------------------
 
 
-async def get_school_context():
-    """DEPRECATED — Use ``app.multi_tenant.dependencies.get_current_tenant``
-    instead.
+async def get_school_context(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db_session),
+) -> TenantContext:
+    """Backward-compatible alias for ``app.multi_tenant.dependencies.get_school_context``.
 
-    This stub exists only to preserve backward compatibility until all
-    callers have been migrated to the new dependency.
-
-    See ``app/multi_tenant/`` for the current implementation.
+    Kept so that legacy imports of ``app.dependencies.get_school_context``
+    continue to resolve to the secure, membership-validated
+    implementation. New code should import from ``app.multi_tenant.dependencies``.
     """
-    from app.multi_tenant.dependencies import get_current_tenant as _new
-    from app.domains.auth.dependencies import get_current_user as _get_user
-    from app.infrastructure.database import get_session as _get_db
+    from app.multi_tenant.dependencies import resolve_tenant_context
 
-    # Approximate the new dependency pipeline — requires the caller
-    # to provide user + session via override, which they already do.
-    raise NotImplementedError(
-        "get_school_context is deprecated. Use "
-        "app.multi_tenant.dependencies.get_current_tenant instead."
-    )
+    return await resolve_tenant_context(session, current_user, require_school=True)

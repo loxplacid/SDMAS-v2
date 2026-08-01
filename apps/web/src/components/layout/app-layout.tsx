@@ -32,6 +32,9 @@ const navIcons: Record<string, string> = {
 
 const locationToNavLabel: Record<string, string> = {
   dashboard: 'Dashboard',
+  'command-center': 'Command Center',
+  risk: 'Risk Center',
+  timeline: 'Timeline',
   students: 'Students',
   teachers: 'Teachers',
   academic: 'Academics',
@@ -50,7 +53,10 @@ function buildCommandGroups(navigate: (path: string) => void) {
     {
       label: 'Pages',
       items: [
-        { id: 'nav-dashboard', label: 'Dashboard', description: 'Executive overview', icon: navIcons.dashboard, action: () => navigate('/dashboard'), keywords: ['home', 'overview'] },
+        { id: 'nav-command-center', label: 'Command Center', description: 'School health, alerts & today', icon: navIcons.dashboard, action: () => navigate('/command-center'), keywords: ['home', 'overview', 'leadership', 'health', 'alerts'] },
+        { id: 'nav-risk', label: 'Risk Center', description: 'Deterministic risk findings & attention', icon: navIcons.analytics, action: () => navigate('/risk'), keywords: ['risk', 'attention', 'findings', 'alerts', 'rules'] },
+        { id: 'nav-timeline', label: 'Timeline', description: 'Unified operational activity feed', icon: navIcons.operations, action: () => navigate('/timeline'), keywords: ['activity', 'feed', 'audit', 'events', 'history'] },
+        { id: 'nav-dashboard', label: 'Dashboard', description: 'Executive overview', icon: navIcons.dashboard, action: () => navigate('/dashboard'), keywords: ['home', 'overview', 'classic'] },
         { id: 'nav-students', label: 'Students', description: 'Manage student records', icon: navIcons.students, action: () => navigate('/students'), keywords: ['people', 'enrollment'] },
         { id: 'nav-teachers', label: 'Teachers', description: 'Manage teaching staff', icon: navIcons.teachers, action: () => navigate('/teachers'), keywords: ['staff', 'faculty'] },
         { id: 'nav-academic', label: 'Academics', description: 'Classes, sections, terms', icon: navIcons.academic, action: () => navigate('/academic'), keywords: ['classes', 'years', 'terms'] },
@@ -106,6 +112,9 @@ export function AppLayout() {
   useEffect(() => {
     const pageLabels: Record<string, string> = {
       '/dashboard': 'Dashboard',
+      '/command-center': 'Command Center',
+      '/risk': 'Risk Center',
+      '/timeline': 'Timeline',
       '/students': 'Students',
       '/teachers': 'Teachers',
       '/academic': 'Academics',

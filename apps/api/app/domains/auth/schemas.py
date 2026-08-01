@@ -161,3 +161,28 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     expires_in: int
+
+
+class SchoolMembershipResponse(BaseModel):
+    """A user's membership in a school (campus)."""
+
+    campus_id: int
+    campus_name: Optional[str] = None
+    campus_code: Optional[str] = None
+    institution_id: Optional[int] = None
+    role: str
+    is_default: bool
+    is_active: bool
+
+
+class SchoolSwitchRequest(BaseModel):
+    """Switch the authenticated user's active school."""
+
+    campus_id: int
+
+    @field_validator("campus_id")
+    @classmethod
+    def campus_id_positive(cls, v: int) -> int:
+        if v < 1:
+            raise ValueError("campus_id must be a positive integer")
+        return v

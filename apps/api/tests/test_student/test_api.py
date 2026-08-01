@@ -175,15 +175,27 @@ async def test_update_student_not_found(api_client: AsyncClient):
     assert response.status_code == 404
 
 
+async def _admin_headers(api_client: AsyncClient) -> dict:
+    """Login as the seeded admin user (see conftest api_client fixture)."""
+    resp = await api_client.post(
+        "/auth/login",
+        json={"login": "admin", "password": "AdminPass123!"},
+    )
+    assert resp.status_code == 200, resp.text
+    token = resp.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
 @pytest.mark.asyncio
 async def test_delete_student(api_client: AsyncClient):
+    headers = await _admin_headers(api_client)
     create_resp = await api_client.post(
         "/students",
         json={"first_name": "Delete", "last_name": "Me", "student_number": "DEL001"},
     )
     student_id = create_resp.json()["id"]
 
-    response = await api_client.delete(f"/students/{student_id}")
+    response = await api_client.delete(f"/students/{student_id}", headers=headers)
     assert response.status_code == 204
 
     get_resp = await api_client.get(f"/students/{student_id}")
@@ -192,7 +204,8 @@ async def test_delete_student(api_client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_delete_student_not_found(api_client: AsyncClient):
-    response = await api_client.delete("/students/99999")
+    headers = await _admin_headers(api_client)
+    response = await api_client.delete("/students/99999", headers=headers)
     assert response.status_code == 404
 
 
@@ -207,4 +220,5 @@ async def test_health_still_works(api_client: AsyncClient):
 async def test_ready_still_works(api_client: AsyncClient):
     response = await api_client.get("/ready")
     assert response.status_code == 200
-    assert response.json()["database"] == "connected"
+    assert response.json()["status"] == "ready"
+    assert response.json()["components"]["database"]["status"] == "ready"

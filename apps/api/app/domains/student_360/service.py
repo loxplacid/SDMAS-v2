@@ -19,10 +19,10 @@ from app.domains.student_360.schemas import (
     GuardianInfo,
     HostelInfo,
     PaymentItem,
+    RiskFindingBrief,
     Student360Response,
     StudentHealthInfo,
     StudentIdentity,
-    TimelineEvent,
     TransportInfo,
 )
 
@@ -54,7 +54,7 @@ class Student360Service:
         health = await self._get_health_info(student_id)
         transport = await self._get_transport_info(student_id)
         hostel = await self._get_hostel_info(student_id)
-        timeline = await self._get_timeline(student_id)
+        risk_findings = await self._get_risk_findings(student_id)
 
         return Student360Response(
             identity=identity,
@@ -71,7 +71,7 @@ class Student360Service:
             health=health,
             transport=transport,
             hostel=hostel,
-            timeline=timeline,
+            risk_findings=risk_findings,
         )
 
     async def _get_guardians(self, student_id: int) -> list[GuardianInfo]:
@@ -414,77 +414,32 @@ class Student360Service:
             logger.debug("No student_hostel table: %s", exc)
         return None
 
-    async def _get_timeline(
-        self, student_id: int
-    ) -> list[TimelineEvent]:
-        events: list[TimelineEvent] = []
+    async def _get_risk_findings(self, student_id: int) -> list[RiskFindingBrief]:
+        """Open risk findings for the student (from the persisted snapshot)."""
         try:
-            result = await self.session.execute(
-                text(
-                    """
-                    SELECT created_at, 'payment' AS type,
-                           CONCAT('Payment of ', amount, ' recorded') AS title,
-                           CONCAT('Method: ', payment_method) AS description
-                    FROM payments WHERE student_id = :sid
-                    """
-                ),
-                {"sid": student_id},
-            )
-            for r in result.all():
-                events.append(
-                    TimelineEvent(
-                        date=str(r[0]), type=r[1], title=r[2], description=r[3]
-                    )
-                )
-        except Exception:
-            pass
+            from app.domains.risk.models import RiskFinding
 
-        try:
             result = await self.session.execute(
-                text(
-                    """
-                    SELECT enrolled_at, 'enrollment' AS type,
-                           CONCAT('Enrolled in ', ay.name) AS title,
-                           CONCAT('Class: ', c.name) AS description
-                    FROM enrollments e
-                    LEFT JOIN academic_years ay ON ay.id = e.academic_year_id
-                    LEFT JOIN classes c ON c.id = e.class_id
-                    WHERE e.student_id = :sid
-                    """
-                ),
-                {"sid": student_id},
-            )
-            for r in result.all():
-                events.append(
-                    TimelineEvent(
-                        date=str(r[0]), type=r[1], title=r[2], description=r[3]
-                    )
+                select(RiskFinding)
+                .where(
+                    RiskFinding.student_id == student_id,
+                    RiskFinding.status == "open",
                 )
-        except Exception:
-            pass
-
-        try:
-            result = await self.session.execute(
-                text(
-                    """
-                    SELECT created_at, 'audit' AS type, action AS title,
-                           resource_id AS description
-                    FROM audit_logs
-                    WHERE resource_type = 'student' AND resource_id = :sid_str
-                    ORDER BY created_at DESC
-                    LIMIT 20
-                    """
-                ),
-                {"sid_str": str(student_id)},
+                .order_by(RiskFinding.severity.desc(), RiskFinding.score.desc())
             )
-            for r in result.all():
-                events.append(
-                    TimelineEvent(
-                        date=str(r[0]), type=r[1], title=r[2], description=r[3]
-                    )
+            return [
+                RiskFindingBrief(
+                    id=f.id,
+                    rule_code=f.rule_code,
+                    category=f.category,
+                    severity=f.severity,
+                    score=f.score,
+                    reason=f.reason,
+                    recommended_action=f.recommended_action,
+                    detected_at=f.detected_at,
                 )
-        except Exception:
-            pass
-
-        events.sort(key=lambda e: e.date, reverse=True)
-        return events[:50]
+                for f in result.scalars().all()
+            ]
+        except Exception as exc:  # noqa: BLE001 — risk is optional enrichment
+            logger.debug("Risk findings query failed: %s", exc)
+            return []

@@ -83,7 +83,7 @@ export function TeacherListPage() {
       <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         {error ? <ErrorState message={error} onRetry={() => fetch({ page, size, status: statusFilter || undefined })} /> : (
           <>
-            <Table columns={[...columns, { key: 'actions', header: 'Actions', render: (t: TeacherResponse) => (<div className="flex gap-2" onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="sm" onClick={() => openEditModal(t)}>Edit</Button></div>) }]} data={data} keyExtractor={(t) => t.id} emptyMessage="No teachers found." onRowClick={(t) => navigate(`/teachers/${t.id}`)} loading={loading} />
+            <Table columns={[...columns, { key: 'actions', header: 'Actions', render: (t: TeacherResponse) => (<div className="flex gap-2" onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="sm" onClick={() => navigate(`/teachers/${t.id}/360`)} title="Open Teacher 360 view">360</Button><Button variant="ghost" size="sm" onClick={() => openEditModal(t)}>Edit</Button></div>) }]} data={data} keyExtractor={(t) => t.id} emptyMessage="No teachers found." onRowClick={(t) => navigate(`/teachers/${t.id}`)} loading={loading} />
             <Pagination page={page} size={size} total={total} pages={pages} onPageChange={setPage} onSizeChange={(s) => { setSize(s); setPage(1) }} />
           </>
         )}

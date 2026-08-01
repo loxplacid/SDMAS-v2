@@ -3,14 +3,152 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../api/auth/auth-context'
 import { teacherApi } from '../../api/academic/teacher-api'
 import { teacherAssignmentApi } from '../../api/academic/teacher-assignment-api'
+import { riskApi, type TeacherRiskSummary } from '../../api/risk/risk-api'
 import type { TeacherResponse, TeacherAssignmentResponse } from '../../api/generated/types'
-import { Loading, ErrorState, AnimatedCount } from '../../components/ui'
+import { ErrorState, AnimatedCount, Skeleton } from '../../components/ui'
+import { cn } from '../../lib/utils'
+
+// ── Student Risk section ──────────────────────────────────────────────
+
+const riskSeverityBadge: Record<string, 'danger' | 'warning' | 'info' | 'success'> = {
+  critical: 'danger',
+  high: 'danger',
+  medium: 'warning',
+  low: 'info',
+}
+
+const riskSeverityDot: Record<string, string> = {
+  critical: 'bg-[var(--color-danger)]',
+  high: 'bg-[var(--color-danger)]',
+  medium: 'bg-[var(--color-warning)]',
+  low: 'bg-[var(--color-info)]',
+}
+
+const riskSeverityTint: Record<string, string> = {
+  critical: 'text-[var(--color-danger)] bg-[var(--color-danger)]/10',
+  high: 'text-[var(--color-danger)] bg-[var(--color-danger)]/10',
+  medium: 'text-[var(--color-warning)] bg-[var(--color-warning)]/10',
+  low: 'text-[var(--color-info)] bg-[var(--color-info)]/10',
+}
+
+const riskCategoryLabel: Record<string, string> = {
+  attendance: 'Attendance',
+  academic: 'Academic',
+  documents: 'Documents',
+  operational: 'Operational',
+}
+
+function StudentRiskSection({ summary, loading, error }: { summary: TeacherRiskSummary | null; loading: boolean; error: string | null }) {
+  const navigate = useNavigate()
+  const severityOrder = ['critical', 'high', 'medium', 'low'] as const
+
+  return (
+    <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] p-6 animate-fade-in-up" style={{ animationFillMode: 'both' }}>
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h2 className="text-base font-semibold text-[var(--color-text-primary)]">Student Risk</h2>
+          <p className="text-sm text-[var(--color-text-tertiary)] mt-0.5">Open attention flags for students in your classes</p>
+        </div>
+        {summary && summary.total > 0 && (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-danger)]/25 bg-[var(--color-danger)]/5 px-3 py-1 text-xs font-medium text-[var(--color-danger)]">
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-danger)]" aria-hidden="true" />
+            {summary.total} open
+          </span>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="space-y-2" aria-label="Loading student risk">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-16 rounded-xl" />
+          ))}
+        </div>
+      ) : error ? (
+        <div className="flex items-start gap-3 rounded-xl border border-[var(--color-warning)]/20 bg-[var(--color-warning)]/5 p-4">
+          <svg className="h-4.5 w-4.5 text-[var(--color-warning)] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+          <p className="text-sm text-[var(--color-text-secondary)]">Risk data is temporarily unavailable. The rest of your dashboard is still up to date.</p>
+        </div>
+      ) : !summary || summary.findings.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <div className="flex items-center justify-center h-11 w-11 rounded-xl bg-[var(--color-success)]/10 mb-3">
+            <svg className="h-5 w-5 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium text-[var(--color-text-secondary)]">No open risk findings</p>
+          <p className="text-xs text-[var(--color-text-tertiary)] mt-1">No students in your classes currently need attention.</p>
+        </div>
+      ) : (
+        <>
+          {/* Severity summary chips */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+            {severityOrder.map((sev) => (
+              <div key={sev} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className={cn('inline-block h-2 w-2 rounded-full', riskSeverityDot[sev])} aria-hidden="true" />
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">{sev}</p>
+                </div>
+                <p className={cn('text-xl font-bold tabular-nums leading-none', riskSeverityTint[sev])}>
+                  {summary.by_severity?.[sev] ?? 0}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Findings list */}
+          <div className="space-y-2">
+            {summary.findings.slice(0, 8).map((f) => (
+              <div key={f.id} className="flex items-start gap-3 p-4 rounded-xl bg-[var(--color-bg)] border border-[var(--color-border)] hover:shadow-sm hover:-translate-y-0.5 motion-safe:transition-all motion-safe:duration-[var(--motion-fast)] motion-reduce:hover:translate-y-0">
+                <span className={cn('mt-1.5 inline-block h-2 w-2 rounded-full flex-shrink-0', riskSeverityDot[f.severity])} aria-hidden="true" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-semibold text-[var(--color-text-primary)]">{f.student_name || `Student #${f.student_id}`}</p>
+                    <span className="text-[11px] text-[var(--color-text-tertiary)]">{f.student_number}</span>
+                    {f.class_name && <span className="text-[11px] text-[var(--color-text-muted)]">{f.class_name}</span>}
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-text-muted)]">{riskCategoryLabel[f.category] || f.category}</span>
+                  </div>
+                  <p className="text-xs text-[var(--color-text-tertiary)] mt-1 leading-relaxed">{f.reason}</p>
+                  <p className="text-xs text-[var(--color-text-secondary)] mt-1.5">
+                    <span className="font-medium">Recommended:</span> {f.recommended_action}
+                  </p>
+                </div>
+                {f.student_id && (
+                  <button
+                    onClick={() => navigate(`/students/${f.student_id}/360`)}
+                    className="flex-shrink-0 inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] hover:border-[var(--color-brand-accent)]/40 hover:text-[var(--color-brand-accent)] motion-safe:transition-colors"
+                    aria-label={`Open Student 360 for ${f.student_name || f.student_id}`}
+                  >
+                    View
+                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {summary.findings.length > 8 && (
+            <p className="text-center text-xs text-[var(--color-text-tertiary)] mt-4">
+              Showing 8 of {summary.findings.length} findings
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
 
 export function TeacherDashboardPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [teacher, setTeacher] = useState<TeacherResponse | null>(null)
   const [assignments, setAssignments] = useState<TeacherAssignmentResponse[]>([])
+  const [riskSummary, setRiskSummary] = useState<TeacherRiskSummary | null>(null)
+  const [riskLoading, setRiskLoading] = useState(false)
+  const [riskError, setRiskError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const fetchIdRef = useRef(0)
@@ -36,6 +174,21 @@ export function TeacherDashboardPage() {
           if (fetchId === fetchIdRef.current) {
             setAssignments(assignResult.items)
           }
+          // Load risk findings for their students (non-blocking, best-effort)
+          setRiskLoading(true)
+          setRiskError(null)
+          riskApi.getTeacherFindings(match.id)
+            .then((summary) => {
+              if (fetchId === fetchIdRef.current) setRiskSummary(summary)
+            })
+            .catch((err: any) => {
+              if (fetchId === fetchIdRef.current) {
+                setRiskError(err?.detail || 'Risk data unavailable')
+              }
+            })
+            .finally(() => {
+              if (fetchId === fetchIdRef.current) setRiskLoading(false)
+            })
         }
       })
       .catch((err: any) => {
@@ -252,6 +405,11 @@ export function TeacherDashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Student Risk — best-effort, never blocks the dashboard */}
+      {teacher && (
+        <StudentRiskSection summary={riskSummary} loading={riskLoading} error={riskError} />
+      )}
     </div>
   )
 }

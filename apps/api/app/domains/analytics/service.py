@@ -44,37 +44,52 @@ class AnalyticsService:
     # Overview
     # ------------------------------------------------------------------
 
-    async def get_overview(self) -> dict:
-        """Combined high-level overview for the executive dashboard."""
+    async def get_overview(self, campus_id: Optional[int] = None) -> dict:
+        """Combined high-level overview for the executive dashboard.
+
+        Pass ``campus_id`` to scope every metric to a single tenant
+        (used by the command center). ``None`` returns school-wide
+        numbers for backward compatibility.
+        """
 
         # Student counts
-        student_counts = await self.session.execute(
-            select(
-                func.count(Student.id),
-                func.sum(case((Student.status == "active", 1), else_=0)),
-                func.sum(case((Student.status == "inactive", 1), else_=0)),
-            )
+        student_q = select(
+            func.count(Student.id),
+            func.sum(case((Student.status == "active", 1), else_=0)),
+            func.sum(case((Student.status == "inactive", 1), else_=0)),
         )
+        if campus_id is not None:
+            student_q = student_q.where(Student.campus_id == campus_id)
+        student_counts = await self.session.execute(student_q)
         total_s, active_s, inactive_s = student_counts.one()
         total_s = total_s or 0
         active_s = active_s or 0
         inactive_s = inactive_s or 0
 
         # Current active academic year
+        active_year_q = select(AcademicYear).where(AcademicYear.status == "active")
+        if campus_id is not None:
+            active_year_q = active_year_q.where(AcademicYear.campus_id == campus_id)
         active_year_result = await self.session.execute(
-            select(AcademicYear)
-            .where(AcademicYear.status == "active")
-            .limit(1)
+            active_year_q.limit(1)
         )
         active_year = active_year_result.scalar_one_or_none()
 
-        # Academic structure counts in one round-trip
+        # Academic structure counts — one round-trip via scalar subqueries.
+        # (A plain multi-table select would cross-join the tables and
+        # inflate (or zero) the counts, so each count is its own subquery.)
+        def _count(model):
+            inner = select(func.count(model.id))
+            if campus_id is not None:
+                inner = inner.where(model.campus_id == campus_id)
+            return inner.scalar_subquery()
+
         counts_result = await self.session.execute(
             select(
-                func.count(Class.id).label("classes"),
-                func.count(Section.id).label("sections"),
-                func.count(Teacher.id).label("teachers"),
-                func.count(Subject.id).label("subjects"),
+                _count(Class).label("classes"),
+                _count(Section).label("sections"),
+                _count(Teacher).label("teachers"),
+                _count(Subject).label("subjects"),
             )
         )
         row = counts_result.one()
@@ -84,16 +99,17 @@ class AnalyticsService:
         total_subjects = row.subjects or 0
 
         # Overall attendance percentage
-        att_result = await self.session.execute(
-            select(
-                func.count(AttendanceRecord.id),
-                func.sum(
-                    case(
-                        (AttendanceRecord.status == "present", 1), else_=0
-                    )
-                ),
-            )
+        att_q = select(
+            func.count(AttendanceRecord.id),
+            func.sum(
+                case(
+                    (AttendanceRecord.status == "present", 1), else_=0
+                )
+            ),
         )
+        if campus_id is not None:
+            att_q = att_q.where(AttendanceRecord.campus_id == campus_id)
+        att_result = await self.session.execute(att_q)
         total_att, present_att = att_result.one()
         total_att = total_att or 0
         present_att = present_att or 0
@@ -104,12 +120,13 @@ class AnalyticsService:
         )
 
         # Financial totals (across all years)
-        finance_result = await self.session.execute(
-            select(
-                func.coalesce(func.sum(FeeDue.original_amount), 0),
-                func.coalesce(func.sum(FeeDue.amount_paid), 0),
-            )
+        finance_q = select(
+            func.coalesce(func.sum(FeeDue.original_amount), 0),
+            func.coalesce(func.sum(FeeDue.amount_paid), 0),
         )
+        if campus_id is not None:
+            finance_q = finance_q.where(FeeDue.campus_id == campus_id)
+        finance_result = await self.session.execute(finance_q)
         total_fees, total_paid = finance_result.one()
         outstanding = total_fees - total_paid
         coll_pct = (
@@ -119,21 +136,22 @@ class AnalyticsService:
         )
 
         # Low attendance students (below 90%)
-        low_att_count = await self._count_low_attendance_students(90)
+        low_att_count = await self._count_low_attendance_students(90, campus_id=campus_id)
 
         # Unpaid/partially paid counts
-        status_query = await self.session.execute(
-            select(
-                func.sum(
-                    case((FeeDue.status == "unpaid", 1), else_=0)
-                ),
-                func.sum(
-                    case(
-                        (FeeDue.status == "partially_paid", 1), else_=0
-                    )
-                ),
-            )
+        status_q = select(
+            func.sum(
+                case((FeeDue.status == "unpaid", 1), else_=0)
+            ),
+            func.sum(
+                case(
+                    (FeeDue.status == "partially_paid", 1), else_=0
+                )
+            ),
         )
+        if campus_id is not None:
+            status_q = status_q.where(FeeDue.campus_id == campus_id)
+        status_query = await self.session.execute(status_q)
         unpaid, partial = status_query.one()
 
         return {
@@ -163,9 +181,10 @@ class AnalyticsService:
         academic_year_id: Optional[int] = None,
         class_id: Optional[int] = None,
         section_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
     ) -> dict:
         conditions = self._attendance_conditions(
-            academic_year_id, class_id, section_id
+            academic_year_id, class_id, section_id, campus_id
         )
         query = select(
             func.count(AttendanceRecord.id),
@@ -217,9 +236,10 @@ class AnalyticsService:
         class_id: Optional[int] = None,
         section_id: Optional[int] = None,
         granularity: str = "daily",
+        campus_id: Optional[int] = None,
     ) -> dict:
         conditions = self._attendance_conditions(
-            academic_year_id, class_id, section_id
+            academic_year_id, class_id, section_id, campus_id
         )
 
         date_col = AttendanceRecord.attendance_date
@@ -467,6 +487,7 @@ class AnalyticsService:
         threshold: int = 90,
         academic_year_id: Optional[int] = None,
         min_records: int = 1,
+        campus_id: Optional[int] = None,
     ) -> list[dict]:
         """Identify students with attendance percentage below threshold."""
         conditions = []
@@ -474,6 +495,8 @@ class AnalyticsService:
             conditions.append(
                 AttendanceRecord.academic_year_id == academic_year_id
             )
+        if campus_id is not None:
+            conditions.append(AttendanceRecord.campus_id == campus_id)
 
         subq_stmt = select(
             AttendanceRecord.student_id,
@@ -676,13 +699,15 @@ class AnalyticsService:
     # ------------------------------------------------------------------
 
     async def get_finance_overview(
-        self, academic_year_id: Optional[int] = None
+        self, academic_year_id: Optional[int] = None, campus_id: Optional[int] = None
     ) -> dict:
         conditions = []
         if academic_year_id is not None:
             conditions.append(
                 FeeDue.academic_year_id == academic_year_id
             )
+        if campus_id is not None:
+            conditions.append(FeeDue.campus_id == campus_id)
 
         query = select(
             func.coalesce(func.sum(FeeDue.original_amount), 0),
@@ -748,12 +773,15 @@ class AnalyticsService:
         self,
         academic_year_id: Optional[int] = None,
         granularity: str = "daily",
+        campus_id: Optional[int] = None,
     ) -> dict:
         conditions = []
         if academic_year_id is not None:
             conditions.append(
                 Payment.payment_date.isnot(None)
             )
+        if campus_id is not None:
+            conditions.append(Payment.campus_id == campus_id)
 
         date_col = Payment.payment_date
         query = select(
@@ -1214,6 +1242,7 @@ class AnalyticsService:
         academic_year_id: Optional[int] = None,
         class_id: Optional[int] = None,
         section_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
     ) -> list:
         conditions = []
         if academic_year_id is not None:
@@ -1228,10 +1257,12 @@ class AnalyticsService:
             conditions.append(
                 AttendanceRecord.section_id == section_id
             )
+        if campus_id is not None:
+            conditions.append(AttendanceRecord.campus_id == campus_id)
         return conditions
 
     async def _count_low_attendance_students(
-        self, threshold: int = 90
+        self, threshold: int = 90, campus_id: Optional[int] = None
     ) -> int:
         """Count students below attendance threshold using efficient query."""
         subq = (
@@ -1249,13 +1280,19 @@ class AnalyticsService:
             .subquery()
         )
 
+        # Scope the student set to the campus before counting, so a
+        # tenant never counts another campus's students.
+        from app.domains.student.models import Student as StudentModel
+        inner = select(subq.c.student_id)
+        if campus_id is not None:
+            inner = inner.join(
+                StudentModel, StudentModel.id == subq.c.student_id
+            ).where(StudentModel.campus_id == campus_id)
+
         count_query = select(func.count()).select_from(
-            select(subq.c.student_id)
-            .where(subq.c.total_records >= 1)
-            .where(
+            inner.where(subq.c.total_records >= 1).where(
                 (subq.c.present_count * 100.0 / subq.c.total_records) < threshold
-            )
-            .subquery()
+            ).subquery()
         )
 
         result = await self.session.execute(count_query)

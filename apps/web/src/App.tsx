@@ -14,6 +14,15 @@ const LoginPage = lazy(() => import('./pages/login').then((m) => ({ default: m.L
 // Dashboard
 const DashboardPage = lazy(() => import('./pages/dashboard').then((m) => ({ default: m.DashboardPage })))
 
+// Command Center (primary leadership landing)
+const CommandCenterPage = lazy(() => import('./pages/command-center/command-center').then((m) => ({ default: m.CommandCenterPage })))
+
+// Risk & Attention Engine
+const RiskCenterPage = lazy(() => import('./pages/risk/risk-center').then((m) => ({ default: m.RiskCenterPage })))
+
+// Unified Operational Timeline
+const TimelinePage = lazy(() => import('./pages/timeline/timeline-page').then((m) => ({ default: m.TimelinePage })))
+
 // Students
 const StudentListPage = lazy(() => import('./pages/students/student-list').then((m) => ({ default: m.StudentListPage })))
 const StudentDetailPage = lazy(() => import('./pages/students/student-detail').then((m) => ({ default: m.StudentDetailPage })))
@@ -24,6 +33,7 @@ const AcademicPage = lazy(() => import('./pages/academic').then((m) => ({ defaul
 const AcademicYearListPage = lazy(() => import('./pages/academic/academic-year-list').then((m) => ({ default: m.AcademicYearListPage })))
 const AcademicYearDetailPage = lazy(() => import('./pages/academic/academic-year-detail').then((m) => ({ default: m.AcademicYearDetailPage })))
 const ClassListPage = lazy(() => import('./pages/academic/class-list').then((m) => ({ default: m.ClassListPage })))
+const Class360Page = lazy(() => import('./pages/academic/class-360').then((m) => ({ default: m.Class360Page })))
 const SectionListPage = lazy(() => import('./pages/academic/section-list').then((m) => ({ default: m.SectionListPage })))
 const EnrollmentListPage = lazy(() => import('./pages/academic/enrollment-list').then((m) => ({ default: m.EnrollmentListPage })))
 const TermListPage = lazy(() => import('./pages/academic/term-list').then((m) => ({ default: m.TermListPage })))
@@ -32,6 +42,7 @@ const TeacherAssignmentListPage = lazy(() => import('./pages/academic/teacher-as
 // Teachers
 const TeacherListPage = lazy(() => import('./pages/teachers/teacher-list').then((m) => ({ default: m.TeacherListPage })))
 const TeacherDetailPage = lazy(() => import('./pages/teachers/teacher-detail').then((m) => ({ default: m.TeacherDetailPage })))
+const Teacher360Page = lazy(() => import('./pages/teachers/teacher-360').then((m) => ({ default: m.Teacher360Page })))
 
 // Subjects
 const SubjectListPage = lazy(() => import('./pages/subjects/subject-list').then((m) => ({ default: m.SubjectListPage })))
@@ -192,6 +203,21 @@ export default function App() {
               }
             >
               <Route path="/dashboard" element={<Suspense fallback={null}><DashboardPage /></Suspense>} />
+              <Route path="/command-center" element={
+                <RoleGuard roles={['admin', 'principal', 'accountant', 'staff', 'teacher']}>
+                  <Suspense fallback={<PageFallback />}><CommandCenterPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/risk" element={
+                <RoleGuard roles={['admin', 'principal', 'staff']}>
+                  <Suspense fallback={<PageFallback />}><RiskCenterPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/timeline" element={
+                <RoleGuard roles={['admin', 'principal', 'accountant', 'staff', 'teacher']}>
+                  <Suspense fallback={<PageFallback />}><TimelinePage /></Suspense>
+                </RoleGuard>
+              } />
               <Route path="/students" element={<Suspense fallback={null}><StudentListPage /></Suspense>} />
               <Route path="/students/:id" element={<Suspense fallback={null}><StudentDetailPage /></Suspense>} />
               <Route path="/students/:id/360" element={<Suspense fallback={null}><Student360Page /></Suspense>} />
@@ -199,12 +225,14 @@ export default function App() {
               <Route path="/academic/years" element={<Suspense fallback={null}><AcademicYearListPage /></Suspense>} />
               <Route path="/academic/years/:id" element={<Suspense fallback={null}><AcademicYearDetailPage /></Suspense>} />
               <Route path="/academic/classes" element={<Suspense fallback={null}><ClassListPage /></Suspense>} />
+              <Route path="/academic/classes/:id/360" element={<Suspense fallback={null}><Class360Page /></Suspense>} />
               <Route path="/academic/sections" element={<Suspense fallback={null}><SectionListPage /></Suspense>} />
               <Route path="/academic/enrollments" element={<Suspense fallback={null}><EnrollmentListPage /></Suspense>} />
               <Route path="/academic/terms" element={<Suspense fallback={null}><TermListPage /></Suspense>} />
               <Route path="/academic/assignments" element={<Suspense fallback={null}><TeacherAssignmentListPage /></Suspense>} />
               <Route path="/teachers" element={<Suspense fallback={null}><TeacherListPage /></Suspense>} />
               <Route path="/teachers/:id" element={<Suspense fallback={null}><TeacherDetailPage /></Suspense>} />
+              <Route path="/teachers/:id/360" element={<Suspense fallback={null}><Teacher360Page /></Suspense>} />
               <Route path="/subjects" element={<Suspense fallback={null}><SubjectListPage /></Suspense>} />
               <Route path="/attendance" element={<Suspense fallback={null}><AttendancePage /></Suspense>} />
               <Route path="/attendance/records" element={<Suspense fallback={null}><AttendanceRecordsPage /></Suspense>} />

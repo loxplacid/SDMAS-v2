@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel
 
@@ -78,7 +78,7 @@ class StudentAttendanceResponse(BaseModel):
     summary: AttendanceSummary = AttendanceSummary()
     records: list[AttendanceRecord] = []
     current_streak: int = 0
-    monthly_breakdown: list[dict[str, any]] = []
+    monthly_breakdown: list[dict[str, Any]] = []
 
 
 # ── Subjects ───────────────────────────────────────────────────────────

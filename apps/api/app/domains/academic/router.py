@@ -53,6 +53,9 @@ from app.domains.academic.service import (
 )
 from app.domains.student.repository import StudentRepository
 from app.infrastructure.database import get_session
+from app.multi_tenant.dependencies import get_optional_tenant
+from app.multi_tenant.guards import assert_tenant_scope, effective_campus_id, inject_campus
+from app.multi_tenant.models import TenantContext
 
 router = APIRouter(prefix="/api", tags=["academic"])
 
@@ -140,8 +143,10 @@ async def get_assignment_service(
 async def create_academic_year(
     data: AcademicYearCreate,
     service: AcademicYearService = Depends(get_year_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AcademicYearResponse:
     year = await service.create_year(data)
+    inject_campus(year, tenant)
     return AcademicYearResponse.model_validate(year)
 
 
@@ -149,8 +154,10 @@ async def create_academic_year(
 async def get_academic_year(
     year_id: int,
     service: AcademicYearService = Depends(get_year_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AcademicYearResponse:
     year = await service.get_year(year_id)
+    assert_tenant_scope(year, tenant, resource="academic_year")
     return AcademicYearResponse.model_validate(year)
 
 
@@ -164,10 +171,11 @@ async def list_academic_years(
         default=None, alias="campus_id", description="Filter by campus"
     ),
     service: AcademicYearService = Depends(get_year_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[AcademicYearResponse]:
     years, total = await service.list_years(
         status=status_filter,
-        campus_id=campus_id,
+        campus_id=effective_campus_id(tenant, campus_id),
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -185,7 +193,10 @@ async def update_academic_year(
     year_id: int,
     data: AcademicYearUpdate,
     service: AcademicYearService = Depends(get_year_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AcademicYearResponse:
+    year = await service.get_year(year_id)
+    assert_tenant_scope(year, tenant, resource="academic_year")
     year = await service.update_year(year_id, data)
     return AcademicYearResponse.model_validate(year)
 
@@ -194,7 +205,10 @@ async def update_academic_year(
 async def delete_academic_year(
     year_id: int,
     service: AcademicYearService = Depends(get_year_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> None:
+    year = await service.get_year(year_id)
+    assert_tenant_scope(year, tenant, resource="academic_year")
     await service.delete_year(year_id)
 
 
@@ -211,8 +225,10 @@ async def delete_academic_year(
 async def create_class(
     data: ClassCreate,
     service: ClassService = Depends(get_class_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> ClassResponse:
     cls = await service.create_class(data)
+    inject_campus(cls, tenant)
     return ClassResponse.model_validate(cls)
 
 
@@ -220,8 +236,10 @@ async def create_class(
 async def get_class(
     class_id: int,
     service: ClassService = Depends(get_class_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> ClassResponse:
     cls = await service.get_class(class_id)
+    assert_tenant_scope(cls, tenant, resource="class")
     return ClassResponse.model_validate(cls)
 
 
@@ -238,11 +256,12 @@ async def list_classes(
         default=None, alias="campus_id", description="Filter by campus"
     ),
     service: ClassService = Depends(get_class_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[ClassResponse]:
     classes, total = await service.list_classes(
         year_id=year_id,
         status=status_filter,
-        campus_id=campus_id,
+        campus_id=effective_campus_id(tenant, campus_id),
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -260,7 +279,10 @@ async def update_class(
     class_id: int,
     data: ClassUpdate,
     service: ClassService = Depends(get_class_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> ClassResponse:
+    cls = await service.get_class(class_id)
+    assert_tenant_scope(cls, tenant, resource="class")
     cls = await service.update_class(class_id, data)
     return ClassResponse.model_validate(cls)
 
@@ -269,7 +291,10 @@ async def update_class(
 async def delete_class(
     class_id: int,
     service: ClassService = Depends(get_class_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> None:
+    cls = await service.get_class(class_id)
+    assert_tenant_scope(cls, tenant, resource="class")
     await service.delete_class(class_id)
 
 
@@ -286,8 +311,10 @@ async def delete_class(
 async def create_section(
     data: SectionCreate,
     service: SectionService = Depends(get_section_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> SectionResponse:
     section = await service.create_section(data)
+    inject_campus(section, tenant)
     return SectionResponse.model_validate(section)
 
 
@@ -295,8 +322,10 @@ async def create_section(
 async def get_section(
     section_id: int,
     service: SectionService = Depends(get_section_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> SectionResponse:
     section = await service.get_section(section_id)
+    assert_tenant_scope(section, tenant, resource="section")
     return SectionResponse.model_validate(section)
 
 
@@ -313,11 +342,12 @@ async def list_sections(
         default=None, alias="campus_id", description="Filter by campus"
     ),
     service: SectionService = Depends(get_section_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[SectionResponse]:
     sections, total = await service.list_sections(
         class_id=class_id,
         status=status_filter,
-        campus_id=campus_id,
+        campus_id=effective_campus_id(tenant, campus_id),
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -335,7 +365,10 @@ async def update_section(
     section_id: int,
     data: SectionUpdate,
     service: SectionService = Depends(get_section_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> SectionResponse:
+    section = await service.get_section(section_id)
+    assert_tenant_scope(section, tenant, resource="section")
     section = await service.update_section(section_id, data)
     return SectionResponse.model_validate(section)
 
@@ -344,7 +377,10 @@ async def update_section(
 async def delete_section(
     section_id: int,
     service: SectionService = Depends(get_section_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> None:
+    section = await service.get_section(section_id)
+    assert_tenant_scope(section, tenant, resource="section")
     await service.delete_section(section_id)
 
 
@@ -361,8 +397,10 @@ async def delete_section(
 async def create_enrollment(
     data: EnrollmentCreate,
     service: EnrollmentService = Depends(get_enrollment_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> EnrollmentResponse:
     enrollment = await service.create_enrollment(data)
+    inject_campus(enrollment, tenant)
     return EnrollmentResponse.model_validate(enrollment)
 
 
@@ -370,8 +408,10 @@ async def create_enrollment(
 async def get_enrollment(
     enrollment_id: int,
     service: EnrollmentService = Depends(get_enrollment_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> EnrollmentResponse:
     enrollment = await service.get_enrollment(enrollment_id)
+    assert_tenant_scope(enrollment, tenant, resource="enrollment")
     return EnrollmentResponse.model_validate(enrollment)
 
 
@@ -396,13 +436,14 @@ async def list_enrollments(
         default=None, alias="campus_id", description="Filter by campus"
     ),
     service: EnrollmentService = Depends(get_enrollment_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[EnrollmentResponse]:
     enrollments, total = await service.list_enrollments(
         student_id=student_id,
         academic_year_id=academic_year_id,
         class_id=class_id,
         section_id=section_id,
-        campus_id=campus_id,
+        campus_id=effective_campus_id(tenant, campus_id),
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -420,7 +461,10 @@ async def update_enrollment(
     enrollment_id: int,
     data: EnrollmentUpdate,
     service: EnrollmentService = Depends(get_enrollment_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> EnrollmentResponse:
+    enrollment = await service.get_enrollment(enrollment_id)
+    assert_tenant_scope(enrollment, tenant, resource="enrollment")
     enrollment = await service.update_enrollment(enrollment_id, data)
     return EnrollmentResponse.model_validate(enrollment)
 
@@ -431,7 +475,10 @@ async def update_enrollment(
 async def delete_enrollment(
     enrollment_id: int,
     service: EnrollmentService = Depends(get_enrollment_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> None:
+    enrollment = await service.get_enrollment(enrollment_id)
+    assert_tenant_scope(enrollment, tenant, resource="enrollment")
     await service.delete_enrollment(enrollment_id)
 
 
@@ -449,8 +496,10 @@ async def create_term(
     year_id: int,
     data: TermCreate,
     service: TermService = Depends(get_term_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> TermResponse:
     term = await service.create_term(year_id, data)
+    inject_campus(term, tenant)
     return TermResponse.model_validate(term)
 
 
@@ -458,8 +507,10 @@ async def create_term(
 async def get_term(
     term_id: int,
     service: TermService = Depends(get_term_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> TermResponse:
     term = await service.get_term(term_id)
+    assert_tenant_scope(term, tenant, resource="term")
     return TermResponse.model_validate(term)
 
 
@@ -468,7 +519,11 @@ async def list_terms(
     year_id: int,
     pagination: PaginationParams = Depends(),
     service: TermService = Depends(get_term_service),
+    year_service: AcademicYearService = Depends(get_year_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[TermResponse]:
+    year = await year_service.get_year(year_id)
+    assert_tenant_scope(year, tenant, resource="academic_year")
     terms, total = await service.list_terms(
         year_id=year_id,
         skip=pagination.offset,
@@ -488,7 +543,10 @@ async def update_term(
     term_id: int,
     data: TermUpdate,
     service: TermService = Depends(get_term_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> TermResponse:
+    term = await service.get_term(term_id)
+    assert_tenant_scope(term, tenant, resource="term")
     term = await service.update_term(term_id, data)
     return TermResponse.model_validate(term)
 
@@ -506,8 +564,10 @@ async def update_term(
 async def create_subject(
     data: SubjectCreate,
     service: SubjectService = Depends(get_subject_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> SubjectResponse:
     subject = await service.create_subject(data)
+    inject_campus(subject, tenant)
     return SubjectResponse.model_validate(subject)
 
 
@@ -515,8 +575,10 @@ async def create_subject(
 async def get_subject(
     subject_id: int,
     service: SubjectService = Depends(get_subject_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> SubjectResponse:
     subject = await service.get_subject(subject_id)
+    assert_tenant_scope(subject, tenant, resource="subject")
     return SubjectResponse.model_validate(subject)
 
 
@@ -530,10 +592,11 @@ async def list_subjects(
         default=None, alias="campus_id", description="Filter by campus"
     ),
     service: SubjectService = Depends(get_subject_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[SubjectResponse]:
     subjects, total = await service.list_subjects(
         status=status_filter,
-        campus_id=campus_id,
+        campus_id=effective_campus_id(tenant, campus_id),
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -551,7 +614,10 @@ async def update_subject(
     subject_id: int,
     data: SubjectUpdate,
     service: SubjectService = Depends(get_subject_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> SubjectResponse:
+    subject = await service.get_subject(subject_id)
+    assert_tenant_scope(subject, tenant, resource="subject")
     subject = await service.update_subject(subject_id, data)
     return SubjectResponse.model_validate(subject)
 
@@ -569,8 +635,10 @@ async def update_subject(
 async def create_teacher(
     data: TeacherCreate,
     service: TeacherService = Depends(get_teacher_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> TeacherResponse:
     teacher = await service.create_teacher(data)
+    inject_campus(teacher, tenant)
     return TeacherResponse.model_validate(teacher)
 
 
@@ -578,8 +646,10 @@ async def create_teacher(
 async def get_teacher(
     teacher_id: int,
     service: TeacherService = Depends(get_teacher_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> TeacherResponse:
     teacher = await service.get_teacher(teacher_id)
+    assert_tenant_scope(teacher, tenant, resource="teacher")
     return TeacherResponse.model_validate(teacher)
 
 
@@ -593,10 +663,11 @@ async def list_teachers(
         default=None, alias="campus_id", description="Filter by campus"
     ),
     service: TeacherService = Depends(get_teacher_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[TeacherResponse]:
     teachers, total = await service.list_teachers(
         status=status_filter,
-        campus_id=campus_id,
+        campus_id=effective_campus_id(tenant, campus_id),
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -614,7 +685,10 @@ async def update_teacher(
     teacher_id: int,
     data: TeacherUpdate,
     service: TeacherService = Depends(get_teacher_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> TeacherResponse:
+    teacher = await service.get_teacher(teacher_id)
+    assert_tenant_scope(teacher, tenant, resource="teacher")
     teacher = await service.update_teacher(teacher_id, data)
     return TeacherResponse.model_validate(teacher)
 
@@ -632,8 +706,10 @@ async def update_teacher(
 async def assign_teacher(
     data: TeacherAssignmentCreate,
     service: TeacherAssignmentService = Depends(get_assignment_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> TeacherAssignmentResponse:
     assignment = await service.assign_teacher(data)
+    inject_campus(assignment, tenant)
     return TeacherAssignmentResponse.model_validate(assignment)
 
 
@@ -644,8 +720,10 @@ async def assign_teacher(
 async def get_teacher_assignment(
     assignment_id: int,
     service: TeacherAssignmentService = Depends(get_assignment_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> TeacherAssignmentResponse:
     assignment = await service.get_assignment(assignment_id)
+    assert_tenant_scope(assignment, tenant, resource="teacher_assignment")
     return TeacherAssignmentResponse.model_validate(assignment)
 
 
@@ -662,6 +740,7 @@ async def list_teacher_assignments(
         default=None, alias="teacher_id", description="Filter by teacher"
     ),
     service: TeacherAssignmentService = Depends(get_assignment_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[TeacherAssignmentResponse]:
     assignments, total = await service.list_assignments(
         class_id=class_id,
@@ -669,6 +748,11 @@ async def list_teacher_assignments(
         skip=pagination.offset,
         limit=pagination.limit,
     )
+    # Tenant scope: when the caller is campus-scoped, retain only
+    # assignments belonging to their school.
+    if tenant.is_tenant_scoped:
+        assignments = [a for a in assignments if a.campus_id == tenant.campus_id]
+        total = len(assignments)
     items = [
         TeacherAssignmentResponse.model_validate(a) for a in assignments
     ]
@@ -687,5 +771,8 @@ async def list_teacher_assignments(
 async def unassign_teacher(
     assignment_id: int,
     service: TeacherAssignmentService = Depends(get_assignment_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> None:
+    assignment = await service.get_assignment(assignment_id)
+    assert_tenant_scope(assignment, tenant, resource="teacher_assignment")
     await service.unassign(assignment_id)

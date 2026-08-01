@@ -16,7 +16,11 @@ async def test_health_returns_200(client: AsyncClient):
 async def test_health_response_structure(client: AsyncClient):
     response = await client.get("/health")
     data = response.json()
-    assert set(data.keys()) == {"status"}
+    assert set(data.keys()) == {
+        "status", "version", "environment", "uptime_seconds", "components",
+    }
+    assert "database" in data["components"]
+    assert data["components"]["database"]["status"] in ("healthy", "unhealthy")
 
 
 @pytest.mark.asyncio
@@ -25,14 +29,15 @@ async def test_ready_with_sqlite(client: AsyncClient):
     response = await client.get("/ready")
     assert response.status_code == 200
     data = response.json()
-    assert data["database"] == "connected"
+    assert data["status"] == "ready"
+    assert data["components"]["database"]["status"] == "ready"
 
 
 @pytest.mark.asyncio
 async def test_ready_response_structure(client: AsyncClient):
     response = await client.get("/ready")
     data = response.json()
-    assert set(data.keys()) == {"status", "database"}
+    assert set(data.keys()) == {"status", "components"}
 
 
 @pytest.mark.asyncio

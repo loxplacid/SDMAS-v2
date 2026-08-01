@@ -1,10 +1,44 @@
 export { api, getAccessToken, clearTokens } from './client/http-client'
+export { commandCenterApi } from './command-center/command-center-api'
+export type {
+  CommandCenterOverview,
+  Metric,
+  SchoolHealth,
+  AttentionAlert,
+  NeedsAttention,
+  TodayEvent,
+  TodaySection,
+  QuickAction,
+} from './command-center/command-center-api'
+export { riskApi } from './risk/risk-api'
+export { timelineApi } from './timeline/timeline-api'
+export type {
+  TimelineItem,
+  TimelineSourceInfo,
+  TimelineResponse,
+  TimelineParams,
+} from './timeline/timeline-api'
+export type {
+  RiskFinding,
+  RiskFindingPage,
+  RiskOverview,
+  RecomputeResult,
+  RuleConfig,
+  RiskFindingParams,
+  RuleConfigUpdate,
+  TeacherRiskFinding,
+  TeacherRiskSummary,
+} from './risk/risk-api'
 export { authApi, adminUserApi } from './auth/auth-api'
 export { auditLogApi } from './audit/audit-api'
 export { studentApi } from './student/student-api'
 export type { StudentListParams } from './student/student-api'
 export { student360Api } from './student-360/student-360-api'
 export type { Student360Response } from './student-360/student-360-api'
+export { class360Api } from './class-360/class-360-api'
+export type { Class360Response } from './class-360/class-360-api'
+export { teacher360Api } from './teacher-360/teacher-360-api'
+export type { Teacher360Response } from './teacher-360/teacher-360-api'
 export { academicYearApi } from './academic/academic-year-api'
 export type { AcademicYearListParams } from './academic/academic-year-api'
 export { classApi } from './academic/class-api'

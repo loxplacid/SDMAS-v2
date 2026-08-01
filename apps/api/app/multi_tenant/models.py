@@ -17,6 +17,7 @@ class TenantContext:
 
     campus_id: int | None = None
     institution_id: int | None = None
+    user_id: int | None = None
 
     @property
     def is_tenant_scoped(self) -> bool:

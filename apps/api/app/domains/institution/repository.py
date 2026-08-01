@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Generic, Optional, TypeVar
 
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,8 +16,10 @@ from app.domains.institution.models import (
     Semester,
 )
 
+T = TypeVar("T")
 
-class BaseRepository[T]:
+
+class BaseRepository(Generic[T]):
     """Generic CRUD repository for hierarchy entities."""
 
     def __init__(self, session: AsyncSession, model: type[T]) -> None:
@@ -31,7 +33,7 @@ class BaseRepository[T]:
 
     async def get_by_id(self, entity_id: int) -> T:
         result = await self.session.execute(
-            select(self.model).where(self.model.id == entity_id)
+            select(self.model).where(self.model.id == entity_id)  # type: ignore[attr-defined]
         )
         entity = result.scalar_one_or_none()
         if entity is None:
@@ -44,6 +46,7 @@ class BaseRepository[T]:
         parent_column: str | None = None,
         parent_id: int | None = None,
         status: Optional[str] = None,
+        ids: list[int] | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[list, int]:
@@ -53,17 +56,21 @@ class BaseRepository[T]:
                 getattr(self.model, parent_column) == parent_id
             )
         if status:
-            conditions.append(self.model.status == status)
+            conditions.append(self.model.status == status)  # type: ignore[attr-defined]
+        if ids is not None:
+            # ``ids=[]`` (an empty allowed set) must still filter to zero
+            # rows — never fall through to an unscoped query.
+            conditions.append(self.model.id.in_(ids))  # type: ignore[attr-defined]
 
         query = select(self.model)
         if conditions:
             query = query.where(*conditions)
-        query = query.order_by(self.model.name).offset(skip).limit(limit)
+        query = query.order_by(self.model.name).offset(skip).limit(limit)  # type: ignore[attr-defined]
 
         result = await self.session.execute(query)
         items = list(result.scalars().all())
 
-        count_query = select(func.count(self.model.id))
+        count_query = select(func.count(self.model.id))  # type: ignore[attr-defined]
         if conditions:
             count_query = count_query.where(*conditions)
         count_result = await self.session.execute(count_query)

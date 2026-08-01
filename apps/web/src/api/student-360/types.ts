@@ -80,13 +80,6 @@ export interface AcademicRecord {
   enrolled_at: string
 }
 
-export interface TimelineEvent {
-  date: string
-  type: string
-  title: string
-  description: string | null
-}
-
 export interface StudentHealthInfo {
   blood_group: string | null
   allergies: string | null

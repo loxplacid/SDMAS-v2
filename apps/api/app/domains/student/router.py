@@ -16,6 +16,9 @@ from app.domains.student.schemas import (
 )
 from app.domains.student.service import StudentService
 from app.infrastructure.database import get_session
+from app.multi_tenant.dependencies import get_optional_tenant
+from app.multi_tenant.guards import assert_tenant_scope, effective_campus_id, inject_campus
+from app.multi_tenant.models import TenantContext
 
 router = APIRouter(prefix="/students", tags=["students"])
 
@@ -30,8 +33,10 @@ async def get_student_service(
 async def create_student(
     data: StudentCreate,
     service: StudentService = Depends(get_student_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> StudentResponse:
     student = await service.create_student(data)
+    inject_campus(student, tenant)
     return StudentResponse.model_validate(student)
 
 
@@ -39,8 +44,10 @@ async def create_student(
 async def get_student(
     student_id: int,
     service: StudentService = Depends(get_student_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> StudentResponse:
     student = await service.get_student(student_id)
+    assert_tenant_scope(student, tenant, resource="student")
     return StudentResponse.model_validate(student)
 
 
@@ -57,18 +64,20 @@ async def list_students(
         default=None, alias="campus_id", description="Filter by campus"
     ),
     service: StudentService = Depends(get_student_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[StudentResponse]:
+    effective_campus = effective_campus_id(tenant, campus_id)
     if search:
         students, total = await service.search_students(
             query=search,
-            campus_id=campus_id,
+            campus_id=effective_campus,
             skip=pagination.offset,
             limit=pagination.limit,
         )
     else:
         students, total = await service.list_students(
             status=status_filter,
-            campus_id=campus_id,
+            campus_id=effective_campus,
             skip=pagination.offset,
             limit=pagination.limit,
         )
@@ -87,7 +96,10 @@ async def update_student(
     student_id: int,
     data: StudentUpdate,
     service: StudentService = Depends(get_student_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> StudentResponse:
+    student = await service.get_student(student_id)
+    assert_tenant_scope(student, tenant, resource="student")
     student = await service.update_student(student_id, data)
     return StudentResponse.model_validate(student)
 
@@ -96,6 +108,9 @@ async def update_student(
 async def delete_student(
     student_id: int,
     service: StudentService = Depends(get_student_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
     _user=Depends(require_permission(STUDENTS_DELETE)),  # noqa
 ) -> None:
+    student = await service.get_student(student_id)
+    assert_tenant_scope(student, tenant, resource="student")
     await service.delete_student(student_id)

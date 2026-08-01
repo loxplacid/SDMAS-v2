@@ -98,6 +98,13 @@ async def mark_notification_read(
     current_user: User = Depends(get_current_user),
 ) -> NotificationResponse:
     svc = NotificationService(session)
+    existing = await svc.repo.get_by_id(notification_id)
+    if existing.user_id != current_user.id:
+        # Do not leak the existence of other users' notifications.
+        from app.core.exceptions import NotFoundError
+        raise NotFoundError(
+            f"Notification with id {notification_id} not found"
+        )
     notification = await svc.mark_as_read(notification_id)
     return NotificationResponse.model_validate(notification)
 
@@ -122,6 +129,12 @@ async def delete_notification(
     current_user: User = Depends(get_current_user),
 ) -> None:
     svc = NotificationService(session)
+    existing = await svc.repo.get_by_id(notification_id)
+    if existing.user_id != current_user.id:
+        from app.core.exceptions import NotFoundError
+        raise NotFoundError(
+            f"Notification with id {notification_id} not found"
+        )
     await svc.delete_notification(notification_id)
 
 

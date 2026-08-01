@@ -1,12 +1,19 @@
 from __future__ import annotations
 
 import datetime
+import logging
 from datetime import timezone
 
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
+from app.domains.events import publish_event
+from app.domains.events.events import (
+    AcademicYearRolloverCompletedEvent,
+    AcademicYearRolloverFailedEvent,
+    AcademicYearRolloverStartedEvent,
+)
 from app.domains.academic.models import AcademicYear, Class, Section, Enrollment
 from app.domains.academic.repository import (
     AcademicYearRepository,
@@ -15,6 +22,8 @@ from app.domains.academic.repository import (
     EnrollmentRepository,
 )
 from app.domains.student.repository import StudentRepository
+
+logger = logging.getLogger(__name__)
 
 
 class RolloverService:
@@ -97,6 +106,46 @@ class RolloverService:
         if not to_end_date.strip():
             raise ValidationError("End date is required")
 
+        # Domain event: rollover started (non-fatal)
+        try:
+            await publish_event(
+                AcademicYearRolloverStartedEvent(
+                    previous_year_id=from_year_id,
+                    new_year_name=to_year_name,
+                ),
+                session=self.session,
+            )
+        except Exception:
+            logger.warning("Failed to publish rollover started event (non-fatal)", exc_info=True)
+
+        try:
+            return await self._execute_rollover_engine(
+                from_year_id=from_year_id,
+                to_year_name=to_year_name,
+                to_start_date=to_start_date,
+                to_end_date=to_end_date,
+            )
+        except Exception as exc:
+            try:
+                await publish_event(
+                    AcademicYearRolloverFailedEvent(
+                        previous_year_id=from_year_id,
+                        new_year_name=to_year_name,
+                        error=str(exc)[:500],
+                    ),
+                    session=self.session,
+                )
+            except Exception:
+                logger.warning("Failed to publish rollover failed event (non-fatal)", exc_info=True)
+            raise
+
+    async def _execute_rollover_engine(
+        self,
+        from_year_id: int,
+        to_year_name: str,
+        to_start_date: str,
+        to_end_date: str,
+    ) -> dict:
         now = datetime.datetime.now(timezone.utc)
 
         new_year = AcademicYear(
@@ -176,6 +225,21 @@ class RolloverService:
             enrollments_created += 1
 
         await self.session.flush()
+
+        # Domain event: rollover completed -> notification + audit (non-fatal)
+        try:
+            await publish_event(
+                AcademicYearRolloverCompletedEvent(
+                    previous_year_id=from_year_id,
+                    new_year_id=new_year.id,
+                    new_year_name=new_year.name,
+                    students_rolled=enrollments_created,
+                    classes_migrated=classes_created,
+                ),
+                session=self.session,
+            )
+        except Exception:
+            logger.warning("Failed to publish rollover completed event (non-fatal)", exc_info=True)
 
         return {
             "success": True,

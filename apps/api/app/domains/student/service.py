@@ -9,6 +9,13 @@ from app.core.exceptions import ConflictError, NotFoundError, ValidationError
 from app.domains.audit.constants import CREATE, DELETE, STUDENT, UPDATE
 from app.domains.audit.service import AuditService
 from app.domains.audit.utils import build_diff, safe_details
+from app.domains.events import publish_event
+from app.domains.events.context import get_actor_user_id
+from app.domains.events.events import (
+    StudentCreatedEvent,
+    StudentStatusChangedEvent,
+    StudentUpdatedEvent,
+)
 from app.domains.student.models import Student
 from app.domains.student.repository import StudentRepository
 from app.domains.student.schemas import (
@@ -33,11 +40,16 @@ class StudentService:
         username: str | None = None,
         details: dict[str, Any] | None = None,
     ) -> None:
-        """Record an audit entry in fire-and-forget fashion."""
+        """Record an audit entry in fire-and-forget fashion.
+
+        Falls back to the actor stamped on the event context (set by the
+        tenant middleware for the current request) so audit entries carry
+        the acting user even when the caller does not pass one.
+        """
         try:
             svc = AuditService(self.repository.session)
             await svc.record(
-                user_id=user_id,
+                user_id=user_id if user_id is not None else get_actor_user_id(),
                 username=username,
                 action=action,
                 resource_type=STUDENT,
@@ -47,6 +59,28 @@ class StudentService:
             await self.repository.session.flush()
         except Exception:
             logger.warning("Failed to write audit entry (non-fatal)", exc_info=True)
+
+    async def _publish_status_changed(
+        self, student_id: int, from_status: str, to_status: str
+    ) -> None:
+        """Publish a StudentStatusChangedEvent (non-fatal).
+
+        The synchronous UPDATE audit (written by the caller) is the source of
+        truth; this event is published for future subscribers (catalog
+        completeness) — no handler is registered for it in the initial
+        handler set.
+        """
+        try:
+            await publish_event(
+                StudentStatusChangedEvent(
+                    student_id=student_id,
+                    from_status=from_status,
+                    to_status=to_status,
+                ),
+                session=self.repository.session,
+            )
+        except Exception:
+            logger.warning("Failed to publish StudentStatusChangedEvent (non-fatal)", exc_info=True)
 
     async def create_student(self, data: StudentCreate) -> Student:
         existing = await self.repository.get_by_student_number(data.student_number)
@@ -79,6 +113,21 @@ class StudentService:
                 "last_name": created.last_name,
             },
         )
+
+        # Domain event: StudentCreated -> audit event (non-fatal)
+        try:
+            await publish_event(
+                StudentCreatedEvent(
+                    student_id=created.id,
+                    student_number=created.student_number,
+                    full_name=f"{created.first_name} {created.last_name}".strip(),
+                    email=created.email,
+                ),
+                session=self.repository.session,
+            )
+        except Exception:
+            logger.warning("Failed to publish StudentCreatedEvent (non-fatal)", exc_info=True)
+
         return created
 
     async def get_student(self, student_id: int) -> Student:
@@ -126,6 +175,20 @@ class StudentService:
                 resource_id=str(student_id),
                 details=diff,
             )
+            # Domain event: StudentUpdated.  The synchronous audit above is
+            # the source of truth; this event is published for future
+            # subscribers (catalog completeness) — no handler is registered
+            # for it in the initial handler set. (non-fatal)
+            try:
+                await publish_event(
+                    StudentUpdatedEvent(
+                        student_id=student_id,
+                        changes=diff,
+                    ),
+                    session=self.repository.session,
+                )
+            except Exception:
+                logger.warning("Failed to publish StudentUpdatedEvent (non-fatal)", exc_info=True)
         return after
 
     async def delete_student(self, student_id: int) -> None:
@@ -158,6 +221,7 @@ class StudentService:
             resource_id=str(student_id),
             details={"before": {"status": "active"}, "after": {"status": "inactive"}},
         )
+        await self._publish_status_changed(student_id, "active", "inactive")
         return updated
 
     async def reactivate_student(self, student_id: int) -> Student:
@@ -174,6 +238,7 @@ class StudentService:
             resource_id=str(student_id),
             details={"before": {"status": "inactive"}, "after": {"status": "active"}},
         )
+        await self._publish_status_changed(student_id, "inactive", "active")
         return updated
 
     async def list_students(

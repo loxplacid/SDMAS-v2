@@ -239,6 +239,7 @@ class AdmissionMeritEntryRepository:
         program_id: Optional[int] = None,
         academic_year_id: Optional[int] = None,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[AdmissionMeritEntry], int]:
@@ -262,6 +263,16 @@ class AdmissionMeritEntryRepository:
             count_query = count_query.where(
                 AdmissionMeritEntry.status == status
             )
+        # Merit entries inherit tenancy from their parent application.
+        if campus_id is not None:
+            query = query.join(
+                AdmissionApplication,
+                AdmissionMeritEntry.application_id == AdmissionApplication.id,
+            ).where(AdmissionApplication.campus_id == campus_id)
+            count_query = count_query.join(
+                AdmissionApplication,
+                AdmissionMeritEntry.application_id == AdmissionApplication.id,
+            ).where(AdmissionApplication.campus_id == campus_id)
 
         query = query.offset(skip).limit(limit).order_by(AdmissionMeritEntry.rank)
 

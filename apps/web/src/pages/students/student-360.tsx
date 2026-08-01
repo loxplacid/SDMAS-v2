@@ -4,10 +4,11 @@ import { student360Api, type Student360Response } from '../../api/student-360/st
 import {
   Card, TabGroup, Badge, Button, Breadcrumbs, PageHeader, ErrorState,
 } from '../../components/ui'
+import { Timeline } from '../../components/timeline/timeline'
 import { Can } from '../../components/auth/can'
 import { usePermission } from '../../hooks/use-permission'
 import { FEES_VIEW } from '../../types/permissions'
-import { formatDate } from '../../lib/utils'
+import { cn, formatDate } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
   active: 'success',
@@ -446,47 +447,105 @@ function CommunicationTab({ data }: { data: Student360Response }) {
   )
 }
 
-// ── Tab: Timeline ──────────────────────────────────────────────────────
+// ── Tab: Risk ─────────────────────────────────────────────────────────
 
-const timelineIcons: Record<string, string> = {
-  payment: '💰',
-  enrollment: '📚',
-  audit: '📋',
-  attendance: '📊',
+const riskSeverityBadge: Record<string, 'danger' | 'warning' | 'info' | 'success'> = {
+  critical: 'danger',
+  high: 'danger',
+  medium: 'warning',
+  low: 'info',
 }
+
+const riskSeverityDot: Record<string, string> = {
+  critical: 'bg-[var(--color-danger)]',
+  high: 'bg-[var(--color-danger)]',
+  medium: 'bg-[var(--color-warning)]',
+  low: 'bg-[var(--color-info)]',
+}
+
+const riskCategoryLabel: Record<string, string> = {
+  attendance: 'Attendance',
+  finance: 'Finance',
+  academic: 'Academic',
+  documents: 'Documents',
+  admissions: 'Admissions',
+  operational: 'Operational',
+}
+
+function RiskTab({ data }: { data: Student360Response }) {
+  const { can } = usePermission()
+  // Never expose finance findings to roles without finance access.
+  const findings = (data.risk_findings || []).filter(
+    (f) => f.category !== 'finance' || can(FEES_VIEW)
+  )
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start gap-3 rounded-2xl border border-[var(--color-info)]/20 bg-[var(--color-info)]/5 p-4">
+        <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-[var(--color-info)]/10 flex-shrink-0">
+          <svg className="h-4.5 w-4.5 text-[var(--color-info)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-[var(--color-text-primary)]">Risk &amp; Attention</p>
+          <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">
+            Deterministic findings from the school's rule engine. Each finding includes a reason, a recommended action, and a score.
+          </p>
+        </div>
+      </div>
+
+      {findings.length === 0 ? (
+        <div className="rounded-2xl border border-[var(--color-success)]/20 bg-[var(--color-success)]/5 p-8 text-center">
+          <p className="text-sm font-semibold text-[var(--color-success-dark)]">No active risk findings</p>
+          <p className="text-xs text-[var(--color-success)]/70 mt-1">This student has no open findings from the risk engine.</p>
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+          {findings.map((f) => (
+            <div key={f.id} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 animate-fade-in-up" style={{ animationFillMode: 'both' }}>
+              <div className="flex items-start gap-3">
+                <span className={cn('mt-1.5 inline-block h-2 w-2 rounded-full flex-shrink-0', riskSeverityDot[f.severity])} aria-hidden="true" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant={riskSeverityBadge[f.severity]}>{f.severity}</Badge>
+                    <Badge variant="neutral">{riskCategoryLabel[f.category] || f.category}</Badge>
+                    <span className="text-[11px] text-[var(--color-text-muted)] tabular-nums">Score {Math.round(f.score)}</span>
+                  </div>
+                  <p className="text-sm text-[var(--color-text-primary)] mt-2">{f.reason}</p>
+                  <p className="text-xs text-[var(--color-text-secondary)] mt-1.5">
+                    <span className="font-medium">Recommended:</span> {f.recommended_action}
+                  </p>
+                  <p className="text-[11px] text-[var(--color-text-muted)] mt-1.5">Detected {formatDate(f.detected_at)}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Tab: Timeline (unified operational timeline) ──────────────────────
 
 function TimelineTab({ data }: { data: Student360Response }) {
   return (
-    <Card title="Activity Timeline">
-      {data.timeline.length === 0 ? (
-        <p className="text-sm text-[var(--color-text-tertiary)] py-8 text-center">No timeline events</p>
-      ) : (
-        <div className="relative">
-          <div className="absolute left-4 top-0 bottom-0 w-px bg-[var(--color-border)]" />
-          <div className="space-y-0">
-            {data.timeline.map((event, i) => (
-              <div key={i} className="relative flex gap-4 pb-5 last:pb-0">
-                <div className="relative z-10 mt-0.5">
-                  <div className="h-8 w-8 rounded-full bg-[var(--color-surface)] border-2 border-[var(--color-border)] flex items-center justify-center text-sm">
-                    {timelineIcons[event.type] || '📌'}
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0 pt-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium text-[var(--color-text-primary)]">{event.title}</p>
-                    <span className="text-xs text-[var(--color-text-tertiary)] shrink-0">{event.date?.split(' ')[0] || event.date}</span>
-                  </div>
-                  {event.description && (
-                    <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">{event.description}</p>
-                  )}
-                  <Badge variant="neutral" className="mt-1 text-[10px]">{event.type}</Badge>
-                </div>
-              </div>
-            ))}
-          </div>
+    <div className="space-y-3">
+      <div className="flex items-start gap-3 rounded-2xl border border-[var(--color-info)]/20 bg-[var(--color-info)]/5 p-4">
+        <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-[var(--color-info)]/10 flex-shrink-0">
+          <svg className="h-4.5 w-4.5 text-[var(--color-info)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
         </div>
-      )}
-    </Card>
+        <div>
+          <p className="text-sm font-semibold text-[var(--color-text-primary)]">Activity Timeline</p>
+          <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">
+            Unified activity — audit, payments, enrollments &amp; risk findings for this student.
+          </p>
+        </div>
+      </div>
+      <Timeline params={{ entity_type: 'student', entity_id: data.identity.id }} compact />
+    </div>
   )
 }
 
@@ -498,6 +557,7 @@ const ALL_TABS = [
   { id: 'attendance', label: 'Attendance', permission: null },
   { id: 'finance', label: 'Finance', permission: FEES_VIEW },
   { id: 'documents', label: 'Documents', permission: null },
+  { id: 'risk', label: 'Risk', permission: null },
   { id: 'communication', label: 'Communication', permission: null },
   { id: 'timeline', label: 'Timeline', permission: null },
 ]
@@ -594,6 +654,7 @@ export function Student360Page() {
           </Can>
         )}
         {activeTab === 'documents' && <DocumentsTab data={data} />}
+        {activeTab === 'risk' && <RiskTab data={data} />}
         {activeTab === 'communication' && <CommunicationTab data={data} />}
         {activeTab === 'timeline' && <TimelineTab data={data} />}
       </div>

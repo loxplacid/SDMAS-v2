@@ -20,6 +20,7 @@ BULK_OPERATION = "BULK_OPERATION"
 APPROVE = "APPROVE"
 RECORD_PAYMENT = "RECORD_PAYMENT"
 REFUND = "REFUND"
+RISK = "RISK"
 
 ALL_ACTIONS = frozenset({
     LOGIN,
@@ -33,6 +34,7 @@ ALL_ACTIONS = frozenset({
     APPROVE,
     RECORD_PAYMENT,
     REFUND,
+    RISK,
 })
 
 # ── Resource types ────────────────────────────────────────────────────────

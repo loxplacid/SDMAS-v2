@@ -29,6 +29,7 @@ from app.domains.fees.schemas import (
     PaymentCreate,
     PaymentResponse,
     PaymentResult,
+    StudentFeeResponse,
     StudentFinancialSummary,
 )
 from app.domains.fees.service import (
@@ -40,6 +41,13 @@ from app.domains.fees.service import (
 )
 from app.domains.student.repository import StudentRepository
 from app.infrastructure.database import get_session
+from app.multi_tenant.dependencies import get_optional_tenant
+from app.multi_tenant.guards import (
+    assert_tenant_scope,
+    effective_campus_id,
+    inject_campus,
+)
+from app.multi_tenant.models import TenantContext
 
 router = APIRouter(prefix="/api/fees", tags=["fees"])
 
@@ -112,8 +120,10 @@ async def get_summary_service(
 async def create_fee_type(
     data: FeeTypeCreate,
     service: FeeTypeService = Depends(get_fee_type_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> FeeTypeResponse:
     ft = await service.create(data)
+    inject_campus(ft, tenant)
     return FeeTypeResponse.model_validate(ft)
 
 
@@ -121,8 +131,10 @@ async def create_fee_type(
 async def get_fee_type(
     type_id: int,
     service: FeeTypeService = Depends(get_fee_type_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> FeeTypeResponse:
     ft = await service.get(type_id)
+    assert_tenant_scope(ft, tenant, resource="fee type")
     return FeeTypeResponse.model_validate(ft)
 
 
@@ -136,10 +148,12 @@ async def list_fee_types(
         default=None, alias="campus_id", description="Filter by campus"
     ),
     service: FeeTypeService = Depends(get_fee_type_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[FeeTypeResponse]:
+    effective_campus = effective_campus_id(tenant, campus_id)
     items, total = await service.list(
         status=status_filter,
-        campus_id=campus_id,
+        campus_id=effective_campus,
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -156,7 +170,10 @@ async def update_fee_type(
     type_id: int,
     data: FeeTypeUpdate,
     service: FeeTypeService = Depends(get_fee_type_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> FeeTypeResponse:
+    existing = await service.get(type_id)
+    assert_tenant_scope(existing, tenant, resource="fee type")
     ft = await service.update(type_id, data)
     return FeeTypeResponse.model_validate(ft)
 
@@ -168,7 +185,10 @@ async def update_fee_type(
 async def deactivate_fee_type(
     type_id: int,
     service: FeeTypeService = Depends(get_fee_type_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> FeeTypeResponse:
+    existing = await service.get(type_id)
+    assert_tenant_scope(existing, tenant, resource="fee type")
     ft = await service.deactivate(type_id)
     return FeeTypeResponse.model_validate(ft)
 
@@ -186,8 +206,10 @@ async def deactivate_fee_type(
 async def create_fee_structure(
     data: FeeStructureCreate,
     service: FeeStructureService = Depends(get_fee_structure_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> FeeStructureResponse:
     fs = await service.create(data)
+    inject_campus(fs, tenant)
     return FeeStructureResponse.model_validate(fs)
 
 
@@ -198,8 +220,10 @@ async def create_fee_structure(
 async def get_fee_structure(
     structure_id: int,
     service: FeeStructureService = Depends(get_fee_structure_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> FeeStructureResponse:
     fs = await service.get(structure_id)
+    assert_tenant_scope(fs, tenant, resource="fee structure")
     return FeeStructureResponse.model_validate(fs)
 
 
@@ -220,13 +244,15 @@ async def list_fee_structures(
         default=None, alias="campus_id"
     ),
     service: FeeStructureService = Depends(get_fee_structure_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[FeeStructureResponse]:
+    effective_campus = effective_campus_id(tenant, campus_id)
     items, total = await service.list(
         academic_year_id=academic_year_id,
         class_id=class_id,
         fee_type_id=fee_type_id,
         status=status_filter,
-        campus_id=campus_id,
+        campus_id=effective_campus,
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -246,7 +272,10 @@ async def update_fee_structure(
     structure_id: int,
     data: FeeStructureUpdate,
     service: FeeStructureService = Depends(get_fee_structure_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> FeeStructureResponse:
+    existing = await service.get(structure_id)
+    assert_tenant_scope(existing, tenant, resource="fee structure")
     fs = await service.update(structure_id, data)
     return FeeStructureResponse.model_validate(fs)
 
@@ -263,7 +292,11 @@ async def get_student_fees(
         ..., alias="academic_year_id", description="Academic year ID"
     ),
     service: FeeDueService = Depends(get_fee_due_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> list[StudentFeeResponse]:
+    student = await StudentRepository(session).get_by_id(student_id)
+    assert_tenant_scope(student, tenant, resource="student")
     fees = await service.get_student_fees(student_id, academic_year_id)
     return [StudentFeeResponse(**f) for f in fees]
 
@@ -282,8 +315,14 @@ async def create_fee_dues(
     student_id: int = Query(..., alias="student_id"),
     academic_year_id: int = Query(..., alias="academic_year_id"),
     service: FeeDueService = Depends(get_fee_due_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> list[FeeDueResponse]:
+    student = await StudentRepository(session).get_by_id(student_id)
+    assert_tenant_scope(student, tenant, resource="student")
     dues = await service.create_dues(student_id, academic_year_id)
+    for due in dues:
+        inject_campus(due, tenant)
     return [FeeDueResponse.model_validate(d) for d in dues]
 
 
@@ -291,8 +330,10 @@ async def create_fee_dues(
 async def get_fee_due(
     due_id: int,
     service: FeeDueService = Depends(get_fee_due_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> FeeDueResponse:
     due = await service.get(due_id)
+    assert_tenant_scope(due, tenant, resource="fee due")
     return FeeDueResponse.model_validate(due)
 
 
@@ -312,12 +353,14 @@ async def list_fee_dues(
         default=None, alias="campus_id"
     ),
     service: FeeDueService = Depends(get_fee_due_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[FeeDueResponse]:
+    effective_campus = effective_campus_id(tenant, campus_id)
     items, total = await service.list(
         student_id=student_id,
         academic_year_id=academic_year_id,
         status=status_filter,
-        campus_id=campus_id,
+        campus_id=effective_campus,
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -339,7 +382,11 @@ async def get_student_dues(
         default=None, alias="status"
     ),
     service: FeeDueService = Depends(get_fee_due_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> list[FeeDueResponse]:
+    student = await StudentRepository(session).get_by_id(student_id)
+    assert_tenant_scope(student, tenant, resource="student")
     dues = await service.get_student_dues(
         student_id,
         academic_year_id=academic_year_id,
@@ -361,8 +408,13 @@ async def get_student_dues(
 async def record_payment(
     data: PaymentCreate,
     service: PaymentService = Depends(get_payment_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> PaymentResult:
+    student = await StudentRepository(session).get_by_id(data.student_id)
+    assert_tenant_scope(student, tenant, resource="student")
     result = await service.record_payment(data)
+    inject_campus(result["payment"], tenant)
     return PaymentResult(
         payment=PaymentResponse.model_validate(result["payment"]),
         fee_due=FeeDueResponse.model_validate(result["fee_due"]),
@@ -373,8 +425,10 @@ async def record_payment(
 async def get_payment(
     payment_id: int,
     service: PaymentService = Depends(get_payment_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> PaymentResponse:
     payment = await service.get_payment(payment_id)
+    assert_tenant_scope(payment, tenant, resource="payment")
     return PaymentResponse.model_validate(payment)
 
 
@@ -391,11 +445,13 @@ async def list_payments(
         default=None, alias="campus_id"
     ),
     service: PaymentService = Depends(get_payment_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[PaymentResponse]:
+    effective_campus = effective_campus_id(tenant, campus_id)
     items, total = await service.repo.list(
         student_id=student_id,
         fee_due_id=fee_due_id,
-        campus_id=campus_id,
+        campus_id=effective_campus,
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -414,7 +470,11 @@ async def list_payments(
 async def get_student_payments(
     student_id: int,
     service: PaymentService = Depends(get_payment_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> list[PaymentResponse]:
+    student = await StudentRepository(session).get_by_id(student_id)
+    assert_tenant_scope(student, tenant, resource="student")
     payments = await service.get_student_payments(student_id)
     return [PaymentResponse.model_validate(p) for p in payments]
 
@@ -426,7 +486,11 @@ async def get_student_payments(
 async def get_fee_due_payments(
     fee_due_id: int,
     service: PaymentService = Depends(get_payment_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> list[PaymentResponse]:
+    due = await FeeDueRepository(session).get_by_id(fee_due_id)
+    assert_tenant_scope(due, tenant, resource="fee due")
     payments = await service.get_fee_due_payments(fee_due_id)
     return [PaymentResponse.model_validate(p) for p in payments]
 
@@ -435,9 +499,14 @@ async def get_fee_due_payments(
 async def get_payments_by_date_range(
     start_date: str = Query(..., alias="start_date"),
     end_date: str = Query(..., alias="end_date"),
+    campus_id: Optional[int] = Query(default=None, alias="campus_id"),
     service: PaymentService = Depends(get_payment_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> list[PaymentResponse]:
-    payments = await service.get_payments_by_date_range(start_date, end_date)
+    effective_campus = effective_campus_id(tenant, campus_id)
+    payments = await service.get_payments_by_date_range(
+        start_date, end_date, campus_id=effective_campus
+    )
     return [PaymentResponse.model_validate(p) for p in payments]
 
 
@@ -448,8 +517,10 @@ async def get_payments_by_date_range(
 async def get_payment_by_receipt_number(
     receipt_number: str,
     service: PaymentService = Depends(get_payment_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> PaymentResponse:
     payment = await service.get_payment_by_receipt_number(receipt_number)
+    assert_tenant_scope(payment, tenant, resource="payment")
     return PaymentResponse.model_validate(payment)
 
 
@@ -468,7 +539,11 @@ async def get_student_financial_summary(
         ..., alias="academic_year_id"
     ),
     service: SummaryService = Depends(get_summary_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> StudentFinancialSummary:
+    student = await StudentRepository(session).get_by_id(student_id)
+    assert_tenant_scope(student, tenant, resource="student")
     summary = await service.get_student_summary(student_id, academic_year_id)
     return StudentFinancialSummary(**summary)
 
@@ -483,6 +558,10 @@ async def get_class_financial_summary(
         ..., alias="academic_year_id"
     ),
     service: SummaryService = Depends(get_summary_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> ClassFinancialSummary:
+    cls = await ClassRepository(session).get_by_id(class_id)
+    assert_tenant_scope(cls, tenant, resource="class")
     summary = await service.get_class_summary(class_id, academic_year_id)
     return ClassFinancialSummary(**summary)

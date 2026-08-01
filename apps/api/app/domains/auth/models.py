@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 from typing import Optional
 
-from sqlalchemy import String, Boolean, DateTime, BigInteger
+from sqlalchemy import String, Boolean, DateTime, BigInteger, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from sqlalchemy import Integer, ForeignKey, Table, Column
@@ -37,6 +37,63 @@ user_roles = Table(
 # =====================================================================
 # Refresh Token (for rotation / reuse detection)
 # =====================================================================
+
+
+class UserSchoolMembership(Base):
+    """Membership linking a user to a school (campus) within an
+    organization (institution).
+
+    A user may belong to one or more schools. Exactly one membership per
+    user can be marked ``is_default`` (the active school context). The
+    user's active school is also mirrored on ``users.campus_id`` for
+    backward compatibility with the JWT claim and existing queries.
+    """
+
+    __tablename__ = "user_school_memberships"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id", "campus_id", name="uq_user_school_membership"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    campus_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("campuses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    role: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="staff"
+    )
+    is_default: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.datetime.now(datetime.timezone.utc),
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.datetime.now(datetime.timezone.utc),
+        onupdate=lambda: datetime.datetime.now(datetime.timezone.utc),
+    )
+
+    user: Mapped[User] = relationship(
+        "User", back_populates="school_memberships",
+        foreign_keys=[user_id],
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<UserSchoolMembership user={self.user_id} "
+            f"campus={self.campus_id} default={self.is_default}>"
+        )
 
 
 class RefreshToken(Base):
@@ -195,6 +252,15 @@ class User(Base):
     # M2M: roles assigned to this user
     assigned_roles: Mapped[list[Role]] = relationship(
         "Role", secondary=user_roles, lazy="selectin", back_populates="users",
+    )
+
+    # School memberships (which campuses this user belongs to)
+    school_memberships: Mapped[list[UserSchoolMembership]] = relationship(
+        "UserSchoolMembership",
+        back_populates="user",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        foreign_keys="UserSchoolMembership.user_id",
     )
 
     @property

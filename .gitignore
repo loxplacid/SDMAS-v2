@@ -45,3 +45,4 @@ junit.xml
 
 # Docker
 *.log
+.env

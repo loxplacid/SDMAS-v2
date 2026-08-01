@@ -378,14 +378,20 @@ class PaymentRepository:
         return result.scalars().all()
 
     async def find_by_date_range(
-        self, start_date: str, end_date: str
+        self,
+        start_date: str,
+        end_date: str,
+        campus_id: Optional[int] = None,
     ) -> Sequence[Payment]:
+        conditions = [
+            Payment.payment_date >= start_date,
+            Payment.payment_date <= end_date,
+        ]
+        if campus_id is not None:
+            conditions.append(Payment.campus_id == campus_id)
         result = await self.session.execute(
             select(Payment)
-            .where(
-                Payment.payment_date >= start_date,
-                Payment.payment_date <= end_date,
-            )
+            .where(*conditions)
             .order_by(Payment.payment_date)
         )
         return result.scalars().all()

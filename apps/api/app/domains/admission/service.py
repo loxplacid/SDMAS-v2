@@ -1,14 +1,24 @@
 from __future__ import annotations
 
 import datetime
+import logging
 from datetime import timezone
 from typing import Optional, Sequence
 
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
+from app.domains.events import publish_event
+from app.domains.events.events import (
+    AdmissionApprovedEvent,
+    AdmissionRejectedEvent,
+    AdmissionSubmittedEvent,
+)
 from app.domains.admission.models import (
+    ADMISSION_STATUS_APPLICATION_SUBMITTED,
+    ADMISSION_STATUS_ENROLLED,
     ADMISSION_STATUS_FLOW,
     ADMISSION_STATUS_INQUIRY,
     ADMISSION_STATUS_REJECTED,
+    ADMISSION_STATUS_STUDENT_CREATED,
     ADMISSION_VALID_STATUSES,
     VALID_ALLOCATION_STATUSES,
     VALID_DOCUMENT_VERIFICATION_STATUSES,
@@ -31,6 +41,8 @@ from app.domains.admission.repository import (
     AdmissionMeritEntryRepository,
     AdmissionSeatAllocationRepository,
 )
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -192,7 +204,38 @@ class AdmissionApplicationService:
         elif new_status == ADMISSION_STATUS_ENROLLED:  # enrolled
             app.enrolled_at = now
 
-        return await self.repo.update(app)
+        updated = await self.repo.update(app)
+
+        # Domain events for admission lifecycle (non-fatal)
+        try:
+            if new_status == ADMISSION_STATUS_APPLICATION_SUBMITTED:
+                await publish_event(
+                    AdmissionSubmittedEvent(
+                        application_id=updated.id,
+                        applicant_name=updated.applicant_name,
+                    ),
+                    session=self.repo.session,
+                )
+            elif new_status == ADMISSION_STATUS_ENROLLED:
+                await publish_event(
+                    AdmissionApprovedEvent(
+                        application_id=updated.id,
+                        applicant_name=updated.applicant_name,
+                    ),
+                    session=self.repo.session,
+                )
+            elif new_status == ADMISSION_STATUS_REJECTED:
+                await publish_event(
+                    AdmissionRejectedEvent(
+                        application_id=updated.id,
+                        applicant_name=updated.applicant_name,
+                    ),
+                    session=self.repo.session,
+                )
+        except Exception:
+            logger.warning("Failed to publish admission event (non-fatal)", exc_info=True)
+
+        return updated
 
 
 # ---------------------------------------------------------------------------
@@ -337,6 +380,7 @@ class AdmissionMeritEntryService:
         program_id: Optional[int] = None,
         academic_year_id: Optional[int] = None,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[AdmissionMeritEntry], int]:
@@ -346,6 +390,7 @@ class AdmissionMeritEntryService:
             program_id=program_id,
             academic_year_id=academic_year_id,
             status=status,
+            campus_id=campus_id,
             skip=skip,
             limit=limit,
         )

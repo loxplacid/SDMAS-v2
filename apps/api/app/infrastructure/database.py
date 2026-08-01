@@ -19,12 +19,31 @@ class Base(DeclarativeBase):
 def create_engine_and_factory(
     database_url: str,
     echo: bool = False,
+    *,
+    pool_size: int | None = None,
+    max_overflow: int | None = None,
 ) -> tuple[AsyncEngine, async_sessionmaker[AsyncSession]]:
-    engine = create_async_engine(
-        database_url,
-        echo=echo,
-        poolclass=NullPool,
-    )
+    """Create the async engine + session factory.
+
+    - SQLite uses ``NullPool`` (each connection is a file/``:memory:``
+      handle — pooling adds nothing and breaks ``:memory:`` semantics).
+    - PostgreSQL uses the default async queue pool with configurable
+      size so a handful of workers don't open a fresh connection per
+      request (a real load hazard at production concurrency).
+    """
+    if database_url.startswith("sqlite"):
+        engine = create_async_engine(
+            database_url,
+            echo=echo,
+            poolclass=NullPool,
+        )
+    else:
+        engine = create_async_engine(
+            database_url,
+            echo=echo,
+            pool_size=pool_size,
+            max_overflow=max_overflow,
+        )
     factory = async_sessionmaker(
         engine,
         class_=AsyncSession,
@@ -38,6 +57,8 @@ from app.config import settings  # noqa: E402
 engine, async_session_factory = create_engine_and_factory(
     database_url=str(settings.database_url),
     echo=settings.database_echo if settings.database_echo is not None else settings.debug,
+    pool_size=settings.db_pool_size,
+    max_overflow=settings.db_pool_max_overflow,
 )
 
 # ---------------------------------------------------------------------------

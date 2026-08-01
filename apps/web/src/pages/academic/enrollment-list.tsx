@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { enrollmentApi, type EnrollmentListParams } from '../../api/academic/enrollment-api'
 import { studentApi } from '../../api/student/student-api'
 import { academicYearApi } from '../../api/academic/academic-year-api'
@@ -20,13 +21,18 @@ const columns = [
 ]
 
 export function EnrollmentListPage() {
+  const navigate = useNavigate()
   const { showToast } = useToast()
+  const [searchParams] = useSearchParams()
+  const initialClassId = searchParams.get('classId')
+  const initialSectionId = searchParams.get('sectionId')
 
   useKeyboardShortcut({ 'n': () => openCreateModal() }, [])
   const [data, setData] = useState<EnrollmentResponse[]>([])
   const [total, setTotal] = useState(0); const [pages, setPages] = useState(0)
   const [page, setPage] = useState(1); const [size, setSize] = useState(20)
   const [studentFilter, setStudentFilter] = useState(''); const [yearFilter, setYearFilter] = useState('')
+  const [classFilter, setClassFilter] = useState(initialClassId ?? ''); const [sectionFilter, setSectionFilter] = useState(initialSectionId ?? '')
   const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null)
   const [students, setStudents] = useState<StudentResponse[]>([])
   const [years, setYears] = useState<AcademicYearResponse[]>([])
@@ -58,7 +64,7 @@ export function EnrollmentListPage() {
     } finally { if (fetchId === fetchIdRef.current) setLoading(false) }
   }, [])
 
-  useEffect(() => { fetch({ page, size, student_id: studentFilter ? Number(studentFilter) : undefined, academic_year_id: yearFilter ? Number(yearFilter) : undefined }) }, [page, size, studentFilter, yearFilter, fetch])
+  useEffect(() => { fetch({ page, size, student_id: studentFilter ? Number(studentFilter) : undefined, academic_year_id: yearFilter ? Number(yearFilter) : undefined, class_id: classFilter ? Number(classFilter) : undefined, section_id: sectionFilter ? Number(sectionFilter) : undefined }) }, [page, size, studentFilter, yearFilter, classFilter, sectionFilter, fetch])
 
   const openCreateModal = () => { setEditing(null); setFormData({ student_id: null, academic_year_id: null, class_id: null, section_id: null }); setFormErrors({}); setApiError(null); setModalOpen(true) }
   const openEditModal = (e: EnrollmentResponse) => { setEditing(e); setFormData({ student_id: e.student_id, academic_year_id: e.academic_year_id, class_id: e.class_id, section_id: e.section_id, status: e.status }); setFormErrors({}); setApiError(null); setModalOpen(true) }
@@ -110,11 +116,15 @@ export function EnrollmentListPage() {
           onChange={(e) => { setStudentFilter(e.target.value); setPage(1) }} />
         <Select options={years.map((y) => ({ value: String(y.id), label: y.name }))} placeholder="All years" value={yearFilter}
           onChange={(e) => { setYearFilter(e.target.value); setPage(1) }} />
+        <Select options={classes.map((c) => ({ value: String(c.id), label: c.name }))} placeholder="All classes" value={classFilter}
+          onChange={(e) => { setClassFilter(e.target.value); setPage(1) }} />
+        <Select options={sections.map((s) => ({ value: String(s.id), label: s.name }))} placeholder="All sections" value={sectionFilter}
+          onChange={(e) => { setSectionFilter(e.target.value); setPage(1) }} />
       </div>
       <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
-        {error ? <ErrorState message={error} onRetry={() => fetch({ page, size, student_id: studentFilter ? Number(studentFilter) : undefined, academic_year_id: yearFilter ? Number(yearFilter) : undefined })} /> : (
+        {error ? <ErrorState message={error} onRetry={() => fetch({ page, size, student_id: studentFilter ? Number(studentFilter) : undefined, academic_year_id: yearFilter ? Number(yearFilter) : undefined, class_id: classFilter ? Number(classFilter) : undefined, section_id: sectionFilter ? Number(sectionFilter) : undefined })} /> : (
           <>
-            <Table columns={[...columns, { key: 'actions', header: 'Actions', render: (e: EnrollmentResponse) => (<div className="flex gap-2" onClick={(ev) => ev.stopPropagation()}><Button variant="ghost" size="sm" onClick={() => openEditModal(e)}>Edit</Button><Button variant="danger" size="sm" onClick={() => handleDelete(e)}>Delete</Button></div>) }]} data={data} keyExtractor={(e) => e.id} emptyMessage="No enrollments found." loading={loading} />
+            <Table columns={[...columns, { key: 'actions', header: 'Actions', render: (e: EnrollmentResponse) => (<div className="flex gap-2" onClick={(ev) => ev.stopPropagation()}><Button variant="ghost" size="sm" onClick={() => openEditModal(e)}>Edit</Button><Button variant="danger" size="sm" onClick={() => handleDelete(e)}>Delete</Button></div>) }]} data={data} keyExtractor={(e) => e.id} emptyMessage="No enrollments found." loading={loading} onRowClick={(e) => navigate(`/students/${e.student_id}`)} />
             <Pagination page={page} size={size} total={total} pages={pages} onPageChange={setPage} onSizeChange={(s) => { setSize(s); setPage(1) }} />
           </>
         )}

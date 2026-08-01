@@ -34,9 +34,13 @@ class InstitutionService:
         return await self.repo.get_by_id(entity_id)
 
     async def list(
-        self, status: Optional[str] = None, skip: int = 0, limit: int = 100
+        self,
+        status: Optional[str] = None,
+        ids: Optional[list[int]] = None,
+        skip: int = 0,
+        limit: int = 100,
     ) -> tuple[list[Institution], int]:
-        return await self.repo.list(status=status, skip=skip, limit=limit)
+        return await self.repo.list(status=status, ids=ids, skip=skip, limit=limit)
 
     async def update(
         self, entity_id: int, name: Optional[str] = None,
@@ -132,11 +136,12 @@ class DepartmentService:
 
     async def list(
         self, school_id: Optional[int] = None,
-        status: Optional[str] = None, skip: int = 0, limit: int = 100,
+        status: Optional[str] = None, ids: Optional[list[int]] = None,
+        skip: int = 0, limit: int = 100,
     ) -> tuple[list[Department], int]:
         return await self.repo.list(
             parent_column="school_id", parent_id=school_id,
-            status=status, skip=skip, limit=limit,
+            status=status, ids=ids, skip=skip, limit=limit,
         )
 
     async def update(self, entity_id: int, **kwargs) -> Department:
@@ -165,11 +170,12 @@ class ProgramService:
 
     async def list(
         self, department_id: Optional[int] = None,
-        status: Optional[str] = None, skip: int = 0, limit: int = 100,
+        status: Optional[str] = None, ids: Optional[list[int]] = None,
+        skip: int = 0, limit: int = 100,
     ) -> tuple[list[Program], int]:
         return await self.repo.list(
             parent_column="department_id", parent_id=department_id,
-            status=status, skip=skip, limit=limit,
+            status=status, ids=ids, skip=skip, limit=limit,
         )
 
     async def update(self, entity_id: int, **kwargs) -> Program:
@@ -197,11 +203,12 @@ class BranchService:
 
     async def list(
         self, program_id: Optional[int] = None,
-        status: Optional[str] = None, skip: int = 0, limit: int = 100,
+        status: Optional[str] = None, ids: Optional[list[int]] = None,
+        skip: int = 0, limit: int = 100,
     ) -> tuple[list[Branch], int]:
         return await self.repo.list(
             parent_column="program_id", parent_id=program_id,
-            status=status, skip=skip, limit=limit,
+            status=status, ids=ids, skip=skip, limit=limit,
         )
 
     async def update(self, entity_id: int, **kwargs) -> Branch:
@@ -232,11 +239,12 @@ class SemesterService:
 
     async def list(
         self, program_id: Optional[int] = None,
-        status: Optional[str] = None, skip: int = 0, limit: int = 100,
+        status: Optional[str] = None, ids: Optional[list[int]] = None,
+        skip: int = 0, limit: int = 100,
     ) -> tuple[list[Semester], int]:
         return await self.repo.list(
             parent_column="program_id", parent_id=program_id,
-            status=status, skip=skip, limit=limit,
+            status=status, ids=ids, skip=skip, limit=limit,
         )
 
     async def update(self, entity_id: int, **kwargs) -> Semester:

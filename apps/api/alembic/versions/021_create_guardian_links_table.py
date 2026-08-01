@@ -1,6 +1,6 @@
 """Create guardian_links table for parent-child relationships
 
-Revision ID: 021
+Revision ID: 021_create_guardian_links
 Revises: d29e45f87a2c
 Create Date: 2026-07-31 08:45:00.000000
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "021"
+revision: str = "021_create_guardian_links"
 down_revision: Union[str, None] = "d29e45f87a2c"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

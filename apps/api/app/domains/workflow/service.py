@@ -8,8 +8,12 @@ from typing import Optional, Sequence
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
 from app.domains.audit.constants import APPROVE, UPDATE, WORKFLOW
 from app.domains.audit.service import AuditService
-from app.domains.notifications import dispatcher as notification_dispatcher
-from app.domains.notifications.events import ImportantAdminEvent
+from app.domains.events import publish_event
+from app.domains.events.events import (
+    WorkflowApprovedEvent,
+    WorkflowRejectedEvent,
+    WorkflowSubmittedEvent,
+)
 from app.domains.workflow.models import (
     ApprovalHistory,
     Workflow,
@@ -305,24 +309,23 @@ class WorkflowExecutionService:
             else:
                 transition = transitions[0]
 
-            # Move to the target step
-            instance.current_step_id = transition.to_step_id
+            # Move to the target step.  Assign the relationship (not just
+            # the FK) so ``instance.current_step`` is never stale within
+            # the same session — important for chained transitions.
+            target_step = await self.step_repo.get_by_id(transition.to_step_id)
+            instance.current_step = target_step
             instance.updated_at = datetime.datetime.now(timezone.utc)
 
-            # Check if the target step is final
-            target_step = await self.step_repo.get_by_id(transition.to_step_id)
             if target_step.is_final:
                 instance.status = "completed"
 
         elif action == "reject":
-            # Reject: find the final step marked as 'rejected' or similar
-            # If a specific step is designated, we need to find a direct transition
-            # Otherwise, we mark the instance as cancelled
+            # Reject always terminates the instance as cancelled, moving
+            # to the designated step (if any) for record-keeping.
             if to_step_id is not None:
-                instance.current_step_id = to_step_id
-            else:
-                instance.status = "cancelled"
-
+                target_step = await self.step_repo.get_by_id(to_step_id)
+                instance.current_step = target_step
+            instance.status = "cancelled"
             instance.updated_at = datetime.datetime.now(timezone.utc)
 
         elif action == "return":
@@ -334,7 +337,7 @@ class WorkflowExecutionService:
             target_step = await self.step_repo.get_by_id(to_step_id)
             if target_step.workflow_id != instance.workflow_id:
                 raise ValidationError("Target step does not belong to this workflow")
-            instance.current_step_id = to_step_id
+            instance.current_step = target_step
             instance.updated_at = datetime.datetime.now(timezone.utc)
 
         elif action == "submit":
@@ -347,7 +350,8 @@ class WorkflowExecutionService:
             if not transitions:
                 raise ValidationError("No forward transitions available from current step")
             transition = transitions[0]
-            instance.current_step_id = transition.to_step_id
+            target_step = await self.step_repo.get_by_id(transition.to_step_id)
+            instance.current_step = target_step
             instance.updated_at = datetime.datetime.now(timezone.utc)
 
         instance = await self.instance_repo.update(instance)
@@ -362,6 +366,13 @@ class WorkflowExecutionService:
             comment=comment,
         )
         await self.history_repo.create(history)
+
+        # Reload the history collection so the in-memory instance reflects
+        # the new entry.  The relationship is selectin-loaded at fetch time
+        # and would otherwise be stale within the same session.
+        await self.history_repo.session.refresh(
+            instance, attribute_names=["history"]
+        )
 
         # Fire audit entry
         try:
@@ -386,28 +397,49 @@ class WorkflowExecutionService:
         except Exception:
             logger.warning("Failed to write audit entry for workflow action (non-fatal)", exc_info=True)
 
-        # Fire notification event
+        # Fire standard workflow domain event.  The notification side is
+        # produced by the ``WorkflowApprovedEvent`` handler registered on the
+        # domain event bus (single source of truth for notifications).
         try:
-            event = ImportantAdminEvent(
-                tenant_id=getattr(instance, "campus_id", None),
-                event_type=f"workflow_{action}",
-                title=f"Workflow {action}: {instance.entity_type}#{instance.entity_id}",
-                message=f"Workflow instance {instance.id} was {action}d "
-                        f"(step: {current_step.name} → {instance.current_step.name if instance.current_step else '?'})"
-                        f"{(' — ' + comment) if comment else ''}",
-                target_user_id=instance.created_by,
-                metadata={
-                    "instance_id": instance.id,
-                    "workflow_id": instance.workflow_id,
-                    "action": action,
-                    "entity_type": instance.entity_type,
-                    "entity_id": instance.entity_id,
-                    "status": instance.status,
-                },
-            )
-            await notification_dispatcher.dispatch(event, session=self.history_repo.session)
+            step_name = instance.current_step.name if instance.current_step else ""
+            from app.domains.events.events import DomainEvent as _DomainEvent
+
+            event: _DomainEvent
+            if action == "approve":
+                event = WorkflowApprovedEvent(
+                    instance_id=instance.id,
+                    workflow_id=instance.workflow_id,
+                    entity_type=instance.entity_type,
+                    entity_id=instance.entity_id,
+                    step_name=step_name,
+                    status=instance.status,
+                    actor_id=actor_id,
+                    created_by=instance.created_by,
+                    comment=comment,
+                )
+            elif action == "reject":
+                event = WorkflowRejectedEvent(
+                    instance_id=instance.id,
+                    workflow_id=instance.workflow_id,
+                    entity_type=instance.entity_type,
+                    entity_id=instance.entity_id,
+                    step_name=step_name,
+                    status=instance.status,
+                    actor_id=actor_id,
+                    created_by=instance.created_by,
+                    comment=comment,
+                )
+            else:
+                event = WorkflowSubmittedEvent(
+                    instance_id=instance.id,
+                    workflow_id=instance.workflow_id,
+                    entity_type=instance.entity_type,
+                    entity_id=instance.entity_id,
+                    created_by=actor_id,
+                )
+            await publish_event(event, session=self.history_repo.session)
         except Exception:
-            logger.warning("Failed to dispatch workflow notification (non-fatal)", exc_info=True)
+            logger.warning("Failed to dispatch workflow domain event (non-fatal)", exc_info=True)
 
         return instance
 

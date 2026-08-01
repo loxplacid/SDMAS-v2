@@ -45,11 +45,15 @@ from app.domains.workflow.router import router as workflow_router
 from app.domains.institution.router import router as institution_router
 from app.domains.notifications import dispatcher as notification_dispatcher
 from app.domains.notifications.handlers import register_all_handlers
+from app.domains.events import event_bus
+from app.domains.events.handlers import register_domain_event_handlers
 from app.domains.notifications.router import router as notifications_router
 from app.domains.notifications.push_router import router as push_router
 from app.domains.reports.router import router as reports_router
 from app.domains.student.router import router as student_router
 from app.domains.student_360.router import router as student_360_router
+from app.domains.class_360.router import router as class_360_router
+from app.domains.teacher_360.router import router as teacher_360_router
 from app.domains.academic_ops.router import router as academic_ops_router
 from app.domains.school_finance.router import router as school_finance_router
 from app.domains.report_builder.router import router as report_builder_router
@@ -60,6 +64,9 @@ from app.domains.search.router import router as search_router
 from app.domains.jobs.router import router as jobs_router
 from app.domains.migration.router import router as migration_router
 from app.domains.student_portal.router import router as student_portal_router
+from app.domains.command_center.router import router as command_center_router
+from app.domains.risk.router import router as risk_router
+from app.domains.timeline.router import router as timeline_router
 from app.infrastructure.database import close_db
 from app.domains.audit.router import router as audit_router
 from app.domains.audit.export import router as audit_export_router
@@ -106,6 +113,13 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
         notification_dispatcher.handler_count,
     )
 
+    # Wire up domain event handlers (audit, risk, notification, lifecycle)
+    register_domain_event_handlers(event_bus)
+    logger.info(
+        "Domain event dispatcher initialised with %d handler(s)",
+        event_bus.handler_count,
+    )
+
     # Seed report definitions into database
     from app.infrastructure.database import get_session
     from app.domains.report_builder.registry import ReportRegistry
@@ -141,6 +155,11 @@ app = FastAPI(
     title=settings.app_name,
     version="0.1.0",
     lifespan=lifespan,
+    # Interactive docs (Swagger/ReDoc) and the raw OpenAPI schema expose
+    # internal route structure — disable them in production.
+    docs_url=None if settings.is_production() else "/docs",
+    redoc_url=None if settings.is_production() else "/redoc",
+    openapi_url=None if settings.is_production() else "/openapi.json",
 )
 
 app.add_middleware(
@@ -189,6 +208,8 @@ app.include_router(leave_router)
 app.include_router(audit_router)
 app.include_router(audit_export_router)
 app.include_router(student_360_router)
+app.include_router(class_360_router)
+app.include_router(teacher_360_router)
 app.include_router(academic_ops_router)
 app.include_router(school_finance_router)
 app.include_router(report_builder_router)
@@ -197,6 +218,9 @@ app.include_router(communications_router)
 app.include_router(parent_router)
 app.include_router(search_router)
 app.include_router(student_portal_router)
+app.include_router(command_center_router)
+app.include_router(risk_router)
+app.include_router(timeline_router)
 app.include_router(jobs_router)
 app.include_router(migration_router)
 app.include_router(billing_router)

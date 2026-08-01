@@ -32,28 +32,28 @@ export const ROLE_CONFIG: Record<UserRole, RoleConfig> = {
     description: 'Full system access',
     icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
     color: 'bg-[var(--color-brand-accent)]',
-    homeRoute: '/dashboard',
+    homeRoute: '/command-center',
   },
   principal: {
     label: 'Principal',
     description: 'School leadership overview',
     icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
     color: 'bg-indigo-500',
-    homeRoute: '/dashboard',
+    homeRoute: '/command-center',
   },
   accountant: {
     label: 'Accountant',
     description: 'Financial management',
     icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
     color: 'bg-blue-500',
-    homeRoute: '/dashboard',
+    homeRoute: '/command-center',
   },
   staff: {
     label: 'Staff',
     description: 'General staff access',
     icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
     color: 'bg-teal-500',
-    homeRoute: '/dashboard',
+    homeRoute: '/command-center',
   },
   teacher: {
     label: 'Teacher',
@@ -106,7 +106,9 @@ const NAV_ICONS = {
 const NAV_ICON_COMMUNICATIONS = 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'
 
 const adminNav: NavItem[] = [
-  { to: '/dashboard', label: 'Dashboard', icon: NAV_ICONS.dashboard },
+  { to: '/command-center', label: 'Command Center', icon: NAV_ICONS.dashboard, matchPaths: ['/command-center'] },
+  { to: '/risk', label: 'Risk Center', icon: NAV_ICONS.analytics, matchPaths: ['/risk'] },
+  { to: '/timeline', label: 'Timeline', icon: NAV_ICONS.operations, matchPaths: ['/timeline'] },
   { to: '/leave', label: 'Leave', icon: NAV_ICONS.leave, matchPaths: ['/leave'] },
   { to: '/admissions', label: 'Admissions', icon: NAV_ICONS.admissions, matchPaths: ['/admissions'] },
   { to: '/students', label: 'Students', icon: NAV_ICONS.students },
@@ -167,7 +169,9 @@ const parentNav: NavItem[] = [
 
 /** Nav items visible to Principal role (leadership overview) */
 const principalNav: NavItem[] = [
-  { to: '/principal', label: 'Dashboard', icon: NAV_ICONS.dashboard },
+  { to: '/command-center', label: 'Command Center', icon: NAV_ICONS.dashboard, matchPaths: ['/command-center'] },
+  { to: '/risk', label: 'Risk Center', icon: NAV_ICONS.analytics, matchPaths: ['/risk'] },
+  { to: '/timeline', label: 'Timeline', icon: NAV_ICONS.operations, matchPaths: ['/timeline'] },
   { to: '/students', label: 'Students', icon: NAV_ICONS.students },
   { to: '/teachers', label: 'Teachers', icon: NAV_ICONS.teachers },
   { to: '/academic', label: 'Academics', icon: NAV_ICONS.academic, matchPaths: ['/academic'] },
@@ -181,7 +185,7 @@ const principalNav: NavItem[] = [
 
 /** Nav items visible to Accountant role (financial management) */
 const accountantNav: NavItem[] = [
-  { to: '/accountant', label: 'Dashboard', icon: NAV_ICONS.dashboard },
+  { to: '/command-center', label: 'Command Center', icon: NAV_ICONS.dashboard, matchPaths: ['/command-center'] },
   { to: '/fees/structures', label: 'Fee Structures', icon: NAV_ICONS.fees, matchPaths: ['/fees/structures'] },
   { to: '/fees/dues', label: 'Fee Dues', icon: NAV_ICONS['my-fees'], matchPaths: ['/fees/dues'] },
   { to: '/fees/payments', label: 'Payments', icon: NAV_ICONS.fees, matchPaths: ['/fees/payments'] },
@@ -193,7 +197,9 @@ const accountantNav: NavItem[] = [
 
 /** Nav items visible to Staff role (general operations) */
 const staffNav: NavItem[] = [
-  { to: '/staff', label: 'Dashboard', icon: NAV_ICONS.dashboard },
+  { to: '/command-center', label: 'Command Center', icon: NAV_ICONS.dashboard, matchPaths: ['/command-center'] },
+  { to: '/risk', label: 'Risk Center', icon: NAV_ICONS.analytics, matchPaths: ['/risk'] },
+  { to: '/timeline', label: 'Timeline', icon: NAV_ICONS.operations, matchPaths: ['/timeline'] },
   { to: '/attendance', label: 'Attendance', icon: NAV_ICONS.attendance, matchPaths: ['/attendance'] },
   { to: '/leave', label: 'Leave', icon: NAV_ICONS.leave, matchPaths: ['/leave'] },
   { to: '/communications', label: 'Communications', icon: NAV_ICON_COMMUNICATIONS, matchPaths: ['/communications'] },
@@ -209,7 +215,7 @@ export function getNavSectionsForRole(role: string): NavSection[] {
     return [
       {
         label: 'Overview',
-        items: items.filter((i) => ['/dashboard', '/leave', '/admissions', '/notifications'].includes(i.to)),
+        items: items.filter((i) => ['/command-center', '/risk', '/timeline', '/leave', '/admissions', '/notifications'].includes(i.to)),
       },
       {
         label: 'Records',
@@ -293,7 +299,7 @@ export function getNavSectionsForRole(role: string): NavSection[] {
     return [
       {
         label: 'Overview',
-        items: items.filter((i) => ['/principal'].includes(i.to)),
+        items: items.filter((i) => ['/command-center', '/risk', '/timeline'].includes(i.to)),
       },
       {
         label: 'Records',
@@ -314,7 +320,7 @@ export function getNavSectionsForRole(role: string): NavSection[] {
     return [
       {
         label: 'Overview',
-        items: items.filter((i) => ['/accountant'].includes(i.to)),
+        items: items.filter((i) => ['/command-center'].includes(i.to)),
       },
       {
         label: 'Finance',
@@ -335,7 +341,7 @@ export function getNavSectionsForRole(role: string): NavSection[] {
     return [
       {
         label: 'Overview',
-        items: items.filter((i) => ['/staff'].includes(i.to)),
+        items: items.filter((i) => ['/command-center', '/risk', '/timeline'].includes(i.to)),
       },
       {
         label: 'Operations',
@@ -380,14 +386,9 @@ export function getHomeRoute(role: string | undefined | null): string {
       return '/student'
     case 'parent':
       return '/parent'
-    case 'principal':
-      return '/principal'
-    case 'accountant':
-      return '/accountant'
-    case 'staff':
-      return '/staff'
     default:
-      return '/dashboard'
+      // Admin, principal, accountant and staff all land on the Command Center
+      return '/command-center'
   }
 }
 
@@ -411,6 +412,9 @@ export function hasRouteAccess(role: string, path: string): boolean {
   // Principal, Accountant, Staff — role workspace + relevant domains
   if (['principal', 'accountant', 'staff'].includes(role)) {
     if (path.startsWith(`/${role}`)) return true
+    if (path === '/command-center' || path.startsWith('/command-center')) return true
+    if (path === '/timeline' || path.startsWith('/timeline')) return true
+    if (role !== 'accountant' && (path === '/risk' || path.startsWith('/risk'))) return true
     if (path === '/notifications' || path.startsWith('/notifications')) return true
     if (path === '/profile' || path.startsWith('/profile')) return true
     if (role === 'accountant' && (path.startsWith('/fees') || path.startsWith('/reports'))) return true
@@ -422,6 +426,8 @@ export function hasRouteAccess(role: string, path: string): boolean {
   // Teacher routes
   if (role === 'teacher') {
     if (path.startsWith('/teacher')) return true
+    if (path === '/command-center' || path.startsWith('/command-center')) return true
+    if (path === '/timeline' || path.startsWith('/timeline')) return true
     if (path.startsWith('/attendance')) return true
     if (path === '/notifications' || path.startsWith('/notifications')) return true
     if (path === '/profile' || path.startsWith('/profile')) return true

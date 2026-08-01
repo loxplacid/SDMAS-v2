@@ -23,6 +23,8 @@ from app.domains.attendance.schemas import (
 from app.domains.student.repository import StudentRepository
 from app.domains.audit.constants import ATTENDANCE, CREATE, UPDATE
 from app.domains.audit.service import AuditService
+from app.domains.events import publish_event
+from app.domains.events.events import AttendanceThresholdBreachedEvent
 from app.domains.notifications import dispatcher as notification_dispatcher
 from app.domains.notifications.events import LowAttendanceEvent
 
@@ -262,6 +264,27 @@ class AttendanceService:
                     pct = ((total_count - absences) / total_count) * 100
 
                     if pct < 75.0:
+                        # Standard domain event -> risk/audit handler first, so
+                        # the risk record is never dependent on the legacy
+                        # notification dispatch below (both are non-fatal and
+                        # isolated from the business outcome).
+                        try:
+                            await publish_event(
+                                AttendanceThresholdBreachedEvent(
+                                    student_id=rec.student_id,
+                                    academic_year_id=year.id,
+                                    section_id=data.section_id,
+                                    attendance_percentage=round(pct, 1),
+                                    threshold=75.0,
+                                    total_absences=absences,
+                                ),
+                                session=self.repo.session,
+                            )
+                        except Exception:
+                            logger.warning(
+                                "Failed to publish AttendanceThresholdBreachedEvent (non-fatal)",
+                                exc_info=True,
+                            )
                         event = LowAttendanceEvent(
                             student_id=rec.student_id,
                             academic_year_id=year.id,

@@ -7,7 +7,6 @@ import type {
   FeeDueItem,
   PaymentItem,
   AcademicRecord,
-  TimelineEvent,
   StudentHealthInfo,
   TransportInfo,
   HostelInfo,
@@ -28,10 +27,21 @@ export interface Student360Response {
   health: StudentHealthInfo
   transport: TransportInfo | null
   hostel: HostelInfo | null
-  timeline: TimelineEvent[]
   achievements: Record<string, unknown>[]
   behavior: Record<string, unknown>[]
   communications: Record<string, unknown>[]
+  risk_findings: RiskFindingBrief[]
+}
+
+export interface RiskFindingBrief {
+  id: number
+  rule_code: string
+  category: string
+  severity: 'critical' | 'high' | 'medium' | 'low'
+  score: number
+  reason: string
+  recommended_action: string
+  detected_at: string
 }
 
 export const student360Api = {

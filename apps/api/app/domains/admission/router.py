@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.pagination import Page, PaginationParams
+from app.domains.admission.models import AdmissionApplication
 from app.domains.admission.repository import (
     AdmissionApplicationRepository,
     AdmissionDocumentRepository,
@@ -39,6 +40,14 @@ from app.domains.admission.service import (
     AdmissionSeatAllocationService,
 )
 from app.infrastructure.database import get_session
+from app.multi_tenant.dependencies import get_optional_tenant
+from app.multi_tenant.guards import (
+    assert_tenant_scope,
+    assert_tenant_scope_by_parent_id,
+    effective_campus_id,
+    inject_campus,
+)
+from app.multi_tenant.models import TenantContext
 
 router = APIRouter(prefix="/api/admissions", tags=["admissions"])
 
@@ -91,8 +100,10 @@ async def get_allocation_service(
 async def create_application(
     data: AdmissionApplicationCreate,
     service: AdmissionApplicationService = Depends(get_application_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AdmissionApplicationResponse:
     app = await service.create(data)
+    inject_campus(app, tenant)
     return AdmissionApplicationResponse.model_validate(app)
 
 
@@ -103,8 +114,10 @@ async def create_application(
 async def get_application(
     application_id: int,
     service: AdmissionApplicationService = Depends(get_application_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AdmissionApplicationResponse:
     app = await service.get(application_id)
+    assert_tenant_scope(app, tenant, resource="admission application")
     return AdmissionApplicationResponse.model_validate(app)
 
 
@@ -129,10 +142,12 @@ async def list_applications(
         default=None, description="Search by name, email, or phone"
     ),
     service: AdmissionApplicationService = Depends(get_application_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[AdmissionApplicationResponse]:
+    effective_campus = effective_campus_id(tenant, campus_id)
     apps, total = await service.list(
         status=status_filter,
-        campus_id=campus_id,
+        campus_id=effective_campus,
         program_id=program_id,
         academic_year_id=academic_year_id,
         search=search,
@@ -156,7 +171,10 @@ async def update_application(
     application_id: int,
     data: AdmissionApplicationUpdate,
     service: AdmissionApplicationService = Depends(get_application_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AdmissionApplicationResponse:
+    existing = await service.get(application_id)
+    assert_tenant_scope(existing, tenant, resource="admission application")
     app = await service.update(application_id, data)
     return AdmissionApplicationResponse.model_validate(app)
 
@@ -168,7 +186,10 @@ async def update_application(
 async def delete_application(
     application_id: int,
     service: AdmissionApplicationService = Depends(get_application_service),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> None:
+    existing = await service.get(application_id)
+    assert_tenant_scope(existing, tenant, resource="admission application")
     await service.delete(application_id)
 
 
@@ -180,7 +201,13 @@ async def transition_application_status(
     application_id: int,
     data: AdmissionStatusTransition,
     service: AdmissionApplicationService = Depends(get_application_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AdmissionApplicationResponse:
+    await assert_tenant_scope_by_parent_id(
+        session, AdmissionApplication, application_id, tenant,
+        resource="admission application",
+    )
     app = await service.transition_status(
         application_id, data.new_status, data.remarks
     )
@@ -201,7 +228,13 @@ async def upload_document(
     application_id: int,
     data: AdmissionDocumentCreate,
     service: AdmissionDocumentService = Depends(get_document_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AdmissionDocumentResponse:
+    await assert_tenant_scope_by_parent_id(
+        session, AdmissionApplication, application_id, tenant,
+        resource="admission application",
+    )
     doc = await service.create(application_id, data)
     return AdmissionDocumentResponse.model_validate(doc)
 
@@ -213,8 +246,14 @@ async def upload_document(
 async def get_document(
     document_id: int,
     service: AdmissionDocumentService = Depends(get_document_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AdmissionDocumentResponse:
     doc = await service.get(document_id)
+    await assert_tenant_scope_by_parent_id(
+        session, AdmissionApplication, doc.application_id, tenant,
+        resource="admission document",
+    )
     return AdmissionDocumentResponse.model_validate(doc)
 
 
@@ -225,7 +264,13 @@ async def get_document(
 async def list_application_documents(
     application_id: int,
     service: AdmissionDocumentService = Depends(get_document_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> list[AdmissionDocumentResponse]:
+    await assert_tenant_scope_by_parent_id(
+        session, AdmissionApplication, application_id, tenant,
+        resource="admission application",
+    )
     docs = await service.list_by_application(application_id)
     return [AdmissionDocumentResponse.model_validate(d) for d in docs]
 
@@ -238,7 +283,14 @@ async def verify_document(
     document_id: int,
     data: AdmissionDocumentUpdate,
     service: AdmissionDocumentService = Depends(get_document_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AdmissionDocumentResponse:
+    existing = await service.get(document_id)
+    await assert_tenant_scope_by_parent_id(
+        session, AdmissionApplication, existing.application_id, tenant,
+        resource="admission document",
+    )
     doc = await service.verify(
         document_id,
         verification_status=data.verification_status or "verified",
@@ -255,7 +307,14 @@ async def verify_document(
 async def delete_document(
     document_id: int,
     service: AdmissionDocumentService = Depends(get_document_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> None:
+    existing = await service.get(document_id)
+    await assert_tenant_scope_by_parent_id(
+        session, AdmissionApplication, existing.application_id, tenant,
+        resource="admission document",
+    )
     await service.delete(document_id)
 
 
@@ -273,7 +332,13 @@ async def schedule_interview(
     application_id: int,
     data: AdmissionInterviewCreate,
     service: AdmissionInterviewService = Depends(get_interview_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AdmissionInterviewResponse:
+    await assert_tenant_scope_by_parent_id(
+        session, AdmissionApplication, application_id, tenant,
+        resource="admission application",
+    )
     interview = await service.create(application_id, data)
     return AdmissionInterviewResponse.model_validate(interview)
 
@@ -285,8 +350,14 @@ async def schedule_interview(
 async def get_interview(
     interview_id: int,
     service: AdmissionInterviewService = Depends(get_interview_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AdmissionInterviewResponse:
     interview = await service.get(interview_id)
+    await assert_tenant_scope_by_parent_id(
+        session, AdmissionApplication, interview.application_id, tenant,
+        resource="admission interview",
+    )
     return AdmissionInterviewResponse.model_validate(interview)
 
 
@@ -297,7 +368,13 @@ async def get_interview(
 async def list_application_interviews(
     application_id: int,
     service: AdmissionInterviewService = Depends(get_interview_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> list[AdmissionInterviewResponse]:
+    await assert_tenant_scope_by_parent_id(
+        session, AdmissionApplication, application_id, tenant,
+        resource="admission application",
+    )
     interviews = await service.list_by_application(application_id)
     return [AdmissionInterviewResponse.model_validate(i) for i in interviews]
 
@@ -310,7 +387,14 @@ async def update_interview(
     interview_id: int,
     data: AdmissionInterviewUpdate,
     service: AdmissionInterviewService = Depends(get_interview_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AdmissionInterviewResponse:
+    existing = await service.get(interview_id)
+    await assert_tenant_scope_by_parent_id(
+        session, AdmissionApplication, existing.application_id, tenant,
+        resource="admission interview",
+    )
     interview = await service.update(interview_id, data)
     return AdmissionInterviewResponse.model_validate(interview)
 
@@ -328,7 +412,13 @@ async def update_interview(
 async def create_merit_entry(
     data: AdmissionMeritEntryCreate,
     service: AdmissionMeritEntryService = Depends(get_merit_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AdmissionMeritEntryResponse:
+    await assert_tenant_scope_by_parent_id(
+        session, AdmissionApplication, data.application_id, tenant,
+        resource="admission application",
+    )
     entry = await service.create(data)
     return AdmissionMeritEntryResponse.model_validate(entry)
 
@@ -340,8 +430,14 @@ async def create_merit_entry(
 async def get_merit_entry(
     entry_id: int,
     service: AdmissionMeritEntryService = Depends(get_merit_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AdmissionMeritEntryResponse:
     entry = await service.get(entry_id)
+    await assert_tenant_scope_by_parent_id(
+        session, AdmissionApplication, entry.application_id, tenant,
+        resource="admission merit entry",
+    )
     return AdmissionMeritEntryResponse.model_validate(entry)
 
 
@@ -360,12 +456,19 @@ async def list_merit_entries(
     status_filter: Optional[str] = Query(
         default=None, alias="status"
     ),
+    campus_id: Optional[int] = Query(default=None, alias="campus_id"),
     service: AdmissionMeritEntryService = Depends(get_merit_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[AdmissionMeritEntryResponse]:
+    # Merit entries inherit tenancy from their application, so pin the
+    # list to the tenant's campus via a join.
+    effective_campus = effective_campus_id(tenant, campus_id)
     items, total = await service.list(
         program_id=program_id,
         academic_year_id=academic_year_id,
         status=status_filter,
+        campus_id=effective_campus,
         skip=pagination.offset,
         limit=pagination.limit,
     )
@@ -385,7 +488,14 @@ async def update_merit_entry(
     entry_id: int,
     data: AdmissionMeritEntryUpdate,
     service: AdmissionMeritEntryService = Depends(get_merit_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AdmissionMeritEntryResponse:
+    existing = await service.get(entry_id)
+    await assert_tenant_scope_by_parent_id(
+        session, AdmissionApplication, existing.application_id, tenant,
+        resource="admission merit entry",
+    )
     entry = await service.update(entry_id, data)
     return AdmissionMeritEntryResponse.model_validate(entry)
 
@@ -403,7 +513,13 @@ async def update_merit_entry(
 async def create_seat_allocation(
     data: AdmissionSeatAllocationCreate,
     service: AdmissionSeatAllocationService = Depends(get_allocation_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AdmissionSeatAllocationResponse:
+    await assert_tenant_scope_by_parent_id(
+        session, AdmissionApplication, data.application_id, tenant,
+        resource="admission application",
+    )
     allocation = await service.create(data)
     return AdmissionSeatAllocationResponse.model_validate(allocation)
 
@@ -415,8 +531,14 @@ async def create_seat_allocation(
 async def get_seat_allocation(
     allocation_id: int,
     service: AdmissionSeatAllocationService = Depends(get_allocation_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AdmissionSeatAllocationResponse:
     allocation = await service.get(allocation_id)
+    await assert_tenant_scope_by_parent_id(
+        session, AdmissionApplication, allocation.application_id, tenant,
+        resource="admission seat allocation",
+    )
     return AdmissionSeatAllocationResponse.model_validate(allocation)
 
 
@@ -427,7 +549,13 @@ async def get_seat_allocation(
 async def list_application_allocations(
     application_id: int,
     service: AdmissionSeatAllocationService = Depends(get_allocation_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> list[AdmissionSeatAllocationResponse]:
+    await assert_tenant_scope_by_parent_id(
+        session, AdmissionApplication, application_id, tenant,
+        resource="admission application",
+    )
     allocations = await service.list_by_application(application_id)
     return [AdmissionSeatAllocationResponse.model_validate(a) for a in allocations]
 
@@ -440,6 +568,13 @@ async def update_seat_allocation(
     allocation_id: int,
     data: AdmissionSeatAllocationUpdate,
     service: AdmissionSeatAllocationService = Depends(get_allocation_service),
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> AdmissionSeatAllocationResponse:
+    existing = await service.get(allocation_id)
+    await assert_tenant_scope_by_parent_id(
+        session, AdmissionApplication, existing.application_id, tenant,
+        resource="admission seat allocation",
+    )
     allocation = await service.update(allocation_id, data)
     return AdmissionSeatAllocationResponse.model_validate(allocation)

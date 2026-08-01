@@ -26,6 +26,9 @@ from app.domains.workflow.repository import (
 )
 from app.domains.workflow.service import WorkflowExecutionService
 from app.infrastructure.database import get_session
+from app.multi_tenant.dependencies import get_optional_tenant
+from app.multi_tenant.guards import assert_tenant_scope_or_owner, inject_campus
+from app.multi_tenant.models import TenantContext
 
 router = APIRouter(prefix="/api/leave", tags=["leave"])
 
@@ -57,8 +60,10 @@ async def create_leave(
     data: LeaveRequestCreate,
     service: LeaveRequestService = Depends(get_leave_service),
     current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> LeaveRequestResponse:
     leave = await service.create(user_id=current_user.id, data=data)
+    inject_campus(leave, tenant)
     return LeaveRequestResponse.model_validate(leave)
 
 
@@ -67,8 +72,12 @@ async def get_leave(
     leave_id: int,
     service: LeaveRequestService = Depends(get_leave_service),
     _current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> dict:
     leave = await service.get(leave_id)
+    assert_tenant_scope_or_owner(
+        leave, tenant, _current_user.id, resource="leave request"
+    )
     wf_status = await service.get_workflow_status(leave_id)
     return {
         "id": leave.id,
@@ -113,6 +122,11 @@ async def update_leave(
     data: LeaveRequestUpdate,
     service: LeaveRequestService = Depends(get_leave_service),
     _current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> LeaveRequestResponse:
+    existing = await service.get(leave_id)
+    assert_tenant_scope_or_owner(
+        existing, tenant, _current_user.id, resource="leave request"
+    )
     leave = await service.update(leave_id, data)
     return LeaveRequestResponse.model_validate(leave)

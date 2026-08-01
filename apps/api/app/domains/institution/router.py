@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.pagination import Page, PaginationParams
@@ -16,6 +17,15 @@ from app.domains.institution.repository import (
     ProgramRepository,
     BranchRepository,
     SemesterRepository,
+)
+from app.domains.institution.models import (
+    Branch,
+    Campus,
+    Department,
+    Institution,
+    Program,
+    School,
+    Semester,
 )
 from app.domains.institution.schemas import (
     InstitutionCreate,
@@ -49,9 +59,182 @@ from app.domains.institution.service import (
     BranchService,
     SemesterService,
 )
+from app.core.exceptions import AuthorizationError
 from app.infrastructure.database import get_session
+from app.multi_tenant.dependencies import get_optional_tenant
+from app.multi_tenant.models import TenantContext
 
 router = APIRouter(prefix="/api/institution", tags=["institution"])
+
+
+# ---------------------------------------------------------------------------
+# Tenant scope resolution for the institution hierarchy
+# ---------------------------------------------------------------------------
+# The hierarchy (Institution → Campus → School → Department → Program →
+# Branch/Semester) is the tenant-defining structure itself. Tenant-scoped
+# users must never read or mutate nodes outside their own subtree.
+
+
+async def _hierarchy_campus_id(
+    session: AsyncSession,
+    kind: str,
+    entity: Any,
+) -> Optional[int]:
+    """Resolve the campus a hierarchy node belongs to (for scoping)."""
+    if kind == "campus":
+        return int(getattr(entity, "id"))
+    if kind == "school":
+        return getattr(entity, "campus_id", None)
+    if kind == "department":
+        school = await SchoolRepository(session).get_by_id(entity.school_id)
+        return school.campus_id if school else None
+    if kind == "program":
+        dep = await DepartmentRepository(session).get_by_id(entity.department_id)
+        if dep is None:
+            return None
+        school = await SchoolRepository(session).get_by_id(dep.school_id)
+        return school.campus_id if school else None
+    if kind in ("branch", "semester"):
+        prog = await ProgramRepository(session).get_by_id(entity.program_id)
+        if prog is None:
+            return None
+        dep = await DepartmentRepository(session).get_by_id(prog.department_id)
+        if dep is None:
+            return None
+        school = await SchoolRepository(session).get_by_id(dep.school_id)
+        return school.campus_id if school else None
+    return None
+
+
+async def _assert_hierarchy_scope(
+    session: AsyncSession,
+    tenant: TenantContext,
+    kind: str,
+    entity: Any,
+) -> None:
+    """Raise 403 when a hierarchy node lies outside the tenant's subtree.
+
+    Institution nodes are matched against ``tenant.institution_id``; all
+    deeper nodes are resolved to a campus and matched against
+    ``tenant.campus_id``. Unscoped (platform) callers are unaffected.
+    """
+    if not tenant.is_tenant_scoped:
+        return
+    if kind == "institution":
+        if getattr(entity, "id") != tenant.institution_id:
+            raise AuthorizationError(
+                "Cross-tenant access denied to institution: "
+                f"entity belongs to institution {getattr(entity, 'id')}, "
+                f"current tenant is institution {tenant.institution_id}."
+            )
+        return
+    campus_id = await _hierarchy_campus_id(session, kind, entity)
+    if campus_id != tenant.campus_id:
+        raise AuthorizationError(
+            f"Cross-tenant access denied to {kind}: "
+            f"entity belongs to campus {campus_id}, "
+            f"current tenant is campus {tenant.campus_id}."
+        )
+
+
+async def _scoped_institution_ids(
+    session: AsyncSession,
+    tenant: TenantContext,
+) -> list[int]:
+    """Return the institution IDs visible to the tenant (own institution)."""
+    if not tenant.is_tenant_scoped or tenant.institution_id is None:
+        return []
+    return [tenant.institution_id]
+
+
+async def _scoped_campus_ids(
+    session: AsyncSession,
+    tenant: TenantContext,
+) -> list[int]:
+    """Return the campus IDs visible to the tenant."""
+    if not tenant.is_tenant_scoped:
+        return []
+    result = await session.execute(
+        select(Campus.id).where(Campus.institution_id == tenant.institution_id)
+    )
+    return list(result.scalars().all())
+
+
+async def _scoped_school_ids(
+    session: AsyncSession,
+    tenant: TenantContext,
+) -> list[int]:
+    """Return the school IDs visible to the tenant."""
+    if not tenant.is_tenant_scoped:
+        return []
+    result = await session.execute(
+        select(School.id).where(School.campus_id == tenant.campus_id)
+    )
+    return list(result.scalars().all())
+
+
+async def _scoped_department_ids(
+    session: AsyncSession,
+    tenant: TenantContext,
+) -> list[int]:
+    """Return the department IDs visible to the tenant."""
+    if not tenant.is_tenant_scoped:
+        return []
+    school_ids = await _scoped_school_ids(session, tenant)
+    if not school_ids:
+        return []
+    result = await session.execute(
+        select(Department.id).where(Department.school_id.in_(school_ids))
+    )
+    return list(result.scalars().all())
+
+
+async def _scoped_program_ids(
+    session: AsyncSession,
+    tenant: TenantContext,
+) -> list[int]:
+    """Return the program IDs visible to the tenant."""
+    if not tenant.is_tenant_scoped:
+        return []
+    dept_ids = await _scoped_department_ids(session, tenant)
+    if not dept_ids:
+        return []
+    result = await session.execute(
+        select(Program.id).where(Program.department_id.in_(dept_ids))
+    )
+    return list(result.scalars().all())
+
+
+async def _scoped_branch_ids(
+    session: AsyncSession,
+    tenant: TenantContext,
+) -> list[int]:
+    """Return the branch IDs visible to the tenant."""
+    if not tenant.is_tenant_scoped:
+        return []
+    program_ids = await _scoped_program_ids(session, tenant)
+    if not program_ids:
+        return []
+    result = await session.execute(
+        select(Branch.id).where(Branch.program_id.in_(program_ids))
+    )
+    return list(result.scalars().all())
+
+
+async def _scoped_semester_ids(
+    session: AsyncSession,
+    tenant: TenantContext,
+) -> list[int]:
+    """Return the semester IDs visible to the tenant."""
+    if not tenant.is_tenant_scoped:
+        return []
+    program_ids = await _scoped_program_ids(session, tenant)
+    if not program_ids:
+        return []
+    result = await session.execute(
+        select(Semester.id).where(Semester.program_id.in_(program_ids))
+    )
+    return list(result.scalars().all())
 
 
 # ---------------------------------------------------------------------------
@@ -101,7 +284,13 @@ async def create_institution(
     data: InstitutionCreate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> InstitutionResponse:
+    if tenant.is_tenant_scoped:
+        # A school-scoped admin must not create institutions at platform level.
+        raise AuthorizationError(
+            "Only platform admins can create institutions"
+        )
     svc = _ins(session)
     entity = await svc.create(name=data.name, code=data.code)
     return InstitutionResponse.model_validate(entity)
@@ -112,9 +301,11 @@ async def get_institution(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> InstitutionResponse:
     svc = _ins(session)
     entity = await svc.get(entity_id)
+    await _assert_hierarchy_scope(session, tenant, "institution", entity)
     return InstitutionResponse.model_validate(entity)
 
 
@@ -124,11 +315,19 @@ async def list_institutions(
     status_filter: Optional[str] = Query(default=None, alias="status"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[InstitutionResponse]:
     svc = _ins(session)
-    items, total = await svc.list(
-        status=status_filter, skip=pagination.offset, limit=pagination.limit,
-    )
+    institution_ids = await _scoped_institution_ids(session, tenant)
+    if institution_ids:
+        items, total = await svc.list(
+            status=status_filter, ids=institution_ids,
+            skip=pagination.offset, limit=pagination.limit,
+        )
+    else:
+        items, total = await svc.list(
+            status=status_filter, skip=pagination.offset, limit=pagination.limit,
+        )
     return Page.create(
         items=[InstitutionResponse.model_validate(i) for i in items],
         total=total, page=pagination.page, size=pagination.size,
@@ -140,7 +339,12 @@ async def delete_institution(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> None:
+    if tenant.is_tenant_scoped:
+        raise AuthorizationError(
+            "Only platform admins can delete institutions"
+        )
     svc = _ins(session)
     await svc.delete(entity_id)
 
@@ -151,7 +355,12 @@ async def update_institution(
     data: InstitutionUpdate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> InstitutionResponse:
+    if tenant.is_tenant_scoped:
+        raise AuthorizationError(
+            "Only platform admins can update institutions"
+        )
     svc = _ins(session)
     entity = await svc.update(
         entity_id, name=data.name, code=data.code, status=data.status,
@@ -169,7 +378,12 @@ async def create_campus(
     data: CampusCreate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> CampusResponse:
+    if tenant.is_tenant_scoped and data.institution_id != tenant.institution_id:
+        raise AuthorizationError(
+            "Cross-tenant access denied: campus belongs to another institution"
+        )
     svc = _cam(session)
     entity = await svc.create(
         institution_id=data.institution_id, name=data.name, code=data.code,
@@ -183,9 +397,11 @@ async def get_campus(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> CampusResponse:
     svc = _cam(session)
     entity = await svc.get(entity_id)
+    await _assert_hierarchy_scope(session, tenant, "campus", entity)
     return CampusResponse.model_validate(entity)
 
 
@@ -196,10 +412,14 @@ async def list_campuses(
     status_filter: Optional[str] = Query(default=None, alias="status"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[CampusResponse]:
+    effective_institution_id = (
+        tenant.institution_id if tenant.is_tenant_scoped else institution_id
+    )
     svc = _cam(session)
     items, total = await svc.list(
-        institution_id=institution_id, status=status_filter,
+        institution_id=effective_institution_id, status=status_filter,
         skip=pagination.offset, limit=pagination.limit,
     )
     return Page.create(
@@ -213,8 +433,11 @@ async def delete_campus(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> None:
     svc = _cam(session)
+    entity = await svc.get(entity_id)
+    await _assert_hierarchy_scope(session, tenant, "campus", entity)
     await svc.delete(entity_id)
 
 
@@ -224,8 +447,11 @@ async def update_campus(
     data: CampusUpdate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> CampusResponse:
     svc = _cam(session)
+    existing = await svc.get(entity_id)
+    await _assert_hierarchy_scope(session, tenant, "campus", existing)
     entity = await svc.update(
         entity_id, name=data.name, code=data.code, address=data.address,
         phone=data.phone, email=data.email, status=data.status,
@@ -243,7 +469,12 @@ async def create_school(
     data: SchoolCreate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> SchoolResponse:
+    if tenant.is_tenant_scoped and data.campus_id != tenant.campus_id:
+        raise AuthorizationError(
+            "Cross-tenant access denied: school belongs to another campus"
+        )
     svc = _sch(session)
     entity = await svc.create(
         campus_id=data.campus_id, name=data.name, code=data.code,
@@ -257,9 +488,11 @@ async def get_school(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> SchoolResponse:
     svc = _sch(session)
     entity = await svc.get(entity_id)
+    await _assert_hierarchy_scope(session, tenant, "school", entity)
     return SchoolResponse.model_validate(entity)
 
 
@@ -270,10 +503,12 @@ async def list_schools(
     status_filter: Optional[str] = Query(default=None, alias="status"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[SchoolResponse]:
+    effective_campus_id = tenant.campus_id if tenant.is_tenant_scoped else campus_id
     svc = _sch(session)
     items, total = await svc.list(
-        campus_id=campus_id, status=status_filter,
+        campus_id=effective_campus_id, status=status_filter,
         skip=pagination.offset, limit=pagination.limit,
     )
     return Page.create(
@@ -287,8 +522,11 @@ async def delete_school(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> None:
     svc = _sch(session)
+    entity = await svc.get(entity_id)
+    await _assert_hierarchy_scope(session, tenant, "school", entity)
     await svc.delete(entity_id)
 
 
@@ -298,8 +536,11 @@ async def update_school(
     data: SchoolUpdate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> SchoolResponse:
     svc = _sch(session)
+    existing = await svc.get(entity_id)
+    await _assert_hierarchy_scope(session, tenant, "school", existing)
     entity = await svc.update(
         entity_id, name=data.name, code=data.code,
         description=data.description, status=data.status,
@@ -320,7 +561,11 @@ async def create_department(
     data: DepartmentCreate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> DepartmentResponse:
+    if tenant.is_tenant_scoped:
+        school = await SchoolRepository(session).get_by_id(data.school_id)
+        await _assert_hierarchy_scope(session, tenant, "school", school)
     svc = _dep(session)
     entity = await svc.create(
         school_id=data.school_id, name=data.name, code=data.code,
@@ -334,9 +579,11 @@ async def get_department(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> DepartmentResponse:
     svc = _dep(session)
     entity = await svc.get(entity_id)
+    await _assert_hierarchy_scope(session, tenant, "department", entity)
     return DepartmentResponse.model_validate(entity)
 
 
@@ -347,12 +594,31 @@ async def list_departments(
     status_filter: Optional[str] = Query(default=None, alias="status"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[DepartmentResponse]:
     svc = _dep(session)
-    items, total = await svc.list(
-        school_id=school_id, status=status_filter,
-        skip=pagination.offset, limit=pagination.limit,
-    )
+    if tenant.is_tenant_scoped:
+        allowed_schools = await _scoped_school_ids(session, tenant)
+        if school_id is not None and school_id not in allowed_schools:
+            raise AuthorizationError(
+                "Cross-tenant access denied to department listing"
+            )
+        if school_id is not None:
+            items, total = await svc.list(
+                school_id=school_id, status=status_filter,
+                skip=pagination.offset, limit=pagination.limit,
+            )
+        else:
+            dept_ids = await _scoped_department_ids(session, tenant)
+            items, total = await svc.list(
+                ids=dept_ids, status=status_filter,
+                skip=pagination.offset, limit=pagination.limit,
+            )
+    else:
+        items, total = await svc.list(
+            school_id=school_id, status=status_filter,
+            skip=pagination.offset, limit=pagination.limit,
+        )
     return Page.create(
         items=[DepartmentResponse.model_validate(i) for i in items],
         total=total, page=pagination.page, size=pagination.size,
@@ -364,8 +630,11 @@ async def delete_department(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> None:
     svc = _dep(session)
+    entity = await svc.get(entity_id)
+    await _assert_hierarchy_scope(session, tenant, "department", entity)
     await svc.delete(entity_id)
 
 
@@ -375,8 +644,11 @@ async def update_department(
     data: DepartmentUpdate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> DepartmentResponse:
     svc = _dep(session)
+    existing = await svc.get(entity_id)
+    await _assert_hierarchy_scope(session, tenant, "department", existing)
     entity = await svc.update(
         entity_id, name=data.name, code=data.code,
         description=data.description, status=data.status,
@@ -394,7 +666,11 @@ async def create_program(
     data: ProgramCreate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> ProgramResponse:
+    if tenant.is_tenant_scoped:
+        department = await DepartmentRepository(session).get_by_id(data.department_id)
+        await _assert_hierarchy_scope(session, tenant, "department", department)
     svc = _prog(session)
     entity = await svc.create(
         department_id=data.department_id, name=data.name, code=data.code,
@@ -408,9 +684,11 @@ async def get_program(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> ProgramResponse:
     svc = _prog(session)
     entity = await svc.get(entity_id)
+    await _assert_hierarchy_scope(session, tenant, "program", entity)
     return ProgramResponse.model_validate(entity)
 
 
@@ -421,12 +699,31 @@ async def list_programs(
     status_filter: Optional[str] = Query(default=None, alias="status"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[ProgramResponse]:
     svc = _prog(session)
-    items, total = await svc.list(
-        department_id=department_id, status=status_filter,
-        skip=pagination.offset, limit=pagination.limit,
-    )
+    if tenant.is_tenant_scoped:
+        allowed_departments = await _scoped_department_ids(session, tenant)
+        if department_id is not None and department_id not in allowed_departments:
+            raise AuthorizationError(
+                "Cross-tenant access denied to program listing"
+            )
+        if department_id is not None:
+            items, total = await svc.list(
+                department_id=department_id, status=status_filter,
+                skip=pagination.offset, limit=pagination.limit,
+            )
+        else:
+            prog_ids = await _scoped_program_ids(session, tenant)
+            items, total = await svc.list(
+                ids=prog_ids, status=status_filter,
+                skip=pagination.offset, limit=pagination.limit,
+            )
+    else:
+        items, total = await svc.list(
+            department_id=department_id, status=status_filter,
+            skip=pagination.offset, limit=pagination.limit,
+        )
     return Page.create(
         items=[ProgramResponse.model_validate(i) for i in items],
         total=total, page=pagination.page, size=pagination.size,
@@ -438,8 +735,11 @@ async def delete_program(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> None:
     svc = _prog(session)
+    entity = await svc.get(entity_id)
+    await _assert_hierarchy_scope(session, tenant, "program", entity)
     await svc.delete(entity_id)
 
 
@@ -449,8 +749,11 @@ async def update_program(
     data: ProgramUpdate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> ProgramResponse:
     svc = _prog(session)
+    existing = await svc.get(entity_id)
+    await _assert_hierarchy_scope(session, tenant, "program", existing)
     entity = await svc.update(
         entity_id, name=data.name, code=data.code,
         duration_years=data.duration_years,
@@ -469,7 +772,11 @@ async def create_branch(
     data: BranchCreate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> BranchResponse:
+    if tenant.is_tenant_scoped:
+        program = await ProgramRepository(session).get_by_id(data.program_id)
+        await _assert_hierarchy_scope(session, tenant, "program", program)
     svc = _bra(session)
     entity = await svc.create(
         program_id=data.program_id, name=data.name, code=data.code,
@@ -483,9 +790,11 @@ async def get_branch(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> BranchResponse:
     svc = _bra(session)
     entity = await svc.get(entity_id)
+    await _assert_hierarchy_scope(session, tenant, "branch", entity)
     return BranchResponse.model_validate(entity)
 
 
@@ -496,12 +805,31 @@ async def list_branches(
     status_filter: Optional[str] = Query(default=None, alias="status"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[BranchResponse]:
     svc = _bra(session)
-    items, total = await svc.list(
-        program_id=program_id, status=status_filter,
-        skip=pagination.offset, limit=pagination.limit,
-    )
+    if tenant.is_tenant_scoped:
+        allowed_programs = await _scoped_program_ids(session, tenant)
+        if program_id is not None and program_id not in allowed_programs:
+            raise AuthorizationError(
+                "Cross-tenant access denied to branch listing"
+            )
+        if program_id is not None:
+            items, total = await svc.list(
+                program_id=program_id, status=status_filter,
+                skip=pagination.offset, limit=pagination.limit,
+            )
+        else:
+            branch_ids = await _scoped_branch_ids(session, tenant)
+            items, total = await svc.list(
+                ids=branch_ids, status=status_filter,
+                skip=pagination.offset, limit=pagination.limit,
+            )
+    else:
+        items, total = await svc.list(
+            program_id=program_id, status=status_filter,
+            skip=pagination.offset, limit=pagination.limit,
+        )
     return Page.create(
         items=[BranchResponse.model_validate(i) for i in items],
         total=total, page=pagination.page, size=pagination.size,
@@ -513,8 +841,11 @@ async def delete_branch(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> None:
     svc = _bra(session)
+    entity = await svc.get(entity_id)
+    await _assert_hierarchy_scope(session, tenant, "branch", entity)
     await svc.delete(entity_id)
 
 
@@ -524,8 +855,11 @@ async def update_branch(
     data: BranchUpdate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> BranchResponse:
     svc = _bra(session)
+    existing = await svc.get(entity_id)
+    await _assert_hierarchy_scope(session, tenant, "branch", existing)
     entity = await svc.update(
         entity_id, name=data.name, code=data.code,
         description=data.description, status=data.status,
@@ -545,7 +879,11 @@ async def create_semester(
     data: SemesterCreate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> SemesterResponse:
+    if tenant.is_tenant_scoped:
+        program = await ProgramRepository(session).get_by_id(data.program_id)
+        await _assert_hierarchy_scope(session, tenant, "program", program)
     svc = _sem(session)
     entity = await svc.create(
         program_id=data.program_id, name=data.name, code=data.code,
@@ -560,9 +898,11 @@ async def get_semester(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> SemesterResponse:
     svc = _sem(session)
     entity = await svc.get(entity_id)
+    await _assert_hierarchy_scope(session, tenant, "semester", entity)
     return SemesterResponse.model_validate(entity)
 
 
@@ -573,12 +913,31 @@ async def list_semesters(
     status_filter: Optional[str] = Query(default=None, alias="status"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> Page[SemesterResponse]:
     svc = _sem(session)
-    items, total = await svc.list(
-        program_id=program_id, status=status_filter,
-        skip=pagination.offset, limit=pagination.limit,
-    )
+    if tenant.is_tenant_scoped:
+        allowed_programs = await _scoped_program_ids(session, tenant)
+        if program_id is not None and program_id not in allowed_programs:
+            raise AuthorizationError(
+                "Cross-tenant access denied to semester listing"
+            )
+        if program_id is not None:
+            items, total = await svc.list(
+                program_id=program_id, status=status_filter,
+                skip=pagination.offset, limit=pagination.limit,
+            )
+        else:
+            semester_ids = await _scoped_semester_ids(session, tenant)
+            items, total = await svc.list(
+                ids=semester_ids, status=status_filter,
+                skip=pagination.offset, limit=pagination.limit,
+            )
+    else:
+        items, total = await svc.list(
+            program_id=program_id, status=status_filter,
+            skip=pagination.offset, limit=pagination.limit,
+        )
     return Page.create(
         items=[SemesterResponse.model_validate(i) for i in items],
         total=total, page=pagination.page, size=pagination.size,
@@ -590,8 +949,11 @@ async def delete_semester(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> None:
     svc = _sem(session)
+    entity = await svc.get(entity_id)
+    await _assert_hierarchy_scope(session, tenant, "semester", entity)
     await svc.delete(entity_id)
 
 
@@ -601,8 +963,11 @@ async def update_semester(
     data: SemesterUpdate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_optional_tenant),
 ) -> SemesterResponse:
     svc = _sem(session)
+    existing = await svc.get(entity_id)
+    await _assert_hierarchy_scope(session, tenant, "semester", existing)
     entity = await svc.update(
         entity_id, name=data.name, code=data.code,
         semester_number=data.semester_number,

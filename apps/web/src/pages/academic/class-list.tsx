@@ -123,6 +123,7 @@ export function ClassListPage() {
               { key: 'status', header: 'Status', render: (c: ClassResponse) => <StatusBadge status={c.status} /> },
               { key: 'actions', header: 'Actions', render: (c: ClassResponse) => (
                 <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="sm" onClick={() => navigate(`/academic/classes/${c.id}/360`)} title="Open Class 360 view">360</Button>
                   <Button variant="outline" size="sm" onClick={() => openEditModal(c)}>Edit</Button>
                 </div>
               )},

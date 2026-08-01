@@ -45,7 +45,14 @@ def test_environment_validation():
 
 def test_valid_environments():
     for env in ("development", "staging", "production", "test"):
-        settings = Settings(environment=env)
+        kwargs = {}
+        if env == "production":
+            # Production refuses placeholder secrets — supply real ones.
+            kwargs = {
+                "jwt_secret": SecretStr("real-prod-secret"),
+                "document_storage_secret": SecretStr("real-doc-secret"),
+            }
+        settings = Settings(environment=env, **kwargs)
         assert settings.environment == env
 
 
@@ -81,7 +88,11 @@ def test_environment_methods():
     assert dev.is_production() is False
     assert dev.is_test() is False
 
-    prod = Settings(environment="production")
+    prod = Settings(
+        environment="production",
+        jwt_secret=SecretStr("real-prod-secret"),
+        document_storage_secret=SecretStr("real-doc-secret"),
+    )
     assert prod.is_production() is True
     assert prod.is_development() is False
 
@@ -96,6 +107,7 @@ def test_env_file_override():
         "DEBUG": "true",
         "DATABASE_URL": "postgresql+asyncpg://u:p@localhost/db",
         "JWT_SECRET": "prod-secret",
+        "DOCUMENT_STORAGE_SECRET": "prod-doc-secret",
         "ACCESS_TOKEN_EXPIRE_MINUTES": "15",
         "CORS_ORIGINS": '["https://prod.example.com"]',
     }
@@ -136,3 +148,76 @@ def test_redis_url_optional():
 
     settings = Settings()
     assert settings.redis_url is None
+
+
+def test_db_pool_settings_defaults():
+    settings = Settings()
+    assert settings.db_pool_size == 10
+    assert settings.db_pool_max_overflow == 20
+
+
+def test_db_pool_settings_override():
+    settings = Settings(db_pool_size=5, db_pool_max_overflow=0)
+    assert settings.db_pool_size == 5
+    assert settings.db_pool_max_overflow == 0
+
+
+def test_db_pool_settings_validation():
+    with pytest.raises(ValidationError):
+        Settings(db_pool_size=0)
+    with pytest.raises(ValidationError):
+        Settings(db_pool_max_overflow=-1)
+
+
+# ---------------------------------------------------------------------------
+# Production fail-fast on default secrets
+# ---------------------------------------------------------------------------
+
+
+def test_production_rejects_default_jwt_secret():
+    """Production boot must refuse the placeholder JWT secret."""
+    with pytest.raises(ValidationError, match="JWT_SECRET"):
+        Settings(environment="production", jwt_secret=SecretStr("change-me"))
+
+
+def test_production_rejects_default_document_secret():
+    with pytest.raises(ValidationError, match="DOCUMENT_STORAGE_SECRET"):
+        Settings(
+            environment="production",
+            jwt_secret=SecretStr("real-prod-secret"),
+            document_storage_secret=SecretStr("change-me-doc-secret"),
+        )
+
+
+def test_production_accepts_real_secrets():
+    settings = Settings(
+        environment="production",
+        jwt_secret=SecretStr("real-prod-secret"),
+        document_storage_secret=SecretStr("real-doc-secret"),
+    )
+    assert settings.is_production() is True
+
+
+def test_development_accepts_default_secrets():
+    """Dev must still work out of the box with placeholder secrets."""
+    with patch.dict(os.environ, {}, clear=True):
+        # _env_file=None isolates from any ambient .env on disk.
+        settings = Settings(_env_file=None)
+        assert settings.jwt_secret.get_secret_value() == "change-me"
+
+
+def test_staging_accepts_default_secrets():
+    """Staging uses the same secret validation as dev (no fail-fast)."""
+    settings = Settings(environment="staging")
+    assert settings.environment == "staging"
+
+
+def test_production_secret_guard_from_env():
+    env_vars = {
+        "ENVIRONMENT": "production",
+        "JWT_SECRET": "change-me",
+        "DOCUMENT_STORAGE_SECRET": "real-doc-secret",
+    }
+    with patch.dict(os.environ, env_vars, clear=True):
+        with pytest.raises(ValidationError, match="JWT_SECRET"):
+            Settings()

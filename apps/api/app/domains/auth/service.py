@@ -9,6 +9,7 @@ from typing import Optional, Sequence
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload
 
 from app.config import settings
 from app.core.exceptions import (
@@ -96,7 +97,51 @@ class UserService:
         except Exception:
             logger.warning("Failed to write audit entry for user creation (non-fatal)", exc_info=True)
 
-        return created
+        # Reload with eager role loading so serialization of
+        # ``user.roles`` does not trigger an async lazy load
+        # (MissingGreenlet) on the freshly created user.
+        result = await self.repo.session.execute(
+            select(User)
+            .where(User.id == created.id)
+            .options(selectinload(User.assigned_roles))
+        )
+        return result.scalar_one()
+
+    async def issue_tokens(
+        self,
+        user: User,
+        *,
+        campus_id: int | None = None,
+        ip_address: str | None = None,
+    ) -> tuple[str, str, int]:
+        """Issue a fresh access + refresh token pair for a user.
+
+        ``campus_id`` is embedded in the JWT claim so every request
+        authenticated with the returned access token is scoped to that
+        school. When ``campus_id`` is ``None`` the user's current
+        ``user.campus_id`` is used.
+        """
+        token_data = {
+            "sub": str(user.id),
+            "username": user.username,
+            "jti": secrets.token_hex(16),
+        }
+        effective_campus_id = user.campus_id if campus_id is None else campus_id
+        access_token = create_access_token(token_data, campus_id=effective_campus_id)
+        refresh_token_str = create_refresh_token(token_data, campus_id=effective_campus_id)
+        refresh_hash = _hash_token(refresh_token_str)
+
+        expires_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
+            days=settings.refresh_token_expire_days
+        )
+        await self.repo.store_refresh_token(user.id, refresh_hash, expires_at)
+
+        SecurityAuditLogger.login_success(
+            user_id=user.id,
+            username=user.username,
+            ip_address=ip_address,
+        )
+        return access_token, refresh_token_str, settings.access_token_expire_minutes * 60
 
     async def login(
         self,
@@ -133,21 +178,32 @@ class UserService:
             )
             raise AuthenticationError("Invalid username or password")
 
-        token_data = {"sub": str(user.id), "username": user.username, "jti": secrets.token_hex(16)}
-        campus_id = user.campus_id
-        access_token = create_access_token(token_data, campus_id=campus_id)
-        refresh_token_str = create_refresh_token(token_data, campus_id=campus_id)
-        refresh_hash = _hash_token(refresh_token_str)
+        # If the user belongs to one or more schools but has no active
+        # campus yet, auto-select the default membership so the JWT claim
+        # and all subsequent queries are correctly scoped.
+        if user.campus_id is None:
+            try:
+                from app.domains.auth.membership import (
+                    SchoolMembershipRepository,
+                )
 
-        expires_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
-            days=settings.refresh_token_expire_days
-        )
-        await self.repo.store_refresh_token(user.id, refresh_hash, expires_at)
+                memberships = await SchoolMembershipRepository(
+                    self.repo.session
+                ).list_active_for_user(user.id)
+                if memberships:
+                    default = next(
+                        (m for m in memberships if m.is_default), memberships[0]
+                    )
+                    user.campus_id = default.campus_id
+                    await self.repo.session.flush()
+            except Exception:
+                logger.warning(
+                    "Failed to auto-select default school on login (non-fatal)",
+                    exc_info=True,
+                )
 
-        SecurityAuditLogger.login_success(
-            user_id=user.id,
-            username=user.username,
-            ip_address=ip_address,
+        access_token, refresh_token_str, _ = await self.issue_tokens(
+            user, ip_address=ip_address
         )
 
         try:
