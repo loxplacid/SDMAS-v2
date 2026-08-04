@@ -53,9 +53,12 @@ async function attemptTokenRefresh(): Promise<boolean> {
       const refreshToken = await getRefreshToken();
       if (!refreshToken) return false;
 
-      const res = await fetch(`${BASE_URL}/auth/refresh?refresh_token=${encodeURIComponent(refreshToken)}`, {
+      // Body-based contract: the refresh token never travels in the URL
+      // (a query parameter would leak into proxy/access logs).
+      const res = await fetch(`${BASE_URL}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
       });
 
       if (!res.ok) {

@@ -16,10 +16,10 @@ env/
 # pytest
 .pytest_cache/
 
-# Environment
+# Environment — never track real secrets. Example files are allow-listed.
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
 
 # IDE
 .idea/

@@ -30,6 +30,7 @@ from __future__ import annotations
 import asyncio
 import datetime
 import logging
+from typing import Any, Callable
 
 from app.domains.jobs.models import Job
 from app.domains.jobs.schemas import JobCreate
@@ -38,11 +39,19 @@ from app.infrastructure.database import async_session_factory
 
 logger = logging.getLogger(__name__)
 
+
+#: ``() -> datetime`` clock used for cycle-key generation.  A module-level
+#: indirection keeps production on wall-clock time while letting tests
+#: inject a fixed clock for deterministic cycle keys.
+def _default_clock() -> datetime.datetime:
+    return datetime.datetime.now(datetime.timezone.utc)
+
+
 #: Type of the async session factory callable used by the scheduler loop.
-SessionFactory = object  # Callable[[], AsyncSession] — kept loose for tests
+SessionFactory = Callable[[], Any]
 
 
-def _default_session_factory():
+def _default_session_factory() -> SessionFactory:
     return async_session_factory
 
 
@@ -57,7 +66,9 @@ def _five_min_bucket_key(prefix: str, now: datetime.datetime) -> str:
 
 
 #: (job_type, identity key factory, max_retries, priority)
-_PERIODIC_JOBS: tuple[tuple[str, object, int, int], ...] = (
+PeriodicJobSpec = tuple[str, Callable[[datetime.datetime], str], int, int]
+
+_PERIODIC_JOBS: tuple[PeriodicJobSpec, ...] = (
     ("billing.period_end", lambda now: _daily_key("billing.period_end", now), 2, 10),
     ("billing.expire_past_due", lambda now: _daily_key("billing.expire_past_due", now), 2, 10),
     (
@@ -75,10 +86,12 @@ class Scheduler:
     def __init__(
         self,
         poll_interval: float = 60.0,
-        session_factory=None,
+        session_factory: SessionFactory | None = None,
+        clock: Callable[[], datetime.datetime] | None = None,
     ) -> None:
         self._poll_interval = poll_interval
-        self._session_factory = session_factory or async_session_factory
+        self._session_factory: SessionFactory = session_factory or async_session_factory
+        self._clock = clock or _default_clock
         self._task: asyncio.Task[None] | None = None
         self._shutdown_event = asyncio.Event()
 
@@ -95,13 +108,14 @@ class Scheduler:
         logger.info("Scheduler started (poll=%ss)", self._poll_interval)
 
     async def stop(self) -> None:
-        if not self.is_running:
+        task = self._task
+        if task is None or task.done():
             return
         logger.info("Scheduler stopping…")
         self._shutdown_event.set()
-        self._task.cancel()
+        task.cancel()
         try:
-            await self._task
+            await task
         except asyncio.CancelledError:
             pass
         self._task = None
@@ -116,15 +130,13 @@ class Scheduler:
             except Exception:
                 logger.exception("Scheduler cycle failed")
             try:
-                await asyncio.wait_for(
-                    self._shutdown_event.wait(), timeout=self._poll_interval
-                )
+                await asyncio.wait_for(self._shutdown_event.wait(), timeout=self._poll_interval)
             except asyncio.TimeoutError:
                 pass
 
     async def _enqueue_cycle(self) -> None:
         """Enqueue every periodic job for the current cycle (idempotent)."""
-        now = datetime.datetime.now(datetime.timezone.utc)
+        now = self._clock()
         async with self._session_factory() as session:
             service = JobService(session)
             created: list[Job] = []
@@ -141,14 +153,13 @@ class Scheduler:
                 created.append(job)
                 logger.debug(
                     "Scheduler ensured job %d [%s] key=%s",
-                    job.id, job_type, identity_key,
+                    job.id,
+                    job_type,
+                    identity_key,
                 )
             await session.commit()
             # Only report jobs that were created fresh this cycle.
-            fresh = [
-                j for j in created
-                if j.status == "pending"
-            ]
+            fresh = [j for j in created if j.status == "pending"]
             if fresh:
                 logger.info(
                     "Scheduler enqueued %d new periodic job(s): %s",

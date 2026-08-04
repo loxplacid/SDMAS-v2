@@ -1,0 +1,286 @@
+# =============================================================================
+# SDMAS v2 — Continuous Integration
+# =============================================================================
+#
+# Pipeline overview:
+#   api           — lint (changed files), format (changed files), type check
+#                   (changed files), unit + security + async suites, migration
+#                   validation against PostgreSQL
+#   web           — dependency install from lockfile, type check, tests,
+#                   production build, npm audit (high/critical)
+#   mobile        — dependency install from lockfile, type check, tests
+#   security      — secret scanning (Gitleaks), .env tracking guard
+#
+# Design notes:
+#   * Lint/format/mypy run on **changed files only** because the repository
+#     carries substantial pre-existing lint debt (762 app + 431 test ruff
+#     findings at the time this workflow was introduced).  CI fails on NEW
+#     violations in the files a change touches, without demanding a
+#     full-repo cleanup in the same PR.  Full-repo cleanup is tracked
+#     separately (docs/SECRETS.md and the hardening backlog).
+#   * The unit/security suites run on SQLite (in-memory) — no external
+#     services required.
+#   * Migration validation runs against a PostgreSQL service container,
+#     because parts of the migration chain cannot run on SQLite (the
+#     documented limitation).  Production and CI both use PostgreSQL.
+#   * Integration tests (testcontainers / Docker) are excluded from the
+#     default run; they need Docker-in-Docker and are covered by the
+#     dedicated `integration` job.
+#
+# Secrets: no real credentials are required.  All settings used in CI are
+# development/test defaults — never production values.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Development/test-only settings.  NEVER put production secrets here.
+  ENVIRONMENT: test
+  DEBUG: "true"
+
+jobs:
+  api:
+    name: API (lint, type, tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv (lockfile-managed install)
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.5.x"
+          enable-cache: true
+
+      - name: Install dependencies from lockfile
+        run: uv sync --frozen --extra dev
+
+      - name: Determine changed Python files
+        id: changed
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          if [ -z "$BASE" ]; then BASE="${{ github.event.before }}"; fi
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            BASE="HEAD~1"
+          fi
+          CHANGED=$(git diff --name-only "$BASE...HEAD" -- '*.py' '*.pyi' || true)
+          echo "Changed Python files:"
+          echo "$CHANGED"
+          echo "python_files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$CHANGED" >> "$GITHUB_OUTPUT"
+          echo "EOF"
+
+      - name: Ruff lint (changed files)
+        run: |
+          FILES=$(echo "${{ steps.changed.outputs.python_files }}" | tr '\n' ' ')
+          if [ -z "$FILES" ]; then echo "No changed Python files to lint"; exit 0; fi
+          uv run ruff check $FILES
+
+      - name: Ruff format check (changed files)
+        run: |
+          FILES=$(echo "${{ steps.changed.outputs.python_files }}" | tr '\n' ' ')
+          if [ -z "$FILES" ]; then echo "No changed Python files to format-check"; exit 0; fi
+          uv run ruff format --check $FILES
+
+      - name: Mypy type check (changed files)
+        run: |
+          FILES=$(echo "${{ steps.changed.outputs.python_files }}" | tr '\n' ' ')
+          if [ -z "$FILES" ]; then echo "No changed Python files to type-check"; exit 0; fi
+          uv run mypy --no-incremental $FILES --follow-imports=skip
+
+      - name: Run test suite (unit + security + async; SQLite in-memory)
+        run: uv run pytest tests -q -m "not integration"
+
+  api-integration:
+    name: API integration tests (Docker/Testcontainers)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.5.x"
+          enable-cache: true
+
+      - name: Install dependencies including integration extras
+        run: uv sync --frozen --all-extras
+
+      - name: Run integration tests
+        run: uv run pytest tests -q -m integration
+
+  migrations:
+    name: Migration validation (PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: sdmas
+          POSTGRES_PASSWORD: sdmas_dev
+          POSTGRES_DB: sdmas
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sdmas"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: apps/api
+    env:
+      DATABASE_URL: postgresql+asyncpg://sdmas:sdmas_dev@localhost:5432/sdmas
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.5.x"
+          enable-cache: true
+
+      - name: Install dependencies from lockfile
+        run: uv sync --frozen --extra dev
+
+      - name: Verify single migration head
+        run: |
+          HEADS=$(uv run alembic heads | wc -l)
+          if [ "$HEADS" -ne 1 ]; then
+            echo "Expected exactly one migration head, found $HEADS"
+            uv run alembic heads
+            exit 1
+          fi
+
+      - name: Upgrade database to head
+        run: uv run alembic upgrade head
+
+  web:
+    name: Web (type, tests, build, audit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies from lockfile
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+      - name: Dependency audit (high/critical only)
+        run: npm audit --audit-level=high
+
+  mobile:
+    name: Mobile (type, tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+
+      - name: Install dependencies from lockfile
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        run: npx jest --passWithNoTests
+
+  security:
+    name: Security (secret scan, .env guard)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+      - name: Ensure no environment files are tracked by Git
+        run: |
+          TRACKED=$(git ls-files | grep -E '(^|/)\.env(\.|$)' | grep -v '\.env\.example' || true)
+          if [ -n "$TRACKED" ]; then
+            echo "Secret-bearing environment files are tracked by Git:"
+            echo "$TRACKED"
+            echo "Remove them with: git rm --cached <file>"
+            exit 1
+          fi
+          echo "No secret-bearing .env files tracked."
+
+      - name: Scan for hardcoded credential patterns
+        run: |
+          # Fails on obvious live-credential patterns (Razorpay live keys,
+          # AWS access keys, GitHub tokens, Google API keys, JWT prod secrets).
+          MATCHES=$(grep -rInE \
+            'sk_live_[a-zA-Z0-9]{10,}|AKIA[0-9A-Z]{16}|ghp_[a-zA-Z0-9]{20,}|AIza[0-9A-Za-z_-]{20,}' \
+            apps infrastructure scripts . --include='*.py' --include='*.ts' \
+            --include='*.tsx' --include='*.js' --include='*.yml' --include='*.yaml' \
+            --include='*.toml' --include='*.env.example' 2>/dev/null | \
+            grep -v node_modules | grep -v '\.git/' || true)
+          if [ -n "$MATCHES" ]; then
+            echo "Hardcoded credential pattern(s) found (values redacted):"
+            echo "$MATCHES" | sed -E 's/(sk_live_|AKIA|ghp_|AIza)[a-zA-Z0-9_-]+/\1<REDACTED>/g'
+            exit 1
+          fi
+          echo "No hardcoded credential patterns found."

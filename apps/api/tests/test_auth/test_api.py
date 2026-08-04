@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import pytest
 from httpx import AsyncClient
 
 
@@ -105,9 +104,7 @@ class TestMeEndpoint:
 
     async def test_get_me(self, api_client: AsyncClient):
         token = await self._register_and_login(api_client, "meapi")
-        resp = await api_client.get(
-            "/auth/me", headers={"Authorization": f"Bearer {token}"}
-        )
+        resp = await api_client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 200
         assert resp.json()["email"] == "meapi@test.com"
 
@@ -168,10 +165,36 @@ class TestRefreshEndpoint:
         )
         refresh = login_resp.json()["refresh_token"]
 
-        resp = await api_client.post(
-            "/auth/refresh", params={"refresh_token": refresh}
-        )
+        resp = await api_client.post("/auth/refresh", json={"refresh_token": refresh})
         assert resp.status_code == 200
         data = resp.json()
         assert "access_token" in data
         assert "refresh_token" in data
+
+    async def test_refresh_accepts_body_not_query_param(self, api_client: AsyncClient):
+        """The refresh contract is ONE coherent body-based API: passing the
+        token as a query parameter is rejected (422), so the token never
+        travels in URLs."""
+        email = "refbody@test.com"
+        await api_client.post(
+            "/auth/register",
+            json={
+                "email": email,
+                "username": "refbody",
+                "password": "Str0ng!Pass",
+                "display_name": "RefreshBody",
+            },
+        )
+        login_resp = await api_client.post(
+            "/auth/login",
+            json={"login": email, "password": "Str0ng!Pass"},
+        )
+        refresh = login_resp.json()["refresh_token"]
+
+        # Body-based is the only supported contract.
+        resp = await api_client.post("/auth/refresh", json={"refresh_token": refresh})
+        assert resp.status_code == 200
+
+        # Query-parameter usage is rejected outright.
+        resp_q = await api_client.post("/auth/refresh", params={"refresh_token": refresh})
+        assert resp_q.status_code == 422

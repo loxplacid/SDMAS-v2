@@ -231,6 +231,82 @@ describe('Auth API Client', () => {
     expect(err.status).toBe(500)
   })
 
+  it('sends refresh_token in the JSON body, never in the URL (contract)', async () => {
+    let refreshUrl = ''
+    let refreshBody: string | undefined
+    let callCount = 0
+    const fetchMock = vi.fn()
+    fetchMock.mockImplementation((url: string, opts: any) => {
+      callCount++
+      if (callCount === 1) {
+        return Promise.resolve({
+          ok: false,
+          status: 401,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: () => Promise.resolve({ detail: 'Unauthorized' }),
+        })
+      }
+      if (url.includes('/auth/refresh')) {
+        refreshUrl = url
+        refreshBody = opts?.body
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: () => Promise.resolve({
+            access_token: 'refreshed-access',
+            refresh_token: 'refreshed-refresh',
+          }),
+        })
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: () => Promise.resolve({ items: [], total: 0 }),
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const m = await import('../api/client/http-client')
+    m.clearTokens()
+    m.api.setTokens('expired-access', 'valid-refresh')
+
+    await m.api.get('/students')
+
+    // The API contract is POST /auth/refresh with a JSON body — the token
+    // must never appear in the URL (it would leak into proxy/access logs).
+    expect(refreshUrl).toBe('/auth/refresh')
+    expect(refreshUrl).not.toContain('refresh_token=')
+    expect(JSON.parse(refreshBody!)).toEqual({ refresh_token: 'valid-refresh' })
+  })
+
+  it('authApi.refresh helper sends the token in the body, not the query string', async () => {
+    let capturedUrl = ''
+    let capturedBody: string | undefined
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string, opts: any) => {
+      capturedUrl = url
+      capturedBody = opts?.body
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: () => Promise.resolve({
+          access_token: 'a',
+          refresh_token: 'r',
+          expires_in: 1800,
+        }),
+      })
+    }))
+
+    const { authApi } = await import('../api/auth/auth-api')
+    await authApi.refresh('tok-123')
+
+    expect(capturedUrl.endsWith('/auth/refresh')).toBe(true)
+    expect(capturedUrl).not.toContain('refresh_token=')
+    expect(JSON.parse(capturedBody!)).toEqual({ refresh_token: 'tok-123' })
+  })
+
   it('does not attempt refresh for skipAuth requests on 401', async () => {
     let refreshAttempted = false
     const fetchMock = vi.fn()

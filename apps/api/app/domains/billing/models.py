@@ -41,21 +41,15 @@ class Plan(Base):
     features: Mapped[dict[str, Any] | None] = mapped_column(JSONType, nullable=False, default={})
     limits: Mapped[dict[str, Any] | None] = mapped_column(JSONType, nullable=False, default={})
 
-    billing_interval: Mapped[str] = mapped_column(
-        String(10), nullable=False, default="monthly"
-    )
+    billing_interval: Mapped[str] = mapped_column(String(10), nullable=False, default="monthly")
     price_inr: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     trial_days: Mapped[int] = mapped_column(Integer, nullable=False, default=14)
 
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    updated_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     def __repr__(self) -> str:
         return f"<Plan id={self.id} code={self.code} price={self.price_inr}>"
@@ -80,17 +74,20 @@ class Subscription(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     campus_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("campuses.id", ondelete="RESTRICT"),
-        nullable=False, unique=True, index=True,
+        Integer,
+        ForeignKey("campuses.id", ondelete="RESTRICT"),
+        nullable=False,
+        unique=True,
+        index=True,
     )
     plan_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("plans.id", ondelete="RESTRICT"),
-        nullable=False, index=True,
+        Integer,
+        ForeignKey("plans.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
 
-    status: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="trial", index=True
-    )
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="trial", index=True)
 
     current_period_start: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
@@ -105,23 +102,15 @@ class Subscription(Base):
     cancelled_at: Mapped[datetime.datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    cancel_at_period_end: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False
-    )
+    cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     payment_provider: Mapped[str | None] = mapped_column(
         String(50), nullable=True, comment="e.g. razorpay, cashfree"
     )
-    payment_provider_subscription_id: Mapped[str | None] = mapped_column(
-        String(255), nullable=True
-    )
+    payment_provider_subscription_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    updated_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     def __repr__(self) -> str:
         return (
@@ -142,12 +131,16 @@ class UsageRecord(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     campus_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("campuses.id", ondelete="RESTRICT"),
-        nullable=False, index=True,
+        Integer,
+        ForeignKey("campuses.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
     subscription_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("subscriptions.id", ondelete="CASCADE"),
-        nullable=False, index=True,
+        Integer,
+        ForeignKey("subscriptions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
 
     metric: Mapped[str] = mapped_column(
@@ -155,23 +148,17 @@ class UsageRecord(Base):
     )
     amount: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
 
-    period_start: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    period_end: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    period_start: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    period_end: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    updated_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     __table_args__ = (
         UniqueConstraint(
-            "campus_id", "metric", "period_start",
+            "campus_id",
+            "metric",
+            "period_start",
             name="uq_usage_period_metric",
         ),
     )
@@ -195,44 +182,47 @@ class Invoice(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     campus_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("campuses.id", ondelete="RESTRICT"),
-        nullable=False, index=True,
+        Integer,
+        ForeignKey("campuses.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
     subscription_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("subscriptions.id", ondelete="RESTRICT"),
-        nullable=False, index=True,
+        Integer,
+        ForeignKey("subscriptions.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
 
     amount_inr: Mapped[int] = mapped_column(
         Integer, nullable=False, comment="Amount in paise (1 INR = 100 paise)"
     )
-    status: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="pending", index=True
-    )
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending", index=True)
 
     payment_provider: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    payment_provider_invoice_id: Mapped[str | None] = mapped_column(
-        String(255), nullable=True
-    )
+    payment_provider_invoice_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
-    period_start: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    period_end: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    due_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    period_start: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    period_end: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    due_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     paid_at: Mapped[datetime.datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
 
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    updated_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        # A subscription must never have two invoices for the same billing
+        # period.  This is the database-level backstop on top of the
+        # application-level row lock in ``SubscriptionService.
+        # process_period_end`` — a race between the pending-invoice check
+        # and the insert now fails loudly instead of double-billing.
+        UniqueConstraint(
+            "subscription_id",
+            "period_start",
+            name="uq_invoices_subscription_period",
+        ),
     )
 
     def __repr__(self) -> str:
@@ -268,21 +258,21 @@ class WebhookEvent(Base):
         JSONType, nullable=True, comment="Raw verified event payload"
     )
     processed: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False,
+        Boolean,
+        nullable=False,
+        default=False,
         comment="True once the event's side effects have been applied",
     )
     campus_id: Mapped[int | None] = mapped_column(
-        Integer, nullable=True, index=True,
+        Integer,
+        nullable=True,
+        index=True,
         comment="Tenant resolved from the event payload (nullable for platform events)",
     )
-    received_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    received_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     __table_args__ = (
-        UniqueConstraint(
-            "provider_name", "event_id", name="uq_webhook_event_delivery"
-        ),
+        UniqueConstraint("provider_name", "event_id", name="uq_webhook_event_delivery"),
     )
 
     def __repr__(self) -> str:

@@ -9,9 +9,10 @@ export const authApi = {
     api.login(login, password),
 
   refresh: (refreshToken: string) =>
+    // Body-based contract: the refresh token never travels in the URL.
     api.post<TokenResponse>(
-      `/auth/refresh?refresh_token=${encodeURIComponent(refreshToken)}`,
-      undefined,
+      '/auth/refresh',
+      { refresh_token: refreshToken },
       true,
     ),
 

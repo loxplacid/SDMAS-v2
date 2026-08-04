@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
-
-from fastapi import APIRouter, Depends, Header, Query, Request, status
+from fastapi import APIRouter, Depends, Request, status
 
 from app.core.security import RateLimiter, SecurityAuditLogger
 from app.domains.audit.constants import CREATE, USER
@@ -11,9 +9,14 @@ from app.domains.auth.dependencies import (
     get_current_user,
     get_user_service,
 )
+from app.domains.auth.membership import (
+    SchoolMembershipRepository,
+    SchoolMembershipService,
+)
 from app.domains.auth.models import User
 from app.domains.auth.schemas import (
     PasswordChange,
+    RefreshRequest,
     SchoolMembershipResponse,
     SchoolSwitchRequest,
     TokenResponse,
@@ -21,10 +24,6 @@ from app.domains.auth.schemas import (
     UserLogin,
     UserResponse,
     UserUpdate,
-)
-from app.domains.auth.membership import (
-    SchoolMembershipRepository,
-    SchoolMembershipService,
 )
 from app.domains.auth.service import UserService
 from app.infrastructure.database import get_session
@@ -41,13 +40,15 @@ async def register(
     data: UserCreate,
     request: Request,
     service: UserService = Depends(get_user_service),
-    session = Depends(get_session),
+    session=Depends(get_session),
 ) -> UserResponse:
     user = await service.register(data)
 
     # Audit: user registration with request context (IP, UA, campus)
-    from app.domains.audit.service import AuditService
     import logging
+
+    from app.domains.audit.service import AuditService
+
     try:
         audit_svc = AuditService(session)
         meta = get_request_metadata(request)
@@ -90,6 +91,7 @@ async def login(
             path="/auth/login",
         )
         from fastapi import HTTPException, status
+
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail={"error": "Too many requests", "retry_after_seconds": retry_after},
@@ -97,7 +99,8 @@ async def login(
         )
 
     access_token, refresh_token_str, expires_in = await service.login(
-        data, ip_address=ip_address,
+        data,
+        ip_address=ip_address,
     )
 
     return TokenResponse(
@@ -109,15 +112,20 @@ async def login(
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh(
+    data: RefreshRequest,
     request: Request,
-    refresh_token: str = Query(
-        ..., description="The refresh token (query parameter)"
-    ),
     service: UserService = Depends(get_user_service),
 ) -> TokenResponse:
+    """Rotate a refresh token into a fresh token pair.
+
+    The refresh token travels in the JSON request body (never in the
+    URL, so it cannot leak into proxy/access logs).  Rotation + reuse
+    detection are enforced in :meth:`UserService.refresh_token`.
+    """
     ip_address = request.client.host if request.client else None
     access, new_refresh, expires_in = await service.refresh_token(
-        refresh_token, ip_address=ip_address,
+        data.refresh_token,
+        ip_address=ip_address,
     )
     return TokenResponse(
         access_token=access,
@@ -161,9 +169,7 @@ async def change_my_password(
 async def get_membership_service(
     session=Depends(get_session),
 ) -> SchoolMembershipService:
-    return SchoolMembershipService(
-        SchoolMembershipRepository(session), session
-    )
+    return SchoolMembershipService(SchoolMembershipRepository(session), session)
 
 
 @router.get(
@@ -208,7 +214,7 @@ async def switch_school(
 
     # Audit: school switch (non-fatal on failure)
     try:
-        from app.domains.audit.constants import UPDATE, USER
+        from app.domains.audit.constants import UPDATE
         from app.domains.audit.service import AuditService
 
         audit_svc = AuditService(membership_service.session)
@@ -225,6 +231,7 @@ async def switch_school(
         await membership_service.session.flush()
     except Exception:
         import logging
+
         logging.getLogger(__name__).warning(
             "Failed to write audit entry for school switch (non-fatal)",
             exc_info=True,

@@ -24,8 +24,6 @@ from sqlalchemy import select
 
 from app.domains.auth.models import User
 from app.domains.auth.security import create_access_token
-from app.domains.auth.service import UserService
-from app.domains.auth.repository import UserRepository
 
 from .conftest import AcqEnv, login, login_full
 
@@ -47,17 +45,13 @@ async def test_expired_access_token_rejected(acq_env: AcqEnv):
         expires_delta=datetime.timedelta(seconds=-60),
         campus_id=1,
     )
-    resp = await acq_env.client.get(
-        "/auth/me", headers={"Authorization": f"Bearer {token}"}
-    )
+    resp = await acq_env.client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code == 401, resp.text
 
 
 async def test_malformed_token_rejected(acq_env: AcqEnv):
     """Invariant: garbage that is not a JWT is rejected with 401."""
-    resp = await acq_env.client.get(
-        "/auth/me", headers={"Authorization": "Bearer not.a.jwt"}
-    )
+    resp = await acq_env.client.get("/auth/me", headers={"Authorization": "Bearer not.a.jwt"})
     assert resp.status_code == 401, resp.text
 
 
@@ -71,9 +65,7 @@ async def test_token_signed_with_wrong_secret_rejected(acq_env: AcqEnv):
         "attacker-secret",
         algorithm="HS256",
     )
-    resp = await acq_env.client.get(
-        "/auth/me", headers={"Authorization": f"Bearer {forged}"}
-    )
+    resp = await acq_env.client.get("/auth/me", headers={"Authorization": f"Bearer {forged}"})
     assert resp.status_code == 401, resp.text
 
 
@@ -95,7 +87,7 @@ async def test_refresh_rotation_issues_working_new_token(acq_env: AcqEnv):
     tokens = await login_full(acq_env, "admin_a")
 
     resp = await acq_env.client.post(
-        "/auth/refresh", params={"refresh_token": tokens["refresh_token"]}
+        "/auth/refresh", json={"refresh_token": tokens["refresh_token"]}
     )
     assert resp.status_code == 200, resp.text
     rotated = resp.json()
@@ -105,7 +97,7 @@ async def test_refresh_rotation_issues_working_new_token(acq_env: AcqEnv):
 
     # The new token is live and can be rotated again (normal lifecycle).
     resp = await acq_env.client.post(
-        "/auth/refresh", params={"refresh_token": rotated["refresh_token"]}
+        "/auth/refresh", json={"refresh_token": rotated["refresh_token"]}
     )
     assert resp.status_code == 200, resp.text
 
@@ -117,20 +109,20 @@ async def test_refresh_reuse_detected_revokes_whole_family(acq_env: AcqEnv):
     tokens = await login_full(acq_env, "admin_a")
 
     resp = await acq_env.client.post(
-        "/auth/refresh", params={"refresh_token": tokens["refresh_token"]}
+        "/auth/refresh", json={"refresh_token": tokens["refresh_token"]}
     )
     assert resp.status_code == 200, resp.text
     rotated = resp.json()
 
     # Replay the OLD (already-rotated) token → reuse detected → 401.
     resp = await acq_env.client.post(
-        "/auth/refresh", params={"refresh_token": tokens["refresh_token"]}
+        "/auth/refresh", json={"refresh_token": tokens["refresh_token"]}
     )
     assert resp.status_code == 401, resp.text
 
     # Family revocation: even the NEW token is now invalid.
     resp = await acq_env.client.post(
-        "/auth/refresh", params={"refresh_token": rotated["refresh_token"]}
+        "/auth/refresh", json={"refresh_token": rotated["refresh_token"]}
     )
     assert resp.status_code == 401, resp.text
 
@@ -138,9 +130,7 @@ async def test_refresh_reuse_detected_revokes_whole_family(acq_env: AcqEnv):
 async def test_invalid_refresh_token_rejected(acq_env: AcqEnv):
     """Invariant: a syntactically invalid refresh token is rejected."""
     for bad in ("garbage", "not.a.jwt", ""):
-        resp = await acq_env.client.post(
-            "/auth/refresh", params={"refresh_token": bad}
-        )
+        resp = await acq_env.client.post("/auth/refresh", json={"refresh_token": bad})
         assert resp.status_code == 401, f"{bad!r}: {resp.status_code}"
 
 
@@ -151,7 +141,7 @@ async def test_refresh_preserves_identity(acq_env: AcqEnv):
     tokens_a = await login_full(acq_env, "admin_a")
 
     resp = await acq_env.client.post(
-        "/auth/refresh", params={"refresh_token": tokens_a["refresh_token"]}
+        "/auth/refresh", json={"refresh_token": tokens_a["refresh_token"]}
     )
     assert resp.status_code == 200, resp.text
     rotated = resp.json()
@@ -170,9 +160,7 @@ async def test_deactivated_user_tokens_rejected(acq_env: AcqEnv):
     tokens = await login_full(acq_env, "teacher_a")
 
     async with acq_env.factory() as s:
-        user = (await s.execute(
-            select(User).where(User.username == "teacher_a")
-        )).scalar_one()
+        user = (await s.execute(select(User).where(User.username == "teacher_a"))).scalar_one()
         user.is_active = False
         await s.commit()
 

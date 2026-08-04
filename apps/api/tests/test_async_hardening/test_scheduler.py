@@ -17,22 +17,21 @@ from __future__ import annotations
 import datetime
 from contextlib import asynccontextmanager
 
-import pytest
 from sqlalchemy import select
 
-from app.domains.billing.models import Plan, Subscription, Invoice
+from app.domains.billing.models import Invoice, Plan, Subscription
 from app.domains.communications.models import (
     CommunicationMessage,
     MessageSchedule,
 )
-from app.domains.institution.models import Institution, Campus
+from app.domains.institution.models import Campus, Institution
 from app.domains.jobs.models import Job
+from app.domains.jobs.repository import JobRepository
 from app.domains.jobs.scheduler import (
     Scheduler,
     _daily_key,
     _five_min_bucket_key,
 )
-from app.domains.jobs.repository import JobRepository
 from app.domains.jobs.schemas import JobCreate
 from app.domains.jobs.service import JobService
 
@@ -51,8 +50,10 @@ def _session_ctx(session):
 
 class TestCycleEnqueue:
     async def test_cycle_enqueues_exactly_one_job_per_task(self, db_session):
-        svc = JobService(db_session)
-        scheduler = Scheduler(session_factory=_session_ctx(db_session))
+        scheduler = Scheduler(
+            session_factory=_session_ctx(db_session),
+            clock=lambda: NOW,
+        )
 
         # Two cycles back-to-back (idempotent enqueue).
         await scheduler._enqueue_cycle()
@@ -69,12 +70,10 @@ class TestCycleEnqueue:
         for t in set(types):
             assert types.count(t) == 1
 
-    async def test_cycle_is_idempotent_across_scheduler_instances(
-        self, db_session
-    ):
+    async def test_cycle_is_idempotent_across_scheduler_instances(self, db_session):
         """Two scheduler instances racing still produce one row per key."""
-        s1 = Scheduler(session_factory=_session_ctx(db_session))
-        s2 = Scheduler(session_factory=_session_ctx(db_session))
+        s1 = Scheduler(session_factory=_session_ctx(db_session), clock=lambda: NOW)
+        s2 = Scheduler(session_factory=_session_ctx(db_session), clock=lambda: NOW)
 
         await s1._enqueue_cycle()
         await s2._enqueue_cycle()
@@ -88,9 +87,7 @@ class TestCycleEnqueue:
         work without colliding with the previous cycle's completed job."""
         day1 = datetime.datetime(2026, 8, 3, 10, 0, tzinfo=datetime.timezone.utc)
         day2 = datetime.datetime(2026, 8, 4, 10, 0, tzinfo=datetime.timezone.utc)
-        assert _daily_key("billing.period_end", day1) != _daily_key(
-            "billing.period_end", day2
-        )
+        assert _daily_key("billing.period_end", day1) != _daily_key("billing.period_end", day2)
 
         bucket_a = datetime.datetime(2026, 8, 3, 10, 4, tzinfo=datetime.timezone.utc)
         bucket_b = datetime.datetime(2026, 8, 3, 10, 7, tzinfo=datetime.timezone.utc)
@@ -108,22 +105,16 @@ class TestCycleEnqueue:
             _five_min_bucket_key("communications.scheduled", same)
         )
 
-    async def test_completed_cycle_job_does_not_block_next_cycle(
-        self, db_session
-    ):
+    async def test_completed_cycle_job_does_not_block_next_cycle(self, db_session):
         """After a cycle's job completes, re-enqueuing the same key returns
         the completed row (no crash, no duplicate)."""
         svc = JobService(db_session)
         key = _daily_key("billing.period_end", NOW)
-        first = await svc.create_job(
-            JobCreate(job_type="billing.period_end", identity_key=key)
-        )
+        first = await svc.create_job(JobCreate(job_type="billing.period_end", identity_key=key))
         first.status = "completed"
         await db_session.commit()
 
-        again = await svc.create_job(
-            JobCreate(job_type="billing.period_end", identity_key=key)
-        )
+        again = await svc.create_job(JobCreate(job_type="billing.period_end", identity_key=key))
         await db_session.commit()
         assert again.id == first.id
 
@@ -168,9 +159,7 @@ async def _seed_plan_and_subscription(
 
 
 class TestPeriodicJobs:
-    async def test_billing_period_end_invoices_each_due_subscription(
-        self, db_session
-    ):
+    async def test_billing_period_end_invoices_each_due_subscription(self, db_session):
         """billing.period_end rolls each due subscription into a fresh
         invoice exactly once (idempotent under re-execution)."""
         inst = Institution(name="Test District", code="TST")
@@ -212,9 +201,7 @@ class TestPeriodicJobs:
         invoices = (await db_session.execute(select(Invoice))).scalars().all()
         assert len(invoices) == 1
 
-    async def test_billing_expire_past_due_expires_overdue_subscriptions(
-        self, db_session
-    ):
+    async def test_billing_expire_past_due_expires_overdue_subscriptions(self, db_session):
         inst = Institution(name="Test District", code="TST2")
         db_session.add(inst)
         await db_session.flush()
@@ -231,7 +218,7 @@ class TestPeriodicJobs:
 
         svc = JobService(db_session)
         repo = JobRepository(db_session)
-        job = await svc.create_job(
+        await svc.create_job(
             JobCreate(
                 job_type="billing.expire_past_due",
                 identity_key=_daily_key("billing.expire_past_due", NOW),
@@ -244,9 +231,7 @@ class TestPeriodicJobs:
         subs = (await db_session.execute(select(Subscription))).scalars().all()
         assert all(s.status == "expired" for s in subs)
 
-    async def test_communications_scheduled_dispatches_due_messages(
-        self, db_session
-    ):
+    async def test_communications_scheduled_dispatches_due_messages(self, db_session):
         """communications.scheduled delivers messages whose schedule is due,
         marks the schedule completed, and never double-delivers."""
         inst = Institution(name="Test District", code="TST3")
@@ -336,7 +321,7 @@ class TestPeriodicJobs:
 
         svc = JobService(db_session)
         repo = JobRepository(db_session)
-        job = await svc.create_job(
+        await svc.create_job(
             JobCreate(
                 job_type="communications.scheduled",
                 identity_key=_five_min_bucket_key("communications.scheduled", NOW),
@@ -364,9 +349,9 @@ class TestWorkerSeparation:
 
     def test_dedicated_worker_entrypoint_runs_scheduler(self, monkeypatch):
         """The worker entrypoint wires job worker + outbox worker + scheduler."""
-        import app.domains.jobs.worker as worker_module
         import app.domains.events.outbox as outbox_module
         import app.domains.jobs.scheduler as scheduler_module
+        import app.domains.jobs.worker as worker_module
 
         started: list[str] = []
 

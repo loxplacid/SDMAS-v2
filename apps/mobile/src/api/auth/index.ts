@@ -15,13 +15,14 @@ export async function loginUser(data: UserLogin) {
  *
  * NOTE: Token refresh is handled automatically by the HTTP client on 401
  * (see `client.ts` -> `attemptTokenRefresh`). This function is exposed
- * for manual usage and sends `refresh_token` as a query parameter to
- * match the FastAPI backend contract.
+ * for manual usage and sends `refresh_token` in the JSON **body** —
+ * the single coherent contract with the FastAPI backend. The token
+ * never travels in the URL (it would leak into proxy/access logs).
  */
 export async function refreshToken(refresh_token: string) {
   return api.post<TokenResponse>(
-    `${BASE}/refresh?refresh_token=${encodeURIComponent(refresh_token)}`,
-    undefined,
+    `${BASE}/refresh`,
+    { refresh_token },
     { authenticated: false },
   );
 }
