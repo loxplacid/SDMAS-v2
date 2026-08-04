@@ -16,17 +16,23 @@ from app.domains.attendance.models import AttendanceRecord
 from app.domains.attendance.repository import AttendanceRepository
 from app.domains.student.repository import StudentRepository
 from app.domains.student.models import Student
+from app.multi_tenant.models import TenantContext
 
 
 class AttendanceReportService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        tenant: Optional[TenantContext] = None,
+    ) -> None:
         self.session = session
-        self.attendance_repo = AttendanceRepository(session)
-        self.student_repo = StudentRepository(session)
-        self.year_repo = AcademicYearRepository(session)
-        self.class_repo = ClassRepository(session)
-        self.section_repo = SectionRepository(session)
-        self.enrollment_repo = EnrollmentRepository(session)
+        self.tenant = tenant
+        self.attendance_repo = AttendanceRepository(session, tenant)
+        self.student_repo = StudentRepository(session, tenant)
+        self.year_repo = AcademicYearRepository(session, tenant)
+        self.class_repo = ClassRepository(session, tenant)
+        self.section_repo = SectionRepository(session, tenant)
+        self.enrollment_repo = EnrollmentRepository(session, tenant)
 
     async def get_class_attendance_summary(
         self,
@@ -52,7 +58,9 @@ class AttendanceReportService:
             conditions.append(AttendanceRecord.attendance_date <= end_date)
 
         result = await self.session.execute(
-            select(AttendanceRecord).where(and_(*conditions))
+            self.attendance_repo.scoped_query(AttendanceRecord).where(
+                and_(*conditions)
+            )
         )
         records = result.scalars().all()
 
@@ -97,7 +105,9 @@ class AttendanceReportService:
             conditions.append(AttendanceRecord.attendance_date <= end_date)
 
         result = await self.session.execute(
-            select(AttendanceRecord).where(and_(*conditions))
+            self.attendance_repo.scoped_query(AttendanceRecord).where(
+                and_(*conditions)
+            )
         )
         records = result.scalars().all()
 
@@ -133,7 +143,9 @@ class AttendanceReportService:
         class_ids = [c.id for c in classes]
 
         sections_result = await self.session.execute(
-            select(Section).where(Section.class_id.in_(class_ids))
+            self.section_repo.scoped_query(Section).where(
+                Section.class_id.in_(class_ids)
+            )
         )
         sections = sections_result.scalars().all()
 
@@ -143,7 +155,7 @@ class AttendanceReportService:
         student_ids = {e.student_id for e in enrollments}
 
         result = await self.session.execute(
-            select(AttendanceRecord).where(
+            self.attendance_repo.scoped_query(AttendanceRecord).where(
                 AttendanceRecord.academic_year_id == academic_year_id
             )
         )

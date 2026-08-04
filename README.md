@@ -1,127 +1,77 @@
 # SDMAS v2 — School Data Management & Analytics System
 
-This repository contains two implementations:
+A production school-administration platform: student management, academics,
+attendance, fees/billing, admissions, reports/analytics, communications, and
+parent/student portals — with **structural multi-tenant isolation** at the
+data layer.
 
-## 1. JavaScript DI Container (Legacy Behavioral Reference)
+## Repository layout
 
-The existing JavaScript implementation (v1) in the repository root is a comprehensive **Enterprise Dependency Injection Container** with:
-
-- Full dependency resolution with automatic injection
-- Singleton support for stateful services
-- Modular architecture following SOLID principles
-- 10 implemented components (Configuration Manager, Logger, Database Connector, Repository Pattern, Service Layer, Session Manager, Security Manager, Theme Manager, AI Manager, Event Bus)
-- CLI tools for student and academic operations
-- Database migration system
-- ~488 tests across ~6200 lines
-
-**Status:** Active behavioral reference. This code will be archived into `legacy/` only after Python behavioral parity is verified.
-
-```bash
-npm install
-npm test
+```
+sdmas-v2/
+├── apps/
+│   ├── api/                 # Backend — Python 3.11+ FastAPI, SQLAlchemy 2 (async), Alembic
+│   ├── web/                 # Frontend — React + Vite + TypeScript (PWA, dark mode)
+│   └── mobile/              # Mobile — Expo / React Native
+├── infrastructure/          # Docker Compose, Nginx, monitoring (Prometheus/Grafana/OTel), ops scripts
+├── docs/                    # Coding standards, contribution & historical migration docs
+├── legacy/                  # Marker for the archived SDMAS v1 (see _archive/legacy-v1)
+├── _archive/                # Read-only archives: v1 stack (legacy-v1), early backend (backend)
+├── Makefile                 # Canonical dev/build/deploy/test entry points
+└── *.md                     # Canonical docs: ARCHITECTURE, SECURITY, AUTHORIZATION, TENANCY,
+                             # DEPLOYMENT, KNOWN_LIMITATIONS
 ```
 
-## 2. Python FastAPI Backend (v2 — In Development)
+> The SDMAS v1 JavaScript implementation and the root Python v1 foundation
+> were archived to [`_archive/legacy-v1/`](_archive/legacy-v1/DEPRECATED.md).
+> The canonical system is `apps/` — nothing else is imported or deployed.
 
-A new Python backend being developed alongside the existing implementation in `apps/api/`.
+## Quick start
 
-**Current Phase:** Phase 1 — Foundation (scaffolding, configuration, database infrastructure)
-
-### Prerequisites
-
-- Python >= 3.11
-- pip
-
-### Setup
+### Backend (apps/api)
 
 ```bash
 cd apps/api
 python -m venv .venv
-.venv\Scripts\activate    # Windows
-# source .venv/bin/activate  # Linux/macOS
+# activate the venv (platform-specific), then:
 pip install -e ".[dev]"
+cp ../.env.example .env        # or set env vars
+uvicorn app.main:app --reload  # http://localhost:8000/docs
 ```
 
-### Configuration
-
-Copy `.env.example` to `.env` and adjust as needed:
+### Whole stack with Docker
 
 ```bash
-cp .env.example .env
+make dev        # Postgres + Redis + API via docker compose
+make migrate    # alembic upgrade head
+make seed       # reference/seed data
 ```
 
-### Run the API
+### Frontend (apps/web)
 
 ```bash
-uvicorn app.main:app --reload
+cd apps/web
+npm install
+npm run dev     # http://localhost:5173 (proxies /api → :8000)
 ```
 
-API will be available at `http://localhost:8000`.
-
-- `GET /health` — Health check
-- `GET /ready` — Readiness check (requires database)
-- `http://localhost:8000/docs` — OpenAPI documentation
-
-### Run Tests
+## Testing
 
 ```bash
-cd apps/api
-pytest
+make test       # full API suite (pytest, ~1,100 tests)
+make test-web   # frontend suite (vitest)
 ```
 
-### Linting & Type Checking
+## Core docs
 
-```bash
-ruff check .
-ruff format --check .
-mypy app/
-```
-
-### Docker Compose
-
-Starts PostgreSQL, Redis, and the API:
-
-```bash
-docker-compose -f infrastructure/docker/docker-compose.yml up --build
-```
-
-### Alembic Migrations
-
-```bash
-cd apps/api
-alembic upgrade head
-alembic revision --autogenerate -m "description"
-```
-
-### Important Notes
-
-- Domain migration has **NOT** started yet.
-- No Student, Academic, Attendance, or Fees tables exist yet.
-- Authentication is **NOT** implemented yet.
-- The JavaScript implementation remains the authoritative behavioral reference.
-
-## Project Structure
-
-```
-sdmas-v2/
-├── apps/api/                  # Python FastAPI backend
-│   ├── app/                   # Application package
-│   │   ├── core/              # Exceptions, pagination
-│   │   ├── infrastructure/    # Database setup
-│   │   ├── config.py          # Pydantic Settings
-│   │   ├── dependencies.py    # DI dependencies
-│   │   └── main.py            # FastAPI application
-│   ├── tests/                 # pytest test suite
-│   ├── alembic/               # Database migrations
-│   ├── pyproject.toml         # Project metadata
-│   └── Dockerfile             # API container
-├── infrastructure/docker/     # Docker Compose
-├── docs/                      # Architecture & migration docs
-├── legacy/                    # Future home of JS reference
-├── backend/                   # Previous Python foundation (preserved)
-├── tests/                     # JS test files
-└── ...                        # JS implementation files
-```
+| Doc | Covers |
+|---|---|
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Canonical system design — API layering, domains, worker, web, mobile |
+| [`SECURITY.md`](SECURITY.md) | Authentication, tenant isolation, webhooks, audit, secrets |
+| [`AUTHORIZATION.md`](AUTHORIZATION.md) | Roles & permission model, platform access |
+| [`TENANCY.md`](TENANCY.md) | Multi-tenant context, scoped repositories, guards |
+| [`DEPLOYMENT.md`](DEPLOYMENT.md) | Environments, deployment, scaling, backup, monitoring |
+| [`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md) | Honest list of current gaps & risks |
 
 ## License
 

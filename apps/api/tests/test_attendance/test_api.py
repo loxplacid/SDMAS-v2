@@ -5,32 +5,32 @@ from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_record_attendance_single(api_client: AsyncClient):
-    student_resp = await api_client.post(
+async def test_record_attendance_single(auth_client: AsyncClient):
+    student_resp = await auth_client.post(
         "/students",
         json={"first_name": "John", "last_name": "Doe", "student_number": "ATAPI001"},
     )
     s1 = student_resp.json()
 
-    year_resp = await api_client.post(
+    year_resp = await auth_client.post(
         "/api/academic-years",
         json={"name": "API Year", "start_date": "2026-01-01", "end_date": "2026-12-31"},
     )
     year = year_resp.json()
 
-    class_resp = await api_client.post(
+    class_resp = await auth_client.post(
         "/api/classes",
         json={"name": "Grade 10", "academic_year_id": year["id"]},
     )
     cls = class_resp.json()
 
-    section_resp = await api_client.post(
+    section_resp = await auth_client.post(
         "/api/sections",
         json={"name": "Section A", "class_id": cls["id"]},
     )
     section = section_resp.json()
 
-    enroll_resp = await api_client.post(
+    enroll_resp = await auth_client.post(
         "/api/enrollments",
         json={
             "student_id": s1["id"],
@@ -41,7 +41,7 @@ async def test_record_attendance_single(api_client: AsyncClient):
     )
     assert enroll_resp.status_code == 201
 
-    response = await api_client.post(
+    response = await auth_client.post(
         "/attendance",
         json={
             "student_id": s1["id"],
@@ -63,32 +63,32 @@ async def test_record_attendance_single(api_client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_record_attendance_duplicate(api_client: AsyncClient):
-    student_resp = await api_client.post(
+async def test_record_attendance_duplicate(auth_client: AsyncClient):
+    student_resp = await auth_client.post(
         "/students",
         json={"first_name": "Jane", "last_name": "Doe", "student_number": "ATAPI002"},
     )
     s1 = student_resp.json()
 
-    year_resp = await api_client.post(
+    year_resp = await auth_client.post(
         "/api/academic-years",
         json={"name": "API Year 2", "start_date": "2026-01-01", "end_date": "2026-12-31"},
     )
     year = year_resp.json()
 
-    class_resp = await api_client.post(
+    class_resp = await auth_client.post(
         "/api/classes",
         json={"name": "Grade 11", "academic_year_id": year["id"]},
     )
     cls = class_resp.json()
 
-    section_resp = await api_client.post(
+    section_resp = await auth_client.post(
         "/api/sections",
         json={"name": "Section B", "class_id": cls["id"]},
     )
     section = section_resp.json()
 
-    await api_client.post(
+    await auth_client.post(
         "/api/enrollments",
         json={
             "student_id": s1["id"],
@@ -106,15 +106,15 @@ async def test_record_attendance_duplicate(api_client: AsyncClient):
         "attendance_date": "2026-03-15",
         "status": "present",
     }
-    await api_client.post("/attendance", json=payload)
-    response = await api_client.post("/attendance", json=payload)
+    await auth_client.post("/attendance", json=payload)
+    response = await auth_client.post("/attendance", json=payload)
     assert response.status_code == 409
     assert "already exists" in response.json()["detail"]
 
 
 @pytest.mark.asyncio
-async def test_record_attendance_invalid_status(api_client: AsyncClient):
-    response = await api_client.post(
+async def test_record_attendance_invalid_status(auth_client: AsyncClient):
+    response = await auth_client.post(
         "/attendance",
         json={
             "student_id": 1,
@@ -129,32 +129,32 @@ async def test_record_attendance_invalid_status(api_client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_get_attendance(api_client: AsyncClient):
-    student_resp = await api_client.post(
+async def test_get_attendance(auth_client: AsyncClient):
+    student_resp = await auth_client.post(
         "/students",
         json={"first_name": "Get", "last_name": "Test", "student_number": "ATAPI003"},
     )
     s1 = student_resp.json()
 
-    year_resp = await api_client.post(
+    year_resp = await auth_client.post(
         "/api/academic-years",
         json={"name": "API Year 3", "start_date": "2026-01-01", "end_date": "2026-12-31"},
     )
     year = year_resp.json()
 
-    class_resp = await api_client.post(
+    class_resp = await auth_client.post(
         "/api/classes",
         json={"name": "Grade 12", "academic_year_id": year["id"]},
     )
     cls = class_resp.json()
 
-    section_resp = await api_client.post(
+    section_resp = await auth_client.post(
         "/api/sections",
         json={"name": "Section C", "class_id": cls["id"]},
     )
     section = section_resp.json()
 
-    await api_client.post(
+    await auth_client.post(
         "/api/enrollments",
         json={
             "student_id": s1["id"],
@@ -164,7 +164,7 @@ async def test_get_attendance(api_client: AsyncClient):
         },
     )
 
-    create_resp = await api_client.post(
+    create_resp = await auth_client.post(
         "/attendance",
         json={
             "student_id": s1["id"],
@@ -177,7 +177,7 @@ async def test_get_attendance(api_client: AsyncClient):
     )
     record_id = create_resp.json()["id"]
 
-    response = await api_client.get(f"/attendance/{record_id}")
+    response = await auth_client.get(f"/attendance/{record_id}")
     assert response.status_code == 200
     data = response.json()
     assert data["id"] == record_id
@@ -185,38 +185,38 @@ async def test_get_attendance(api_client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_get_attendance_not_found(api_client: AsyncClient):
-    response = await api_client.get("/attendance/99999")
+async def test_get_attendance_not_found(auth_client: AsyncClient):
+    response = await auth_client.get("/attendance/99999")
     assert response.status_code == 404
 
 
 @pytest.mark.asyncio
-async def test_update_attendance(api_client: AsyncClient):
-    student_resp = await api_client.post(
+async def test_update_attendance(auth_client: AsyncClient):
+    student_resp = await auth_client.post(
         "/students",
         json={"first_name": "Update", "last_name": "Test", "student_number": "ATAPI004"},
     )
     s1 = student_resp.json()
 
-    year_resp = await api_client.post(
+    year_resp = await auth_client.post(
         "/api/academic-years",
         json={"name": "API Year 4", "start_date": "2026-01-01", "end_date": "2026-12-31"},
     )
     year = year_resp.json()
 
-    class_resp = await api_client.post(
+    class_resp = await auth_client.post(
         "/api/classes",
         json={"name": "Grade 9", "academic_year_id": year["id"]},
     )
     cls = class_resp.json()
 
-    section_resp = await api_client.post(
+    section_resp = await auth_client.post(
         "/api/sections",
         json={"name": "Section D", "class_id": cls["id"]},
     )
     section = section_resp.json()
 
-    await api_client.post(
+    await auth_client.post(
         "/api/enrollments",
         json={
             "student_id": s1["id"],
@@ -226,7 +226,7 @@ async def test_update_attendance(api_client: AsyncClient):
         },
     )
 
-    create_resp = await api_client.post(
+    create_resp = await auth_client.post(
         "/attendance",
         json={
             "student_id": s1["id"],
@@ -239,7 +239,7 @@ async def test_update_attendance(api_client: AsyncClient):
     )
     record_id = create_resp.json()["id"]
 
-    response = await api_client.patch(
+    response = await auth_client.patch(
         f"/attendance/{record_id}",
         json={"status": "present"},
     )
@@ -249,14 +249,14 @@ async def test_update_attendance(api_client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_update_attendance_not_found(api_client: AsyncClient):
-    response = await api_client.patch("/attendance/99999", json={"status": "present"})
+async def test_update_attendance_not_found(auth_client: AsyncClient):
+    response = await auth_client.patch("/attendance/99999", json={"status": "present"})
     assert response.status_code == 404
 
 
 @pytest.mark.asyncio
-async def test_list_attendance(api_client: AsyncClient):
-    response = await api_client.get("/attendance")
+async def test_list_attendance(auth_client: AsyncClient):
+    response = await auth_client.get("/attendance")
     assert response.status_code == 200
     data = response.json()
     assert "items" in data
@@ -264,37 +264,37 @@ async def test_list_attendance(api_client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_daily_attendance(api_client: AsyncClient):
-    student_resp1 = await api_client.post(
+async def test_daily_attendance(auth_client: AsyncClient):
+    student_resp1 = await auth_client.post(
         "/students",
         json={"first_name": "Daily1", "last_name": "Test", "student_number": "ATAPI005"},
     )
     s1 = student_resp1.json()
-    student_resp2 = await api_client.post(
+    student_resp2 = await auth_client.post(
         "/students",
         json={"first_name": "Daily2", "last_name": "Test", "student_number": "ATAPI006"},
     )
     s2 = student_resp2.json()
 
-    year_resp = await api_client.post(
+    year_resp = await auth_client.post(
         "/api/academic-years",
         json={"name": "API Year 5", "start_date": "2026-01-01", "end_date": "2026-12-31"},
     )
     year = year_resp.json()
 
-    class_resp = await api_client.post(
+    class_resp = await auth_client.post(
         "/api/classes",
         json={"name": "Grade 8", "academic_year_id": year["id"]},
     )
     cls = class_resp.json()
 
-    section_resp = await api_client.post(
+    section_resp = await auth_client.post(
         "/api/sections",
         json={"name": "Section E", "class_id": cls["id"]},
     )
     section = section_resp.json()
 
-    await api_client.post(
+    await auth_client.post(
         "/api/enrollments",
         json={
             "student_id": s1["id"],
@@ -303,7 +303,7 @@ async def test_daily_attendance(api_client: AsyncClient):
             "section_id": section["id"],
         },
     )
-    await api_client.post(
+    await auth_client.post(
         "/api/enrollments",
         json={
             "student_id": s2["id"],
@@ -313,7 +313,7 @@ async def test_daily_attendance(api_client: AsyncClient):
         },
     )
 
-    response = await api_client.post(
+    response = await auth_client.post(
         "/attendance/daily",
         json={
             "section_id": section["id"],
@@ -332,7 +332,7 @@ async def test_daily_attendance(api_client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_health_still_works(api_client: AsyncClient):
-    response = await api_client.get("/health")
+async def test_health_still_works(auth_client: AsyncClient):
+    response = await auth_client.get("/health")
     assert response.status_code == 200
     assert response.json()["status"] == "healthy"

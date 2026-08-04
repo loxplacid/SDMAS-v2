@@ -19,6 +19,8 @@ from app.domains.parent.schemas import (
 )
 from app.domains.parent.service import ParentService
 from app.infrastructure.database import get_session
+from app.multi_tenant.dependencies import require_tenant_context
+from app.multi_tenant.models import TenantContext
 
 router = APIRouter(prefix="/api/parent", tags=["parent"])
 
@@ -28,8 +30,9 @@ PARENT_ONLY = require_role("parent")
 
 async def get_parent_svc(
     session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> ParentService:
-    return ParentService(session)
+    return ParentService(session, tenant=tenant)
 
 
 # ── Dashboard ────────────────────────────────────────────────────────

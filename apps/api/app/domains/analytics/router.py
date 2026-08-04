@@ -31,8 +31,22 @@ from app.domains.analytics.schemas import (
 )
 from app.domains.analytics.service import AnalyticsService
 from app.infrastructure.database import get_session
+from app.multi_tenant.dependencies import require_tenant_context
+from app.multi_tenant.guards import effective_campus_id
+from app.multi_tenant.models import TenantContext
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
+
+
+def _scoped_campus(tenant: TenantContext) -> Optional[int]:
+    """Resolve the tenant's campus for analytics queries (None = cross-tenant
+    platform caller, who is explicitly authorized).
+
+    Plain function (not ``async``) because it must return the resolved id
+    synchronously — earlier versions were ``async def`` and callers
+    forgot to ``await`` them, passing a coroutine into the SQL layer.
+    """
+    return effective_campus_id(tenant, None)
 
 
 # ---------------------------------------------------------------------------
@@ -44,9 +58,10 @@ router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 async def get_analytics_overview(
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> AnalyticsOverview:
     svc = AnalyticsService(session)
-    return AnalyticsOverview(**await svc.get_overview())
+    return AnalyticsOverview(**await svc.get_overview(campus_id=_scoped_campus(tenant)))
 
 
 # ---------------------------------------------------------------------------
@@ -66,6 +81,7 @@ async def get_attendance_overview(
     section_id: Optional[int] = Query(default=None, alias="section_id"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> AttendanceOverview:
     svc = AnalyticsService(session)
     return AttendanceOverview(
@@ -73,6 +89,7 @@ async def get_attendance_overview(
             academic_year_id=academic_year_id,
             class_id=class_id,
             section_id=section_id,
+            campus_id=_scoped_campus(tenant),
         )
     )
 
@@ -90,6 +107,7 @@ async def get_attendance_trends(
     granularity: str = Query(default="daily", alias="granularity"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> AttendanceTrend:
     svc = AnalyticsService(session)
     return AttendanceTrend(
@@ -98,6 +116,7 @@ async def get_attendance_trends(
             class_id=class_id,
             section_id=section_id,
             granularity=granularity,
+            campus_id=_scoped_campus(tenant),
         )
     )
 
@@ -112,10 +131,11 @@ async def get_attendance_class_comparison(
     ),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> list[ClassAttendanceComparison]:
     svc = AnalyticsService(session)
     data = await svc.get_attendance_class_comparison(
-        academic_year_id=academic_year_id
+        academic_year_id=academic_year_id, campus_id=_scoped_campus(tenant)
     )
     return [ClassAttendanceComparison(**d) for d in data]
 
@@ -131,11 +151,13 @@ async def get_attendance_section_comparison(
     class_id: Optional[int] = Query(default=None, alias="class_id"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> list[SectionAttendanceComparison]:
     svc = AnalyticsService(session)
     data = await svc.get_attendance_section_comparison(
         academic_year_id=academic_year_id,
         class_id=class_id,
+        campus_id=_scoped_campus(tenant),
     )
     return [SectionAttendanceComparison(**d) for d in data]
 
@@ -152,12 +174,14 @@ async def get_low_attendance_students(
     min_records: int = Query(default=1, alias="min_records"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> list[LowAttendanceStudent]:
     svc = AnalyticsService(session)
     data = await svc.get_low_attendance_students(
         threshold=threshold,
         academic_year_id=academic_year_id,
         min_records=min_records,
+        campus_id=_scoped_campus(tenant),
     )
     return [LowAttendanceStudent(**d) for d in data]
 
@@ -172,10 +196,11 @@ async def get_term_attendance(
     ),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> list[TermAttendanceAnalytics]:
     svc = AnalyticsService(session)
     data = await svc.get_all_term_attendance(
-        academic_year_id=academic_year_id
+        academic_year_id=academic_year_id, campus_id=_scoped_campus(tenant)
     )
     return [TermAttendanceAnalytics(**d) for d in data]
 
@@ -195,11 +220,12 @@ async def get_finance_overview(
     ),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> FinanceOverview:
     svc = AnalyticsService(session)
     return FinanceOverview(
         **await svc.get_finance_overview(
-            academic_year_id=academic_year_id
+            academic_year_id=academic_year_id, campus_id=_scoped_campus(tenant)
         )
     )
 
@@ -215,12 +241,14 @@ async def get_finance_trends(
     granularity: str = Query(default="daily", alias="granularity"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> CollectionTrend:
     svc = AnalyticsService(session)
     return CollectionTrend(
         **await svc.get_collection_trends(
             academic_year_id=academic_year_id,
             granularity=granularity,
+            campus_id=_scoped_campus(tenant),
         )
     )
 
@@ -235,10 +263,11 @@ async def get_fee_type_collection(
     ),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> list[FeeTypeCollection]:
     svc = AnalyticsService(session)
     data = await svc.get_fee_type_collection(
-        academic_year_id=academic_year_id
+        academic_year_id=academic_year_id, campus_id=_scoped_campus(tenant)
     )
     return [FeeTypeCollection(**d) for d in data]
 
@@ -253,10 +282,11 @@ async def get_finance_class_collection(
     ),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> list[ClassFeeCollection]:
     svc = AnalyticsService(session)
     data = await svc.get_class_fee_collection(
-        academic_year_id=academic_year_id
+        academic_year_id=academic_year_id, campus_id=_scoped_campus(tenant)
     )
     return [ClassFeeCollection(**d) for d in data]
 
@@ -271,10 +301,11 @@ async def get_payment_method_distribution(
     ),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> list[PaymentMethodDistribution]:
     svc = AnalyticsService(session)
     data = await svc.get_payment_method_distribution(
-        academic_year_id=academic_year_id
+        academic_year_id=academic_year_id, campus_id=_scoped_campus(tenant)
     )
     return [PaymentMethodDistribution(**d) for d in data]
 
@@ -289,10 +320,11 @@ async def get_fee_status_distribution(
     ),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> list[FeeStatusDistribution]:
     svc = AnalyticsService(session)
     data = await svc.get_fee_status_distribution(
-        academic_year_id=academic_year_id
+        academic_year_id=academic_year_id, campus_id=_scoped_campus(tenant)
     )
     return [FeeStatusDistribution(**d) for d in data]
 
@@ -309,9 +341,10 @@ async def get_fee_status_distribution(
 async def get_student_overview(
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> StudentOverview:
     svc = AnalyticsService(session)
-    return StudentOverview(**await svc.get_student_overview())
+    return StudentOverview(**await svc.get_student_overview(campus_id=_scoped_campus(tenant)))
 
 
 @router.get(
@@ -324,10 +357,11 @@ async def get_students_by_class(
     ),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> list[StudentsByClass]:
     svc = AnalyticsService(session)
     data = await svc.get_students_by_class(
-        academic_year_id=academic_year_id
+        academic_year_id=academic_year_id, campus_id=_scoped_campus(tenant)
     )
     return [StudentsByClass(**d) for d in data]
 
@@ -343,11 +377,13 @@ async def get_students_by_section(
     class_id: Optional[int] = Query(default=None, alias="class_id"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> list[StudentsBySection]:
     svc = AnalyticsService(session)
     data = await svc.get_students_by_section(
         academic_year_id=academic_year_id,
         class_id=class_id,
+        campus_id=_scoped_campus(tenant),
     )
     return [StudentsBySection(**d) for d in data]
 
@@ -359,9 +395,10 @@ async def get_students_by_section(
 async def get_enrollment_trends(
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> list[EnrollmentTrend]:
     svc = AnalyticsService(session)
-    data = await svc.get_enrollment_trends()
+    data = await svc.get_enrollment_trends(campus_id=_scoped_campus(tenant))
     return [EnrollmentTrend(**d) for d in data]
 
 
@@ -377,9 +414,10 @@ async def get_enrollment_trends(
 async def get_academic_overview(
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> AcademicOverview:
     svc = AnalyticsService(session)
-    return AcademicOverview(**await svc.get_academic_overview())
+    return AcademicOverview(**await svc.get_academic_overview(campus_id=_scoped_campus(tenant)))
 
 
 @router.get(
@@ -389,9 +427,10 @@ async def get_academic_overview(
 async def get_teacher_workload(
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> list[TeacherWorkload]:
     svc = AnalyticsService(session)
-    data = await svc.get_teacher_workload()
+    data = await svc.get_teacher_workload(campus_id=_scoped_campus(tenant))
     return [TeacherWorkload(**d) for d in data]
 
 
@@ -402,7 +441,8 @@ async def get_teacher_workload(
 async def get_subject_distribution(
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> list[SubjectDistribution]:
     svc = AnalyticsService(session)
-    data = await svc.get_subject_distribution()
+    data = await svc.get_subject_distribution(campus_id=_scoped_campus(tenant))
     return [SubjectDistribution(**d) for d in data]

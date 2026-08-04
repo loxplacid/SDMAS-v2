@@ -33,6 +33,7 @@ from app.domains.parent.schemas import (
     ParentSubjectGrade,
 )
 from app.domains.student.models import Student
+from app.multi_tenant.models import TenantContext
 
 logger = logging.getLogger(__name__)
 
@@ -41,11 +42,18 @@ class ParentService:
     """Service layer for the parent portal.
 
     Every method enforces authorization — the parent user must be a
-    linked guardian of the requested student.
+    linked guardian of the requested student.  Guardian *links* are
+    additionally tenant-checked so a parent can never create a
+    cross-tenant parent↔student junction.
     """
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        tenant: Optional[TenantContext] = None,
+    ) -> None:
         self.session = session
+        self.tenant = tenant
 
     # ── Authorization Helpers ───────────────────────────────────────
 
@@ -103,11 +111,29 @@ class ParentService:
     async def link_child(
         self, user_id: int, student_id: int, relationship: str = "parent"
     ) -> Guardian:
-        """Link a parent user to a student."""
+        """Link a parent user to a student.
+
+        The student must belong to the parent's own campus — a parent
+        may never establish a guardian link to a student on another
+        campus, which would otherwise grant read access to that
+        student's attendance, fees, grades and documents.
+        """
         # Verify student exists
         student = await self.session.get(Student, student_id)
         if not student:
             raise NotFoundError("Student not found")
+
+        # Tenant boundary: only link students in the caller's campus
+        # (platform operators may link across campuses explicitly).
+        # Fail closed: a service instance with no tenant context cannot
+        # link at all — unscoped must never imply cross-tenant access.
+        if self.tenant is None or not self.tenant.allow_cross_tenant:
+            if (
+                self.tenant is None
+                or not self.tenant.is_tenant_scoped
+                or student.campus_id != self.tenant.campus_id
+            ):
+                raise NotFoundError("Student not found")
 
         # Check if already linked
         existing = await self.session.execute(
@@ -124,6 +150,7 @@ class ParentService:
             student_id=student_id,
             relationship=relationship,
             is_primary=True,
+            campus_id=student.campus_id or (self.tenant.campus_id if self.tenant else None),
         )
         self.session.add(guardian)
         await self.session.commit()
@@ -595,17 +622,33 @@ class ParentService:
         self, limit: int = 10
     ) -> list[ParentAnnouncement]:
         try:
+            # Announcements are campus-scoped: a parent only sees
+            # announcements from their own campus (plus system-wide
+            # announcements whose campus_id is NULL).
+            conditions = [
+                "cm.message_type IN ('announcement', 'parent')",
+                "cm.status = 'sent'",
+            ]
+            params: dict[str, Any] = {"lim": limit}
+            if self.tenant is not None and self.tenant.is_tenant_scoped:
+                conditions.append(
+                    "(cm.campus_id IS NULL OR cm.campus_id = :campus_id)"
+                )
+                params["campus_id"] = self.tenant.campus_id
+            elif self.tenant is None or not self.tenant.allow_cross_tenant:
+                # Default-deny for unscoped non-platform callers.
+                conditions.append("cm.campus_id IS NULL")
+
             result = await self.session.execute(
                 text(
                     """SELECT cm.id, cm.subject, cm.body, cm.priority, cm.created_at, u.display_name
                        FROM communication_messages cm
                        LEFT JOIN users u ON u.id = cm.sender_id
-                       WHERE cm.message_type IN ('announcement', 'parent')
-                         AND cm.status = 'sent'
-                       ORDER BY cm.created_at DESC
-                       LIMIT :lim"""
+                       WHERE """
+                    + " AND ".join(conditions)
+                    + "\n                       ORDER BY cm.created_at DESC\n                       LIMIT :lim"
                 ),
-                {"lim": limit},
+                params,
             )
             return [
                 ParentAnnouncement(

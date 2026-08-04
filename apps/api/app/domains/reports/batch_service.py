@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import datetime
+import logging
+import uuid
 from datetime import timezone
 from typing import Optional
 
@@ -19,24 +21,76 @@ from app.domains.fees.repository import (
     FeeDueRepository,
     FeeStructureRepository,
 )
+from app.domains.events.outbox import publish_durable
+from app.domains.notifications.events import BatchOperationCompletedEvent
 from app.domains.student.repository import StudentRepository
+from app.multi_tenant.models import TenantContext
+
+logger = logging.getLogger(__name__)
 
 
 class BatchService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        tenant: Optional[TenantContext] = None,
+    ) -> None:
         self.session = session
-        self.student_repo = StudentRepository(session)
-        self.year_repo = AcademicYearRepository(session)
-        self.class_repo = ClassRepository(session)
-        self.section_repo = SectionRepository(session)
-        self.enrollment_repo = EnrollmentRepository(session)
-        self.fee_due_repo = FeeDueRepository(session)
-        self.structure_repo = FeeStructureRepository(session)
+        self.tenant = tenant
+        self.student_repo = StudentRepository(session, tenant)
+        self.year_repo = AcademicYearRepository(session, tenant)
+        self.class_repo = ClassRepository(session, tenant)
+        self.section_repo = SectionRepository(session, tenant)
+        self.enrollment_repo = EnrollmentRepository(session, tenant)
+        self.fee_due_repo = FeeDueRepository(session, tenant)
+        self.structure_repo = FeeStructureRepository(session, tenant)
+
+    # ------------------------------------------------------------------
+    # Batch completion notification (non-fatal, never breaks the batch)
+    # ------------------------------------------------------------------
+
+    async def _notify_completed(
+        self,
+        operation_type: str,
+        result: dict,
+        actor_user_id: int | None,
+    ) -> None:
+        """Fire a BatchOperationCompletedEvent after a bulk operation.
+
+        Durable (transactional outbox): the event row commits atomically
+        with the batch transaction and is delivered by the worker process.
+        A publish failure must never roll back or fail the batch operation
+        itself (consistent with fee/attendance events).
+        """
+        try:
+            succeeded = result.get("succeeded", 0)
+            failed = result.get("failed", 0)
+            event = BatchOperationCompletedEvent(
+                operation_type=operation_type,
+                total_processed=result.get("total", 0),
+                success_count=succeeded,
+                error_count=failed,
+                summary=f"{succeeded} succeeded, {failed} failed",
+                target_user_id=actor_user_id,
+                event_key=f"{operation_type}:{uuid.uuid4().hex}",
+            )
+            await publish_durable(
+                event,
+                session=self.session,
+                event_id=event.event_key or f"batch:{operation_type}",
+            )
+        except Exception:
+            logger.warning(
+                "Failed to publish BatchOperationCompletedEvent for %s (non-fatal)",
+                operation_type,
+                exc_info=True,
+            )
 
     async def batch_enroll(
         self,
         academic_year_id: int,
         enrollments_data: list[dict],
+        actor_user_id: int | None = None,
     ) -> dict:
         year = await self.year_repo.get_by_id(academic_year_id)
         if year.status != "active":
@@ -59,6 +113,8 @@ class BatchService:
                     raise ValidationError("student_id is required")
 
                 student = await self.student_repo.get_by_id(int(student_id))
+                if student is None:
+                    raise NotFoundError(f"Student {student_id} not found")
                 if student.status != "active":
                     raise ValidationError(
                         f"Student {student_id} is not active"
@@ -67,6 +123,8 @@ class BatchService:
                 if not class_id:
                     raise ValidationError("class_id is required")
                 cls = await self.class_repo.get_by_id(int(class_id))
+                if cls is None:
+                    raise NotFoundError(f"Class {class_id} not found")
                 if cls.status != "active":
                     raise ValidationError(
                         f"Class {class_id} is not active"
@@ -74,6 +132,8 @@ class BatchService:
 
                 if section_id is not None:
                     section = await self.section_repo.get_by_id(int(section_id))
+                    if section is None:
+                        raise NotFoundError(f"Section {section_id} not found")
                     if section.class_id != int(class_id):
                         raise ValidationError(
                             f"Section {section_id} does not belong to class {class_id}"
@@ -118,18 +178,21 @@ class BatchService:
                     }
                 )
 
-        return {
+        result = {
             "academic_year_id": academic_year_id,
             "total": len(enrollments_data),
             "succeeded": succeeded,
             "failed": failed,
             "results": results,
         }
+        await self._notify_completed("batch_enroll", result, actor_user_id)
+        return result
 
     async def batch_create_fee_dues(
         self,
         academic_year_id: int,
         student_ids: list[int],
+        actor_user_id: int | None = None,
     ) -> dict:
         year = await self.year_repo.get_by_id(academic_year_id)
         if year.status != "active":
@@ -145,6 +208,8 @@ class BatchService:
         for student_id in student_ids:
             try:
                 student = await self.student_repo.get_by_id(student_id)
+                if student is None:
+                    raise NotFoundError(f"Student {student_id} not found")
                 if student.status != "active":
                     raise ValidationError(
                         f"Student {student_id} is not active"
@@ -189,6 +254,12 @@ class BatchService:
                         created_at=now,
                         updated_at=now,
                     )
+                    # Attribute the due to the requesting tenant so it is
+                    # visible to campus-scoped queries and cannot be orphaned.
+                    if self.tenant is not None and self.tenant.is_tenant_scoped:
+                        from app.multi_tenant.guards import inject_campus
+
+                        inject_campus(due, self.tenant)
                     await self.fee_due_repo.create(due)
                     dues_created += 1
 
@@ -212,10 +283,12 @@ class BatchService:
                     }
                 )
 
-        return {
+        result = {
             "academic_year_id": academic_year_id,
             "total": len(student_ids),
             "succeeded": succeeded,
             "failed": failed,
             "results": results,
         }
+        await self._notify_completed("batch_fee_dues", result, actor_user_id)
+        return result

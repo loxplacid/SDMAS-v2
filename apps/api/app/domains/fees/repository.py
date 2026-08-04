@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from typing import Optional, Sequence
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
 from app.domains.fees.models import FeeDue, FeeStructure, FeeType, Payment
+from app.multi_tenant.models import TenantContext
+from app.multi_tenant.repository import TenantScopedRepository
 
 
 # ---------------------------------------------------------------------------
@@ -14,13 +16,13 @@ from app.domains.fees.models import FeeDue, FeeStructure, FeeType, Payment
 # ---------------------------------------------------------------------------
 
 
-class FeeTypeRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class FeeTypeRepository(TenantScopedRepository):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, type_id: int) -> FeeType:
         result = await self.session.execute(
-            select(FeeType).where(FeeType.id == type_id)
+            self.scoped_query(FeeType).where(FeeType.id == type_id)
         )
         ft = result.scalar_one_or_none()
         if ft is None:
@@ -29,13 +31,13 @@ class FeeTypeRepository:
 
     async def get_by_name(self, name: str) -> FeeType | None:
         result = await self.session.execute(
-            select(FeeType).where(FeeType.name == name)
+            self.scoped_query(FeeType).where(FeeType.name == name)
         )
         return result.scalar_one_or_none()
 
     async def exists_by_name(self, name: str) -> bool:
         result = await self.session.execute(
-            select(func.count(FeeType.id)).where(FeeType.name == name)
+            self.scoped_count(FeeType).where(FeeType.name == name)
         )
         return (result.scalar() or 0) > 0
 
@@ -46,8 +48,8 @@ class FeeTypeRepository:
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[FeeType], int]:
-        query = select(FeeType)
-        count_query = select(func.count(FeeType.id))
+        query = self.scoped_query(FeeType)
+        count_query = self.scoped_count(FeeType)
 
         if status is not None:
             query = query.where(FeeType.status == status)
@@ -84,13 +86,13 @@ class FeeTypeRepository:
 # ---------------------------------------------------------------------------
 
 
-class FeeStructureRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class FeeStructureRepository(TenantScopedRepository):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, structure_id: int) -> FeeStructure:
         result = await self.session.execute(
-            select(FeeStructure).where(FeeStructure.id == structure_id)
+            self.scoped_query(FeeStructure).where(FeeStructure.id == structure_id)
         )
         fs = result.scalar_one_or_none()
         if fs is None:
@@ -101,7 +103,7 @@ class FeeStructureRepository:
         self, academic_year_id: int, class_id: int, fee_type_id: int
     ) -> FeeStructure | None:
         result = await self.session.execute(
-            select(FeeStructure).where(
+            self.scoped_query(FeeStructure).where(
                 FeeStructure.academic_year_id == academic_year_id,
                 FeeStructure.class_id == class_id,
                 FeeStructure.fee_type_id == fee_type_id,
@@ -119,8 +121,8 @@ class FeeStructureRepository:
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[FeeStructure], int]:
-        query = select(FeeStructure)
-        count_query = select(func.count(FeeStructure.id))
+        query = self.scoped_query(FeeStructure)
+        count_query = self.scoped_count(FeeStructure)
 
         if academic_year_id is not None:
             query = query.where(
@@ -175,13 +177,13 @@ class FeeStructureRepository:
 # ---------------------------------------------------------------------------
 
 
-class FeeDueRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class FeeDueRepository(TenantScopedRepository):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, due_id: int) -> FeeDue:
         result = await self.session.execute(
-            select(FeeDue).where(FeeDue.id == due_id)
+            self.scoped_query(FeeDue).where(FeeDue.id == due_id)
         )
         due = result.scalar_one_or_none()
         if due is None:
@@ -190,7 +192,7 @@ class FeeDueRepository:
 
     async def get_by_id_for_update(self, due_id: int) -> FeeDue:
         result = await self.session.execute(
-            select(FeeDue)
+            self.scoped_query(FeeDue)
             .where(FeeDue.id == due_id)
             .with_for_update()
         )
@@ -203,7 +205,7 @@ class FeeDueRepository:
         self, student_id: int, fee_structure_id: int
     ) -> FeeDue | None:
         result = await self.session.execute(
-            select(FeeDue).where(
+            self.scoped_query(FeeDue).where(
                 FeeDue.student_id == student_id,
                 FeeDue.fee_structure_id == fee_structure_id,
             )
@@ -219,8 +221,8 @@ class FeeDueRepository:
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[FeeDue], int]:
-        query = select(FeeDue)
-        count_query = select(func.count(FeeDue.id))
+        query = self.scoped_query(FeeDue)
+        count_query = self.scoped_count(FeeDue)
 
         if student_id is not None:
             query = query.where(FeeDue.student_id == student_id)
@@ -266,7 +268,7 @@ class FeeDueRepository:
             conditions.append(FeeDue.status == status)
 
         result = await self.session.execute(
-            select(FeeDue)
+            self.scoped_query(FeeDue)
             .where(and_(*conditions))
             .order_by(FeeDue.created_at)
         )
@@ -276,7 +278,7 @@ class FeeDueRepository:
         self, academic_year_id: int
     ) -> Sequence[FeeDue]:
         result = await self.session.execute(
-            select(FeeDue)
+            self.scoped_query(FeeDue)
             .where(FeeDue.academic_year_id == academic_year_id)
             .order_by(FeeDue.id)
         )
@@ -297,13 +299,27 @@ class FeeDueRepository:
 # ---------------------------------------------------------------------------
 
 
-class PaymentRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class PaymentRepository(TenantScopedRepository):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, payment_id: int) -> Payment:
         result = await self.session.execute(
-            select(Payment).where(Payment.id == payment_id)
+            self.scoped_query(Payment).where(Payment.id == payment_id)
+        )
+        payment = result.scalar_one_or_none()
+        if payment is None:
+            raise NotFoundError(f"Payment with id {payment_id} not found")
+        return payment
+
+    async def get_by_id_for_update(self, payment_id: int) -> Payment:
+        """Lock the payment row (SELECT ... FOR UPDATE) so concurrent
+        refunds on the same payment serialize and re-read the fresh
+        ``refunded_amount`` — a stale read can never double-refund."""
+        result = await self.session.execute(
+            self.scoped_query(Payment)
+            .where(Payment.id == payment_id)
+            .with_for_update()
         )
         payment = result.scalar_one_or_none()
         if payment is None:
@@ -314,8 +330,18 @@ class PaymentRepository:
         self, receipt_number: str
     ) -> Payment | None:
         result = await self.session.execute(
-            select(Payment).where(
+            self.scoped_query(Payment).where(
                 Payment.receipt_number == receipt_number
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_idempotency_key(
+        self, idempotency_key: str
+    ) -> Payment | None:
+        result = await self.session.execute(
+            self.scoped_query(Payment).where(
+                Payment.idempotency_key == idempotency_key
             )
         )
         return result.scalar_one_or_none()
@@ -328,8 +354,8 @@ class PaymentRepository:
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Payment], int]:
-        query = select(Payment)
-        count_query = select(func.count(Payment.id))
+        query = self.scoped_query(Payment)
+        count_query = self.scoped_count(Payment)
 
         if student_id is not None:
             query = query.where(Payment.student_id == student_id)
@@ -361,7 +387,7 @@ class PaymentRepository:
         self, student_id: int
     ) -> Sequence[Payment]:
         result = await self.session.execute(
-            select(Payment)
+            self.scoped_query(Payment)
             .where(Payment.student_id == student_id)
             .order_by(Payment.payment_date)
         )
@@ -371,7 +397,7 @@ class PaymentRepository:
         self, fee_due_id: int
     ) -> Sequence[Payment]:
         result = await self.session.execute(
-            select(Payment)
+            self.scoped_query(Payment)
             .where(Payment.fee_due_id == fee_due_id)
             .order_by(Payment.payment_date)
         )
@@ -390,7 +416,7 @@ class PaymentRepository:
         if campus_id is not None:
             conditions.append(Payment.campus_id == campus_id)
         result = await self.session.execute(
-            select(Payment)
+            self.scoped_query(Payment)
             .where(*conditions)
             .order_by(Payment.payment_date)
         )

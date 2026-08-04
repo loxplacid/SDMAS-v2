@@ -26,7 +26,7 @@ from app.domains.workflow.repository import (
 )
 from app.domains.workflow.service import WorkflowExecutionService
 from app.infrastructure.database import get_session
-from app.multi_tenant.dependencies import get_optional_tenant
+from app.multi_tenant.dependencies import require_tenant_context
 from app.multi_tenant.guards import assert_tenant_scope_or_owner, inject_campus
 from app.multi_tenant.models import TenantContext
 
@@ -35,19 +35,20 @@ router = APIRouter(prefix="/api/leave", tags=["leave"])
 
 async def get_leave_service(
     session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> LeaveRequestService:
     return LeaveRequestService(
-        repo=LeaveRequestRepository(session),
+        repo=LeaveRequestRepository(session, tenant),
         workflow_svc=WorkflowExecutionService(
-            instance_repo=WorkflowInstanceRepository(session),
-            workflow_repo=WorkflowRepository(session),
-            step_repo=WorkflowStepRepository(session),
-            transition_repo=WorkflowTransitionRepository(session),
-            action_repo=WorkflowActionRepository(session),
-            history_repo=ApprovalHistoryRepository(session),
+            instance_repo=WorkflowInstanceRepository(session, tenant),
+            workflow_repo=WorkflowRepository(session, tenant),
+            step_repo=WorkflowStepRepository(session, tenant),
+            transition_repo=WorkflowTransitionRepository(session, tenant),
+            action_repo=WorkflowActionRepository(session, tenant),
+            history_repo=ApprovalHistoryRepository(session, tenant),
         ),
-        workflow_repo=WorkflowRepository(session),
-        instance_repo=WorkflowInstanceRepository(session),
+        workflow_repo=WorkflowRepository(session, tenant),
+        instance_repo=WorkflowInstanceRepository(session, tenant),
     )
 
 
@@ -60,7 +61,7 @@ async def create_leave(
     data: LeaveRequestCreate,
     service: LeaveRequestService = Depends(get_leave_service),
     current_user: User = Depends(get_current_user),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> LeaveRequestResponse:
     leave = await service.create(user_id=current_user.id, data=data)
     inject_campus(leave, tenant)
@@ -72,9 +73,9 @@ async def get_leave(
     leave_id: int,
     service: LeaveRequestService = Depends(get_leave_service),
     _current_user: User = Depends(get_current_user),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> dict:
-    leave = await service.get(leave_id)
+    leave = await service.get_allow_legacy_owner(leave_id, _current_user.id)
     assert_tenant_scope_or_owner(
         leave, tenant, _current_user.id, resource="leave request"
     )
@@ -122,9 +123,9 @@ async def update_leave(
     data: LeaveRequestUpdate,
     service: LeaveRequestService = Depends(get_leave_service),
     _current_user: User = Depends(get_current_user),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> LeaveRequestResponse:
-    existing = await service.get(leave_id)
+    existing = await service.get_allow_legacy_owner(leave_id, _current_user.id)
     assert_tenant_scope_or_owner(
         existing, tenant, _current_user.id, resource="leave request"
     )

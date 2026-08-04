@@ -12,6 +12,11 @@ from app.core.exceptions import (
     ValidationError,
 )
 
+# Document upload validation failures (oversized, disallowed extension,
+# disallowed MIME content) must surface as a clean 400 — never as an
+# unhandled 500 that leaks stack traces.
+from app.domains.documents.validation import FileValidationError  # noqa: E402
+
 
 async def not_found_handler(_request: Request, exc: Exception) -> JSONResponse:
     return JSONResponse(
@@ -52,5 +57,12 @@ async def forbidden_handler(_request: Request, exc: Exception) -> JSONResponse:
 async def payment_required_handler(_request: Request, exc: Exception) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_402_PAYMENT_REQUIRED,
+        content={"detail": str(exc)},
+    )
+
+
+async def file_validation_handler(_request: Request, exc: Exception) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
         content={"detail": str(exc)},
     )

@@ -35,6 +35,7 @@ from app.domains.audit.service import AuditService
 from app.domains.events.base import serialize_event
 from app.domains.events.events import (
     AcademicYearRolloverCompletedEvent,
+    AcademicYearRolloverFailedEvent,
     AdmissionApprovedEvent,
     AttendanceThresholdBreachedEvent,
     StudentCreatedEvent,
@@ -282,6 +283,45 @@ async def handle_rollover_completed_notification(
     )
 
 
+async def handle_rollover_failed_notification(
+    event: AcademicYearRolloverFailedEvent,
+    *,
+    session: AsyncSession,
+    **kwargs: Any,
+) -> None:
+    """Notification + audit integration: rollover failed.
+
+    Alerts admins so a failed academic year rollover is never silent.
+    The error text is truncated and contained in metadata (no stack trace).
+    """
+    await _record_audit(
+        session,
+        action=CREATE,
+        resource_type=ACADEMIC,
+        resource_id=str(event.previous_year_id),
+        event=event,
+        details={
+            "new_year_name": event.new_year_name,
+            "error": event.error[:500],
+        },
+    )
+    await _dispatch_admin_notification(
+        session,
+        event_type="rollover_failed",
+        title="Academic Year Rollover Failed",
+        message=(
+            f"Rollover to '{event.new_year_name}' failed. "
+            f"Check the audit trail for details."
+        ),
+        metadata={
+            "previous_year_id": event.previous_year_id,
+            "new_year_name": event.new_year_name,
+            "error": event.error[:500],
+        },
+        tenant_id=getattr(event, "school_id", None),
+    )
+
+
 # ---------------------------------------------------------------------------
 # Handler registration
 # ---------------------------------------------------------------------------
@@ -302,6 +342,9 @@ def register_domain_event_handlers(dispatcher: Any) -> None:
     dispatcher.register(WorkflowApprovedEvent, handle_workflow_approved_notification)
     dispatcher.register(
         AcademicYearRolloverCompletedEvent, handle_rollover_completed_notification
+    )
+    dispatcher.register(
+        AcademicYearRolloverFailedEvent, handle_rollover_failed_notification
     )
     logger.info(
         "Registered %d domain event handler(s)",

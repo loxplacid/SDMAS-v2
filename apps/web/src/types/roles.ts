@@ -119,6 +119,7 @@ const adminNav: NavItem[] = [
   { to: '/subjects', label: 'Subjects', icon: NAV_ICONS.academic },
   { to: '/communications', label: 'Communications', icon: NAV_ICON_COMMUNICATIONS, matchPaths: ['/communications'] },
   { to: '/reports', label: 'Reports', icon: NAV_ICONS.reports, matchPaths: ['/reports'] },
+  { to: '/reports/cards', label: 'Report Cards', icon: NAV_ICONS.reports, matchPaths: ['/reports/cards'] },
   { to: '/analytics', label: 'Analytics', icon: NAV_ICONS.analytics, matchPaths: ['/analytics'] },
   { to: '/notifications', label: 'Notifications', icon: NAV_ICONS.notifications },
   { to: '/operations', label: 'Data Ops', icon: NAV_ICONS.operations },
@@ -178,6 +179,7 @@ const principalNav: NavItem[] = [
   { to: '/attendance', label: 'Attendance', icon: NAV_ICONS.attendance, matchPaths: ['/attendance'] },
   { to: '/communications', label: 'Communications', icon: NAV_ICON_COMMUNICATIONS, matchPaths: ['/communications'] },
   { to: '/reports', label: 'Reports', icon: NAV_ICONS.reports, matchPaths: ['/reports'] },
+  { to: '/reports/cards', label: 'Report Cards', icon: NAV_ICONS.reports, matchPaths: ['/reports/cards'] },
   { to: '/analytics', label: 'Analytics', icon: NAV_ICONS.analytics, matchPaths: ['/analytics'] },
   { to: '/notifications', label: 'Notifications', icon: NAV_ICONS.notifications },
   { to: '/profile', label: 'Profile', icon: NAV_ICONS.profile },
@@ -223,7 +225,7 @@ export function getNavSectionsForRole(role: string): NavSection[] {
       },
       {
         label: 'Operations',
-        items: items.filter((i) => ['/attendance', '/fees', '/communications', '/reports', '/analytics'].includes(i.to)),
+        items: items.filter((i) => ['/attendance', '/fees', '/communications', '/reports', '/reports/cards', '/analytics'].includes(i.to)),
       },
       {
         label: 'System',
@@ -307,7 +309,7 @@ export function getNavSectionsForRole(role: string): NavSection[] {
       },
       {
         label: 'Operations',
-        items: items.filter((i) => ['/attendance', '/communications', '/reports', '/analytics'].includes(i.to)),
+        items: items.filter((i) => ['/attendance', '/communications', '/reports', '/reports/cards', '/analytics'].includes(i.to)),
       },
       {
         label: 'Account',

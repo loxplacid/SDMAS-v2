@@ -411,6 +411,7 @@ class TimetableService:
         day_of_week: Optional[int] = None,
         academic_year_id: Optional[int] = None,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[TimetableEntry], int]:
@@ -437,6 +438,9 @@ class TimetableService:
         if status is not None:
             query = query.where(TimetableEntry.status == status)
             count_query = count_query.where(TimetableEntry.status == status)
+        if campus_id is not None:
+            query = query.where(TimetableEntry.campus_id == campus_id)
+            count_query = count_query.where(TimetableEntry.campus_id == campus_id)
         query = query.offset(skip).limit(limit).order_by(TimetableEntry.day_of_week, TimetableEntry.id)
         total = (await self.session.execute(count_query)).scalar() or 0
         result = await self.session.execute(query)
@@ -448,10 +452,13 @@ class TimetableService:
         teacher_id: Optional[int] = None,
         room_id: Optional[int] = None,
         academic_year_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
     ) -> TimetableWeekView:
         conditions = [TimetableEntry.status == "active"]
         class_name = section_name = teacher_name = room_name = None
 
+        if campus_id is not None:
+            conditions.append(TimetableEntry.campus_id == campus_id)
         if class_id is not None:
             conditions.append(TimetableEntry.class_id == class_id)
             cls = await self.session.get(Class, class_id)
@@ -635,6 +642,7 @@ class SubstitutionService:
         status: Optional[str] = None,
         from_date: Optional[str] = None,
         to_date: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Substitution], int]:
@@ -655,6 +663,9 @@ class SubstitutionService:
         if to_date is not None:
             query = query.where(Substitution.substitution_date <= to_date)
             count_query = count_query.where(Substitution.substitution_date <= to_date)
+        if campus_id is not None:
+            query = query.where(Substitution.campus_id == campus_id)
+            count_query = count_query.where(Substitution.campus_id == campus_id)
         query = query.offset(skip).limit(limit).order_by(Substitution.substitution_date.desc())
         total = (await self.session.execute(count_query)).scalar() or 0
         result = await self.session.execute(query)
@@ -753,6 +764,7 @@ class ExamScheduleService:
         status: Optional[str] = None,
         from_date: Optional[str] = None,
         to_date: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[ExamSchedule], int]:
@@ -779,6 +791,9 @@ class ExamScheduleService:
         if to_date is not None:
             query = query.where(ExamSchedule.exam_date <= to_date)
             count_query = count_query.where(ExamSchedule.exam_date <= to_date)
+        if campus_id is not None:
+            query = query.where(ExamSchedule.campus_id == campus_id)
+            count_query = count_query.where(ExamSchedule.campus_id == campus_id)
         query = query.offset(skip).limit(limit).order_by(ExamSchedule.exam_date, ExamSchedule.start_time)
         total = (await self.session.execute(count_query)).scalar() or 0
         result = await self.session.execute(query)
@@ -854,6 +869,7 @@ class GradingStructureService:
         class_id: Optional[int] = None,
         subject_id: Optional[int] = None,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[GradingStructure], int]:
@@ -871,6 +887,9 @@ class GradingStructureService:
         if status is not None:
             query = query.where(GradingStructure.status == status)
             count_query = count_query.where(GradingStructure.status == status)
+        if campus_id is not None:
+            query = query.where(GradingStructure.campus_id == campus_id)
+            count_query = count_query.where(GradingStructure.campus_id == campus_id)
         query = query.offset(skip).limit(limit).order_by(GradingStructure.min_percentage)
         total = (await self.session.execute(count_query)).scalar() or 0
         result = await self.session.execute(query)
@@ -985,6 +1004,7 @@ class GradeRecordService:
         subject_id: Optional[int] = None,
         term_id: Optional[int] = None,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[GradeRecord], int]:
@@ -1002,6 +1022,9 @@ class GradeRecordService:
         if status is not None:
             query = query.where(GradeRecord.status == status)
             count_query = count_query.where(GradeRecord.status == status)
+        if campus_id is not None:
+            query = query.where(GradeRecord.campus_id == campus_id)
+            count_query = count_query.where(GradeRecord.campus_id == campus_id)
         query = query.offset(skip).limit(limit).order_by(GradeRecord.id)
         total = (await self.session.execute(count_query)).scalar() or 0
         result = await self.session.execute(query)
@@ -1078,6 +1101,7 @@ class CurriculumService:
         subject_id: Optional[int] = None,
         term_id: Optional[int] = None,
         status: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Curriculum], int]:
@@ -1098,6 +1122,9 @@ class CurriculumService:
         if status is not None:
             query = query.where(Curriculum.status == status)
             count_query = count_query.where(Curriculum.status == status)
+        if campus_id is not None:
+            query = query.where(Curriculum.campus_id == campus_id)
+            count_query = count_query.where(Curriculum.campus_id == campus_id)
         query = query.offset(skip).limit(limit).order_by(Curriculum.id)
         total = (await self.session.execute(count_query)).scalar() or 0
         result = await self.session.execute(query)

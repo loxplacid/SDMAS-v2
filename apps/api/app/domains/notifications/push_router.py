@@ -13,6 +13,8 @@ from app.domains.notifications.schemas import (
 from app.domains.notifications.device_token_service import DeviceTokenService
 from app.domains.notifications.push_service import send_push_via_expo
 from app.infrastructure.database import get_session
+from app.multi_tenant.dependencies import require_tenant_context
+from app.multi_tenant.models import TenantContext
 
 router = APIRouter(prefix="/api/notifications", tags=["push"])
 
@@ -31,9 +33,10 @@ async def register_device_token(
     data: DeviceTokenRegisterRequest,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> DeviceTokenResponse:
     """Register a push notification device token for the authenticated user."""
-    svc = DeviceTokenService(session)
+    svc = DeviceTokenService(session, tenant)
     dt = await svc.register_token(
         user_id=current_user.id,
         token=data.token,
@@ -50,9 +53,10 @@ async def unregister_device_token(
     token: str,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
     """Remove a registered device token."""
-    svc = DeviceTokenService(session)
+    svc = DeviceTokenService(session, tenant)
     await svc.unregister_token(token)
 
 
@@ -63,9 +67,10 @@ async def unregister_device_token(
 async def unregister_all_device_tokens(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
     """Remove all device tokens for the authenticated user (logout)."""
-    svc = DeviceTokenService(session)
+    svc = DeviceTokenService(session, tenant)
     await svc.unregister_all_for_user(current_user.id)
 
 
@@ -82,13 +87,14 @@ async def send_push_notification(
     data: PushSendRequest,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> dict:
     """Send a push notification to a specific user.
 
     Requires admin or staff role. The notification is delivered to all
     registered devices for the target user.
     """
-    svc = DeviceTokenService(session)
+    svc = DeviceTokenService(session, tenant)
     tokens = await svc.get_tokens_for_user(data.user_id)
 
     if not tokens:

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import datetime
 from typing import Any, Optional
 
@@ -11,7 +10,80 @@ from app.domains.report_builder.base import BaseReportBuilder
 from app.domains.report_builder.exporters import export_csv, export_excel, export_pdf
 from app.domains.report_builder.models import ExportJob, ReportDefinition, SavedReport
 from app.domains.report_builder.registry import ReportRegistry
-from app.infrastructure.database import get_session
+
+REPORT_EXPORT_JOB_TYPE = "report_builder.export"
+
+
+async def process_export_job(session: AsyncSession, export_job_id: int) -> dict[str, Any]:
+    """Execute a single export idempotently.
+
+    Used by the durable ``report_builder.export`` job worker.  Jobs that are
+    already terminal (completed/failed) are left untouched so a retry after a
+    crash never re-runs or clobbers a completed export.  Progress is committed
+    incrementally so long-running exports survive worker restarts.
+    """
+    query = select(ExportJob).where(ExportJob.id == export_job_id)
+    result = await session.execute(query)
+    job = result.scalar_one_or_none()
+    if not job:
+        raise ValueError(f"Export job {export_job_id} not found")
+
+    if job.status in ("completed", "failed"):
+        return {"export_job_id": export_job_id, "status": job.status, "skipped": True}
+
+    def_query = select(ReportDefinition).where(ReportDefinition.id == job.report_definition_id)
+    def_result = await session.execute(def_query)
+    definition = def_result.scalar_one_or_none()
+    if not definition:
+        job.status = "failed"
+        job.error_message = "Report definition not found"
+        await session.commit()
+        return {"export_job_id": export_job_id, "status": "failed"}
+
+    builder_cls = ReportRegistry.get(definition.code)
+    if not builder_cls:
+        job.status = "failed"
+        job.error_message = f"Report builder not found for code: {definition.code}"
+        await session.commit()
+        return {"export_job_id": export_job_id, "status": "failed"}
+
+    builder = builder_cls()
+    params = job.params
+
+    job.status = "processing"
+    job.progress = 5
+    await session.commit()
+
+    data = await builder.fetch_data(params, job.user_id, job.campus_id, session)
+
+    job.progress = 50
+    await session.commit()
+
+    rows = builder.build_rows(data)
+    job.total_rows = len(rows)
+    job.progress = 70
+    await session.commit()
+
+    meta = builder_cls.meta()
+    filename = f"{meta.code}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+    if job.format == "csv":
+        content = export_csv(meta.columns, rows)
+        job.result_data = content
+        job.result_filename = f"{filename}.csv"
+    elif job.format == "excel":
+        content = export_excel(meta.columns, rows, meta.name)
+        job.result_data = content.hex()
+        job.result_filename = f"{filename}.xlsx"
+    elif job.format == "pdf":
+        content = export_pdf(meta.columns, rows, meta.name)
+        job.result_data = content.hex()
+        job.result_filename = f"{filename}.pdf"
+
+    job.status = "completed"
+    job.progress = 100
+    await session.commit()
+    return {"export_job_id": export_job_id, "status": "completed", "rows": len(rows)}
 
 
 class SavedReportService:
@@ -79,9 +151,10 @@ class SavedReportService:
 class ExportJobService:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
-        self._tasks: dict[int, asyncio.Task] = {}
 
-    async def create_job(self, user_id: int, data: Any) -> ExportJob:
+    async def create_job(
+        self, user_id: int, data: Any, campus_id: Optional[int] = None
+    ) -> ExportJob:
         definition_id = data.report_definition_id
         def_query = select(ReportDefinition).where(ReportDefinition.id == definition_id)
         def_result = await self.session.execute(def_query)
@@ -101,75 +174,36 @@ class ExportJobService:
             params=data.params,
             format=data.format,
             status="pending",
+            campus_id=campus_id,
             expires_at=datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=24),
         )
         self.session.add(job)
+        await self.session.flush()
+
+        # Persist a durable job row so the standalone worker process (not an
+        # in-process fire-and-forget task) performs the export.  Execution is
+        # idempotent: process_export_job skips jobs already terminal.
+        from app.domains.jobs.models import Job as QueuedJob
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+        queued = QueuedJob(
+            job_type=REPORT_EXPORT_JOB_TYPE,
+            status="pending",
+            params={"export_job_id": job.id, "format": job.format},
+            priority=100,
+            max_retries=3,
+            identity_key=f"export:{job.id}",
+            user_id=user_id,
+            campus_id=campus_id,
+            created_at=now,
+            updated_at=now,
+            progress=0.0,
+        )
+        self.session.add(queued)
+
         await self.session.commit()
         await self.session.refresh(job)
-
-        task = asyncio.create_task(self._process_job(job.id, builder_cls))
-        self._tasks[job.id] = task
         return job
-
-    async def _process_job(self, job_id: int, builder_cls: type[BaseReportBuilder]) -> None:
-        try:
-            async for session in get_session():
-                query = select(ExportJob).where(ExportJob.id == job_id)
-                result = await session.execute(query)
-                job = result.scalar_one_or_none()
-                if not job:
-                    return
-
-                builder = builder_cls()
-                params = job.params
-
-                job.status = "processing"
-                job.progress = 5
-                await session.commit()
-
-                data = await builder.fetch_data(params, job.user_id, job.campus_id, session)
-
-                job.progress = 50
-                await session.commit()
-
-                rows = builder.build_rows(data)
-                job.total_rows = len(rows)
-                job.progress = 70
-                await session.commit()
-
-                meta = builder_cls.meta()
-                filename = f"{meta.code}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
-
-                if job.format == "csv":
-                    content = export_csv(meta.columns, rows)
-                    job.result_data = content
-                    job.result_filename = f"{filename}.csv"
-                elif job.format == "excel":
-                    content = export_excel(meta.columns, rows, meta.name)
-                    job.result_data = content.hex()
-                    job.result_filename = f"{filename}.xlsx"
-                elif job.format == "pdf":
-                    content = export_pdf(meta.columns, rows, meta.name)
-                    job.result_data = content.hex()
-                    job.result_filename = f"{filename}.pdf"
-
-                job.status = "completed"
-                job.progress = 100
-                await session.commit()
-                return
-
-        except Exception as e:
-            try:
-                async for session in get_session():
-                    query = select(ExportJob).where(ExportJob.id == job_id)
-                    result = await session.execute(query)
-                    job = result.scalar_one_or_none()
-                    if job:
-                        job.status = "failed"
-                        job.error_message = str(e)
-                        await session.commit()
-            except Exception:
-                pass
 
     async def get_job(self, job_id: int, user_id: int) -> ExportJob:
         query = select(ExportJob).where(ExportJob.id == job_id, ExportJob.user_id == user_id)

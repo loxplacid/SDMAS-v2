@@ -53,12 +53,35 @@ class TestPermissionRegistry:
         assert len(ALL_PERMISSIONS) == len(set(ALL_PERMISSIONS)), \
             "Duplicate permission codes found"
 
-    def test_admin_has_all_permissions(self):
-        """Admin role must have every permission in ALL_PERMISSIONS."""
+    def test_admin_has_all_tenant_permissions_but_no_platform(self):
+        """Admin gets every TENANT permission but never platform permissions.
+
+        Platform access (cross-tenant) requires the explicit
+        ``platform_admin`` role — a tenant admin must never be able to
+        operate outside their own campus.
+        """
+        from app.domains.auth.permissions import (
+            PLATFORM_ACCESS,
+            PLATFORM_MANAGE,
+            TENANT_ALL_PERMISSIONS,
+        )
+
         admin_perms = set(ROLE_PERMISSIONS["admin"])
-        expected = set(ALL_PERMISSIONS)
-        missing = expected - admin_perms
-        assert not missing, f"Admin missing permissions: {missing}"
+        missing = set(TENANT_ALL_PERMISSIONS) - admin_perms
+        assert not missing, f"Admin missing tenant permissions: {missing}"
+        assert PLATFORM_ACCESS not in admin_perms
+        assert PLATFORM_MANAGE not in admin_perms
+
+    def test_platform_admin_has_platform_permissions(self):
+        """Only the explicit platform_admin role carries platform access."""
+        from app.domains.auth.permissions import (
+            PLATFORM_ACCESS,
+            PLATFORM_MANAGE,
+        )
+
+        platform_perms = set(ROLE_PERMISSIONS["platform_admin"])
+        assert PLATFORM_ACCESS in platform_perms
+        assert PLATFORM_MANAGE in platform_perms
 
     def test_has_permission_returns_true_for_granted(self):
         assert has_permission("admin", STUDENTS_DELETE) is True

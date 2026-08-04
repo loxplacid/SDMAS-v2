@@ -44,6 +44,7 @@ class UserRepository:
         self,
         role: Optional[str] = None,
         is_active: Optional[bool] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[User], int]:
@@ -56,6 +57,11 @@ class UserRepository:
         if is_active is not None:
             query = query.where(User.is_active == is_active)
             count_query = count_query.where(User.is_active == is_active)
+        if campus_id is not None:
+            # Tenant-scoped admin user management: a tenant admin may only
+            # ever see users belonging to their own campus.
+            query = query.where(User.campus_id == campus_id)
+            count_query = count_query.where(User.campus_id == campus_id)
 
         query = query.offset(skip).limit(limit).order_by(User.username)
 

@@ -2,20 +2,26 @@ from __future__ import annotations
 
 from typing import Optional, Sequence
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
 from app.domains.attendance.models import AttendanceRecord
+from app.multi_tenant.models import TenantContext
+from app.multi_tenant.repository import TenantScopedRepository
 
 
-class AttendanceRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class AttendanceRepository(TenantScopedRepository):
+    """Attendance record data access, tenant-scoped at query construction."""
+
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, record_id: int) -> AttendanceRecord:
         result = await self.session.execute(
-            select(AttendanceRecord).where(AttendanceRecord.id == record_id)
+            self.scoped_query(AttendanceRecord).where(
+                AttendanceRecord.id == record_id
+            )
         )
         record = result.scalar_one_or_none()
         if record is None:
@@ -38,7 +44,7 @@ class AttendanceRepository:
         end_date: str,
     ) -> Sequence[AttendanceRecord]:
         result = await self.session.execute(
-            select(AttendanceRecord)
+            self.scoped_query(AttendanceRecord)
             .where(
                 AttendanceRecord.student_id == student_id,
                 AttendanceRecord.attendance_date >= start_date,
@@ -54,7 +60,7 @@ class AttendanceRepository:
         date: str,
     ) -> Sequence[AttendanceRecord]:
         result = await self.session.execute(
-            select(AttendanceRecord)
+            self.scoped_query(AttendanceRecord)
             .where(
                 AttendanceRecord.section_id == section_id,
                 AttendanceRecord.attendance_date == date,
@@ -70,7 +76,7 @@ class AttendanceRepository:
         end_date: str,
     ) -> Sequence[AttendanceRecord]:
         result = await self.session.execute(
-            select(AttendanceRecord)
+            self.scoped_query(AttendanceRecord)
             .where(
                 AttendanceRecord.section_id == section_id,
                 AttendanceRecord.attendance_date >= start_date,
@@ -123,14 +129,14 @@ class AttendanceRepository:
             )
 
         count_result = await self.session.execute(
-            select(func.count(AttendanceRecord.id)).where(
+            self.scoped_count(AttendanceRecord).where(
                 and_(*count_conditions)
             )
         )
         total = count_result.scalar() or 0
 
         query = (
-            select(AttendanceRecord)
+            self.scoped_query(AttendanceRecord)
             .where(and_(*conditions))
             .order_by(AttendanceRecord.attendance_date)
             .offset(skip)
@@ -148,7 +154,7 @@ class AttendanceRepository:
         section_id: int,
     ) -> AttendanceRecord | None:
         result = await self.session.execute(
-            select(AttendanceRecord).where(
+            self.scoped_query(AttendanceRecord).where(
                 AttendanceRecord.student_id == student_id,
                 AttendanceRecord.attendance_date == date,
                 AttendanceRecord.section_id == section_id,
@@ -166,8 +172,8 @@ class AttendanceRepository:
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[AttendanceRecord], int]:
-        query = select(AttendanceRecord)
-        count_query = select(func.count(AttendanceRecord.id))
+        query = self.scoped_query(AttendanceRecord)
+        count_query = self.scoped_count(AttendanceRecord)
 
         if student_id is not None:
             query = query.where(AttendanceRecord.student_id == student_id)

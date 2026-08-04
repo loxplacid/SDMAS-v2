@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { notificationApi } from '../../api/notifications'
 import type { NotificationResponse } from '../../api/notifications'
+import { getNotificationRoute } from '../../api/notifications/deep-link'
 import { cn } from '../../lib/utils'
 import { TabGroup, Button, Pagination, EmptyState, ErrorState, Badge } from '../../components/ui'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 
 export function NotificationsPage() {
+  const navigate = useNavigate()
   const [notifications, setNotifications] = useState<NotificationResponse[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -71,6 +74,23 @@ export function NotificationsPage() {
     } catch {
       // Silently fail
     }
+  }
+
+  async function handleOpen(n: NotificationResponse) {
+    // Mark as read when opened.
+    if (!n.read_at) {
+      try {
+        await notificationApi.markRead(n.id)
+        setNotifications((prev) =>
+          prev.map((x) => (x.id === n.id ? { ...x, read_at: new Date().toISOString() } : x))
+        )
+      } catch {
+        // Non-fatal
+      }
+    }
+    // Deep-link to a safe internal route when the payload carries one.
+    const route = getNotificationRoute(n.data)
+    if (route) navigate(route)
   }
 
   const totalPages = Math.max(1, Math.ceil(total / size))
@@ -183,10 +203,12 @@ export function NotificationsPage() {
 
       <div className="space-y-1">
         {notifications.map((n) => (
-          <div
+          <button
             key={n.id}
+            type="button"
+            onClick={() => handleOpen(n)}
             className={cn(
-              'flex items-start gap-3 p-4 rounded-xl border motion-safe:transition-colors motion-safe:duration-[var(--motion-fast)]',
+              'w-full text-left flex items-start gap-3 p-4 rounded-xl border motion-safe:transition-colors motion-safe:duration-[var(--motion-fast)]',
               !n.read_at
                 ? 'bg-[var(--color-brand-accent-subtle)] border-[var(--color-brand-accent)]/20'
                 : 'bg-[var(--color-surface)] border-[var(--color-border)] hover:bg-[var(--color-surface-hover)]'
@@ -211,7 +233,7 @@ export function NotificationsPage() {
                 <Badge variant="neutral" size="sm">{n.type}</Badge>
               </div>
             </div>
-            <div className="flex flex-col gap-1 flex-shrink-0">
+            <div className="flex flex-col gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
               {!n.read_at && (
                 <Button variant="ghost" size="xs" onClick={() => handleMarkRead(n.id)}>
                   Read
@@ -226,7 +248,7 @@ export function NotificationsPage() {
                 Delete
               </Button>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 

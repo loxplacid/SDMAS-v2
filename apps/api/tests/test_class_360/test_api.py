@@ -91,26 +91,62 @@ async def test_class_360_requires_auth(api_client: AsyncClient):
     assert response.status_code == 401
 
 
+async def _seed_role_user(
+    api_client: AsyncClient, username: str, role: str
+) -> None:
+    """Insert a role-diverse user directly into the fixture's database.
+
+    ``/admin/users`` only creates the ``staff``/``admin`` roles (see
+    ``AdminUserUpdate`` validation), so to exercise the ``academic.view``
+    permission gate we seed a user whose role genuinely lacks it (e.g.
+    ``student``).  The user is pinned to campus 1 and given a membership,
+    exactly like an admin-created user.
+    """
+    from app.main import app
+    from app.infrastructure.database import get_session
+    from app.domains.auth.models import User, UserSchoolMembership
+    from app.domains.auth.security import hash_password
+
+    override = app.dependency_overrides[get_session]
+    gen = override()
+    session = await gen.__anext__()
+    try:
+        user = User(
+            username=username,
+            email=f"{username}@school.test",
+            password_hash=hash_password("Password123!"),
+            display_name=username.title(),
+            role=role,
+            campus_id=1,
+            is_active=True,
+        )
+        session.add(user)
+        await session.flush()
+        session.add(
+            UserSchoolMembership(
+                user_id=user.id, campus_id=1, role=role,
+                is_default=True, is_active=True,
+            )
+        )
+        await session.commit()
+    finally:
+        await gen.aclose()
+
+
 @pytest.mark.asyncio
 async def test_class_360_denied_for_limited_role(api_client: AsyncClient):
     """A limited-role user (no academic.view) must be denied (403).
 
-    Users created via /admin/users default to the ``staff`` role, which
-    does not grant ``academic.view`` (see ROLE_PERMISSIONS), so this
-    exercises the permission guard end-to-end.
+    ``staff`` grants ``academic.view`` (see ROLE_PERMISSIONS), so a
+    ``student``-role user — which has no ``academic.view`` — is used to
+    exercise the permission guard end-to-end.
     """
     admin_headers = await _admin_headers(api_client)
-    created = await api_client.post(
-        "/admin/users",
-        json={
-            "email": "limited@school.test",
-            "username": "limited360",
-            "password": "Password123!",
-            "display_name": "Limited User",
-        },
-        headers=admin_headers,
-    )
-    assert created.status_code == 201, created.text
+    # Seed the class the limited user will try to read (own campus).
+    seeded = await _seed_class(api_client, admin_headers)
+    class_id = seeded["class_id"]
+
+    await _seed_role_user(api_client, "limited360", "student")
 
     login = await api_client.post(
         "/auth/login",
@@ -121,7 +157,9 @@ async def test_class_360_denied_for_limited_role(api_client: AsyncClient):
         "Authorization": f"Bearer {login.json()['access_token']}"
     }
 
-    response = await api_client.get("/classes/1/360", headers=limited_headers)
+    response = await api_client.get(
+        f"/classes/{class_id}/360", headers=limited_headers
+    )
     assert response.status_code == 403
 
 

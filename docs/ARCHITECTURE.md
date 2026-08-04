@@ -1,66 +1,49 @@
 # SDMAS v2 — Architecture
 
-## Overview
+> The canonical, maintained architecture document lives at the repository root:
+> **[`ARCHITECTURE.md`](../ARCHITECTURE.md)**. This file is a short index.
 
-SDMAS (School Data Management & Analytics System) v2 is a flagship-level rewrite of the existing SDMAS v1 JavaScript implementation. The new backend is built with Python + FastAPI, following clean architecture principles.
+## Status
 
-## Phase 1 Scope (Current)
+SDMAS v2 is a production school-administration platform. The v1 JavaScript
+stack has been archived to `_archive/legacy-v1/` (read-only) — it is **not**
+part of the running system. All of the features previously listed as
+"not yet implemented" (domains, migrations, authentication, routers, AI,
+frontend) are **implemented**.
 
-The goal of Phase 1 is to establish a production-ready Python backend foundation.
+## Repositories
 
-**Completed:**
-- Repository scaffolding (`apps/api/`)
-- Project configuration (`pyproject.toml`, `requirements.txt`)
-- Configuration management (Pydantic Settings, `.env` support)
-- Async SQLAlchemy infrastructure (engine, session factory, session dependency)
-- FastAPI application with `/health` and `/ready` endpoints
-- Core foundation (exception hierarchy, pagination primitives)
-- Alembic configuration (async, settings-based)
-- Test infrastructure (pytest, async fixtures, httpx)
-- Docker Compose development environment (PostgreSQL, Redis, API)
-- Documentation (README, architecture, migration plan)
-
-**Not yet implemented (later phases):**
-- Domain models (Student, Academic, Attendance, Fees)
-- Domain migrations
-- Authentication / authorization
-- API routers for domain entities
-- AI / Analytics services
-- Frontend
-
-## Project Structure
-
-```
-sdmas-v2/
-├── apps/api/            # Python FastAPI backend
-├── infrastructure/      # Docker, CI/CD configs
-├── docs/                # Architecture & migration docs
-├── legacy/              # Future home of JS reference
-├── backend/             # Existing Python foundation (preserved)
-├── tests/               # Existing JS tests (preserved)
-├── ...JS files...       # Legacy JS implementation
-```
-
-## JavaScript Legacy
-
-The existing JavaScript implementation in the repository root is the **legacy behavioral reference**. It contains ~488 tests across ~6200 lines. It remains in place and will be archived into `legacy/` only after Python behavioral parity is verified.
+- `apps/api/` — Backend: Python 3.11+ FastAPI, SQLAlchemy 2 (async), Pydantic v2,
+  Alembic. Domains under `app/domains/`, structural multi-tenancy under
+  `app/multi_tenant/`, infrastructure under `app/infrastructure/`.
+- `apps/web/` — Frontend: React + Vite + TypeScript, PWA, dark mode.
+- `apps/mobile/` — Mobile: Expo / React Native.
+- `infrastructure/` — Docker Compose (dev/staging/prod), Nginx, monitoring
+  (Prometheus/Grafana/OTel), ops scripts (backup, restore, deploy, seed).
+- `docs/` — Standards, contribution guide, historical migration record.
 
 ## Technology Stack
 
-| Component       | Technology                        |
-|----------------|-----------------------------------|
-| Framework       | FastAPI                           |
-| ASGI Server     | Uvicorn                           |
-| ORM             | SQLAlchemy 2.x (async)            |
-| Database        | PostgreSQL (asyncpg)              |
-| Migrations      | Alembic                           |
-| Validation      | Pydantic v2                       |
-| Config          | Pydantic Settings                 |
-| Testing         | pytest, pytest-asyncio, httpx     |
-| Linting         | Ruff                              |
-| Type Checking   | mypy                              |
-| Container       | Docker + Docker Compose           |
+| Component    | Technology                        |
+|--------------|-----------------------------------|
+| Framework    | FastAPI                           |
+| ASGI Server  | Uvicorn                           |
+| ORM          | SQLAlchemy 2.x (async)            |
+| Database     | PostgreSQL (asyncpg)              |
+| Migrations   | Alembic (async, settings-based)   |
+| Validation   | Pydantic v2                       |
+| Config       | Pydantic Settings (env + `.env`)  |
+| Testing      | pytest, pytest-asyncio, httpx     |
+| Frontend     | React + Vite + TypeScript, Expo   |
+| Container    | Docker + Docker Compose           |
+| Payments     | Razorpay (HMAC-verified webhooks) |
 
 ## Configuration
 
-Configuration is managed via Pydantic Settings, reading from environment variables and `.env` files. See `.env.example` for available settings.
+Configuration is managed via Pydantic Settings reading environment variables
+and `.env` files (`apps/api/app/config.py`). See `apps/api/.env.example` for
+available settings.
+
+## Security & tenancy
+
+See `SECURITY.md`, `AUTHORIZATION.md`, and `TENANCY.md` at the repository root.

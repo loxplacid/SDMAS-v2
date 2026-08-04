@@ -54,25 +54,34 @@ class StudentPortalService:
     # ── Student Resolution ──────────────────────────────────────────
 
     async def resolve_student(
-        self, user_id: int, email: str | None = None
+        self,
+        user_id: int,
+        email: str | None = None,
+        campus_id: int | None = None,
     ) -> Student:
         """Find the student record associated with a user account.
 
         Tries to match by email first, then falls back to the first
-        active student record if no email match is found.
+        active student record *in the user's campus* if no email match
+        is found.  Every lookup is pinned to the caller's campus so a
+        student can never resolve to another campus's record.
         """
+        base = select(Student).where(Student.status == "active")
+        if campus_id is not None:
+            base = base.where(Student.campus_id == campus_id)
+
         if email:
-            result = await self.session.execute(
-                select(Student).where(Student.email == email, Student.status == "active")
-            )
+            result = await self.session.execute(base.where(Student.email == email))
             student = result.scalar_one_or_none()
             if student:
                 return student
 
-        # Fallback: return the first active student
-        result = await self.session.execute(
-            select(Student).where(Student.status == "active").limit(1)
-        )
+        # Fallback: first active student within the user's campus only.
+        # Fail closed — without a campus scope the fallback would return
+        # an arbitrary student system-wide, so it is denied entirely.
+        if campus_id is None:
+            raise NotFoundError("Student record not found for your account")
+        result = await self.session.execute(base.limit(1))
         student = result.scalar_one_or_none()
         if not student:
             raise NotFoundError("Student record not found for your account")
@@ -126,7 +135,7 @@ class StudentPortalService:
         subjects = await self._get_enrolled_subjects(student_id, enrollment)
         assignments = await self._get_assignments(student_id, enrollment)
         upcoming = await self._get_today_timetable(student_id, enrollment)
-        announcements = await self._get_announcements()
+        announcements = await self._get_announcements(campus_id=student.campus_id)
 
         pending_count = len(assignments.get("pending", []))
         overdue_count = len(assignments.get("overdue", []))
@@ -595,25 +604,39 @@ class StudentPortalService:
 
     # ── Announcements ───────────────────────────────────────────────
 
-    async def get_announcements(self) -> StudentAnnouncementsResponse:
-        announcements = await self._get_announcements()
+    async def get_announcements(
+        self, campus_id: int | None = None
+    ) -> StudentAnnouncementsResponse:
+        announcements = await self._get_announcements(campus_id=campus_id)
         return StudentAnnouncementsResponse(announcements=announcements)
 
     async def _get_announcements(
-        self, limit: int = 20
+        self, limit: int = 20, campus_id: int | None = None
     ) -> list[StudentAnnouncement]:
         try:
+            # Campus-scoped: only own-campus announcements plus
+            # system-wide ones (campus_id NULL) are visible.
+            conditions = [
+                "cm.message_type IN ('announcement', 'class', 'section')",
+                "cm.status = 'sent'",
+            ]
+            params: dict[str, Any] = {"lim": limit}
+            if campus_id is not None:
+                conditions.append(
+                    "(cm.campus_id IS NULL OR cm.campus_id = :campus_id)"
+                )
+                params["campus_id"] = campus_id
+
             result = await self.session.execute(
                 text(
                     """SELECT cm.id, cm.subject, cm.body, cm.priority, cm.created_at, u.display_name
                        FROM communication_messages cm
                        LEFT JOIN users u ON u.id = cm.sender_id
-                       WHERE cm.message_type IN ('announcement', 'class', 'section')
-                         AND cm.status = 'sent'
-                       ORDER BY cm.created_at DESC
-                       LIMIT :lim"""
+                       WHERE """
+                    + " AND ".join(conditions)
+                    + "\n                       ORDER BY cm.created_at DESC\n                       LIMIT :lim"
                 ),
-                {"lim": limit},
+                params,
             )
             return [
                 StudentAnnouncement(

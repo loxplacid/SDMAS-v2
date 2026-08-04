@@ -12,6 +12,7 @@ from app.domains.auth.dependencies import (
     get_optional_current_user,
 )
 from app.domains.auth.models import User, UserSchoolMembership
+from app.domains.auth.permissions import PLATFORM_ACCESS
 from app.domains.institution.models import Campus
 from app.infrastructure.database import get_session
 from app.multi_tenant.models import TenantContext
@@ -41,6 +42,21 @@ async def _campus_institution_id(
 ) -> int | None:
     campus = await session.get(Campus, campus_id)
     return campus.institution_id if campus else None
+
+
+async def _has_platform_access(
+    session: AsyncSession,
+    user: User,
+) -> bool:
+    """True when the user holds an explicit platform permission.
+
+    Platform access is the ONLY way an unscoped (campus-less) user may
+    operate — "unscoped" alone must never imply full access.
+    """
+    from app.domains.auth.permission_service import PermissionService
+
+    svc = PermissionService(session)
+    return await svc.any_role_has_permission(user.role_codes, PLATFORM_ACCESS)
 
 
 async def resolve_tenant_context(
@@ -101,7 +117,7 @@ async def resolve_tenant_context(
             user_id=current_user.id,
         )
 
-    # Legacy / platform-admin mode: honour the legacy column.
+    # Legacy mode: honour the legacy column (concrete campus).
     if current_user.campus_id is not None:
         institution_id = await _campus_institution_id(session, current_user.campus_id)
         if require_school and institution_id is None:
@@ -112,8 +128,17 @@ async def resolve_tenant_context(
             user_id=current_user.id,
         )
 
+    # No campus at all.  Default-deny: only an explicit platform
+    # permission converts this into cross-tenant access.  A plain
+    # authenticated user without any tenant membership is denied.
+    if await _has_platform_access(session, current_user):
+        return TenantContext(user_id=current_user.id, platform=True)
+
     if require_school:
-        raise AuthorizationError("No active school context for this user")
+        raise AuthorizationError(
+            "No active school context for this user — "
+            "an authenticated user without tenant membership is denied."
+        )
     return TenantContext(user_id=current_user.id)
 
 
@@ -165,3 +190,18 @@ async def require_active_school(
     name for routers.
     """
     return tenant
+
+
+async def require_tenant_context(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> TenantContext:
+    """Canonical dependency for tenant-scoped (C-class) endpoints.
+
+    Enforces default-deny:
+    * authenticated user with a campus (membership or legacy) → scoped
+      ``TenantContext``
+    * platform user (explicit ``platform.access``) → platform context
+    * authenticated user with NO tenant → 403 (never global access)
+    """
+    return await resolve_tenant_context(session, current_user, require_school=True)

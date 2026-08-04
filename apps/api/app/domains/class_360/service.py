@@ -33,6 +33,7 @@ from app.domains.class_360.schemas import (
 )
 from app.domains.academic.models import Class
 from app.domains.academic.repository import ClassRepository
+from app.multi_tenant.models import TenantContext
 
 logger = logging.getLogger(__name__)
 
@@ -40,13 +41,18 @@ _ATTENTION_LIMIT = 10
 
 
 class Class360Service:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        tenant: Optional[TenantContext] = None,
+    ) -> None:
         self.session = session
+        self.tenant = tenant
 
     async def get_class_360(
         self, class_id: int, campus_id: Optional[int] = None
     ) -> Class360Response:
-        class_repo = ClassRepository(self.session)
+        class_repo = ClassRepository(self.session, self.tenant)
         cls = await class_repo.get_by_id(class_id)
 
         identity = await self._get_identity(cls)

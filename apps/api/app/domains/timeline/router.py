@@ -22,7 +22,7 @@ from app.domains.auth.dependencies import require_role
 from app.domains.timeline.schemas import TimelineResponse
 from app.domains.timeline.service import TimelineFilters, TimelineService
 from app.infrastructure.database import get_session
-from app.multi_tenant.dependencies import get_optional_tenant
+from app.multi_tenant.dependencies import require_tenant_context
 from app.multi_tenant.guards import effective_campus_id
 from app.multi_tenant.models import TenantContext
 
@@ -62,7 +62,7 @@ async def get_timeline(
     end: Optional[str] = Query(None, description="ISO end datetime (UTC)"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
     service: TimelineService = Depends(get_timeline_service),
     user=Depends(require_role("admin", "principal", "accountant", "staff", "teacher")),
 ) -> TimelineResponse:

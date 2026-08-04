@@ -3,7 +3,16 @@ from __future__ import annotations
 import datetime
 from typing import Any
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.domains.jobs.models import JSONType
@@ -230,4 +239,54 @@ class Invoice(Base):
         return (
             f"<Invoice id={self.id} campus={self.campus_id} "
             f"amount={self.amount_inr} status={self.status}>"
+        )
+
+
+class WebhookEvent(Base):
+    """Idempotency ledger for provider webhook deliveries.
+
+    Payment providers may retry deliveries (and an attacker may replay a
+    captured payload).  Every signature-verified event is recorded here keyed
+    by ``(provider_name, event_id)`` so a duplicate delivery is detected and
+    skipped — it can never double-process a payment.  Rows are kept for
+    ``retention_days`` and purged by a maintenance job.
+    """
+
+    __tablename__ = "webhook_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    provider_name: Mapped[str] = mapped_column(
+        String(50), nullable=False, comment="e.g. razorpay, cashfree"
+    )
+    event_id: Mapped[str] = mapped_column(
+        String(100), nullable=False, comment="Provider-assigned event identifier"
+    )
+    event_name: Mapped[str] = mapped_column(
+        String(100), nullable=False, default="unknown", comment="e.g. payment.captured"
+    )
+    payload: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONType, nullable=True, comment="Raw verified event payload"
+    )
+    processed: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False,
+        comment="True once the event's side effects have been applied",
+    )
+    campus_id: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, index=True,
+        comment="Tenant resolved from the event payload (nullable for platform events)",
+    )
+    received_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "provider_name", "event_id", name="uq_webhook_event_delivery"
+        ),
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<WebhookEvent id={self.id} provider={self.provider_name} "
+            f"event={self.event_id} processed={self.processed}>"
         )

@@ -683,8 +683,12 @@ class CommandCenterService:
         try:
             events: list[TodayEvent] = []
             today = datetime.date.today().isoformat()
-            start_of_day = datetime.datetime.combine(
-                datetime.date.today(), datetime.time.min, tzinfo=timezone.utc
+            # All timestamps are stored in UTC — "start of today" must be
+            # computed from the UTC clock, never the local date, or the
+            # boundary drifts (local midnight ↔ UTC date mismatch) and
+            # today-created records appear to be "yesterday".
+            start_of_day = datetime.datetime.now(timezone.utc).replace(
+                hour=0, minute=0, second=0, microsecond=0
             )
 
             # Attendance today (attendance.view roles)

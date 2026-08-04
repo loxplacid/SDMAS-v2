@@ -2,21 +2,24 @@ from __future__ import annotations
 
 import datetime
 from datetime import timezone
+from typing import Optional
 
 from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
 from app.domains.notifications.models import Notification, DeviceToken
+from app.multi_tenant.models import TenantContext
+from app.multi_tenant.repository import TenantScopedRepository
 
 
-class NotificationRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class NotificationRepository(TenantScopedRepository):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, notification_id: int) -> Notification:
         result = await self.session.execute(
-            select(Notification).where(Notification.id == notification_id)
+            self.scoped_query(Notification).where(Notification.id == notification_id)
         )
         notification = result.scalar_one_or_none()
         if notification is None:
@@ -42,7 +45,7 @@ class NotificationRepository:
             conditions.append(Notification.read_at.is_(None))
 
         query = (
-            select(Notification)
+            self.scoped_query(Notification)
             .where(*conditions)
             .order_by(Notification.created_at.desc(), Notification.id.desc())
             .offset(skip)
@@ -51,19 +54,36 @@ class NotificationRepository:
         result = await self.session.execute(query)
         items = list(result.scalars().all())
 
-        count_query = select(func.count(Notification.id)).where(*conditions)
+        count_query = self.scoped_count(Notification).where(*conditions)
         count_result = await self.session.execute(count_query)
         total = count_result.scalar() or 0
 
         return items, total
 
     async def count_unread(self, user_id: int) -> int:
-        query = select(func.count(Notification.id)).where(
+        query = self.scoped_count(Notification).where(
             Notification.user_id == user_id,
             Notification.read_at.is_(None),
         )
         result = await self.session.execute(query)
         return result.scalar() or 0
+
+    async def exists_unread_by_event_key(
+        self, user_id: int, event_key: str
+    ) -> bool:
+        """Return True when an unread notification with the same dedup key
+        already exists for the user.
+
+        Used by the in-app channel to prevent duplicate notifications for
+        the same business event (DB-level guard, survives restarts).
+        """
+        query = self.scoped_count(Notification).where(
+            Notification.user_id == user_id,
+            Notification.event_key == event_key,
+            Notification.read_at.is_(None),
+        )
+        result = await self.session.execute(query)
+        return (result.scalar() or 0) > 0
 
     async def mark_read(self, notification_id: int) -> Notification:
         notification = await self.get_by_id(notification_id)
@@ -81,6 +101,10 @@ class NotificationRepository:
             )
             .values(read_at=datetime.datetime.now(timezone.utc))
         )
+        # Scope the bulk update to the caller's campus when tenant-scoped,
+        # so a user can never mass-mark another campus's notifications.
+        if self._effective_campus_id() is not None:
+            stmt = stmt.where(Notification.campus_id == self._effective_campus_id())
         result = await self.session.execute(stmt)
         # Only SQLite returns rowcount for async; PostgreSQL via asyncpg does not.
         # This value is best-effort for tests and not relied on in production.
@@ -92,11 +116,11 @@ class NotificationRepository:
         await self.session.flush()
 
 
-class DeviceTokenRepository:
+class DeviceTokenRepository(TenantScopedRepository):
     """Repository for managing push notification device tokens."""
 
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def create(self, device_token: DeviceToken) -> DeviceToken:
         self.session.add(device_token)
@@ -105,13 +129,13 @@ class DeviceTokenRepository:
 
     async def find_by_token(self, token: str) -> DeviceToken | None:
         result = await self.session.execute(
-            select(DeviceToken).where(DeviceToken.token == token)
+            self.scoped_query(DeviceToken).where(DeviceToken.token == token)
         )
         return result.scalar_one_or_none()
 
     async def find_by_user(self, user_id: int) -> list[DeviceToken]:
         result = await self.session.execute(
-            select(DeviceToken)
+            self.scoped_query(DeviceToken)
             .where(DeviceToken.user_id == user_id)
             .order_by(DeviceToken.created_at.desc())
         )

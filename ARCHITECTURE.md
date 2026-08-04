@@ -1,123 +1,155 @@
-# Enterprise Application Architecture
+# SDMAS v2 — Architecture
+
+This document describes the **actual** system. It is the single source of
+truth for how SDMAS v2 is structured today.
 
 ## Overview
 
-This architecture implements a robust dependency injection container that serves as the core of our enterprise application.
+SDMAS v2 is a multi-tenant school data-management platform delivered as three
+applications in one monorepo:
 
-## Core Components
+| App | Path | Stack |
+|---|---|---|
+| API | `apps/api` | Python 3.11+, FastAPI, SQLAlchemy 2 (async), Alembic, Pydantic v2, pydantic-settings |
+| Web | `apps/web` | React + Vite + TypeScript, PWA, dark mode |
+| Mobile | `apps/mobile` | Expo / React Native |
+| Worker | `apps/api/Dockerfile.worker` | Separate process consuming the jobs table and the event outbox |
 
-### 1. Dependency Injection Container
-The DI container is responsible for:
-- Service registration and resolution
-- Automatic dependency injection
-- Singleton instance management
-- Lifecycle management of services
+The canonical runtime is **PostgreSQL 16 + Redis 7 + API + Worker + Web**,
+orchestrated with Docker Compose (`infrastructure/docker/`) and operated via
+the root `Makefile`.
 
-### 2. Configuration Manager
-Manages application configuration with:
-- Centralized settings storage
-- Environment-specific overrides
-- Type-safe access patterns
+## API application structure (`apps/api/app`)
 
-### 3. Logger System
-Provides structured logging with:
-- Multiple log levels (info, warn, error)
-- Timestamped entries
-- Configurable output formats
+```
+app/
+├── config.py                    # Pydantic-settings configuration (env + .env)
+├── main.py                      # FastAPI app: lifespan, middleware chain, routers
+├── core/
+│   ├── exceptions.py            # Canonical exception hierarchy
+│   ├── error_handlers.py        # HTTP mapping for domain exceptions
+│   ├── pagination.py            # Pagination primitives (Page, PaginationParams)
+│   ├── security/                # auth_gate (default-deny), headers, token helpers
+│   ├── observability/           # JSON logging, OpenTelemetry, /health /ready /metrics
+│   └── secrets.py               # Secrets backends (env / Vault)
+├── infrastructure/
+│   └── database.py              # Async engine, session factory, get_session
+├── multi_tenant/                # Canonical tenant framework (see TENANCY.md)
+│   ├── models.py                # TenantContext (scoped / platform / unscoped)
+│   ├── registry.py              # Model classification (tenant-owned vs platform)
+│   ├── repository.py            # TenantScopedRepository (query-construction scoping)
+│   ├── guards.py                # effective_campus_id / assert_tenant_scope / inject_campus
+│   ├── dependencies.py          # require_tenant_context / get_current_tenant
+│   ├── middleware.py            # Tenant context resolution per request
+│   └── service_mixin.py         # Shared service helpers
+└── domains/                     # 33 domain modules, each with models/schemas/
+                                 # repository/service/router + domain events
+```
 
-### 4. Database Layer
-Abstracts database operations with:
-- Connection management
-- Query execution abstraction
-- Error handling and recovery
+### Request lifecycle
 
-### 5. Repository Pattern
-Data access layer implementing:
-- CRUD operations
-- Data mapping
-- Transaction support
+1. **Auth gate** (outermost) — every request must carry a valid bearer token
+   unless the path is on the public allowlist (login, health, webhooks, …);
+   otherwise **401 fail-closed**.
+2. **Security headers** + **observability** middleware (request/correlation
+   IDs, latency metrics).
+3. **Tenant middleware** — resolves the caller's `TenantContext` from the
+   token and `user_school_memberships`.
+4. **Audit middleware** — records mutating requests to the audit log.
+5. **Router / service / repository** — tenant scoping is applied at
+   *query-construction time* (see TENANCY.md); resource-level guards run in
+   routers.
+6. Domain exceptions map to HTTP via `error_handlers.py`
+   (`NotFoundError → 404`, `ConflictError → 409`, `ValidationError → 422`,
+   `AuthenticationError → 401`, `AuthorizationError → 403`,
+   `PaymentRequiredError → 402`).
 
-### 6. Service Layer
-Business logic implementation with:
-- Clean separation of concerns
-- Dependency injection for services
-- Testable components
+### Configuration
 
-### 7. Session Management
-User session handling including:
-- Session creation and validation
-- Security token management
-- Session lifecycle control
+Single source: `app/config.py` (`Settings(BaseSettings)`), read from
+environment variables and `.env` (template: `.env.example`). Notable groups:
+app identity, environment, database (`DATABASE_URL`), Redis, JWT, CORS,
+Razorpay (`razorpay_key_id/secret/webhook_secret`), outbox/worker tuning,
+observability, and domain thresholds (e.g. `attendance_low_threshold`).
 
-### 8. Security Manager
-Authentication and authorization system:
-- User authentication
-- Role-based access control
-- Token generation and verification
+### Migrations
 
-### 9. Theme Manager
-UI theming capabilities:
-- Theme switching
-- CSS class application
-- Responsive design support
+Alembic (`apps/api/alembic/`), **41 migrations** today. Migration history is
+chain `001` → `036+`; production DDL is applied via `make migrate`
+(`alembic upgrade head`). Tests use `Base.metadata.create_all` on SQLite.
 
-### 10. AI Manager
-Artificial intelligence processing:
-- Model execution
-- Training pipeline
-- Prediction services
+## Domain architecture
 
-### 11. Event Bus
-Asynchronous communication system:
-- Publish-subscribe pattern
-- Message routing
-- Event lifecycle management
+Each domain (e.g. `fees`, `billing`, `audit`, `jobs`, `attendance`) follows
+the same shape:
 
-## Architecture Compliance
+- `models.py` — SQLAlchemy 2 mapped classes (money stored as integer minor
+  units; tenant-owned rows carry `campus_id`).
+- `schemas.py` — Pydantic request/response contracts (`from_attributes=True`).
+- `repository.py` — data access, subclassing `TenantScopedRepository` for
+  tenant-owned data.
+- `service.py` — business logic + state transitions (e.g. payment
+  `completed → partially_refunded → refunded`).
+- `router.py` — HTTP endpoints; permissions + tenant guards as dependencies.
+- Domain events are emitted to the in-process event bus / notification
+  dispatcher and (for durable work) the outbox.
 
-This implementation adheres to enterprise architecture principles:
+Cross-cutting domains:
 
-1. **Separation of Concerns**: Each component has a single responsibility
-2. **Dependency Inversion**: High-level modules depend on abstractions, not concretions  
-3. **Single Responsibility Principle**: Each class has one reason to change
-4. **Open/Closed Principle**: Open for extension, closed for modification
-5. **Liskov Substitution**: All implementations satisfy their interfaces
-6. **Interface Segregation**: Small, focused interfaces per component
+- `auth` — registration, login, JWT access/refresh, users, roles, permissions
+  (see AUTHORIZATION.md).
+- `multi_tenant` — the tenant framework (see TENANCY.md).
+- `events` + `notifications` — in-process event bus, outbox, notification
+  dispatcher (email/push).
+- `jobs` — durable background jobs; consumed by the **worker process**.
+- `audit` — append-only audit log for mutations, logins, and webhooks.
+- `billing` + `school_finance` — subscriptions/invoices/Razorpay webhooks and
+  receipts/reconciliation/transaction ledger.
 
-## Implementation Details
+### Background workers
 
-### Service Registration Process:
-1. Register service with factory function and dependencies
-2. Container resolves dependencies recursively 
-3. Singleton instances are cached after first resolution
-4. Services can be resolved by name at any time
+Production runs a dedicated worker (`Dockerfile.worker`) that polls the
+**jobs** table and the **event outbox**. The API process only starts
+in-process workers when `WORKER_IN_PROCESS` is true (development/tests), so
+scaling API replicas never competes for the same queues.
 
-### Dependency Resolution Flow:
-1. Request service by name from container
-2. Check if singleton instance exists (if applicable)
-3. Resolve all required dependencies recursively
-4. Instantiate service with resolved dependencies
-5. Cache singleton instance for future requests
+## Frontend (`apps/web`)
 
-## Testing Strategy
+React + Vite + TypeScript SPA (PWA). Pages: dashboard, login, profile, and
+feature pages (student/teacher 360, risk center, command center, timeline,
+report cards, notifications). Cross-cutting hooks: `use-auth`, `use-theme`,
+`use-permission`, `use-campus`, `use-export`, `use-global-search`,
+`use-smart-search`, `use-keyboard-shortcut`, `use-nav-persistence`. The Vite
+dev server proxies `/api` to the API.
 
-All components are tested using:
-- Unit tests for individual services
-- Integration tests for component interactions  
-- Mocking of external dependencies
-- Coverage reporting and validation
+## Mobile (`apps/mobile`)
 
-## Security Considerations
+Expo React Native app with auth context, typed API client, theme tokens, and
+push notifications; shares the same API.
 
-1. All services are resolved through the DI container (no direct instantiation)
-2. Session management handles security tokens properly
-3. Configuration is validated before use
-4. Database queries are parameterized to prevent injection attacks
-5. Access control implemented at service level
+## Infrastructure
 
-## Performance Considerations
+- **Docker Compose** — `development`, `staging`, `production` variants; base
+  file defines Postgres, Redis, and API.
+- **Nginx** — reverse proxy, SSL termination, security headers, rate limits.
+- **Monitoring** — Prometheus + Grafana (provisioned datasources/alerts) and
+  an OpenTelemetry Collector; the API exposes `/health`, `/ready`, `/metrics`.
+- **Ops scripts** (`infrastructure/scripts/`) — deploy, rollback, backup,
+  restore, seed, init-db.
 
-1. Singleton pattern reduces object creation overhead
-2. Caching of resolved instances improves performance
-3. Lazy instantiation prevents unnecessary resource usage
-4. Dependency resolution optimized for minimal overhead
+## Testing
+
+- **API**: pytest + pytest-asyncio + httpx (in-memory SQLite), **~1,100
+  tests** covering domains, multi-tenant isolation (a dedicated security
+  suite), finance/webhook security, permissions, audit, and jobs. PostgreSQL
+  integration tests (Testcontainers) are gated behind `@pytest.mark.integration`.
+- **Web**: vitest + Testing Library.
+- **JS/Python v1**: archived at `_archive/legacy-v1/` — no longer run.
+
+## Related docs
+
+- [`SECURITY.md`](SECURITY.md) — auth, tenant isolation, webhooks, secrets.
+- [`AUTHORIZATION.md`](AUTHORIZATION.md) — permission model & roles.
+- [`TENANCY.md`](TENANCY.md) — the tenant framework in depth.
+- [`DEPLOYMENT.md`](DEPLOYMENT.md) — environments, scaling, backup.
+- [`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md) — current gaps & risks.

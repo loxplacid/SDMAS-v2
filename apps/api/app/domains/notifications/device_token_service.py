@@ -6,14 +6,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.notifications.models import DeviceToken
 from app.domains.notifications.repository import DeviceTokenRepository
+from app.multi_tenant.models import TenantContext
 
 
 class DeviceTokenService:
     """Manage push notification device tokens."""
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        tenant: Optional[TenantContext] = None,
+    ) -> None:
         self.session = session
-        self.repo = DeviceTokenRepository(session)
+        self.tenant = tenant
+        self.repo = DeviceTokenRepository(session, tenant)
 
     async def register_token(
         self,

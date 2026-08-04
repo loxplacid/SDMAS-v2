@@ -4,26 +4,6 @@ import pytest
 from httpx import AsyncClient
 
 
-@pytest.fixture
-async def staff_auth(api_client: AsyncClient) -> str:
-    """Register and login a staff user, returning the access token."""
-    email = "notifapi@test.com"
-    await api_client.post(
-        "/auth/register",
-        json={
-            "email": email,
-            "username": "notifapi",
-            "password": "Str0ng!Pass",
-            "display_name": "Notif API",
-        },
-    )
-    resp = await api_client.post(
-        "/auth/login",
-        json={"login": email, "password": "Str0ng!Pass"},
-    )
-    return resp.json()["access_token"]
-
-
 @pytest.mark.asyncio
 async def test_unauthenticated_cannot_list(api_client: AsyncClient) -> None:
     resp = await api_client.get("/api/notifications")
@@ -38,10 +18,9 @@ async def test_unauthenticated_cannot_unread_count(api_client: AsyncClient) -> N
 
 @pytest.mark.asyncio
 async def test_authenticated_can_list_notifications(
-    api_client: AsyncClient, staff_auth: str,
+    api_client: AsyncClient, admin_headers: dict,
 ) -> None:
-    headers = {"Authorization": f"Bearer {staff_auth}"}
-    resp = await api_client.get("/api/notifications", headers=headers)
+    resp = await api_client.get("/api/notifications", headers=admin_headers)
     assert resp.status_code == 200
     data = resp.json()
     assert "items" in data
@@ -51,11 +30,10 @@ async def test_authenticated_can_list_notifications(
 
 @pytest.mark.asyncio
 async def test_authenticated_can_get_unread_count(
-    api_client: AsyncClient, staff_auth: str,
+    api_client: AsyncClient, admin_headers: dict,
 ) -> None:
-    headers = {"Authorization": f"Bearer {staff_auth}"}
     resp = await api_client.get(
-        "/api/notifications/unread-count", headers=headers
+        "/api/notifications/unread-count", headers=admin_headers
     )
     assert resp.status_code == 200
     data = resp.json()
@@ -65,11 +43,10 @@ async def test_authenticated_can_get_unread_count(
 
 @pytest.mark.asyncio
 async def test_authenticated_can_mark_all_read(
-    api_client: AsyncClient, staff_auth: str,
+    api_client: AsyncClient, admin_headers: dict,
 ) -> None:
-    headers = {"Authorization": f"Bearer {staff_auth}"}
     resp = await api_client.patch(
-        "/api/notifications/read-all", headers=headers
+        "/api/notifications/read-all", headers=admin_headers
     )
     assert resp.status_code == 200
     data = resp.json()

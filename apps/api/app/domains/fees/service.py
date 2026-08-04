@@ -7,13 +7,24 @@ from datetime import timezone
 from typing import List, Optional, Sequence
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
-from app.domains.audit.constants import ACADEMIC, CREATE, FEE, PAYMENT, RECORD_PAYMENT, UPDATE
+from app.domains.audit.actors import ActorType, AuditActor
+from app.domains.audit.constants import (
+    ACADEMIC,
+    CREATE,
+    FEE,
+    PAYMENT,
+    RECORD_PAYMENT,
+    REFUND,
+    UPDATE,
+)
 from app.domains.audit.service import AuditService
-from app.domains.notifications import dispatcher as notification_dispatcher
+from app.domains.events.outbox import publish_durable
 from app.domains.notifications.events import FeeDueCreatedEvent, PaymentReceivedEvent
+from app.domains.school_finance.service import TransactionLogService
 
 logger = logging.getLogger(__name__)
 from app.domains.academic.repository import (
@@ -376,8 +387,15 @@ class FeeDueService:
                     due_ids=[d.id for d in created_dues],
                     total_amount=float(total_amount),
                     due_count=len(created_dues),
+                    tenant_id=getattr(created_dues[0], "campus_id", None),
                 )
-                await notification_dispatcher.dispatch(event, session=self.repo.session)
+                # Durable event (transactional outbox): written atomically with
+                # the fee-due insert, delivered by the worker process.
+                await publish_durable(
+                    event,
+                    session=self.repo.session,
+                    event_id=f"fee_due:{student_id}:{academic_year_id}",
+                )
             except Exception:
                 logger.warning("Failed to dispatch FeeDueCreatedEvent (non-fatal)", exc_info=True)
 
@@ -478,7 +496,41 @@ class PaymentService:
         self.fee_due_repo = fee_due_repo
         self.student_repo = student_repo
 
-    async def record_payment(self, data: PaymentCreate) -> dict:
+    async def _payment_result(self, payment: Payment) -> dict:
+        """Build the canonical ``PaymentResult``-shaped response for a payment."""
+        fee_due = await self.fee_due_repo.get_by_id(payment.fee_due_id)
+        return {
+            "payment": payment,
+            "fee_due": {
+                "id": fee_due.id,
+                "student_id": fee_due.student_id,
+                "academic_year_id": fee_due.academic_year_id,
+                "fee_structure_id": fee_due.fee_structure_id,
+                "original_amount": fee_due.original_amount,
+                "amount_paid": fee_due.amount_paid,
+                "campus_id": fee_due.campus_id,
+                "due_date": fee_due.due_date,
+                "status": fee_due.status,
+                "created_at": fee_due.created_at,
+                "updated_at": fee_due.updated_at,
+            },
+        }
+
+    async def record_payment(
+        self,
+        data: PaymentCreate,
+        actor: Optional["AuditActor"] = None,
+    ) -> dict:
+        # ── Idempotency: a repeated request with the same logical key must
+        # never create a second financial record.  The key is unique at the
+        # DB layer, so even a concurrent duplicate cannot slip through.
+        if data.idempotency_key:
+            existing = await self.repo.get_by_idempotency_key(
+                data.idempotency_key
+            )
+            if existing is not None:
+                return await self._payment_result(existing)
+
         student = await self.student_repo.get_by_id(data.student_id)
         if student.status != "active":
             raise ValidationError(
@@ -516,72 +568,222 @@ class PaymentService:
         now = datetime.datetime.now(timezone.utc)
         now_str = now.strftime("%Y-%m-%d")
 
-        payment = Payment(
-            student_id=data.student_id,
-            fee_due_id=data.fee_due_id,
-            amount=data.amount,
-            payment_date=data.payment_date or now_str,
-            payment_method=data.payment_method,
-            receipt_number=data.receipt_number,
-            created_at=now,
-        )
-        saved = await self.repo.create(payment)
-
-        fee_due.amount_paid = new_amount_paid
-        fee_due.status = new_status
-        fee_due.updated_at = now
-        await self.fee_due_repo.update(fee_due)
-
-        # Audit: payment recorded
+        # ── Write path in a savepoint.  If a concurrent request commits the
+        # same idempotency key (or same receipt number) first, the unique
+        # constraint fires and we reconcile instead of double-booking.
         try:
-            audit_svc = AuditService(self.repo.session)
-            await audit_svc.record(
-                action=RECORD_PAYMENT,
-                resource_type=PAYMENT,
-                resource_id=str(saved.id),
-                details={
-                    "student_id": data.student_id,
-                    "fee_due_id": data.fee_due_id,
-                    "amount": float(data.amount),
-                    "payment_method": data.payment_method,
-                    "receipt_number": data.receipt_number,
-                    "fee_due_status_after": new_status,
-                },
-            )
-            await self.repo.session.flush()
-        except Exception:
-            logger.warning("Failed to write audit entry for payment (non-fatal)", exc_info=True)
+            async with self.repo.session.begin_nested():
+                payment = Payment(
+                    student_id=data.student_id,
+                    fee_due_id=data.fee_due_id,
+                    campus_id=fee_due.campus_id,
+                    amount=data.amount,
+                    payment_date=data.payment_date or now_str,
+                    payment_method=data.payment_method,
+                    receipt_number=data.receipt_number,
+                    idempotency_key=data.idempotency_key,
+                    status="completed",
+                    refunded_amount=0,
+                    created_at=now,
+                    updated_at=now,
+                )
+                saved = await self.repo.create(payment)
 
-        # Fire event: payment received
+                fee_due.amount_paid = new_amount_paid
+                fee_due.status = new_status
+                fee_due.updated_at = now
+                await self.fee_due_repo.update(fee_due)
+
+                # Journal the payment in the immutable transaction ledger so
+                # the running student balance stays consistent and auditable.
+                recorded_by = self._actor_user_id(actor)
+                tx_log_svc = TransactionLogService(self.repo.session)
+                await tx_log_svc.record(
+                    transaction_type="payment",
+                    student_id=data.student_id,
+                    amount=data.amount,
+                    payment_id=saved.id,
+                    fee_due_id=data.fee_due_id,
+                    reference_number=data.receipt_number,
+                    idempotency_key=f"payment:{saved.id}",
+                    description=f"Fee payment recorded for fee due {data.fee_due_id}",
+                    campus_id=fee_due.campus_id,
+                    recorded_by=recorded_by,
+                )
+
+                # Audit: payment recorded (shares this transaction).
+                audit_svc = AuditService(self.repo.session)
+                await audit_svc.record(
+                    action=RECORD_PAYMENT,
+                    resource_type=PAYMENT,
+                    resource_id=str(saved.id),
+                    actor=actor,
+                    details={
+                        "student_id": data.student_id,
+                        "fee_due_id": data.fee_due_id,
+                        "amount": data.amount,
+                        "payment_method": data.payment_method,
+                        "receipt_number": data.receipt_number,
+                        "idempotency_key": data.idempotency_key,
+                        "fee_due_status_after": new_status,
+                    },
+                )
+
+                # Fire event: payment received (durable, best-effort publish).
+                try:
+                    event = PaymentReceivedEvent(
+                        student_id=data.student_id,
+                        fee_due_id=data.fee_due_id,
+                        payment_id=saved.id,
+                        amount=float(data.amount),
+                        payment_method=data.payment_method,
+                        receipt_number=data.receipt_number,
+                        new_due_status=new_status,
+                        tenant_id=fee_due.campus_id,
+                    )
+                    await publish_durable(
+                        event,
+                        session=self.repo.session,
+                        event_id=f"payment:{saved.id}",
+                        school_id=fee_due.campus_id,
+                    )
+                except Exception:
+                    logger.warning(
+                        "Failed to dispatch PaymentReceivedEvent (non-fatal)", exc_info=True
+                    )
+
+                return await self._payment_result(saved)
+        except IntegrityError as exc:
+            # A concurrent duplicate won the race (unique idempotency key or
+            # receipt number, or the fee-due amount-range constraint).  For an
+            # idempotent caller the right answer is the already-created record;
+            # otherwise the request cannot be honoured twice.
+            if data.idempotency_key:
+                existing = await self.repo.get_by_idempotency_key(
+                    data.idempotency_key
+                )
+                if existing is not None:
+                    return await self._payment_result(existing)
+            raise ConflictError(
+                "Payment could not be recorded - a conflicting payment was "
+                "already processed for this request."
+            ) from exc
+
+    def _actor_user_id(self, actor: Optional["AuditActor"]) -> Optional[int]:
+        """Return the underlying user id when ``actor`` is an authenticated
+        human (USER/PLATFORM), else ``None``."""
+        if actor is None:
+            return None
+        if actor.actor_type in (ActorType.USER, ActorType.PLATFORM):
+            try:
+                return int(actor.actor_id)
+            except (TypeError, ValueError):
+                return None
+        return None
+
+    async def record_refund(
+        self,
+        payment_id: int,
+        amount: int,
+        reason: Optional[str] = None,
+        actor: Optional["AuditActor"] = None,
+    ) -> dict:
+        """Refund part or all of a recorded payment.
+
+        The refund is an explicit state transition on the *payment*
+        (``completed -> partially_refunded -> refunded``) and it reverses
+        the paid balance on the originating fee due.  All mutations share a
+        single database transaction (savepoint), so a refund can never
+        partially apply.  The refund is journaled in the transaction ledger
+        and audited with the acting user.
+        """
+        # Lock the payment row first: two concurrent refunds on the same
+        # payment must serialize, and the refundable balance must be
+        # re-read *after* the lock so a stale ``refunded_amount`` can never
+        # let a refund apply twice.
+        payment = await self.repo.get_by_id_for_update(payment_id)
+        if payment.status == "refunded":
+            raise ConflictError(f"Payment {payment_id} is already fully refunded")
+
+        refundable = payment.amount - payment.refunded_amount
+        if amount > refundable:
+            raise ValidationError(
+                f"Refund amount {amount} exceeds the refundable balance {refundable}"
+            )
+
+        fee_due = await self.fee_due_repo.get_by_id_for_update(payment.fee_due_id)
+        if fee_due.student_id != payment.student_id:
+            raise ValidationError(
+                "Payment's fee due does not belong to the payment's student"
+            )
+
+        now = datetime.datetime.now(timezone.utc)
+
         try:
-            event = PaymentReceivedEvent(
-                student_id=data.student_id,
-                fee_due_id=data.fee_due_id,
-                payment_id=saved.id,
-                amount=float(data.amount),
-                payment_method=data.payment_method,
-                receipt_number=data.receipt_number,
-                new_due_status=new_status,
-            )
-            await notification_dispatcher.dispatch(event, session=self.repo.session)
-        except Exception:
-            logger.warning("Failed to dispatch PaymentReceivedEvent (non-fatal)", exc_info=True)
+            async with self.repo.session.begin_nested():
+                new_refunded = payment.refunded_amount + amount
+                payment.refunded_amount = new_refunded
+                payment.status = (
+                    "refunded" if new_refunded >= payment.amount else "partially_refunded"
+                )
+                payment.updated_at = now
 
-        return {
-            "payment": saved,
-            "fee_due": {
-                "id": fee_due.id,
-                "student_id": fee_due.student_id,
-                "academic_year_id": fee_due.academic_year_id,
-                "fee_structure_id": fee_due.fee_structure_id,
-                "original_amount": fee_due.original_amount,
-                "amount_paid": new_amount_paid,
-                "due_date": fee_due.due_date,
-                "status": new_status,
-                "created_at": fee_due.created_at,
-                "updated_at": fee_due.updated_at,
-            },
-        }
+                new_amount_paid = fee_due.amount_paid - amount
+                if new_amount_paid < 0:
+                    # Defensive: the payment lock serialises refunds, so a
+                    # negative balance is impossible; fail loudly if the
+                    # invariant is ever violated instead of silently
+                    # clamping (which would hide an over-refund).
+                    raise ConflictError(
+                        f"Refund for payment {payment_id} would push the fee "
+                        "due balance below zero."
+                    )
+                fee_due.amount_paid = new_amount_paid
+                if fee_due.amount_paid == 0:
+                    fee_due.status = "unpaid"
+                elif fee_due.amount_paid >= fee_due.original_amount:
+                    fee_due.status = "paid"
+                else:
+                    fee_due.status = "partially_paid"
+                fee_due.updated_at = now
+
+                # Journal the refund in the immutable transaction ledger.
+                recorded_by = self._actor_user_id(actor)
+                tx_log_svc = TransactionLogService(self.repo.session)
+                await tx_log_svc.record(
+                    transaction_type="refund",
+                    student_id=payment.student_id,
+                    amount=amount,
+                    payment_id=payment.id,
+                    fee_due_id=payment.fee_due_id,
+                    reference_number=payment.receipt_number,
+                    idempotency_key=f"refund:{payment.id}:{new_refunded}",
+                    description=reason or f"Refund for payment {payment.id}",
+                    campus_id=fee_due.campus_id,
+                    recorded_by=recorded_by,
+                )
+
+                # Audit: refund recorded (shares this transaction).
+                audit_svc = AuditService(self.repo.session)
+                await audit_svc.record(
+                    action=REFUND,
+                    resource_type=PAYMENT,
+                    resource_id=str(payment.id),
+                    actor=actor,
+                    details={
+                        "amount": amount,
+                        "reason": reason,
+                        "payment_status_after": payment.status,
+                        "refunded_amount_after": payment.refunded_amount,
+                        "fee_due_status_after": fee_due.status,
+                    },
+                )
+
+                return await self._payment_result(payment)
+        except IntegrityError as exc:
+            raise ConflictError(
+                f"Refund for payment {payment_id} could not be applied."
+            ) from exc
 
     async def get_payment(self, payment_id: int) -> Payment:
         return await self.repo.get_by_id(payment_id)

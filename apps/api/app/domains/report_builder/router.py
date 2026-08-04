@@ -217,7 +217,7 @@ async def create_export_job(
     current_user: User = Depends(require_role("admin", "staff", "teacher", "accountant", "principal")),
     svc: ExportJobService = Depends(get_export_svc),
 ) -> ExportJobResponse:
-    job = await svc.create_job(current_user.id, data)
+    job = await svc.create_job(current_user.id, data, campus_id=current_user.campus_id)
     return ExportJobResponse.model_validate(job)
 
 

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
 from app.domains.events import publish_event
+from app.domains.events.outbox import publish_durable
 from app.domains.events.events import (
     AcademicYearRolloverCompletedEvent,
     AcademicYearRolloverFailedEvent,
@@ -22,18 +23,24 @@ from app.domains.academic.repository import (
     EnrollmentRepository,
 )
 from app.domains.student.repository import StudentRepository
+from app.multi_tenant.models import TenantContext
 
 logger = logging.getLogger(__name__)
 
 
 class RolloverService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        tenant: Optional[TenantContext] = None,
+    ) -> None:
         self.session = session
-        self.year_repo = AcademicYearRepository(session)
-        self.class_repo = ClassRepository(session)
-        self.section_repo = SectionRepository(session)
-        self.enrollment_repo = EnrollmentRepository(session)
-        self.student_repo = StudentRepository(session)
+        self.tenant = tenant
+        self.year_repo = AcademicYearRepository(session, tenant)
+        self.class_repo = ClassRepository(session, tenant)
+        self.section_repo = SectionRepository(session, tenant)
+        self.enrollment_repo = EnrollmentRepository(session, tenant)
+        self.student_repo = StudentRepository(session, tenant)
 
     async def preview_rollover(
         self,
@@ -43,6 +50,8 @@ class RolloverService:
         to_end_date: str,
     ) -> dict:
         from_year = await self.year_repo.get_by_id(from_year_id)
+        if from_year is None:
+            raise NotFoundError(f"Academic year {from_year_id} not found")
 
         existing = await self.year_repo.get_by_name(to_year_name)
         if existing is not None:
@@ -55,7 +64,7 @@ class RolloverService:
         )
 
         sections_result = await self.session.execute(
-            select(Section).where(
+            self.section_repo.scoped_query(Section).where(
                 Section.class_id.in_([c.id for c in classes])
             )
         )
@@ -92,6 +101,8 @@ class RolloverService:
         to_end_date: str,
     ) -> dict:
         from_year = await self.year_repo.get_by_id(from_year_id)
+        if from_year is None:
+            raise NotFoundError(f"Academic year {from_year_id} not found")
 
         existing = await self.year_repo.get_by_name(to_year_name)
         if existing is not None:
@@ -127,13 +138,14 @@ class RolloverService:
             )
         except Exception as exc:
             try:
-                await publish_event(
+                await publish_durable(
                     AcademicYearRolloverFailedEvent(
                         previous_year_id=from_year_id,
                         new_year_name=to_year_name,
                         error=str(exc)[:500],
                     ),
                     session=self.session,
+                    event_id=f"rollover_failed:{from_year_id}:{to_year_name}",
                 )
             except Exception:
                 logger.warning("Failed to publish rollover failed event (non-fatal)", exc_info=True)
@@ -181,7 +193,9 @@ class RolloverService:
         section_id_map: dict[int, int] = {}
         for cls in classes:
             sec_result = await self.session.execute(
-                select(Section).where(Section.class_id == cls.id)
+                self.section_repo.scoped_query(Section).where(
+                    Section.class_id == cls.id
+                )
             )
             sections = sec_result.scalars().all()
             for sec in sections:
@@ -226,9 +240,10 @@ class RolloverService:
 
         await self.session.flush()
 
-        # Domain event: rollover completed -> notification + audit (non-fatal)
+        # Durable event: rollover completed -> notification + audit (worker
+        # delivers it, so it survives an API crash mid-rollover).
         try:
-            await publish_event(
+            await publish_durable(
                 AcademicYearRolloverCompletedEvent(
                     previous_year_id=from_year_id,
                     new_year_id=new_year.id,
@@ -237,6 +252,7 @@ class RolloverService:
                     classes_migrated=classes_created,
                 ),
                 session=self.session,
+                event_id=f"rollover_completed:{from_year_id}:{new_year.id}",
             )
         except Exception:
             logger.warning("Failed to publish rollover completed event (non-fatal)", exc_info=True)

@@ -6,12 +6,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.notifications.models import Notification
 from app.domains.notifications.repository import NotificationRepository
+from app.multi_tenant.models import TenantContext
 
 
 class NotificationService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        tenant: Optional[TenantContext] = None,
+    ) -> None:
         self.session = session
-        self.repo = NotificationRepository(session)
+        self.tenant = tenant
+        self.repo = NotificationRepository(session, tenant)
 
     async def create_notification(
         self,

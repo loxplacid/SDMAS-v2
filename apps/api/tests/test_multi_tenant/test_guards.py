@@ -40,6 +40,10 @@ def _unscoped() -> TenantContext:
     return TenantContext(campus_id=None)
 
 
+def _platform() -> TenantContext:
+    return TenantContext(campus_id=None, platform=True)
+
+
 # ======================================================================
 # effective_campus_id — list-scope pinning
 # ======================================================================
@@ -53,12 +57,20 @@ class TestEffectiveCampusId:
     def test_scoped_tenant_no_client_value(self) -> None:
         assert effective_campus_id(_scoped()) == 1
 
-    def test_unscoped_tenant_with_client_filter(self) -> None:
-        """Platform admins may still filter by any campus."""
-        assert effective_campus_id(_unscoped(), client_campus_id=7) == 7
+    def test_platform_tenant_with_client_filter(self) -> None:
+        """Explicit platform callers may filter by any campus."""
+        assert effective_campus_id(_platform(), client_campus_id=7) == 7
 
-    def test_unscoped_tenant_no_filter_means_everything(self) -> None:
-        assert effective_campus_id(_unscoped()) is None
+    def test_platform_tenant_no_filter_means_everything(self) -> None:
+        assert effective_campus_id(_platform()) is None
+
+    def test_unscoped_non_platform_caller_denied(self) -> None:
+        """Default-deny: an unscoped caller without an explicit platform
+        permission must never see tenant data."""
+        with pytest.raises(AuthorizationError):
+            effective_campus_id(_unscoped())
+        with pytest.raises(AuthorizationError):
+            effective_campus_id(_unscoped(), client_campus_id=7)
 
 
 # ======================================================================
@@ -79,8 +91,15 @@ class TestAssertTenantScope:
         with pytest.raises(AuthorizationError):
             assert_tenant_scope(_FakeEntity(campus_id=None), _scoped())
 
-    def test_unscoped_caller_bypasses_check(self) -> None:
-        assert_tenant_scope(_FakeEntity(campus_id=2), _unscoped())
+    def test_platform_caller_bypasses_check(self) -> None:
+        """Explicit platform callers may operate on any campus."""
+        assert_tenant_scope(_FakeEntity(campus_id=2), _platform())
+
+    def test_unscoped_non_platform_caller_denied(self) -> None:
+        """Default-deny: an unscoped caller without an explicit platform
+        permission cannot access any tenant record."""
+        with pytest.raises(AuthorizationError):
+            assert_tenant_scope(_FakeEntity(campus_id=2), _unscoped())
 
     def test_entity_without_campus_id_denied_when_scoped(self) -> None:
         with pytest.raises(AuthorizationError):

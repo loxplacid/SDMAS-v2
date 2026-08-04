@@ -4,26 +4,6 @@ import pytest
 from httpx import AsyncClient
 
 
-@pytest.fixture
-async def staff_auth(api_client: AsyncClient) -> str:
-    """Register and login a staff user, returning the access token."""
-    email = "repstaff@test.com"
-    await api_client.post(
-        "/auth/register",
-        json={
-            "email": email,
-            "username": "repstaff",
-            "password": "Str0ng!Pass",
-            "display_name": "Rep Staff",
-        },
-    )
-    resp = await api_client.post(
-        "/auth/login",
-        json={"login": email, "password": "Str0ng!Pass"},
-    )
-    return resp.json()["access_token"]
-
-
 @pytest.mark.asyncio
 async def test_get_attendance_class_report_requires_auth(api_client: AsyncClient):
     """Verify attendance report endpoint requires authentication."""
@@ -79,27 +59,25 @@ async def test_mutation_endpoints_require_auth(api_client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_authenticated_access_to_reports(api_client: AsyncClient, staff_auth: str):
+async def test_authenticated_access_to_reports(api_client: AsyncClient, admin_headers: dict):
     """Verify authenticated users can access report endpoints."""
-    headers = {"Authorization": f"Bearer {staff_auth}"}
-
-    # Reports with invalid data should return 404, not 401
+    # Reports with invalid (non-existent) data are rejected by the
+    # default-deny tenant guard (403), never 401 — proving auth passes.
     for path in [
         "/api/reports/attendance/class/99999?academic_year_id=99999",
         "/api/reports/fees/collection?academic_year_id=99999",
         "/api/reports/fees/outstanding?academic_year_id=99999",
     ]:
-        r = await api_client.get(path, headers=headers)
-        assert r.status_code in (200, 404, 422), f"GET {path} returned {r.status_code}"
+        r = await api_client.get(path, headers=admin_headers)
+        assert r.status_code in (200, 403, 404, 422), f"GET {path} returned {r.status_code}"
 
 
 @pytest.mark.asyncio
-async def test_export_with_auth(api_client: AsyncClient, staff_auth: str):
+async def test_export_with_auth(api_client: AsyncClient, admin_headers: dict):
     """Test export endpoint with proper authentication returns CSV."""
-    headers = {"Authorization": f"Bearer {staff_auth}"}
     response = await api_client.get(
         "/api/reports/export/students",
-        headers=headers,
+        headers=admin_headers,
     )
     # With auth but no data, should still return CSV (possibly empty)
     assert response.status_code == 200

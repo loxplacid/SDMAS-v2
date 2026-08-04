@@ -3,10 +3,12 @@ from __future__ import annotations
 import datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class DocumentCategoryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     code: str
     name: str
@@ -35,6 +37,8 @@ class DocumentUpdate(BaseModel):
 
 
 class DocumentVersionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     document_id: int
     version_number: int
@@ -52,6 +56,8 @@ class DocumentShareCreate(BaseModel):
 
 
 class DocumentShareResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     document_id: int
     token: str
@@ -64,6 +70,8 @@ class DocumentShareResponse(BaseModel):
 
 
 class DocumentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     category_id: int
     owner_id: Optional[int]

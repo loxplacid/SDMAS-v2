@@ -2,14 +2,16 @@ from __future__ import annotations
 
 import csv
 import datetime
+import html
 import io
 import logging
 import uuid
 from collections import defaultdict
 from datetime import date, timezone
-from typing import Optional, Sequence
+from typing import Any, Optional, Sequence
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import Integer, and_, func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -307,21 +309,25 @@ class TransactionLogService:
         result = await self.session.execute(q)
         return result.scalars().all(), total
 
-    async def get_student_balance(self, student_id: int) -> int:
-        logs = await self.session.execute(
-            select(func.coalesce(func.sum(TransactionLog.amount), 0)).where(
-                TransactionLog.student_id == student_id,
-                TransactionLog.transaction_type.in_(["payment"]),
-            )
+    async def get_student_balance(
+        self, student_id: int, campus_id: Optional[int] = None
+    ) -> int:
+        credits_q = select(func.coalesce(func.sum(TransactionLog.amount), 0)).where(
+            TransactionLog.student_id == student_id,
+            TransactionLog.transaction_type.in_(["payment"]),
         )
+        if campus_id is not None:
+            credits_q = credits_q.where(TransactionLog.campus_id == campus_id)
+        logs = await self.session.execute(credits_q)
         credits = logs.scalar() or 0
 
-        debits = await self.session.execute(
-            select(func.coalesce(func.sum(TransactionLog.amount), 0)).where(
-                TransactionLog.student_id == student_id,
-                TransactionLog.transaction_type.in_(["refund", "waiver", "discount"]),
-            )
+        debits_q = select(func.coalesce(func.sum(TransactionLog.amount), 0)).where(
+            TransactionLog.student_id == student_id,
+            TransactionLog.transaction_type.in_(["refund", "waiver", "discount"]),
         )
+        if campus_id is not None:
+            debits_q = debits_q.where(TransactionLog.campus_id == campus_id)
+        debits = await self.session.execute(debits_q)
         return credits - (debits.scalar() or 0)
 
     async def _get_last_balance(self, student_id: int) -> int:
@@ -344,21 +350,37 @@ class ReconciliationService:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def create(self, data: ReconciliationCreate, reconciled_by: int) -> PaymentReconciliation:
+    async def create(
+        self,
+        data: ReconciliationCreate,
+        reconciled_by: int,
+        campus_id: Optional[int] = None,
+    ) -> PaymentReconciliation:
+        """Create a draft reconciliation.
+
+        ``campus_id`` is the *authoritative* tenant scope supplied by the
+        router (from ``effective_campus_id``); it overrides any value the
+        client put in the payload so a reconciliation can never be tagged
+        with a campus the caller does not belong to.  Every item's payment
+        must belong to that same campus.
+        """
+        rec_campus = campus_id if campus_id is not None else data.campus_id
         rec = PaymentReconciliation(
             reconciliation_date=data.reconciliation_date,
             total_amount=data.total_amount,
             total_count=data.total_count,
             status="draft",
             notes=data.notes,
-            campus_id=data.campus_id,
+            campus_id=rec_campus,
             reconciled_by=reconciled_by,
         )
         self.session.add(rec)
         await self.session.flush()
 
         for item_data in data.items:
-            payment = await self._validate_payment(item_data.payment_id)
+            payment = await self._validate_payment(
+                item_data.payment_id, campus_id=rec_campus
+            )
             diff = item_data.expected_amount - item_data.actual_amount
             item = ReconciliationItem(
                 reconciliation_id=rec.id,
@@ -378,7 +400,9 @@ class ReconciliationService:
             .where(PaymentReconciliation.id == rec.id)
             .options(joinedload(PaymentReconciliation.items))
         )
-        return result.scalar_one()
+        # ``joinedload`` on a collection requires ``unique()`` before
+        # extracting a single scalar.
+        return result.scalars().unique().one()
 
     async def get(self, rec_id: int) -> PaymentReconciliation:
         result = await self.session.execute(
@@ -423,25 +447,68 @@ class ReconciliationService:
         items = list({r.id: r for r in result.scalars().all()}.values())
         return items[:limit], total
 
-    async def verify(self, rec_id: int, reviewed_by: int) -> PaymentReconciliation:
+    async def verify(
+        self,
+        rec_id: int,
+        reviewed_by: int,
+        actor: Optional["AuditActor"] = None,
+    ) -> PaymentReconciliation:
         rec = await self.get(rec_id)
         if rec.status != "draft":
             raise ValidationError(f"Reconciliation {rec_id} is already {rec.status}")
         rec.status = "verified"
+        rec.verified_by = reviewed_by
         rec.updated_at = datetime.datetime.now(timezone.utc)  # type: ignore
+        await self._audit_review("VERIFY", rec, actor)
         await self.session.flush()
         return rec
 
-    async def approve(self, rec_id: int, reviewed_by: int) -> PaymentReconciliation:
+    async def approve(
+        self,
+        rec_id: int,
+        reviewed_by: int,
+        actor: Optional["AuditActor"] = None,
+    ) -> PaymentReconciliation:
         rec = await self.get(rec_id)
         if rec.status not in ("draft", "verified"):
             raise ValidationError(f"Reconciliation {rec_id} cannot be approved from status {rec.status}")
         rec.status = "approved"
+        rec.approved_by = reviewed_by
         rec.updated_at = datetime.datetime.now(timezone.utc)  # type: ignore
+        await self._audit_review("APPROVE", rec, actor)
         await self.session.flush()
         return rec
 
-    async def _validate_payment(self, payment_id: int):
+    async def _audit_review(
+        self,
+        action: str,
+        rec: PaymentReconciliation,
+        actor: Optional["AuditActor"],
+    ) -> None:
+        """Record a VERIFY / APPROVE audit entry for a reconciliation
+        review (best-effort, shares the caller's transaction)."""
+        try:
+            from app.domains.audit.service import AuditService
+
+            audit_svc = AuditService(self.session)
+            await audit_svc.record(
+                action=action,
+                resource_type="reconciliation",
+                resource_id=str(rec.id),
+                actor=actor,
+                details={
+                    "rec_id": rec.id,
+                    "status_after": rec.status,
+                    "reconciled_by": rec.reconciled_by,
+                },
+            )
+        except Exception:
+            logger.warning(
+                "Failed to write audit entry for reconciliation %s (non-fatal)", action,
+                exc_info=True,
+            )
+
+    async def _validate_payment(self, payment_id: int, campus_id: Optional[int] = None):
         from app.domains.fees.models import Payment
         result = await self.session.execute(
             select(Payment).where(Payment.id == payment_id)
@@ -449,6 +516,12 @@ class ReconciliationService:
         payment = result.scalar_one_or_none()
         if payment is None:
             raise NotFoundError(f"Payment {payment_id} not found")
+        # A reconciliation must never reference a payment from another
+        # campus (legacy NULL-campus payments remain accepted).
+        if campus_id is not None and payment.campus_id not in (None, campus_id):
+            raise ValidationError(
+                f"Payment {payment_id} does not belong to campus {campus_id}"
+            )
         return payment
 
 
@@ -461,7 +534,19 @@ class ReceiptService:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def generate(self, data: ReceiptGenerate, generated_by: int) -> Receipt:
+    async def generate(
+        self,
+        data: ReceiptGenerate,
+        generated_by: int,
+        campus_id: Optional[int] = None,
+    ) -> Receipt:
+        """Generate a receipt for a payment.
+
+        ``campus_id`` is the authoritative tenant scope from the router: a
+        payment owned by a different campus must not be receipted here
+        (prevents cross-tenant junction + amount disclosure).  Legacy
+        NULL-campus payments remain accepted.
+        """
         from app.domains.fees.models import Payment
 
         payment = await self.session.execute(
@@ -471,25 +556,59 @@ class ReceiptService:
         if payment is None:
             raise NotFoundError(f"Payment {data.payment_id} not found")
 
+        if campus_id is not None and payment.campus_id not in (None, campus_id):
+            raise ValidationError(
+                f"Payment {data.payment_id} does not belong to campus {campus_id}"
+            )
+
         existing = await self._find_by_payment(data.payment_id)
         if existing:
             return existing
 
-        receipt_number = await self._generate_receipt_number()
-        receipt = Receipt(
-            payment_id=data.payment_id,
-            receipt_number=receipt_number,
-            receipt_date=datetime.date.today(),
-            amount=payment.amount,
-            payment_method_name=payment.payment_method,
-            reference_number=payment.receipt_number,
-            notes=data.notes,
-            status="active",
-            generated_by=generated_by,
+        return await self._create_with_retry(
+            data, payment, generated_by, campus_id=campus_id
         )
-        self.session.add(receipt)
-        await self.session.flush()
-        return receipt
+
+    async def _create_with_retry(
+        self,
+        data: ReceiptGenerate,
+        payment: Any,
+        generated_by: int,
+        campus_id: Optional[int] = None,
+        attempts: int = 5,
+    ) -> Receipt:
+        """Insert a receipt, retrying when a concurrent request wins the
+        receipt-number race (unique ``receipt_number`` constraint).
+
+        Each attempt runs in its own savepoint, so a failed attempt rolls
+        back cleanly and re-reads the latest sequence before retrying.
+        """
+        for _ in range(attempts):
+            try:
+                async with self.session.begin_nested():
+                    receipt_number = await self._generate_receipt_number()
+                    receipt = Receipt(
+                        payment_id=data.payment_id,
+                        receipt_number=receipt_number,
+                        receipt_date=datetime.date.today(),
+                        amount=payment.amount,
+                        payment_method_name=payment.payment_method or "unknown",
+                        reference_number=payment.receipt_number,
+                        notes=data.notes,
+                        status="active",
+                        generated_by=generated_by,
+                        campus_id=campus_id,
+                    )
+                    self.session.add(receipt)
+                    await self.session.flush()
+                return receipt
+            except IntegrityError:
+                logger.info(
+                    "Receipt number collision on attempt; retrying", exc_info=True
+                )
+        raise ConflictError(
+            "Could not allocate a unique receipt number - try again"
+        )
 
     async def get(self, receipt_id: int) -> Receipt:
         result = await self.session.execute(
@@ -560,19 +679,13 @@ class ReceiptService:
         receipt = await self.get(receipt_id)
         from app.domains.fees.models import Payment, FeeDue, FeeStructure, FeeType
         from app.domains.student.models import Student
-        from app.domains.academic.models import AcademicYear, Class, Section
-        from app.domains.academic.repository import SectionRepository
+        from app.domains.academic.models import AcademicYear
 
-        payment = await self.session.execute(
-            select(Payment)
-            .options(
-                joinedload(Payment.student),
-                joinedload(Payment.fee_due).joinedload(FeeDue.fee_structure)
-                .joinedload(FeeStructure.fee_type),
+        payment = (
+            await self.session.execute(
+                select(Payment).where(Payment.id == receipt.payment_id)
             )
-            .where(Payment.id == receipt.payment_id)
-        )
-        payment = payment.scalar_one_or_none()
+        ).scalar_one_or_none()
 
         detail = {
             "id": receipt.id,
@@ -587,11 +700,47 @@ class ReceiptService:
         }
 
         if payment:
-            detail["student_name"] = getattr(payment, "student", None) and f"{payment.student.first_name} {payment.student.last_name}"
-            detail["student_number"] = getattr(payment, "student", None) and payment.student.student_number
-            if payment.fee_due and payment.fee_due.fee_structure:
-                detail["fee_type_name"] = payment.fee_due.fee_structure.fee_type.name
-                detail["academic_year_name"] = getattr(payment.fee_due.fee_structure, "academic_year", None) and payment.fee_due.fee_structure.academic_year.name
+            student = (
+                await self.session.execute(
+                    select(Student).where(Student.id == payment.student_id)
+                )
+            ).scalar_one_or_none()
+            if student:
+                detail["student_name"] = (
+                    f"{student.first_name} {student.last_name}"
+                )
+                detail["student_number"] = student.student_number
+
+            fee_due = (
+                await self.session.execute(
+                    select(FeeDue).where(FeeDue.id == payment.fee_due_id)
+                )
+            ).scalar_one_or_none()
+            if fee_due:
+                structure = (
+                    await self.session.execute(
+                        select(FeeStructure).where(
+                            FeeStructure.id == fee_due.fee_structure_id
+                        )
+                    )
+                ).scalar_one_or_none()
+                if structure:
+                    fee_type = (
+                        await self.session.execute(
+                            select(FeeType).where(FeeType.id == structure.fee_type_id)
+                        )
+                    ).scalar_one_or_none()
+                    if fee_type:
+                        detail["fee_type_name"] = fee_type.name
+                    year = (
+                        await self.session.execute(
+                            select(AcademicYear).where(
+                                AcademicYear.id == structure.academic_year_id
+                            )
+                        )
+                    ).scalar_one_or_none()
+                    if year:
+                        detail["academic_year_name"] = year.name
 
         return detail
 
@@ -599,9 +748,25 @@ class ReceiptService:
         detail = await self.get_receipt_detail(receipt_id)
         receipt = await self.get(receipt_id)
 
-        html = f"""<!DOCTYPE html>
+        def esc(value: Any) -> str:
+            return html.escape(str(value), quote=True) if value is not None else "N/A"
+
+        receipt_number = esc(detail["receipt_number"])
+        receipt_date = esc(detail["receipt_date"])
+        student_name = esc(detail.get("student_name", "N/A"))
+        student_number = esc(detail.get("student_number", "N/A"))
+        fee_type_name = esc(detail.get("fee_type_name", "N/A"))
+        payment_method_name = esc(detail["payment_method_name"])
+        reference_row = (
+            f'<tr><td class="label">Reference:</td><td>{esc(detail["reference_number"])}</td></tr>'
+            if detail.get("reference_number")
+            else ""
+        )
+        amount = detail["amount"] / 100
+
+        receipt_html = f"""<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><title>Receipt {detail['receipt_number']}</title>
+<head><meta charset="utf-8"><title>Receipt {receipt_number}</title>
 <style>
   body {{ font-family: 'Courier New', monospace; font-size: 12px; max-width: 80mm; margin: 0 auto; padding: 10px; }}
   .header {{ text-align: center; margin-bottom: 10px; }}
@@ -618,21 +783,21 @@ class ReceiptService:
 <body>
 <div class="header">
   <h1>RECEIPT</h1>
-  <p>#{detail['receipt_number']}</p>
-  <p>{detail['receipt_date']}</p>
+  <p>#{receipt_number}</p>
+  <p>{receipt_date}</p>
 </div>
 <hr>
 <table>
-  <tr><td class="label">Student:</td><td>{detail.get('student_name', 'N/A')}</td></tr>
-  <tr><td class="label">Student #:</td><td>{detail.get('student_number', 'N/A')}</td></tr>
-  <tr><td class="label">Fee Type:</td><td>{detail.get('fee_type_name', 'N/A')}</td></tr>
-  <tr><td class="label">Payment Method:</td><td>{detail['payment_method_name']}</td></tr>
-  {f'<tr><td class="label">Reference:</td><td>{detail["reference_number"]}</td></tr>' if detail.get('reference_number') else ''}
+  <tr><td class="label">Student:</td><td>{student_name}</td></tr>
+  <tr><td class="label">Student #:</td><td>{student_number}</td></tr>
+  <tr><td class="label">Fee Type:</td><td>{fee_type_name}</td></tr>
+  <tr><td class="label">Payment Method:</td><td>{payment_method_name}</td></tr>
+  {reference_row}
 </table>
 <hr>
 <div class="row">
   <span class="label">Amount Paid:</span>
-  <span>${detail['amount'] / 100:.2f}</span>
+  <span>&#8377;{amount:.2f}</span>
 </div>
 <hr>
 <div class="footer">
@@ -641,7 +806,7 @@ class ReceiptService:
 </div>
 <script>window.print();</script>
 </body></html>"""
-        return html
+        return receipt_html
 
     async def export_receipts_csv(
         self,
@@ -684,17 +849,18 @@ class ReceiptService:
     async def _generate_receipt_number(self) -> str:
         today = datetime.date.today()
         prefix = f"RCP-{today.year}{today.month:02d}{today.day:02d}-"
-        last = await self.session.execute(
-            select(Receipt.receipt_number)
-            .where(Receipt.receipt_number.like(f"{prefix}%"))
-            .order_by(Receipt.id.desc())
-            .limit(1)
+        result = await self.session.execute(
+            select(
+                func.max(
+                    func.cast(
+                        func.substr(Receipt.receipt_number, len(prefix) + 1),
+                        Integer,
+                    )
+                )
+            ).where(Receipt.receipt_number.like(f"{prefix}%"))
         )
-        last_num = last.scalar_one_or_none()
-        if last_num:
-            seq = int(last_num.split("-")[-1]) + 1
-        else:
-            seq = 1
+        last_seq = result.scalar_one_or_none()
+        seq = (last_seq or 0) + 1
         return f"{prefix}{seq:04d}"
 
 
@@ -890,81 +1056,68 @@ class SchoolFinanceDashboardService:
         if campus_id is not None:
             conditions.append(Payment.campus_id == campus_id)
 
-        total_payments = await self.session.execute(
-            select(func.coalesce(func.sum(Payment.amount), 0))
-        )
+        total_payments_q = select(func.coalesce(func.sum(Payment.amount), 0))
         if conditions:
-            total_payments = total_payments.where(and_(*conditions))
-        total_collected = total_payments.scalar() or 0
+            total_payments_q = total_payments_q.where(and_(*conditions))
+        total_collected = (await self.session.execute(total_payments_q)).scalar() or 0
 
-        payment_count_result = await self.session.execute(
-            select(func.count(Payment.id))
-        )
+        payment_count_q = select(func.count(Payment.id))
         if conditions:
-            payment_count_result = payment_count_result.where(and_(*conditions))
-        payment_count = payment_count_result.scalar() or 0
+            payment_count_q = payment_count_q.where(and_(*conditions))
+        payment_count = (await self.session.execute(payment_count_q)).scalar() or 0
 
         due_conditions = []
         if campus_id is not None:
             due_conditions.append(FeeDue.campus_id == campus_id)
 
-        total_due = await self.session.execute(
-            select(func.coalesce(func.sum(FeeDue.original_amount), 0))
-        )
+        total_due_q = select(func.coalesce(func.sum(FeeDue.original_amount), 0))
         if due_conditions:
-            total_due = total_due.where(and_(*due_conditions))
-        total_assigned = total_due.scalar() or 0
+            total_due_q = total_due_q.where(and_(*due_conditions))
+        total_assigned = (await self.session.execute(total_due_q)).scalar() or 0
 
-        total_paid_due = await self.session.execute(
-            select(func.coalesce(func.sum(FeeDue.amount_paid), 0))
-        )
+        total_paid_q = select(func.coalesce(func.sum(FeeDue.amount_paid), 0))
         if due_conditions:
-            total_paid_due = total_paid_due.where(and_(*due_conditions))
-        total_paid = total_paid_due.scalar() or 0
+            total_paid_q = total_paid_q.where(and_(*due_conditions))
+        total_paid = (await self.session.execute(total_paid_q)).scalar() or 0
 
         total_outstanding = total_assigned - total_paid
 
         today = datetime.date.today().isoformat()
-        today_payments = await self.session.execute(
-            select(func.coalesce(func.sum(Payment.amount), 0)).where(
-                Payment.payment_date == today
-            )
-        )
-        today_collection = today_payments.scalar() or 0
+        today_conditions = [Payment.payment_date == today]
+        if campus_id is not None:
+            today_conditions.append(Payment.campus_id == campus_id)
+        today_payments_q = select(
+            func.coalesce(func.sum(Payment.amount), 0)
+        ).where(and_(*today_conditions))
+        today_collection = (await self.session.execute(today_payments_q)).scalar() or 0
 
-        today_count_result = await self.session.execute(
-            select(func.count(Payment.id)).where(
-                Payment.payment_date == today
-            )
-        )
-        today_count = today_count_result.scalar() or 0
+        today_count_q = select(func.count(Payment.id)).where(and_(*today_conditions))
+        today_count = (await self.session.execute(today_count_q)).scalar() or 0
 
         rec_conditions = []
         if campus_id is not None:
             rec_conditions.append(PaymentReconciliation.campus_id == campus_id)
 
-        rec_count = await self.session.execute(
-            select(func.count(PaymentReconciliation.id))
-        )
+        rec_count_q = select(func.count(PaymentReconciliation.id))
         if rec_conditions:
-            rec_count = rec_count.where(and_(*rec_conditions))
-        total_rec = rec_count.scalar() or 0
+            rec_count_q = rec_count_q.where(and_(*rec_conditions))
+        total_rec = (await self.session.execute(rec_count_q)).scalar() or 0
 
-        pending_rec = await self.session.execute(
-            select(func.count(PaymentReconciliation.id)).where(
-                PaymentReconciliation.status.in_(["draft", "submitted"])
-            )
+        pending_rec_q = select(func.count(PaymentReconciliation.id)).where(
+            PaymentReconciliation.status.in_(["draft", "submitted"])
         )
-        pending = pending_rec.scalar() or 0
+        if campus_id is not None:
+            pending_rec_q = pending_rec_q.where(
+                PaymentReconciliation.campus_id == campus_id
+            )
+        pending = (await self.session.execute(pending_rec_q)).scalar() or 0
 
         collection_rate = round((total_collected / total_assigned * 100), 1) if total_assigned > 0 else 0.0
 
-        recent = await self.session.execute(
-            select(TransactionLog)
-            .order_by(TransactionLog.created_at.desc())
-            .limit(10)
-        )
-        recent_logs = recent.scalars().all()
+        recent_q = select(TransactionLog).order_by(TransactionLog.created_at.desc()).limit(10)
+        if campus_id is not None:
+            recent_q = recent_q.where(TransactionLog.campus_id == campus_id)
+        recent_logs = (await self.session.execute(recent_q)).scalars().all()
 
         from app.domains.school_finance.schemas import TransactionLogResponse
         return {

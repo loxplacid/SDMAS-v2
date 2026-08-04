@@ -20,6 +20,8 @@ from app.domains.notifications.service import NotificationService
 from app.domains.notifications.preferences import NotificationPreferenceService
 from app.domains.notifications.sse_manager import sse_manager
 from app.infrastructure.database import get_session
+from app.multi_tenant.dependencies import require_tenant_context
+from app.multi_tenant.models import TenantContext
 
 router = APIRouter(prefix="/api/notifications", tags=["notifications"])
 
@@ -31,8 +33,9 @@ async def list_notifications(
     unread_only: bool = Query(default=False),
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> Page[NotificationResponse]:
-    svc = NotificationService(session)
+    svc = NotificationService(session, tenant)
     items, total = await svc.get_user_notifications(
         user_id=current_user.id,
         skip=skip,
@@ -52,8 +55,9 @@ async def list_notifications(
 async def get_unread_count(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> UnreadCountResponse:
-    svc = NotificationService(session)
+    svc = NotificationService(session, tenant)
     count = await svc.get_unread_count(current_user.id)
     return UnreadCountResponse(count=count)
 
@@ -62,6 +66,7 @@ async def get_unread_count(
 async def notification_events(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> StreamingResponse:
     """SSE endpoint for real-time notification updates.
 
@@ -73,7 +78,7 @@ async def notification_events(
 
     async def event_generator() -> None:
         try:
-            svc = NotificationService(session)
+            svc = NotificationService(session, tenant)
             count = await svc.get_unread_count(current_user.id)
             yield f"event: unread_count\ndata: {count}\n\n"
 
@@ -96,8 +101,9 @@ async def mark_notification_read(
     notification_id: int,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> NotificationResponse:
-    svc = NotificationService(session)
+    svc = NotificationService(session, tenant)
     existing = await svc.repo.get_by_id(notification_id)
     if existing.user_id != current_user.id:
         # Do not leak the existence of other users' notifications.
@@ -113,8 +119,9 @@ async def mark_notification_read(
 async def mark_all_notifications_read(
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> UnreadCountResponse:
-    svc = NotificationService(session)
+    svc = NotificationService(session, tenant)
     await svc.mark_all_as_read(current_user.id)
     return UnreadCountResponse(count=0)
 
@@ -127,8 +134,9 @@ async def delete_notification(
     notification_id: int,
     session: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
-    svc = NotificationService(session)
+    svc = NotificationService(session, tenant)
     existing = await svc.repo.get_by_id(notification_id)
     if existing.user_id != current_user.id:
         from app.core.exceptions import NotFoundError

@@ -154,6 +154,12 @@ class MigrationEngine:
                 entity_type, overall, result.imported, result.skipped,
                 result.errors, elapsed,
             )
+            await self._audit(
+                entity_type=entity_type,
+                run_id=run_id,
+                result=result,
+                dry_run=is_dry_run,
+            )
             return result
 
         except Exception as exc:
@@ -172,7 +178,54 @@ class MigrationEngine:
                 completed_at=datetime.datetime.now(datetime.timezone.utc),
             )
             logger.error("Migration '%s' failed: %s", entity_type, exc)
+            await self._audit(
+                entity_type=entity_type,
+                run_id=run_id,
+                result=result,
+                dry_run=is_dry_run,
+                failed=True,
+                failure_reason=str(exc),
+            )
             return result
+
+    async def _audit(
+        self,
+        *,
+        entity_type: str,
+        run_id: int,
+        result: MigratorResult,
+        dry_run: bool,
+        failed: bool = False,
+        failure_reason: str | None = None,
+    ) -> None:
+        """Record a migration run with the SYSTEM actor (best-effort)."""
+        try:
+            from app.domains.audit.actors import AuditActor
+            from app.domains.audit.service import AuditService
+
+            audit_svc = AuditService(self.session)
+            await audit_svc.record(
+                action="MIGRATION_RUN",
+                resource_type="migration",
+                resource_id=str(run_id),
+                actor=AuditActor.system(reason="migration"),
+                details={
+                    "entity_type": entity_type,
+                    "run_id": run_id,
+                    "dry_run": dry_run,
+                    "imported": result.imported,
+                    "skipped": result.skipped,
+                    "errors": result.errors,
+                    "warnings": result.warnings,
+                },
+                result="FAILURE" if failed else "SUCCESS",
+                failure_reason=failure_reason,
+            )
+        except Exception:
+            logger.warning(
+                "Failed to write audit entry for migration run %d (non-fatal)",
+                run_id, exc_info=True,
+            )
 
     async def run_bulk(
         self,

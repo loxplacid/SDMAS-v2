@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 class ChannelMessage:
     """A structured message to be delivered through a notification channel."""
 
-    __slots__ = ("user_id", "event_type", "title", "message", "data", "tenant_id")
+    __slots__ = ("user_id", "event_type", "title", "message", "data", "tenant_id", "event_key")
 
     def __init__(
         self,
@@ -39,6 +39,7 @@ class ChannelMessage:
         message: str,
         data: dict[str, Any] | None = None,
         tenant_id: int | None = None,
+        event_key: str | None = None,
     ) -> None:
         self.user_id = user_id
         self.event_type = event_type
@@ -46,6 +47,7 @@ class ChannelMessage:
         self.message = message
         self.data = data
         self.tenant_id = tenant_id
+        self.event_key = event_key
 
 
 # ---------------------------------------------------------------------------
@@ -73,12 +75,28 @@ class InAppChannel:
 
     async def deliver(self, msg: ChannelMessage) -> bool:
         try:
+            # DB-level dedup: skip when an unread notification for the same
+            # business event already exists for this user. The in-memory
+            # dispatcher dedup only covers one process lifetime; this guard
+            # survives restarts and duplicate publishes.
+            if msg.event_key:
+                if await self.repo.exists_unread_by_event_key(
+                    msg.user_id, msg.event_key
+                ):
+                    logger.debug(
+                        "Skipping duplicate notification event_key=%s for user %s",
+                        msg.event_key,
+                        msg.user_id,
+                    )
+                    return False
+
             notification = Notification(
                 user_id=msg.user_id,
                 type=msg.event_type,
                 title=msg.title,
                 message=msg.message,
                 data=msg.data,
+                event_key=msg.event_key,
             )
             await self.repo.create(notification)
             count = await self.repo.count_unread(msg.user_id)

@@ -39,6 +39,8 @@ from app.domains.workflow.service import (
     WorkflowExecutionService,
 )
 from app.infrastructure.database import get_session
+from app.multi_tenant.dependencies import require_tenant_context
+from app.multi_tenant.models import TenantContext
 
 router = APIRouter(prefix="/api/workflows", tags=["workflows"])
 
@@ -50,25 +52,27 @@ router = APIRouter(prefix="/api/workflows", tags=["workflows"])
 
 async def get_admin_service(
     session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> WorkflowAdminService:
     return WorkflowAdminService(
-        workflow_repo=WorkflowRepository(session),
-        step_repo=WorkflowStepRepository(session),
-        transition_repo=WorkflowTransitionRepository(session),
-        action_repo=WorkflowActionRepository(session),
+        workflow_repo=WorkflowRepository(session, tenant),
+        step_repo=WorkflowStepRepository(session, tenant),
+        transition_repo=WorkflowTransitionRepository(session, tenant),
+        action_repo=WorkflowActionRepository(session, tenant),
     )
 
 
 async def get_execution_service(
     session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> WorkflowExecutionService:
     return WorkflowExecutionService(
-        instance_repo=WorkflowInstanceRepository(session),
-        workflow_repo=WorkflowRepository(session),
-        step_repo=WorkflowStepRepository(session),
-        transition_repo=WorkflowTransitionRepository(session),
-        action_repo=WorkflowActionRepository(session),
-        history_repo=ApprovalHistoryRepository(session),
+        instance_repo=WorkflowInstanceRepository(session, tenant),
+        workflow_repo=WorkflowRepository(session, tenant),
+        step_repo=WorkflowStepRepository(session, tenant),
+        transition_repo=WorkflowTransitionRepository(session, tenant),
+        action_repo=WorkflowActionRepository(session, tenant),
+        history_repo=ApprovalHistoryRepository(session, tenant),
     )
 
 

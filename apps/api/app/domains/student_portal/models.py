@@ -47,6 +47,12 @@ class Assignment(Base):
     term_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("terms.id", ondelete="SET NULL"), nullable=True
     )
+    campus_id: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        ForeignKey("campuses.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     # Type & submission
     assignment_type: Mapped[str] = mapped_column(

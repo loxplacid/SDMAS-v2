@@ -38,6 +38,12 @@ class Guardian(Base):
     is_primary: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True
     )
+    campus_id: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        ForeignKey("campuses.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,

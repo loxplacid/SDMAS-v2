@@ -842,12 +842,19 @@ class TestServiceEmissions:
             to_end_date="2028-08-31",
         )
         assert result["success"] is True
-        assert any(isinstance(e, AcademicYearRolloverCompletedEvent) for e in captured)
-        event = [
-            e for e in captured if isinstance(e, AcademicYearRolloverCompletedEvent)
-        ][0]
-        assert event.new_year_id == result["academic_year_id"]
-        assert event.students_rolled == result["enrollments_created"]
+        from sqlalchemy import select
+        from app.domains.events.outbox import OutboxEvent
+        rows = (
+            await db_session.execute(
+                select(OutboxEvent).where(
+                    OutboxEvent.event_type == "academic_year.rollover_completed"
+                )
+            )
+        ).scalars().all()
+        assert len(rows) == 1
+        event = rows[0]
+        assert event.payload["new_year_id"] == result["academic_year_id"]
+        assert event.payload["students_rolled"] == result["enrollments_created"]
 
     async def test_workflow_service_emits_approved(
         self, db_session, captured, seeded_workflow

@@ -1,17 +1,27 @@
 from __future__ import annotations
 
 import datetime
-from typing import Any, Sequence
+from typing import Any, Optional, Sequence
 
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.jobs.models import Job
+from app.multi_tenant.models import TenantContext
+from app.multi_tenant.repository import TenantScopedRepository
 
 
-class JobRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class JobRepository(TenantScopedRepository):
+    """Job data access.
+
+    Routers construct this repository with the caller's ``TenantContext``
+    so listing / fetching jobs is pinned to the caller's campus at query
+    construction time.  The background :class:`JobWorker` constructs it
+    without a tenant — that is an explicit platform operation.
+    """
+
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def create(self, job: Job) -> Job:
         self.session.add(job)
@@ -20,13 +30,13 @@ class JobRepository:
 
     async def get_by_id(self, job_id: int) -> Job | None:
         result = await self.session.execute(
-            select(Job).where(Job.id == job_id)
+            self.scoped_query(Job).where(Job.id == job_id)
         )
         return result.scalar_one_or_none()
 
     async def get_by_identity_key(self, key: str) -> Job | None:
         result = await self.session.execute(
-            select(Job).where(Job.identity_key == key)
+            self.scoped_query(Job).where(Job.identity_key == key)
         )
         return result.scalar_one_or_none()
 
@@ -217,8 +227,8 @@ class JobRepository:
         skip: int = 0,
         limit: int = 50,
     ) -> tuple[Sequence[Job], int]:
-        query = select(Job)
-        count_query = select(func.count(Job.id))
+        query = self.scoped_query(Job)
+        count_query = self.scoped_count(Job)
 
         filters = []
         if status is not None:
@@ -254,6 +264,6 @@ class JobRepository:
             conditions.append(Job.job_type == job_type)
 
         result = await self.session.execute(
-            select(func.count(Job.id)).where(*conditions)
+            self.scoped_count(Job).where(*conditions)
         )
         return result.scalar() or 0

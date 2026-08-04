@@ -119,6 +119,15 @@ INSTITUTION_MANAGE: Final[str] = "institution.manage"
 WORKFLOW_VIEW: Final[str] = "workflow.view"
 WORKFLOW_MANAGE: Final[str] = "workflow.manage"
 
+# ── Platform (cross-tenant) ───────────────────────────────────────────
+# Platform-level permissions gate CROSS-TENANT / unscoped access.  A
+# tenant admin (even ``admin``) is scoped to their campus; only a user
+# holding an explicit platform permission may operate outside tenant
+# boundaries.  ``platform.access`` grants read+operate across campuses;
+# ``platform.manage`` grants administrative cross-tenant operations.
+PLATFORM_ACCESS: Final[str] = "platform.access"
+PLATFORM_MANAGE: Final[str] = "platform.manage"
+
 
 # =====================================================================
 # Permission Registry — used for seeding and validation
@@ -157,6 +166,8 @@ ALL_PERMISSIONS: list[str] = [
     INSTITUTION_VIEW, INSTITUTION_MANAGE,
     # Workflow
     WORKFLOW_VIEW, WORKFLOW_MANAGE,
+    # Platform
+    PLATFORM_ACCESS, PLATFORM_MANAGE,
 ]
 
 
@@ -164,19 +175,36 @@ ALL_PERMISSIONS: list[str] = [
 # Default role → permission mappings
 # =====================================================================
 
+# Every permission EXCEPT the platform-gating ones.  ``admin`` is a
+# TENANT role: it gets full control inside its own campus but must NEVER
+# satisfy a platform check — "unscoped" must not imply platform admin.
+TENANT_ALL_PERMISSIONS: list[str] = [
+    p for p in ALL_PERMISSIONS if p not in (PLATFORM_ACCESS, PLATFORM_MANAGE)
+]
+
+
 ROLE_PERMISSIONS: dict[str, list[str]] = {
-    "admin": ALL_PERMISSIONS,  # admin gets everything
+    # Platform operator: explicit cross-tenant access.  ``admin`` is a
+    # TENANT role and is deliberately NOT granted platform permissions,
+    # so a tenant admin can never see another campus without an explicit
+    # platform grant (see multi_tenant.dependencies.resolve_tenant_context).
+    "platform_admin": [PLATFORM_ACCESS, PLATFORM_MANAGE, *TENANT_ALL_PERMISSIONS],
+
+    "admin": TENANT_ALL_PERMISSIONS,  # tenant-level admin: everything within their campus
 
     "principal": [
-        STUDENTS_VIEW, TEACHERS_VIEW,
+        STUDENTS_VIEW, STUDENTS_UPDATE,
+        TEACHERS_VIEW,
         ATTENDANCE_VIEW,
         FEES_VIEW,
-        ACADEMIC_VIEW, SUBJECTS_VIEW,
+        ACADEMIC_VIEW, SUBJECTS_VIEW, ACADEMIC_CREATE, ACADEMIC_UPDATE,
+        ADMISSIONS_VIEW, ADMISSIONS_CREATE, ADMISSIONS_UPDATE, ADMISSIONS_APPROVE,
         REPORTS_VIEW, REPORTS_CREATE, REPORTS_EXPORT,
         ANALYTICS_VIEW, ANALYTICS_EXPORT,
         NOTIFICATIONS_VIEW,
         LEAVE_VIEW, LEAVE_APPROVE,
         AUDIT_VIEW,
+        WORKFLOW_VIEW, WORKFLOW_MANAGE,
     ],
 
     "accountant": [
@@ -188,10 +216,11 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
     ],
 
     "staff": [
-        STUDENTS_VIEW,
+        STUDENTS_VIEW, STUDENTS_CREATE, STUDENTS_UPDATE,
+        ACADEMIC_VIEW, SUBJECTS_VIEW,
         ATTENDANCE_VIEW, ATTENDANCE_RECORD, ATTENDANCE_UPDATE, ATTENDANCE_EXPORT,
         NOTIFICATIONS_VIEW, NOTIFICATIONS_CREATE,
-        LEAVE_VIEW, LEAVE_CREATE,
+        LEAVE_VIEW, LEAVE_CREATE, LEAVE_UPDATE,
     ],
 
     "teacher": [

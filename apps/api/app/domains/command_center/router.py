@@ -12,7 +12,7 @@ from app.domains.auth.models import User
 from app.domains.command_center.schemas import CommandCenterOverview
 from app.domains.command_center.service import CommandCenterService
 from app.infrastructure.database import get_session
-from app.multi_tenant.dependencies import get_optional_tenant
+from app.multi_tenant.dependencies import require_tenant_context
 from app.multi_tenant.guards import effective_campus_id
 from app.multi_tenant.models import TenantContext
 
@@ -30,7 +30,7 @@ async def get_command_center_overview(
     current_user: User = Depends(
         require_role("admin", "principal", "accountant", "staff", "teacher")
     ),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
     service: CommandCenterService = Depends(get_command_center_service),
 ) -> CommandCenterOverview:
     """Aggregated School Command Center overview.

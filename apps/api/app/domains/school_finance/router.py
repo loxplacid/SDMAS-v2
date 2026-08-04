@@ -8,6 +8,20 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.pagination import Page, PaginationParams
+from app.domains.audit.actors import AuditActor
+from app.domains.auth.dependencies import require_permission
+from app.domains.auth.models import User
+from app.domains.auth.permissions import (
+    FEES_CREATE,
+    FEES_DELETE,
+    FEES_EXPORT,
+    FEES_RECORD_PAYMENT,
+    FEES_UPDATE,
+    FEES_VIEW,
+    REPORTS_CREATE,
+    REPORTS_EXPORT,
+    REPORTS_VIEW,
+)
 from app.domains.school_finance.schemas import (
     FeeScheduleCreate,
     FeeSchedulePage,
@@ -43,6 +57,9 @@ from app.domains.school_finance.service import (
     TransactionLogService,
 )
 from app.infrastructure.database import get_session
+from app.multi_tenant.dependencies import require_tenant_context
+from app.multi_tenant.guards import assert_tenant_scope, effective_campus_id
+from app.multi_tenant.models import TenantContext
 
 router = APIRouter(prefix="/api/school-finance", tags=["school-finance"])
 
@@ -88,8 +105,10 @@ async def get_dash_svc(session: AsyncSession = Depends(get_session)) -> SchoolFi
 async def get_dashboard(
     campus_id: Optional[int] = Query(None, alias="campus_id"),
     svc: SchoolFinanceDashboardService = Depends(get_dash_svc),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> SchoolFinanceDashboard:
-    return await svc.get_dashboard(campus_id=campus_id)
+    return await svc.get_dashboard(campus_id=effective_campus_id(tenant, campus_id))
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -101,16 +120,25 @@ async def get_dashboard(
 async def create_payment_method(
     data: PaymentMethodCreate,
     svc: PaymentMethodService = Depends(get_pm_svc),
+    _actor: User = Depends(require_permission(FEES_CREATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> PaymentMethodResponse:
-    return PaymentMethodResponse.model_validate(await svc.create(data))
+    pm = await svc.create(data)
+    from app.multi_tenant.guards import inject_campus
+    inject_campus(pm, tenant)
+    return PaymentMethodResponse.model_validate(pm)
 
 
 @router.get("/payment-methods/{pm_id}", response_model=PaymentMethodResponse)
 async def get_payment_method(
     pm_id: int,
     svc: PaymentMethodService = Depends(get_pm_svc),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> PaymentMethodResponse:
-    return PaymentMethodResponse.model_validate(await svc.get(pm_id))
+    pm = await svc.get(pm_id)
+    assert_tenant_scope(pm, tenant, resource="payment method")
+    return PaymentMethodResponse.model_validate(pm)
 
 
 @router.get("/payment-methods", response_model=PaymentMethodPage)
@@ -119,9 +147,11 @@ async def list_payment_methods(
     is_active: Optional[bool] = Query(None, alias="is_active"),
     campus_id: Optional[int] = Query(None, alias="campus_id"),
     svc: PaymentMethodService = Depends(get_pm_svc),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> PaymentMethodPage:
     items, total = await svc.list(
-        is_active=is_active, campus_id=campus_id,
+        is_active=is_active, campus_id=effective_campus_id(tenant, campus_id),
         skip=pagination.offset, limit=pagination.limit,
     )
     return Page.create(
@@ -135,7 +165,11 @@ async def update_payment_method(
     pm_id: int,
     data: PaymentMethodUpdate,
     svc: PaymentMethodService = Depends(get_pm_svc),
+    _actor: User = Depends(require_permission(FEES_UPDATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> PaymentMethodResponse:
+    existing = await svc.get(pm_id)
+    assert_tenant_scope(existing, tenant, resource="payment method")
     return PaymentMethodResponse.model_validate(await svc.update(pm_id, data))
 
 
@@ -143,7 +177,11 @@ async def update_payment_method(
 async def delete_payment_method(
     pm_id: int,
     svc: PaymentMethodService = Depends(get_pm_svc),
+    _actor: User = Depends(require_permission(FEES_DELETE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
+    existing = await svc.get(pm_id)
+    assert_tenant_scope(existing, tenant, resource="payment method")
     await svc.delete(pm_id)
 
 
@@ -156,16 +194,25 @@ async def delete_payment_method(
 async def create_fee_schedule(
     data: FeeScheduleCreate,
     svc: FeeScheduleService = Depends(get_fs_svc),
+    _actor: User = Depends(require_permission(FEES_CREATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> FeeScheduleResponse:
-    return FeeScheduleResponse.model_validate(await svc.create(data))
+    fs = await svc.create(data)
+    from app.multi_tenant.guards import inject_campus
+    inject_campus(fs, tenant)
+    return FeeScheduleResponse.model_validate(fs)
 
 
 @router.get("/fee-schedules/{schedule_id}", response_model=FeeScheduleResponse)
 async def get_fee_schedule(
     schedule_id: int,
     svc: FeeScheduleService = Depends(get_fs_svc),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> FeeScheduleResponse:
-    return FeeScheduleResponse.model_validate(await svc.get(schedule_id))
+    fs = await svc.get(schedule_id)
+    assert_tenant_scope(fs, tenant, resource="fee schedule")
+    return FeeScheduleResponse.model_validate(fs)
 
 
 @router.get("/fee-schedules", response_model=FeeSchedulePage)
@@ -175,10 +222,12 @@ async def list_fee_schedules(
     status_filter: Optional[str] = Query(None, alias="status"),
     campus_id: Optional[int] = Query(None, alias="campus_id"),
     svc: FeeScheduleService = Depends(get_fs_svc),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> FeeSchedulePage:
     items, total = await svc.list(
         fee_structure_id=fee_structure_id, status_filter=status_filter,
-        campus_id=campus_id, skip=pagination.offset, limit=pagination.limit,
+        campus_id=effective_campus_id(tenant, campus_id), skip=pagination.offset, limit=pagination.limit,
     )
     return Page.create(
         items=[FeeScheduleResponse.model_validate(s) for s in items],
@@ -191,7 +240,11 @@ async def update_fee_schedule(
     schedule_id: int,
     data: FeeScheduleUpdate,
     svc: FeeScheduleService = Depends(get_fs_svc),
+    _actor: User = Depends(require_permission(FEES_UPDATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> FeeScheduleResponse:
+    existing = await svc.get(schedule_id)
+    assert_tenant_scope(existing, tenant, resource="fee schedule")
     return FeeScheduleResponse.model_validate(await svc.update(schedule_id, data))
 
 
@@ -199,7 +252,11 @@ async def update_fee_schedule(
 async def delete_fee_schedule(
     schedule_id: int,
     svc: FeeScheduleService = Depends(get_fs_svc),
+    _actor: User = Depends(require_permission(FEES_DELETE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
+    existing = await svc.get(schedule_id)
+    assert_tenant_scope(existing, tenant, resource="fee schedule")
     await svc.delete(schedule_id)
 
 
@@ -207,8 +264,12 @@ async def delete_fee_schedule(
 async def get_fee_structure_schedules(
     structure_id: int,
     svc: FeeScheduleService = Depends(get_fs_svc),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> list[FeeScheduleResponse]:
     items = await svc.get_by_fee_structure(structure_id)
+    for s in items:
+        assert_tenant_scope(s, tenant, resource="fee schedule")
     return [FeeScheduleResponse.model_validate(s) for s in items]
 
 
@@ -221,8 +282,12 @@ async def get_fee_structure_schedules(
 async def get_transaction(
     log_id: int,
     svc: TransactionLogService = Depends(get_tx_svc),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> TransactionLogResponse:
-    return TransactionLogResponse.model_validate(await svc.get(log_id))
+    tx = await svc.get(log_id)
+    assert_tenant_scope(tx, tenant, resource="transaction")
+    return TransactionLogResponse.model_validate(tx)
 
 
 @router.get("/transactions", response_model=TransactionLogPage)
@@ -235,10 +300,12 @@ async def list_transactions(
     from_date: Optional[str] = Query(None, alias="from_date"),
     to_date: Optional[str] = Query(None, alias="to_date"),
     svc: TransactionLogService = Depends(get_tx_svc),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> TransactionLogPage:
     items, total = await svc.list(
         student_id=student_id, transaction_type=transaction_type,
-        payment_id=payment_id, campus_id=campus_id,
+        payment_id=payment_id, campus_id=effective_campus_id(tenant, campus_id),
         from_date=from_date, to_date=to_date,
         skip=pagination.offset, limit=pagination.limit,
     )
@@ -252,8 +319,10 @@ async def list_transactions(
 async def get_student_balance(
     student_id: int,
     svc: TransactionLogService = Depends(get_tx_svc),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> dict:
-    balance = await svc.get_student_balance(student_id)
+    balance = await svc.get_student_balance(student_id, campus_id=effective_campus_id(tenant, None))
     return {"student_id": student_id, "balance": balance}
 
 
@@ -266,8 +335,20 @@ async def get_student_balance(
 async def create_reconciliation(
     data: ReconciliationCreate,
     svc: ReconciliationService = Depends(get_rec_svc),
+    actor: User = Depends(require_permission(FEES_UPDATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> ReconciliationResponse:
-    return ReconciliationResponse.model_validate(await svc.create(data, reconciled_by=0))
+    # The authoritative campus scope comes from the tenant context (a
+    # client-supplied campus_id in the payload is ignored) so a reconciliation
+    # can never be created for, or reference payments from, another campus.
+    rec = await svc.create(
+        data,
+        reconciled_by=actor.id,
+        campus_id=effective_campus_id(tenant, data.campus_id),
+    )
+    from app.multi_tenant.guards import inject_campus
+    inject_campus(rec, tenant)
+    return ReconciliationResponse.model_validate(rec)
 
 
 class StatusUpdateBody(BaseModel):
@@ -278,24 +359,40 @@ class StatusUpdateBody(BaseModel):
 async def verify_reconciliation(
     rec_id: int,
     svc: ReconciliationService = Depends(get_rec_svc),
+    actor: User = Depends(require_permission(FEES_UPDATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> ReconciliationResponse:
-    return ReconciliationResponse.model_validate(await svc.verify(rec_id, reviewed_by=0))
+    existing = await svc.get(rec_id)
+    assert_tenant_scope(existing, tenant, resource="reconciliation")
+    return ReconciliationResponse.model_validate(
+        await svc.verify(rec_id, reviewed_by=actor.id, actor=AuditActor.user(actor.id, actor.username))
+    )
 
 
 @router.post("/reconciliations/{rec_id}/approve", response_model=ReconciliationResponse)
 async def approve_reconciliation(
     rec_id: int,
     svc: ReconciliationService = Depends(get_rec_svc),
+    actor: User = Depends(require_permission(FEES_UPDATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> ReconciliationResponse:
-    return ReconciliationResponse.model_validate(await svc.approve(rec_id, reviewed_by=0))
+    existing = await svc.get(rec_id)
+    assert_tenant_scope(existing, tenant, resource="reconciliation")
+    return ReconciliationResponse.model_validate(
+        await svc.approve(rec_id, reviewed_by=actor.id, actor=AuditActor.user(actor.id, actor.username))
+    )
 
 
 @router.get("/reconciliations/{rec_id}", response_model=ReconciliationResponse)
 async def get_reconciliation(
     rec_id: int,
     svc: ReconciliationService = Depends(get_rec_svc),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> ReconciliationResponse:
-    return ReconciliationResponse.model_validate(await svc.get(rec_id))
+    rec = await svc.get(rec_id)
+    assert_tenant_scope(rec, tenant, resource="reconciliation")
+    return ReconciliationResponse.model_validate(rec)
 
 
 @router.get("/reconciliations", response_model=ReconciliationPage)
@@ -306,9 +403,11 @@ async def list_reconciliations(
     from_date: Optional[str] = Query(None, alias="from_date"),
     to_date: Optional[str] = Query(None, alias="to_date"),
     svc: ReconciliationService = Depends(get_rec_svc),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> ReconciliationPage:
     items, total = await svc.list(
-        status_filter=status_filter, campus_id=campus_id,
+        status_filter=status_filter, campus_id=effective_campus_id(tenant, campus_id),
         from_date=from_date, to_date=to_date,
         skip=pagination.offset, limit=pagination.limit,
     )
@@ -327,24 +426,43 @@ async def list_reconciliations(
 async def generate_receipt(
     data: ReceiptGenerate,
     svc: ReceiptService = Depends(get_receipt_svc),
+    actor: User = Depends(require_permission(FEES_RECORD_PAYMENT)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> ReceiptResponse:
-    return ReceiptResponse.model_validate(await svc.generate(data, generated_by=0))
+    # The payment must belong to the caller's campus — a receipt can never
+    # be issued for (or disclose the amount of) another school's payment.
+    receipt = await svc.generate(
+        data,
+        generated_by=actor.id,
+        campus_id=effective_campus_id(tenant, None),
+    )
+    from app.multi_tenant.guards import inject_campus
+    inject_campus(receipt, tenant)
+    return ReceiptResponse.model_validate(receipt)
 
 
 @router.get("/receipts/{receipt_id}", response_model=ReceiptDetailResponse)
 async def get_receipt(
     receipt_id: int,
     svc: ReceiptService = Depends(get_receipt_svc),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> ReceiptDetailResponse:
-    return ReceiptDetailResponse.model_validate(await svc.get(receipt_id))
+    receipt = await svc.get(receipt_id)
+    assert_tenant_scope(receipt, tenant, resource="receipt")
+    return ReceiptDetailResponse.model_validate(receipt)
 
 
 @router.get("/receipts/by-number/{receipt_number}", response_model=ReceiptDetailResponse)
 async def get_receipt_by_number(
     receipt_number: str,
     svc: ReceiptService = Depends(get_receipt_svc),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> ReceiptDetailResponse:
-    return ReceiptDetailResponse.model_validate(await svc.get_by_number(receipt_number))
+    receipt = await svc.get_by_number(receipt_number)
+    assert_tenant_scope(receipt, tenant, resource="receipt")
+    return ReceiptDetailResponse.model_validate(receipt)
 
 
 @router.get("/receipts", response_model=ReceiptPage)
@@ -356,9 +474,11 @@ async def list_receipts(
     from_date: Optional[str] = Query(None, alias="from_date"),
     to_date: Optional[str] = Query(None, alias="to_date"),
     svc: ReceiptService = Depends(get_receipt_svc),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> ReceiptPage:
     items, total = await svc.list(
-        payment_id=payment_id, campus_id=campus_id,
+        payment_id=payment_id, campus_id=effective_campus_id(tenant, campus_id),
         status_filter=status_filter, from_date=from_date, to_date=to_date,
         skip=pagination.offset, limit=pagination.limit,
     )
@@ -372,7 +492,11 @@ async def list_receipts(
 async def print_receipt(
     receipt_id: int,
     svc: ReceiptService = Depends(get_receipt_svc),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> str:
+    receipt = await svc.get(receipt_id)
+    assert_tenant_scope(receipt, tenant, resource="receipt")
     await svc.increment_print_count(receipt_id)
     return await svc.generate_receipt_html(receipt_id)
 
@@ -381,7 +505,11 @@ async def print_receipt(
 async def get_receipt_detail(
     receipt_id: int,
     svc: ReceiptService = Depends(get_receipt_svc),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> ReceiptDetailResponse:
+    receipt = await svc.get(receipt_id)
+    assert_tenant_scope(receipt, tenant, resource="receipt")
     return await svc.get_receipt_detail(receipt_id)
 
 
@@ -391,9 +519,11 @@ async def export_receipts_csv(
     from_date: Optional[str] = Query(None, alias="from_date"),
     to_date: Optional[str] = Query(None, alias="to_date"),
     svc: ReceiptService = Depends(get_receipt_svc),
+    _actor: User = Depends(require_permission(FEES_EXPORT)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ):
     csv_content = await svc.export_receipts_csv(
-        campus_id=campus_id, from_date=from_date, to_date=to_date,
+        campus_id=effective_campus_id(tenant, campus_id), from_date=from_date, to_date=to_date,
     )
     return StreamingResponse(
         iter([csv_content]),
@@ -414,10 +544,12 @@ async def get_outstanding_balances(
     class_id: Optional[int] = Query(None, alias="class_id"),
     campus_id: Optional[int] = Query(None, alias="campus_id"),
     svc: OutstandingBalanceService = Depends(get_ob_svc),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> OutstandingBalanceSummary:
     return await svc.get_outstanding(
         academic_year_id=academic_year_id, class_id=class_id,
-        campus_id=campus_id, skip=pagination.offset, limit=pagination.limit,
+        campus_id=effective_campus_id(tenant, campus_id), skip=pagination.offset, limit=pagination.limit,
     )
 
 
@@ -430,8 +562,13 @@ async def get_outstanding_balances(
 async def generate_finance_report(
     data: FinanceReportGenerate,
     svc: FinanceReportService = Depends(get_fr_svc),
+    actor: User = Depends(require_permission(REPORTS_CREATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> FinanceReportResponse:
-    return FinanceReportResponse.model_validate(await svc.generate_report(data, generated_by=0))
+    report = await svc.generate_report(data, generated_by=actor.id)
+    from app.multi_tenant.guards import inject_campus
+    inject_campus(report, tenant)
+    return FinanceReportResponse.model_validate(report)
 
 
 @router.get("/reports", response_model=FinanceReportPage)
@@ -440,9 +577,11 @@ async def list_finance_reports(
     report_type: Optional[str] = Query(None, alias="report_type"),
     campus_id: Optional[int] = Query(None, alias="campus_id"),
     svc: FinanceReportService = Depends(get_fr_svc),
+    _actor: User = Depends(require_permission(REPORTS_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> FinanceReportPage:
     items, total = await svc.list_reports(
-        report_type=report_type, campus_id=campus_id,
+        report_type=report_type, campus_id=effective_campus_id(tenant, campus_id),
         skip=pagination.offset, limit=pagination.limit,
     )
     return Page.create(
@@ -456,9 +595,11 @@ async def export_collection_summary_csv(
     academic_year_id: Optional[int] = Query(None, alias="academic_year_id"),
     campus_id: Optional[int] = Query(None, alias="campus_id"),
     svc: FinanceReportService = Depends(get_fr_svc),
+    _actor: User = Depends(require_permission(REPORTS_EXPORT)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ):
     csv_content = await svc.generate_collection_summary_csv(
-        academic_year_id=academic_year_id, campus_id=campus_id,
+        academic_year_id=academic_year_id, campus_id=effective_campus_id(tenant, campus_id),
     )
     return StreamingResponse(
         iter([csv_content]),

@@ -7,6 +7,8 @@ from typing import Any
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from typing import Optional
+
 from app.core.exceptions import NotFoundError
 from app.domains.student.models import Student
 from app.domains.student.repository import StudentRepository
@@ -21,20 +23,28 @@ from app.domains.student_360.schemas import (
     PaymentItem,
     RiskFindingBrief,
     Student360Response,
+    StudentDocumentBrief,
     StudentHealthInfo,
     StudentIdentity,
+    StudentLifecycleSummary,
     TransportInfo,
 )
+from app.multi_tenant.models import TenantContext
 
 logger = logging.getLogger(__name__)
 
 
 class Student360Service:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        tenant: Optional[TenantContext] = None,
+    ) -> None:
         self.session = session
+        self.tenant = tenant
 
     async def get_student_360(self, student_id: int) -> Student360Response:
-        student_repo = StudentRepository(self.session)
+        student_repo = StudentRepository(self.session, self.tenant)
         student = await student_repo.get_by_id(student_id)
 
         identity = StudentIdentity.model_validate(student)
@@ -55,6 +65,8 @@ class Student360Service:
         transport = await self._get_transport_info(student_id)
         hostel = await self._get_hostel_info(student_id)
         risk_findings = await self._get_risk_findings(student_id)
+        lifecycle = await self._get_lifecycle(student)
+        documents = await self._get_documents(student_id)
 
         return Student360Response(
             identity=identity,
@@ -72,9 +84,19 @@ class Student360Service:
             transport=transport,
             hostel=hostel,
             risk_findings=risk_findings,
+            lifecycle=lifecycle,
+            documents=documents,
         )
 
     async def _get_guardians(self, student_id: int) -> list[GuardianInfo]:
+        """Merge legacy ``guardians`` rows with formal ``guardian_links``.
+
+        The legacy raw ``guardians`` table stores free-text name/contact;
+        ``guardian_links`` (the parent domain) links real user accounts to
+        a student.  Both are surfaced, de-duplicated by (name, relationship).
+        """
+        guardians: list[GuardianInfo] = []
+        seen: set[tuple[str, str]] = set()
         try:
             result = await self.session.execute(
                 text(
@@ -83,14 +105,42 @@ class Student360Service:
                 ),
                 {"sid": student_id},
             )
-            rows = result.all()
-            return [
-                GuardianInfo(name=r[0], relationship=r[1], contact=r[2])
-                for r in rows
-            ]
+            for r in result.all():
+                key = (r[0], r[1])
+                if key in seen:
+                    continue
+                seen.add(key)
+                guardians.append(
+                    GuardianInfo(name=r[0], relationship=r[1], contact=r[2])
+                )
         except Exception as exc:
             logger.debug("No guardians table or query failed: %s", exc)
-            return []
+
+        try:
+            from app.domains.auth.models import User
+            from app.domains.parent.models import Guardian
+
+            result = await self.session.execute(
+                select(User.display_name, Guardian.relationship, User.email)
+                .join(User, Guardian.user_id == User.id)
+                .where(Guardian.student_id == student_id)
+            )
+            for display_name, relationship, email in result.all():
+                name = display_name or "Linked Guardian"
+                key = (name, relationship or "parent")
+                if key in seen:
+                    continue
+                seen.add(key)
+                guardians.append(
+                    GuardianInfo(
+                        name=name,
+                        relationship=relationship or "parent",
+                        contact=email or "Linked account",
+                    )
+                )
+        except Exception as exc:
+            logger.debug("guardian_links query failed: %s", exc)
+        return guardians
 
     async def _get_contacts(self, student_id: int) -> list:
         try:
@@ -413,6 +463,77 @@ class Student360Service:
         except Exception as exc:
             logger.debug("No student_hostel table: %s", exc)
         return None
+
+    async def _get_lifecycle(
+        self, student: Student
+    ) -> StudentLifecycleSummary | None:
+        """Lifecycle state + recent transitions for the 360 overview."""
+        try:
+            from app.domains.student.models import (
+                ALLOWED_LIFECYCLE_TRANSITIONS,
+                STUDENT_LIFECYCLE_ORDER,
+                StudentLifecycleEvent,
+            )
+
+            events = (
+                await self.session.execute(
+                    select(StudentLifecycleEvent)
+                    .where(StudentLifecycleEvent.student_id == student.id)
+                    .order_by(StudentLifecycleEvent.created_at.desc())
+                    .limit(5)
+                )
+            ).scalars().all()
+            return StudentLifecycleSummary(
+                current_status=student.status,
+                allowed_transitions=sorted(
+                    ALLOWED_LIFECYCLE_TRANSITIONS.get(student.status, set())
+                ),
+                lifecycle_order=list(STUDENT_LIFECYCLE_ORDER),
+                recent_events=[
+                    {
+                        "id": e.id,
+                        "from_status": e.from_status,
+                        "to_status": e.to_status,
+                        "reason": e.reason,
+                        "created_at": e.created_at,
+                    }
+                    for e in events
+                ],
+            )
+        except Exception as exc:  # noqa: BLE001 — lifecycle is optional enrichment
+            logger.debug("Lifecycle query failed: %s", exc)
+            return None
+
+    async def _get_documents(self, student_id: int) -> list[StudentDocumentBrief]:
+        """Non-deleted documents owned by this student."""
+        try:
+            from app.domains.documents.models import Document, DocumentCategory
+
+            result = await self.session.execute(
+                select(Document, DocumentCategory.name)
+                .join(DocumentCategory, Document.category_id == DocumentCategory.id)
+                .where(
+                    Document.student_id == student_id,
+                    Document.deleted_at.is_(None),
+                )
+                .order_by(Document.uploaded_at.desc())
+                .limit(20)
+            )
+            return [
+                StudentDocumentBrief(
+                    id=doc.id,
+                    title=doc.title or doc.original_filename,
+                    category=category_name,
+                    mime_type=doc.mime_type,
+                    file_size=doc.file_size,
+                    uploaded_at=str(doc.uploaded_at),
+                    lifecycle_state=doc.lifecycle_state,
+                )
+                for doc, category_name in result.all()
+            ]
+        except Exception as exc:  # noqa: BLE001 — documents are optional enrichment
+            logger.debug("Documents query failed: %s", exc)
+            return []
 
     async def _get_risk_findings(self, student_id: int) -> list[RiskFindingBrief]:
         """Open risk findings for the student (from the persisted snapshot)."""

@@ -32,6 +32,7 @@ from app.domains.documents.models import Document, DocumentCategory, DocumentSha
 from app.domains.documents.storage import get_storage_backend
 from app.domains.documents.validation import validate_and_prepare_file, VirusScanner
 from app.domains.auth.models import User
+from app.multi_tenant.models import TenantContext
 
 
 def _make_storage_key(category_code: str, ext: str) -> str:
@@ -95,8 +96,13 @@ class DocumentCategoryService:
 
 
 class DocumentService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        tenant: Optional[TenantContext] = None,
+    ) -> None:
         self.session = session
+        self.tenant = tenant
         self.storage = get_storage_backend()
         self.category_service = DocumentCategoryService(session)
 
@@ -186,6 +192,11 @@ class DocumentService:
         if "admin" not in user.role_codes:
             conditions.append(Document.owner_id == user.id)
 
+        # Structural tenant scope: even when the router forgets to pin the
+        # campus, a scoped caller can never list another campus's docs.
+        if self.tenant is not None and self.tenant.is_tenant_scoped:
+            conditions.append(Document.campus_id == self.tenant.campus_id)
+
         query = (
             select(Document)
             .where(*conditions)
@@ -203,10 +214,16 @@ class DocumentService:
         return items, total
 
     async def get(self, doc_id: int, user: User) -> Document:
-        doc = await self.session.get(
-            Document, doc_id,
-            options=[selectinload(Document.category), selectinload(Document.versions), selectinload(Document.shares)],
-        )
+        query = select(Document).options(
+            selectinload(Document.category),
+            selectinload(Document.versions),
+            selectinload(Document.shares),
+        ).where(Document.id == doc_id)
+        # Structural tenant scope at query construction time (IDOR closed
+        # here, not only by the router's post-fetch assert).
+        if self.tenant is not None and self.tenant.is_tenant_scoped:
+            query = query.where(Document.campus_id == self.tenant.campus_id)
+        doc = (await self.session.execute(query)).scalar_one_or_none()
         if not doc or doc.deleted_at is not None:
             raise NotFoundError("Document not found")
         _check_owner_access(doc, user, doc.category)

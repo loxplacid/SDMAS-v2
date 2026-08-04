@@ -33,8 +33,8 @@ async def resolve_student(
     user: User = Depends(get_current_user),
     svc: StudentPortalService = Depends(get_portal_svc),
 ) -> tuple[User, StudentPortalService, int]:
-    """Resolve the student ID from the current user."""
-    student = await svc.resolve_student(user.id, user.email)
+    """Resolve the student ID from the current user (campus-scoped)."""
+    student = await svc.resolve_student(user.id, user.email, user.campus_id)
     return user, svc, student.id
 
 
@@ -46,7 +46,7 @@ async def get_dashboard(
     user: User = Depends(STUDENT_ONLY),
     svc: StudentPortalService = Depends(get_portal_svc),
 ) -> StudentPortalDashboardResponse:
-    student = await svc.resolve_student(user.id, user.email)
+    student = await svc.resolve_student(user.id, user.email, user.campus_id)
     return await svc.get_dashboard(student.id, student)
 
 
@@ -58,7 +58,7 @@ async def get_timetable(
     user: User = Depends(STUDENT_ONLY),
     svc: StudentPortalService = Depends(get_portal_svc),
 ) -> StudentTimetableResponse:
-    student = await svc.resolve_student(user.id, user.email)
+    student = await svc.resolve_student(user.id, user.email, user.campus_id)
     return await svc.get_timetable(student.id)
 
 
@@ -71,7 +71,7 @@ async def get_attendance(
     user: User = Depends(STUDENT_ONLY),
     svc: StudentPortalService = Depends(get_portal_svc),
 ) -> StudentAttendanceResponse:
-    student = await svc.resolve_student(user.id, user.email)
+    student = await svc.resolve_student(user.id, user.email, user.campus_id)
     return await svc.get_attendance(student.id, days=days)
 
 
@@ -83,7 +83,7 @@ async def get_subjects(
     user: User = Depends(STUDENT_ONLY),
     svc: StudentPortalService = Depends(get_portal_svc),
 ) -> StudentSubjectsResponse:
-    student = await svc.resolve_student(user.id, user.email)
+    student = await svc.resolve_student(user.id, user.email, user.campus_id)
     return await svc.get_subjects(student.id)
 
 
@@ -95,7 +95,7 @@ async def get_results(
     user: User = Depends(STUDENT_ONLY),
     svc: StudentPortalService = Depends(get_portal_svc),
 ) -> StudentResultsResponse:
-    student = await svc.resolve_student(user.id, user.email)
+    student = await svc.resolve_student(user.id, user.email, user.campus_id)
     return await svc.get_results(student.id)
 
 
@@ -107,7 +107,7 @@ async def get_assignments(
     user: User = Depends(STUDENT_ONLY),
     svc: StudentPortalService = Depends(get_portal_svc),
 ) -> StudentAssignmentsResponse:
-    student = await svc.resolve_student(user.id, user.email)
+    student = await svc.resolve_student(user.id, user.email, user.campus_id)
     return await svc.get_assignments(student.id)
 
 
@@ -119,7 +119,7 @@ async def get_announcements(
     user: User = Depends(STUDENT_ONLY),
     svc: StudentPortalService = Depends(get_portal_svc),
 ) -> StudentAnnouncementsResponse:
-    return await svc.get_announcements()
+    return await svc.get_announcements(campus_id=user.campus_id)
 
 
 # ── Documents ────────────────────────────────────────────────────────
@@ -130,5 +130,5 @@ async def get_documents(
     user: User = Depends(STUDENT_ONLY),
     svc: StudentPortalService = Depends(get_portal_svc),
 ) -> StudentDocumentsResponse:
-    student = await svc.resolve_student(user.id, user.email)
+    student = await svc.resolve_student(user.id, user.email, user.campus_id)
     return await svc.get_documents(student.id)

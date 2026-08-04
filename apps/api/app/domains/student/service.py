@@ -24,13 +24,19 @@ from app.domains.student.schemas import (
     StudentCreate,
     StudentUpdate,
 )
+from app.multi_tenant.models import TenantContext
 
 logger = logging.getLogger(__name__)
 
 
 class StudentService:
-    def __init__(self, repository: StudentRepository) -> None:
+    def __init__(
+        self,
+        repository: StudentRepository,
+        tenant: Optional[TenantContext] = None,
+    ) -> None:
         self.repository = repository
+        self.tenant = tenant
 
     async def _audit(
         self,
@@ -261,4 +267,9 @@ class StudentService:
     ) -> tuple[Sequence[Student], int]:
         if not query or not query.strip():
             raise ValidationError("Search query is required")
-        return await self.repository.search(query.strip().lower(), skip=skip, limit=limit)
+        # ``campus_id`` is passed through to the repository — the
+        # repository also applies the tenant predicate unconditionally,
+        # so this path can never escape the tenant boundary.
+        return await self.repository.search(
+            query.strip().lower(), campus_id=campus_id, skip=skip, limit=limit
+        )

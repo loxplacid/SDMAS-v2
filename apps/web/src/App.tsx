@@ -86,6 +86,7 @@ const ProfilePage = lazy(() => import('./pages/profile').then((m) => ({ default:
 
 // Reports
 const ReportsHubPage = lazy(() => import('./pages/reports/reports-hub').then((m) => ({ default: m.ReportsHubPage })))
+const ReportCardsPage = lazy(() => import('./pages/report-cards/report-cards').then((m) => ({ default: m.ReportCardsPage })))
 
 // Reports - these have default exports so simple import works
 const AttendanceReportPage = lazy(() => import('./pages/reports/attendance-report'))
@@ -385,6 +386,7 @@ export default function App() {
               } />
               <Route path="/parent/payments" element={<Navigate to="/parent/fees" replace />} />
               <Route path="/reports" element={<Suspense fallback={null}><ReportsHubPage /></Suspense>} />
+              <Route path="/reports/cards" element={<Suspense fallback={null}><ReportCardsPage /></Suspense>} />
               <Route path="/reports/attendance" element={<Suspense fallback={null}><AttendanceReportPage /></Suspense>} />
               <Route path="/reports/fees/collection" element={<Suspense fallback={null}><FeeCollectionReportPage /></Suspense>} />
               <Route path="/reports/fees/outstanding" element={<Suspense fallback={null}><OutstandingReportPage /></Suspense>} />

@@ -337,6 +337,7 @@ class AnalyticsService:
     async def get_attendance_class_comparison(
         self,
         academic_year_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
     ) -> list[dict]:
         query = (
             select(
@@ -374,6 +375,8 @@ class AnalyticsService:
             query = query.where(
                 AttendanceRecord.academic_year_id == academic_year_id
             )
+        if campus_id is not None:
+            query = query.where(AttendanceRecord.campus_id == campus_id)
         query = query.group_by(Class.id, Class.name).order_by(Class.name)
 
         result = await self.session.execute(query)
@@ -406,6 +409,7 @@ class AnalyticsService:
         self,
         academic_year_id: Optional[int] = None,
         class_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
     ) -> list[dict]:
         conditions = []
         if academic_year_id is not None:
@@ -414,6 +418,8 @@ class AnalyticsService:
             )
         if class_id is not None:
             conditions.append(AttendanceRecord.class_id == class_id)
+        if campus_id is not None:
+            conditions.append(AttendanceRecord.campus_id == campus_id)
 
         query = (
             select(
@@ -612,11 +618,14 @@ class AnalyticsService:
     async def get_all_term_attendance(
         self,
         academic_year_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
     ) -> list[dict]:
         """Get attendance analytics for all terms via single batch query."""
         conditions = []
         if academic_year_id is not None:
             conditions.append(Term.academic_year_id == academic_year_id)
+        if campus_id is not None:
+            conditions.append(Term.campus_id == campus_id)
 
         terms_result = await self.session.execute(
             select(Term).where(and_(*conditions)) if conditions else select(Term)
@@ -824,12 +833,15 @@ class AnalyticsService:
     async def get_fee_type_collection(
         self,
         academic_year_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
     ) -> list[dict]:
         conditions = []
         if academic_year_id is not None:
             conditions.append(
                 FeeDue.academic_year_id == academic_year_id
             )
+        if campus_id is not None:
+            conditions.append(FeeDue.campus_id == campus_id)
 
         query = (
             select(
@@ -879,12 +891,15 @@ class AnalyticsService:
     async def get_class_fee_collection(
         self,
         academic_year_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
     ) -> list[dict]:
         conditions = []
         if academic_year_id is not None:
             conditions.append(
                 FeeDue.academic_year_id == academic_year_id
             )
+        if campus_id is not None:
+            conditions.append(FeeDue.campus_id == campus_id)
 
         query = (
             select(
@@ -937,12 +952,15 @@ class AnalyticsService:
     async def get_payment_method_distribution(
         self,
         academic_year_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
     ) -> list[dict]:
         conditions = []
         if academic_year_id is not None:
             conditions.append(
                 Payment.payment_date.isnot(None)
             )
+        if campus_id is not None:
+            conditions.append(Payment.campus_id == campus_id)
 
         query = select(
             Payment.payment_method,
@@ -971,12 +989,15 @@ class AnalyticsService:
     async def get_fee_status_distribution(
         self,
         academic_year_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
     ) -> list[dict]:
         conditions = []
         if academic_year_id is not None:
             conditions.append(
                 FeeDue.academic_year_id == academic_year_id
             )
+        if campus_id is not None:
+            conditions.append(FeeDue.campus_id == campus_id)
 
         query = select(
             FeeDue.status,
@@ -1003,22 +1024,24 @@ class AnalyticsService:
     # Student Analytics
     # ------------------------------------------------------------------
 
-    async def get_student_overview(self) -> dict:
-        result = await self.session.execute(
-            select(
-                func.count(Student.id),
-                func.sum(
-                    case(
-                        (Student.status == "active", 1), else_=0
-                    )
-                ),
-                func.sum(
-                    case(
-                        (Student.status == "inactive", 1), else_=0
-                    )
-                ),
-            )
+    async def get_student_overview(self, campus_id: Optional[int] = None) -> dict:
+        student_q = select(
+            func.count(Student.id),
+            func.sum(
+                case(
+                    (Student.status == "active", 1), else_=0
+                )
+            ),
+            func.sum(
+                case(
+                    (Student.status == "inactive", 1), else_=0
+                )
+            ),
         )
+        if campus_id is not None:
+            student_q = student_q.where(Student.campus_id == campus_id)
+        result = await self.session.execute(student_q)
+
         total, active, inactive = result.one()
         return {
             "total_students": total or 0,
@@ -1029,12 +1052,15 @@ class AnalyticsService:
     async def get_students_by_class(
         self,
         academic_year_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
     ) -> list[dict]:
         conditions = [Enrollment.status == "active"]
         if academic_year_id is not None:
             conditions.append(
                 Enrollment.academic_year_id == academic_year_id
             )
+        if campus_id is not None:
+            conditions.append(Class.campus_id == campus_id)
 
         query = (
             select(
@@ -1063,6 +1089,7 @@ class AnalyticsService:
         self,
         academic_year_id: Optional[int] = None,
         class_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
     ) -> list[dict]:
         conditions = [Enrollment.status == "active"]
         if academic_year_id is not None:
@@ -1071,6 +1098,8 @@ class AnalyticsService:
             )
         if class_id is not None:
             conditions.append(Enrollment.class_id == class_id)
+        if campus_id is not None:
+            conditions.append(Section.campus_id == campus_id)
 
         query = (
             select(
@@ -1098,7 +1127,11 @@ class AnalyticsService:
             for r in rows
         ]
 
-    async def get_enrollment_trends(self) -> list[dict]:
+    async def get_enrollment_trends(self, campus_id: Optional[int] = None) -> list[dict]:
+        conditions = []
+        if campus_id is not None:
+            conditions.append(AcademicYear.campus_id == campus_id)
+
         query = (
             select(
                 AcademicYear.id,
@@ -1112,6 +1145,8 @@ class AnalyticsService:
             .group_by(AcademicYear.id, AcademicYear.name)
             .order_by(AcademicYear.start_date)
         )
+        if conditions:
+            query = query.where(and_(*conditions))
 
         result = await self.session.execute(query)
         rows = result.all()
@@ -1128,7 +1163,13 @@ class AnalyticsService:
     # Academic Analytics
     # ------------------------------------------------------------------
 
-    async def get_academic_overview(self) -> dict:
+    async def get_academic_overview(self, campus_id: Optional[int] = None) -> dict:
+        def _scoped_count(model):
+            q = select(func.count(model.id))
+            if campus_id is not None:
+                q = q.where(model.campus_id == campus_id)
+            return q
+
         active_year = await self.session.execute(
             select(AcademicYear)
             .where(AcademicYear.status == "active")
@@ -1137,11 +1178,11 @@ class AnalyticsService:
         year = active_year.scalar_one_or_none()
 
         # Separate queries to avoid cartesian product from unrelated tables
-        cls_c = (await self.session.execute(select(func.count(Class.id)))).scalar() or 0
-        sec_c = (await self.session.execute(select(func.count(Section.id)))).scalar() or 0
-        tch_c = (await self.session.execute(select(func.count(Teacher.id)))).scalar() or 0
-        sub_c = (await self.session.execute(select(func.count(Subject.id)))).scalar() or 0
-        term_c = (await self.session.execute(select(func.count(Term.id)))).scalar() or 0
+        cls_c = (await self.session.execute(_scoped_count(Class))).scalar() or 0
+        sec_c = (await self.session.execute(_scoped_count(Section))).scalar() or 0
+        tch_c = (await self.session.execute(_scoped_count(Teacher))).scalar() or 0
+        sub_c = (await self.session.execute(_scoped_count(Subject))).scalar() or 0
+        term_c = (await self.session.execute(_scoped_count(Term))).scalar() or 0
 
         return {
             "active_academic_year": year.name if year else None,
@@ -1152,11 +1193,12 @@ class AnalyticsService:
             "total_terms": term_c or 0,
         }
 
-    async def get_teacher_workload(self) -> list[dict]:
+    async def get_teacher_workload(self, campus_id: Optional[int] = None) -> list[dict]:
         # Load teachers with their assignments eagerly
-        teachers_result = await self.session.execute(
-            select(Teacher).order_by(Teacher.first_name, Teacher.last_name)
-        )
+        teachers_q = select(Teacher).order_by(Teacher.first_name, Teacher.last_name)
+        if campus_id is not None:
+            teachers_q = teachers_q.where(Teacher.campus_id == campus_id)
+        teachers_result = await self.session.execute(teachers_q)
         teachers = teachers_result.scalars().all()
 
         if not teachers:
@@ -1205,7 +1247,7 @@ class AnalyticsService:
             )
         return output
 
-    async def get_subject_distribution(self) -> list[dict]:
+    async def get_subject_distribution(self, campus_id: Optional[int] = None) -> list[dict]:
         query = (
             select(
                 Subject.id,
@@ -1220,6 +1262,8 @@ class AnalyticsService:
             .group_by(Subject.id, Subject.name, Subject.code)
             .order_by(Subject.name)
         )
+        if campus_id is not None:
+            query = query.where(Subject.campus_id == campus_id)
 
         result = await self.session.execute(query)
         rows = result.all()

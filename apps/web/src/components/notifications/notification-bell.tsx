@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { notificationApi } from '../../api/notifications'
+import { getNotificationRoute } from '../../api/notifications/deep-link'
 import { cn } from '../../lib/utils'
 
 export function NotificationBell() {
@@ -104,6 +105,31 @@ export function NotificationBell() {
     setTimeout(() => navigate('/notifications'), 120)
   }
 
+  async function handleOpenNotification(n: {
+    id: number
+    title: string
+    message: string
+    type: string
+    read_at: string | null
+    created_at: string
+    data: Record<string, unknown> | null
+  }) {
+    closeMenu()
+    // Mark as read when the user opens it from the bell.
+    if (!n.read_at) {
+      try {
+        await notificationApi.markRead(n.id)
+        setUnreadCount((c) => Math.max(0, c - 1))
+      } catch {
+        // Non-fatal: navigation still proceeds
+      }
+    }
+    // Deep-link to the referenced page when the payload carries a safe
+    // internal route; otherwise fall back to the notifications hub.
+    const route = getNotificationRoute(n.data)
+    setTimeout(() => navigate(route ?? '/notifications'), 120)
+  }
+
   const hasNewNotifications = unreadCount > prevUnreadCountRef.current && prevUnreadCountRef.current > 0
 
   const formatTime = (iso: string) => {
@@ -196,10 +222,12 @@ export function NotificationBell() {
               </div>
             ) : (
               notifications.map((n, idx) => (
-                <div
+                <button
                   key={n.id}
+                  type="button"
+                  onClick={() => handleOpenNotification(n)}
                   className={cn(
-                    'px-4 py-3 border-b border-[var(--color-border-light)] hover:bg-[var(--color-surface-hover)] transition-colors animate-fade-in',
+                    'w-full text-left px-4 py-3 border-b border-[var(--color-border-light)] hover:bg-[var(--color-surface-hover)] transition-colors animate-fade-in',
                     !n.read_at ? 'bg-[var(--color-brand-accent-light)]/50' : ''
                   )}
                   style={{ animationDelay: `${idx * 30}ms`, animationFillMode: 'both' }}
@@ -215,7 +243,7 @@ export function NotificationBell() {
                       !n.read_at ? 'bg-[var(--color-brand-accent)]' : 'bg-transparent'
                     )} />
                   </div>
-                </div>
+                </button>
               ))
             )}
           </div>

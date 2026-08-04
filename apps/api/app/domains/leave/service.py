@@ -78,6 +78,14 @@ class LeaveRequestService:
     async def get(self, leave_id: int) -> LeaveRequest:
         return await self.repo.get_by_id(leave_id)
 
+    async def get_allow_legacy_owner(
+        self, leave_id: int, user_id: int
+    ) -> LeaveRequest:
+        """Tenant-scoped fetch that also lets the owner of an untagged
+        (legacy) request through.  Cross-tenant rows are never returned.
+        """
+        return await self.repo.get_by_id_allow_legacy_owner(leave_id, user_id)
+
     async def update(self, leave_id: int, data) -> LeaveRequest:
         leave = await self.repo.get_by_id(leave_id)
         if leave.workflow_instance_id is not None:

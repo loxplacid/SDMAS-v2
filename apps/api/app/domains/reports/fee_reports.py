@@ -20,19 +20,25 @@ from app.domains.fees.repository import (
     PaymentRepository,
 )
 from app.domains.student.repository import StudentRepository
+from app.multi_tenant.models import TenantContext
 
 
 class FeeReportService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        tenant: Optional[TenantContext] = None,
+    ) -> None:
         self.session = session
-        self.fee_due_repo = FeeDueRepository(session)
-        self.payment_repo = PaymentRepository(session)
-        self.student_repo = StudentRepository(session)
-        self.year_repo = AcademicYearRepository(session)
-        self.class_repo = ClassRepository(session)
-        self.enrollment_repo = EnrollmentRepository(session)
-        self.structure_repo = FeeStructureRepository(session)
-        self.fee_type_repo = FeeTypeRepository(session)
+        self.tenant = tenant
+        self.fee_due_repo = FeeDueRepository(session, tenant)
+        self.payment_repo = PaymentRepository(session, tenant)
+        self.student_repo = StudentRepository(session, tenant)
+        self.year_repo = AcademicYearRepository(session, tenant)
+        self.class_repo = ClassRepository(session, tenant)
+        self.enrollment_repo = EnrollmentRepository(session, tenant)
+        self.structure_repo = FeeStructureRepository(session, tenant)
+        self.fee_type_repo = FeeTypeRepository(session, tenant)
 
     async def get_collection_report(
         self,
@@ -55,9 +61,9 @@ class FeeReportService:
             payments_conditions.append(Payment.payment_date <= end_date)
 
         payments_result = await self.session.execute(
-            select(Payment).where(and_(*payments_conditions))
+            self.payment_repo.scoped_query(Payment).where(and_(*payments_conditions))
             if payments_conditions
-            else select(Payment)
+            else self.payment_repo.scoped_query(Payment)
         )
         all_payments = payments_result.scalars().all()
 
@@ -114,7 +120,7 @@ class FeeReportService:
             enroll_conditions.append(Enrollment.class_id == class_id)
 
         enroll_result = await self.session.execute(
-            select(Enrollment).where(and_(*enroll_conditions))
+            self.enrollment_repo.scoped_query(Enrollment).where(and_(*enroll_conditions))
         )
         enrollments = enroll_result.scalars().all()
 

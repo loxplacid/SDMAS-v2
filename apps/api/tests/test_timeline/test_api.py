@@ -135,8 +135,9 @@ async def test_timeline_role_guard(client):
 
 @pytest.mark.asyncio
 async def test_admin_sees_aggregated_timeline(api_client):
+    # The seeded admin is a member of campus 1, so seed the events there.
     async with _app_session() as session:
-        await _seed_campus_student(session, None, "A")
+        await _seed_campus_student(session, 1, "A")
 
     token = await _login(api_client, "admin", "AdminPass123!")
     res = await api_client.get("/api/timeline", headers=_auth_headers(token))
@@ -158,7 +159,7 @@ async def test_admin_sees_aggregated_timeline(api_client):
 @pytest.mark.asyncio
 async def test_student_scope_via_api(api_client):
     async with _app_session() as session:
-        data = await _seed_campus_student(session, None, "B")
+        data = await _seed_campus_student(session, 1, "B")
 
     token = await _login(api_client, "admin", "AdminPass123!")
     res = await api_client.get(

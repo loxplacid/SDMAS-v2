@@ -26,6 +26,60 @@ class Settings(BaseSettings):
 
     redis_url: str | None = Field(default=None)
 
+    # ── Background processing ──────────────────────────────────────────
+    # The API and the worker are separate deployment units: API processes
+    # serve requests only, and the dedicated worker process (Dockerfile.worker)
+    # is the sole consumer of the jobs table and the event outbox.  Setting
+    # ``WORKER_IN_PROCESS=true`` re-enables an in-process worker inside the
+    # API (single-process development deployments only) — in production each
+    # API replica would otherwise launch a competing worker against the same
+    # queue.
+    worker_in_process: bool = Field(
+        default=False,
+        description=(
+            "Run the background worker inside the API process. Intended only "
+            "for single-process dev; production must use the dedicated worker."
+        ),
+    )
+
+    # Worker-side periodic scheduler (enqueues billing period-end,
+    # past-due expiration and scheduled-message dispatch jobs).  Runs
+    # inside the dedicated worker process only.
+    scheduler_enabled: bool = Field(
+        default=True,
+        description="Enable the periodic scheduler in the worker process",
+    )
+    scheduler_poll_interval: float = Field(
+        default=60.0,
+        ge=5.0,
+        description="Seconds between scheduler cycles in the worker process",
+    )
+
+    # Event outbox (durable integration events) tuning.
+    outbox_poll_interval: float = Field(default=2.0, ge=0.1)
+    outbox_batch_size: int = Field(default=10, ge=1)
+    outbox_max_attempts: int = Field(default=10, ge=1)
+    outbox_reap_interval: float = Field(default=60.0, ge=1.0)
+    outbox_stale_after: float = Field(
+        default=600.0,
+        ge=1.0,
+        description=(
+            "Seconds after which a claimed-but-unfinished outbox delivery is "
+            "considered stuck (worker died mid-delivery) and re-queued."
+        ),
+    )
+
+    # ── Low Attendance Alerts ──────────────────────────────────────────
+    # Domain-level threshold for low-attendance notifications.  Stored here
+    # (env-configurable) instead of hardcoded deep inside the attendance
+    # service, so schools can tune the alert sensitivity without code.
+    attendance_low_threshold: float = Field(
+        default=75.0,
+        ge=0.0,
+        le=100.0,
+        description="Attendance % below which a low-attendance alert fires",
+    )
+
     jwt_secret: SecretStr = Field(default=SecretStr("change-me"))
     jwt_algorithm: str = Field(default="HS256")
     access_token_expire_minutes: int = Field(default=30, ge=1)
@@ -53,6 +107,14 @@ class Settings(BaseSettings):
     razorpay_key_secret: str = Field(
         default="",
         description="Razorpay API Key Secret for payment processing",
+    )
+    razorpay_webhook_secret: str = Field(
+        default="",
+        description=(
+            "Razorpay webhook signing secret. Must be distinct from the API "
+            "key secret; used to verify the X-Razorpay-Signature header. "
+            "Falls back to razorpay_key_secret when unset."
+        ),
     )
 
     # ── Document Storage ───────────────────────────────────────────

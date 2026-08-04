@@ -294,9 +294,9 @@ Secrets are never stored in the repository. Production uses:
 
 ### JWT Security
 
-- Access tokens: 15 min expiry (30 min in dev)
+- Access tokens: 30 min expiry (configurable via `ACCESS_TOKEN_EXPIRE_MINUTES`)
 - Refresh tokens: 7 days with rotation and reuse detection
-- Algorithm: HS256 with 64-byte secret
+- Algorithm: HS256 (secret from `JWT_SECRET`)
 
 ### Regular Audits
 

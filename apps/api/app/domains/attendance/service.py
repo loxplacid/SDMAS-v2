@@ -6,6 +6,7 @@ from typing import Optional, Sequence
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
 from app.domains.academic.repository import (
     AcademicYearRepository,
@@ -27,6 +28,7 @@ from app.domains.events import publish_event
 from app.domains.events.events import AttendanceThresholdBreachedEvent
 from app.domains.notifications import dispatcher as notification_dispatcher
 from app.domains.notifications.events import LowAttendanceEvent
+from app.multi_tenant.models import TenantContext
 
 logger = logging.getLogger(__name__)
 
@@ -39,12 +41,14 @@ class AttendanceService:
         year_repo: AcademicYearRepository,
         class_repo: ClassRepository,
         section_repo: SectionRepository,
+        tenant: Optional[TenantContext] = None,
     ) -> None:
         self.repo = attendance_repo
         self.student_repo = student_repo
         self.year_repo = year_repo
         self.class_repo = class_repo
         self.section_repo = section_repo
+        self.tenant = tenant
 
     async def _validate_student(self, student_id: int):
         student = await self.student_repo.get_by_id(student_id)
@@ -83,7 +87,7 @@ class AttendanceService:
     ) -> None:
         from app.domains.academic.repository import EnrollmentRepository
 
-        enrollment_repo = EnrollmentRepository(self.repo.session)
+        enrollment_repo = EnrollmentRepository(self.repo.session, self.tenant)
         enrollments, _ = await enrollment_repo.list(
             section_id=section_id, limit=10000
         )
@@ -185,7 +189,9 @@ class AttendanceService:
         from app.domains.academic.models import Enrollment as EnrollmentModel
 
         student_result = await self.repo.session.execute(
-            select(StudentModel).where(StudentModel.id.in_(student_ids))
+            self.student_repo.scoped_query(StudentModel).where(
+                StudentModel.id.in_(student_ids)
+            )
         )
         students = {s.id: s for s in student_result.scalars().all()}
         for sid in student_ids:
@@ -196,11 +202,13 @@ class AttendanceService:
                 raise ValidationError(f"Cannot record attendance for an inactive student (id={sid})")
 
         enrollment_result = await self.repo.session.execute(
-            select(EnrollmentModel.student_id).where(
+            self.repo.scoped_query(EnrollmentModel)
+            .where(
                 EnrollmentModel.student_id.in_(student_ids),
                 EnrollmentModel.section_id == data.section_id,
                 EnrollmentModel.status == "active",
             )
+            .with_only_columns(EnrollmentModel.student_id)
         )
         enrolled_ids = {row[0] for row in enrollment_result.all()}
         for sid in student_ids:
@@ -208,11 +216,13 @@ class AttendanceService:
                 raise ValidationError(f"Student {sid} is not enrolled in section {data.section_id}")
 
         duplicate_result = await self.repo.session.execute(
-            select(AttendanceRecord.student_id).where(
+            self.repo.scoped_query(AttendanceRecord)
+            .where(
                 AttendanceRecord.student_id.in_(student_ids),
                 AttendanceRecord.attendance_date == data.attendance_date,
                 AttendanceRecord.section_id == data.section_id,
             )
+            .with_only_columns(AttendanceRecord.student_id)
         )
         duplicate_ids = {row[0] for row in duplicate_result.all()}
         for sid in student_ids:
@@ -246,7 +256,7 @@ class AttendanceService:
             if absent_records:
                 absent_ids = [r.student_id for r in absent_records]
                 all_records_result = await self.repo.session.execute(
-                    select(AttendanceRecord).where(
+                    self.repo.scoped_query(AttendanceRecord).where(
                         AttendanceRecord.student_id.in_(absent_ids),
                         AttendanceRecord.attendance_date >= "1900-01-01",
                         AttendanceRecord.attendance_date <= "2100-12-31",
@@ -257,13 +267,14 @@ class AttendanceService:
                 for rec in all_absent_records:
                     by_student.setdefault(rec.student_id, []).append(rec)
 
+                threshold = settings.attendance_low_threshold
                 for rec in absent_records:
                     total_records = by_student.get(rec.student_id, [])
                     total_count = len(total_records) + 1
                     absences = sum(1 for r in total_records if r.status in ("absent", "late")) + 1
                     pct = ((total_count - absences) / total_count) * 100
 
-                    if pct < 75.0:
+                    if pct < threshold:
                         # Standard domain event -> risk/audit handler first, so
                         # the risk record is never dependent on the legacy
                         # notification dispatch below (both are non-fatal and
@@ -275,7 +286,7 @@ class AttendanceService:
                                     academic_year_id=year.id,
                                     section_id=data.section_id,
                                     attendance_percentage=round(pct, 1),
-                                    threshold=75.0,
+                                    threshold=threshold,
                                     total_absences=absences,
                                 ),
                                 session=self.repo.session,
@@ -290,7 +301,7 @@ class AttendanceService:
                             academic_year_id=year.id,
                             section_id=data.section_id,
                             attendance_percentage=round(pct, 1),
-                            threshold=75.0,
+                            threshold=threshold,
                             total_absences=absences,
                         )
                         await notification_dispatcher.dispatch(event, session=self.repo.session)
@@ -424,7 +435,7 @@ class AttendanceService:
     ) -> dict:
         from app.domains.academic.repository import EnrollmentRepository
 
-        enrollment_repo = EnrollmentRepository(self.repo.session)
+        enrollment_repo = EnrollmentRepository(self.repo.session, self.tenant)
         enrollments, _ = await enrollment_repo.list(
             section_id=section_id, limit=10000
         )

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Optional
 
+from typing import Any
+
 from fastapi import Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,6 +12,7 @@ from app.domains.auth.models import User
 from app.domains.auth.repository import UserRepository
 from app.domains.auth.service import UserService
 from app.domains.auth.permission_service import PermissionService
+from app.domains.auth.permissions import PLATFORM_ACCESS
 from app.infrastructure.database import get_session
 
 
@@ -53,6 +56,19 @@ async def get_optional_current_user(
         return None
 
 
+async def require_authenticated_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Canonical dependency for private endpoints: requires a valid
+    authenticated user (401 otherwise).  Alias of ``get_current_user``
+    with an explicit, discoverable name.
+
+    Use this (or ``get_current_user``) on every private endpoint;
+    ``get_optional_current_user`` is reserved for public endpoints only.
+    """
+    return current_user
+
+
 class require_role:
     """FastAPI dependency: require the user to have one of the given roles.
 
@@ -84,6 +100,47 @@ class require_role:
             f"Requires one of these roles: {', '.join(self.roles)}. "
             f"User has: {', '.join(user_role_codes)}"
         )
+
+
+class require_platform_permission:
+    """FastAPI dependency: require an explicit PLATFORM-level permission.
+
+    Platform permissions (``platform.access`` / ``platform.manage``) are
+    the ONLY gate that authorises cross-tenant / unscoped operation.  A
+    tenant admin never satisfies this check by itself.
+
+    Returns a platform ``TenantContext`` so handlers receive an explicit
+    cross-tenant context instead of silently relying on "unscoped".
+
+    Example::
+
+        @router.get("/admin/platform/summary")
+        async def platform_summary(
+            _ctx: TenantContext = Depends(require_platform_permission()),
+        ):
+            ...
+    """
+
+    def __init__(self, *permissions: str) -> None:
+        self.permissions = permissions or (PLATFORM_ACCESS,)
+
+    async def __call__(
+        self,
+        current_user: User = Depends(get_current_user),
+        session: AsyncSession = Depends(get_session),
+    ) -> Any:
+        from app.multi_tenant.models import TenantContext
+
+        svc = PermissionService(session)
+        role_codes = current_user.role_codes
+        for perm in self.permissions:
+            allowed = await svc.any_role_has_permission(role_codes, perm)
+            if not allowed:
+                raise AuthorizationError(
+                    f"Missing required platform permission: '{perm}'. "
+                    "Cross-tenant access requires an explicit platform grant."
+                )
+        return TenantContext(user_id=current_user.id, platform=True)
 
 
 class require_permission:

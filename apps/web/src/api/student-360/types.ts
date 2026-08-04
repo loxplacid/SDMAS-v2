@@ -99,3 +99,28 @@ export interface HostelInfo {
   room_number: string | null
   bed_number: string | null
 }
+
+export interface StudentLifecycleEvent {
+  id: number
+  from_status: string
+  to_status: string
+  reason: string | null
+  created_at: string
+}
+
+export interface StudentLifecycleSummary {
+  current_status: string
+  allowed_transitions: string[]
+  lifecycle_order: string[]
+  recent_events: StudentLifecycleEvent[]
+}
+
+export interface StudentDocumentBrief {
+  id: number
+  title: string
+  category: string | null
+  mime_type: string | null
+  file_size: number
+  uploaded_at: string | null
+  lifecycle_state: string | null
+}

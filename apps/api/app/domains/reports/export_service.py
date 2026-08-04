@@ -5,7 +5,7 @@ import io
 from typing import Optional
 
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select, and_
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.academic.models import Class, Section, Enrollment
@@ -26,6 +26,7 @@ from app.domains.fees.repository import (
 )
 from app.domains.student.models import Student
 from app.domains.student.repository import StudentRepository
+from app.multi_tenant.models import TenantContext
 
 
 def _stream_csv(headers: list[str], rows: list[list[str]], filename: str) -> StreamingResponse:
@@ -45,28 +46,53 @@ def _stream_csv(headers: list[str], rows: list[list[str]], filename: str) -> Str
 
 
 class ExportService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        tenant: Optional[TenantContext] = None,
+    ) -> None:
         self.session = session
-        self.student_repo = StudentRepository(session)
-        self.year_repo = AcademicYearRepository(session)
-        self.class_repo = ClassRepository(session)
-        self.section_repo = SectionRepository(session)
-        self.enrollment_repo = EnrollmentRepository(session)
-        self.attendance_repo = AttendanceRepository(session)
-        self.fee_due_repo = FeeDueRepository(session)
-        self.structure_repo = FeeStructureRepository(session)
-        self.fee_type_repo = FeeTypeRepository(session)
-        self.payment_repo = PaymentRepository(session)
+        self.tenant = tenant
+        self.student_repo = StudentRepository(session, tenant)
+        self.year_repo = AcademicYearRepository(session, tenant)
+        self.class_repo = ClassRepository(session, tenant)
+        self.section_repo = SectionRepository(session, tenant)
+        self.enrollment_repo = EnrollmentRepository(session, tenant)
+        self.attendance_repo = AttendanceRepository(session, tenant)
+        self.fee_due_repo = FeeDueRepository(session, tenant)
+        self.structure_repo = FeeStructureRepository(session, tenant)
+        self.fee_type_repo = FeeTypeRepository(session, tenant)
+        self.payment_repo = PaymentRepository(session, tenant)
 
     async def export_students_csv(
         self,
         status: Optional[str] = None,
         search: Optional[str] = None,
+        campus_id: Optional[int] = None,
     ) -> StreamingResponse:
+        conditions: list = []
+        if status is not None:
+            conditions.append(Student.status == status)
         if search:
-            students, _ = await self.student_repo.search(search, skip=0, limit=100000)
-        else:
-            students, _ = await self.student_repo.list(status=status, skip=0, limit=100000)
+            like = f"%{search.lower()}%"
+            conditions.append(
+                or_(
+                    Student.first_name.ilike(like),
+                    Student.last_name.ilike(like),
+                    Student.student_number.ilike(like),
+                    Student.email.ilike(like),
+                )
+            )
+        if campus_id is not None:
+            conditions.append(Student.campus_id == campus_id)
+
+        query = self.student_repo.scoped_query(Student)
+        if conditions:
+            query = query.where(and_(*conditions))
+        result = await self.session.execute(
+            query.order_by(Student.student_number).limit(100000)
+        )
+        students = result.scalars().all()
 
         headers = ["Student Number", "First Name", "Last Name", "Email", "Date of Birth", "Status"]
         rows = [
@@ -88,6 +114,7 @@ class ExportService:
         section_id: Optional[int] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
+        campus_id: Optional[int] = None,
     ) -> StreamingResponse:
         conditions = []
         if section_id is not None:
@@ -96,8 +123,10 @@ class ExportService:
             conditions.append(AttendanceRecord.attendance_date >= start_date)
         if end_date is not None:
             conditions.append(AttendanceRecord.attendance_date <= end_date)
+        if campus_id is not None:
+            conditions.append(AttendanceRecord.campus_id == campus_id)
 
-        query = select(AttendanceRecord)
+        query = self.attendance_repo.scoped_query(AttendanceRecord)
         if conditions:
             query = query.where(and_(*conditions))
         query = query.order_by(AttendanceRecord.attendance_date)
@@ -153,14 +182,17 @@ class ExportService:
         academic_year_id: Optional[int] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
+        campus_id: Optional[int] = None,
     ) -> StreamingResponse:
         conditions = []
         if start_date is not None:
             conditions.append(Payment.payment_date >= start_date)
         if end_date is not None:
             conditions.append(Payment.payment_date <= end_date)
+        if campus_id is not None:
+            conditions.append(Payment.campus_id == campus_id)
 
-        query = select(Payment)
+        query = self.payment_repo.scoped_query(Payment)
         if conditions:
             query = query.where(and_(*conditions))
         query = query.order_by(Payment.payment_date)

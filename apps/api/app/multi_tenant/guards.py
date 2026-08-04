@@ -33,15 +33,19 @@ def effective_campus_id(
 
     * Tenant-scoped users are pinned to ``tenant.campus_id`` — the client
       value is ignored.
-    * Unscoped callers (platform admins / legacy mode) may filter by any
+    * Platform callers (explicit ``platform.access``) may filter by any
       campus via ``client_campus_id``.
-
-    Returns ``None`` when the caller is unscoped and supplied no filter
-    (meaning "no campus restriction", i.e. admin sees everything).
+    * Anyone else without a tenant context is DENIED — an unscoped
+      non-platform caller must never see tenant data (default-deny).
     """
     if tenant.is_tenant_scoped:
         return tenant.campus_id
-    return client_campus_id
+    if tenant.platform:
+        return client_campus_id
+    raise AuthorizationError(
+        "No tenant context — cross-tenant access requires an explicit "
+        "platform permission."
+    )
 
 
 def assert_tenant_scope(
@@ -52,19 +56,29 @@ def assert_tenant_scope(
     """Raise ``AuthorizationError`` (403) when ``entity`` belongs to a
     campus other than the current tenant's.
 
-    The check is skipped for unscoped callers (platform admin / legacy
-    mode), preserving backward compatibility. An entity whose
-    ``campus_id`` is ``None`` is never visible to a scoped tenant.
+    * Tenant-scoped users may only touch their own campus.
+    * Platform callers (explicit ``platform.access``) may operate on any
+      campus.
+    * Unscoped non-platform callers are DENIED by default.
+
+    An entity whose ``campus_id`` is ``None`` is never visible to a
+    scoped tenant.
     """
-    if not tenant.is_tenant_scoped:
+    if tenant.is_tenant_scoped:
+        entity_campus = getattr(entity, "campus_id", None)
+        if entity_campus is None or entity_campus != tenant.campus_id:
+            raise AuthorizationError(
+                f"Cross-tenant access denied to {resource}: "
+                f"entity belongs to campus {entity_campus}, "
+                f"current tenant is campus {tenant.campus_id}."
+            )
         return
-    entity_campus = getattr(entity, "campus_id", None)
-    if entity_campus is None or entity_campus != tenant.campus_id:
-        raise AuthorizationError(
-            f"Cross-tenant access denied to {resource}: "
-            f"entity belongs to campus {entity_campus}, "
-            f"current tenant is campus {tenant.campus_id}."
-        )
+    if tenant.platform:
+        return
+    raise AuthorizationError(
+        f"Cross-tenant access denied to {resource}: "
+        "caller has no tenant context and no platform permission."
+    )
 
 
 def assert_tenant_scope_or_owner(
@@ -115,15 +129,21 @@ async def assert_tenant_scope_by_parent_id(
     interviews, merit entries and seat allocations inherit from
     ``AdmissionApplication``).
     """
-    if not tenant.is_tenant_scoped:
-        return
-    result = await session.execute(
-        select(model.campus_id).where(model.id == parent_id)
-    )
-    parent_campus_id = result.scalar_one_or_none()
-    if parent_campus_id is None or parent_campus_id != tenant.campus_id:
-        raise AuthorizationError(
-            f"Cross-tenant access denied to {resource}: "
-            f"parent record belongs to campus {parent_campus_id}, "
-            f"current tenant is campus {tenant.campus_id}."
+    if tenant.is_tenant_scoped:
+        result = await session.execute(
+            select(model.campus_id).where(model.id == parent_id)
         )
+        parent_campus_id = result.scalar_one_or_none()
+        if parent_campus_id is None or parent_campus_id != tenant.campus_id:
+            raise AuthorizationError(
+                f"Cross-tenant access denied to {resource}: "
+                f"parent record belongs to campus {parent_campus_id}, "
+                f"current tenant is campus {tenant.campus_id}."
+            )
+        return
+    if tenant.platform:
+        return
+    raise AuthorizationError(
+        f"Cross-tenant access denied to {resource}: "
+        "caller has no tenant context and no platform permission."
+    )

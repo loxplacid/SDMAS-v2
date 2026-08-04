@@ -8,6 +8,7 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.jobs.models import Job
+from app.multi_tenant.models import TenantContext
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +18,27 @@ class BaseJob(abc.ABC):
 
     Subclasses must set ``job_type`` and implement ``run``.
     Registration is automatic via ``JobRegistry.register``.
+
+    Each job instance carries the explicit trust boundary it was created
+    under:
+
+    * ``self.job``    — the ``Job`` row being executed (may be ``None``
+      when the job is driven manually).
+    * ``self.tenant`` — a ``TenantContext`` pinned to the job's own campus
+      (``None`` when the job has no campus).  Jobs MUST build tenant-scoped
+      repositories from ``self.tenant``; they must never run unscoped,
+      because that would give cross-tenant (platform-like) access.
+
+    The ``WORKER`` process is the only legitimate actor that may run jobs
+    that span any tenant, and it is exactly pinned per job by
+    ``JobService.execute_job``.
     """
 
     job_type: str
+
+    def __init__(self) -> None:
+        self.job: Job | None = None
+        self.tenant: TenantContext | None = None
 
     async def before_run(self, job: Job, session: AsyncSession) -> None:
         """Hook called before ``run``. Override for setup logic."""

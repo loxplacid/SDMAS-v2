@@ -30,6 +30,9 @@ from app.domains.notifications.preferences import (  # noqa: F401
 from app.domains.audit.models import (  # noqa: F401
     AuditLog,
 )
+from app.domains.events.outbox import (  # noqa: F401
+    OutboxEvent,
+)
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -80,26 +83,55 @@ async def api_client() -> AsyncGenerator[AsyncClient, None]:
     # Seed a default admin so permission-gated endpoints (e.g.
     # DELETE /students requiring students.delete) can be exercised
     # end-to-end through the API.
+    #
+    # The default-deny tenant architecture means the admin must belong
+    # to a real campus: we seed an Institution + two Campuses and make
+    # the admin a default member of Campus A (id=1) so tenant-scoped
+    # endpoints resolve to a concrete school context.
     from sqlalchemy import select as _select
-    from app.domains.auth.models import User
+    from app.domains.auth.models import User, UserSchoolMembership
     from app.domains.auth.security import hash_password
+    from app.domains.institution.models import Institution, Campus
 
     async with factory() as seed_session:
+        institution = Institution(name="Test District", code="TST-DIST")
+        seed_session.add(institution)
+        await seed_session.flush()
+        campus_a = Campus(
+            institution_id=institution.id, name="Campus A", code="CMP-A", status="active"
+        )
+        campus_b = Campus(
+            institution_id=institution.id, name="Campus B", code="CMP-B", status="active"
+        )
+        seed_session.add_all([campus_a, campus_b])
+        await seed_session.flush()
+
         existing = await seed_session.execute(
             _select(User).where(User.username == "admin")
         )
-        if existing.scalar_one_or_none() is None:
-            seed_session.add(
-                User(
-                    username="admin",
-                    email="admin@test.local",
-                    password_hash=hash_password("AdminPass123!"),
-                    display_name="Test Admin",
-                    role="admin",
-                    is_active=True,
-                )
+        admin = existing.scalar_one_or_none()
+        if admin is None:
+            admin = User(
+                username="admin",
+                email="admin@test.local",
+                password_hash=hash_password("AdminPass123!"),
+                display_name="Test Admin",
+                role="admin",
+                campus_id=campus_a.id,
+                is_active=True,
             )
-            await seed_session.commit()
+            seed_session.add(admin)
+            await seed_session.flush()
+        admin.campus_id = campus_a.id
+        member = UserSchoolMembership(
+            user_id=admin.id,
+            campus_id=campus_a.id,
+            role="admin",
+            is_default=True,
+            is_active=True,
+        )
+        seed_session.add(member)
+        await seed_session.commit()
 
     async def override_get_session() -> AsyncGeneratorType[AsyncSession, None]:
         async with factory() as session:
@@ -118,6 +150,40 @@ async def api_client() -> AsyncGenerator[AsyncClient, None]:
 
     app.dependency_overrides.clear()
     await engine.dispose()
+
+
+@pytest_asyncio.fixture
+async def admin_headers(api_client: AsyncClient) -> dict:
+    """Authenticated ``Authorization`` headers for the seeded admin user.
+
+    The admin is a default member of Campus A (id=1), so any tenant-
+    scoped endpoint called with these headers resolves to campus 1.
+    """
+    resp = await api_client.post(
+        "/auth/login",
+        json={"login": "admin", "password": "AdminPass123!"},
+    )
+    assert resp.status_code == 200, resp.text
+    token = resp.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest_asyncio.fixture
+async def auth_client(api_client: AsyncClient) -> AsyncClient:
+    """``api_client`` with the admin bearer token pre-attached.
+
+    Every request sent through this client is authenticated as the
+    seeded admin (campus 1), which satisfies the global auth gate and
+    ``require_tenant_context`` on router endpoints.
+    """
+    resp = await api_client.post(
+        "/auth/login",
+        json={"login": "admin", "password": "AdminPass123!"},
+    )
+    assert resp.status_code == 200, resp.text
+    token = resp.json()["access_token"]
+    api_client.headers["Authorization"] = f"Bearer {token}"
+    return api_client
 
 
 @pytest.fixture(autouse=True)

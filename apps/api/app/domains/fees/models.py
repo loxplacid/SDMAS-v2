@@ -3,7 +3,15 @@ from __future__ import annotations
 import datetime
 from datetime import timezone
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.database import Base
@@ -94,6 +102,13 @@ class FeeDue(Base):
             "student_id", "fee_structure_id",
             name="uq_fee_due_per_student_structure",
         ),
+        # A fee due can never owe more than it was assigned or hold a
+        # negative paid balance.  Enforced at the DB layer so a concurrent
+        # double-payment can never push the balance out of range.
+        CheckConstraint(
+            "amount_paid >= 0 AND amount_paid <= original_amount",
+            name="ck_fee_due_amount_paid_range",
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -137,7 +152,31 @@ class FeeDue(Base):
 
 
 class Payment(Base):
+    """A recorded student fee payment.
+
+    ``amount`` is stored in **minor currency units** (paise for INR) as an
+    integer — floating-point is never used for monetary math.
+
+    Lifecycle (explicit states)::
+
+        completed ──> partially_refunded ──> refunded
+          └────────────────────▲
+
+    ``idempotency_key`` makes payment recording idempotent: a retried or
+    duplicated request carrying the same key resolves to the original
+    payment instead of creating a second financial record.  The key is
+    UNIQUE at the DB layer, so even a concurrent duplicate cannot slip
+    through the application-level pre-check.
+    """
+
     __tablename__ = "payments"
+    __table_args__ = (
+        CheckConstraint("amount > 0", name="ck_payment_amount_positive"),
+        CheckConstraint(
+            "refunded_amount >= 0 AND refunded_amount <= amount",
+            name="ck_payment_refunded_amount_range",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     student_id: Mapped[int] = mapped_column(
@@ -159,10 +198,26 @@ class Payment(Base):
     receipt_number: Mapped[str | None] = mapped_column(
         String(100), nullable=True, unique=True
     )
+    #: Client/gateway-supplied idempotency key for duplicate request handling.
+    idempotency_key: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, unique=True
+    )
+    #: Explicit payment state (completed / partially_refunded / refunded).
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="completed"
+    )
+    #: Cumulative amount refunded against this payment (minor units).
+    refunded_amount: Mapped[int] = mapped_column(nullable=False, default=0)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         default=lambda: datetime.datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.datetime.now(timezone.utc),
+        onupdate=lambda: datetime.datetime.now(timezone.utc),
     )
 
     def __repr__(self) -> str:

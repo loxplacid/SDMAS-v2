@@ -16,7 +16,7 @@ from app.domains.student.schemas import (
 )
 from app.domains.student.service import StudentService
 from app.infrastructure.database import get_session
-from app.multi_tenant.dependencies import get_optional_tenant
+from app.multi_tenant.dependencies import require_tenant_context
 from app.multi_tenant.guards import assert_tenant_scope, effective_campus_id, inject_campus
 from app.multi_tenant.models import TenantContext
 
@@ -25,15 +25,16 @@ router = APIRouter(prefix="/students", tags=["students"])
 
 async def get_student_service(
     session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> StudentService:
-    return StudentService(StudentRepository(session))
+    return StudentService(StudentRepository(session, tenant), tenant=tenant)
 
 
 @router.post("", response_model=StudentResponse, status_code=status.HTTP_201_CREATED)
 async def create_student(
     data: StudentCreate,
     service: StudentService = Depends(get_student_service),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> StudentResponse:
     student = await service.create_student(data)
     inject_campus(student, tenant)
@@ -44,7 +45,7 @@ async def create_student(
 async def get_student(
     student_id: int,
     service: StudentService = Depends(get_student_service),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> StudentResponse:
     student = await service.get_student(student_id)
     assert_tenant_scope(student, tenant, resource="student")
@@ -64,7 +65,7 @@ async def list_students(
         default=None, alias="campus_id", description="Filter by campus"
     ),
     service: StudentService = Depends(get_student_service),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> Page[StudentResponse]:
     effective_campus = effective_campus_id(tenant, campus_id)
     if search:
@@ -96,7 +97,7 @@ async def update_student(
     student_id: int,
     data: StudentUpdate,
     service: StudentService = Depends(get_student_service),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> StudentResponse:
     student = await service.get_student(student_id)
     assert_tenant_scope(student, tenant, resource="student")
@@ -108,7 +109,7 @@ async def update_student(
 async def delete_student(
     student_id: int,
     service: StudentService = Depends(get_student_service),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
     _user=Depends(require_permission(STUDENTS_DELETE)),  # noqa
 ) -> None:
     student = await service.get_student(student_id)

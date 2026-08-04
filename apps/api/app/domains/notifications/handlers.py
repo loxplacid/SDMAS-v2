@@ -44,6 +44,37 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
+# Deduplication key derivation
+# ---------------------------------------------------------------------------
+
+
+def _event_dedup_key(event: DomainEvent) -> str | None:
+    """Return a deterministic dedup key for a domain event.
+
+    Keys are stable per business occurrence so the same event published
+    twice (retry, duplicate dispatch, restart replay) produces at most one
+    in-app notification per user. Events without a meaningful identity
+    return None (no dedup, e.g. generic admin broadcasts).
+    """
+    if isinstance(event, FeeDueCreatedEvent):
+        return f"fee_due:{event.student_id}:{event.academic_year_id}"
+    if isinstance(event, PaymentReceivedEvent):
+        return f"payment:{event.payment_id}"
+    if isinstance(event, LowAttendanceEvent):
+        return f"low_attendance:{event.student_id}:{event.academic_year_id}"
+    if isinstance(event, AcademicYearRolloverEvent):
+        return f"rollover:{event.new_year_id}"
+    if isinstance(event, BatchOperationCompletedEvent):
+        # Callers must supply a per-run key (batch_service uses a uuid per
+        # run). Returning a type-only fallback here would wrongly suppress
+        # every later notification of the same operation type.
+        return event.event_key
+    if isinstance(event, ImportantAdminEvent):
+        return None  # broadcast; dedup handled by caller when needed
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Helper: dispatch a rendered template through a user's enabled channels
 # ---------------------------------------------------------------------------
 
@@ -57,6 +88,7 @@ async def _dispatch_to_user(
 ) -> None:
     """Send rendered notifications to a specific user via their enabled channels."""
     pref_service = NotificationPreferenceService(session)
+    dedup_key = _event_dedup_key(event)
 
     for tpl in rendered_templates:
         event_type = tpl["type"]
@@ -72,6 +104,7 @@ async def _dispatch_to_user(
                 message=tpl["message"],
                 data=event_data or {},
                 tenant_id=getattr(event, "tenant_id", None),
+                event_key=dedup_key,
             )
 
             try:
@@ -183,7 +216,7 @@ async def handle_batch_operation_completed(
     session: AsyncSession,
     **kwargs: Any,
 ) -> None:
-    """Notify about batch operation results."""
+    """Notify the initiating staff user about batch operation results."""
     rendered = render_all(event)
     logger.info(
         "Batch %s: %d/%d succeeded (%d errors)",
@@ -193,12 +226,24 @@ async def handle_batch_operation_completed(
         event.error_count,
     )
 
-    if rendered:
-        logger.info(
-            "[BATCH NOTIFICATION] %s \u2014 %s",
-            rendered[0]["title"],
-            rendered[0]["message"],
-        )
+    target_user_id = event.target_user_id
+    if target_user_id is None:
+        logger.debug("Batch %s has no target user — skipping notification", event.operation_type)
+        return
+
+    await _dispatch_to_user(
+        session,
+        target_user_id,
+        event,
+        rendered,
+        event_data={
+            "operation_type": event.operation_type,
+            "total_processed": event.total_processed,
+            "success_count": event.success_count,
+            "error_count": event.error_count,
+            "summary": event.summary,
+        },
+    )
 
 
 async def handle_important_admin(
@@ -207,16 +252,37 @@ async def handle_important_admin(
     session: AsyncSession,
     **kwargs: Any,
 ) -> None:
-    """Broadcast critical admin events to the target user.
-
-    In production, this would resolve a list of admin/staff user IDs
-    from the database for fan-out broadcast.
-    """
+    """Broadcast critical admin events to the target user or, when no target
+    is specified, fan out to every active admin/staff user (system-wide)."""
     rendered = render_all(event)
 
     if event.target_user_id is not None:
         await _dispatch_to_user(
             session, event.target_user_id, event, rendered,
+            event_data=event.metadata,
+        )
+        return
+
+    # Fan-out broadcast to admin/staff users.
+    from sqlalchemy import select
+    from app.domains.auth.models import User
+
+    try:
+        stmt = select(User.id).where(
+            User.role.in_(("admin", "staff")),
+            User.is_active.is_(True),
+        )
+        if getattr(event, "tenant_id", None) is not None:
+            stmt = stmt.where(User.campus_id == event.tenant_id)
+        result = await session.execute(stmt)
+        admin_ids = [row[0] for row in result.all()]
+    except Exception:
+        logger.warning("Could not resolve admin users for broadcast (non-fatal)", exc_info=True)
+        return
+
+    for admin_id in admin_ids:
+        await _dispatch_to_user(
+            session, admin_id, event, rendered,
             event_data=event.metadata,
         )
 

@@ -2,19 +2,21 @@ from __future__ import annotations
 
 from typing import Optional, Sequence
 
-from sqlalchemy import select, func, and_, desc
+from sqlalchemy import select, and_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
 from app.domains.audit.models import AuditLog
+from app.multi_tenant.models import TenantContext
+from app.multi_tenant.repository import TenantScopedRepository
 
 
-class AuditLogRepository:
+class AuditLogRepository(TenantScopedRepository):
     """Data access for audit log entries (read-only for queries,
-    write-only for the service)."""
+    write-only for the service).  Tenant-scoped at query construction."""
 
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def create(self, entry: AuditLog) -> AuditLog:
         self.session.add(entry)
@@ -23,7 +25,7 @@ class AuditLogRepository:
 
     async def get_by_id(self, entry_id: int) -> AuditLog:
         result = await self.session.execute(
-            select(AuditLog).where(AuditLog.id == entry_id)
+            self.scoped_query(AuditLog).where(AuditLog.id == entry_id)
         )
         entry = result.scalar_one_or_none()
         if entry is None:
@@ -39,6 +41,9 @@ class AuditLogRepository:
         campus_id: Optional[int] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
+        actor_type: Optional[str] = None,
+        actor_id: Optional[str] = None,
+        result: Optional[str] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[AuditLog], int]:
@@ -59,9 +64,15 @@ class AuditLogRepository:
             conditions.append(AuditLog.created_at >= start_date)
         if end_date is not None:
             conditions.append(AuditLog.created_at <= end_date)
+        if actor_type is not None:
+            conditions.append(AuditLog.actor_type == actor_type)
+        if actor_id is not None:
+            conditions.append(AuditLog.actor_id == actor_id)
+        if result is not None:
+            conditions.append(AuditLog.result == result)
 
-        query = select(AuditLog)
-        count_query = select(func.count(AuditLog.id))
+        query = self.scoped_query(AuditLog)
+        count_query = self.scoped_count(AuditLog)
 
         if conditions:
             query = query.where(and_(*conditions))

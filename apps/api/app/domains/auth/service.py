@@ -19,7 +19,7 @@ from app.core.exceptions import (
     ValidationError,
 )
 from app.core.security import SecurityAuditLogger
-from app.domains.audit.constants import CREATE, LOGIN, PASSWORD_CHANGE, UPDATE, USER, ROLE
+from app.domains.audit.constants import CREATE, LOGIN, LOGIN_FAILED, PASSWORD_CHANGE, UPDATE, USER, ROLE
 from app.domains.audit.service import AuditService
 from app.domains.audit.utils import safe_details
 from app.domains.auth.models import RefreshToken, Role, User
@@ -50,7 +50,19 @@ class UserService:
     def __init__(self, user_repo: UserRepository) -> None:
         self.repo = user_repo
 
-    async def register(self, data: UserCreate) -> User:
+    async def register(
+        self,
+        data: UserCreate,
+        *,
+        campus_id: int | None = None,
+    ) -> User:
+        """Register a new user, optionally pinning them to a campus.
+
+        Public self-service registration leaves ``campus_id`` unset;
+        tenant-scoped admin creation (``/admin/users``) pins the new
+        user to the acting admin's campus so the record can never
+        escape the admin's tenant boundary.
+        """
         existing_email = await self.repo.get_by_email(data.email)
         if existing_email is not None:
             raise ConflictError(
@@ -71,6 +83,7 @@ class UserService:
             display_name=data.display_name,
             role="staff",
             is_active=True,
+            campus_id=campus_id,
         )
         try:
             created = await self.repo.create(user)
@@ -158,6 +171,9 @@ class UserService:
                 ip_address=ip_address,
                 reason="user_not_found",
             )
+            await self._audit_login_failed(
+                username=data.login, reason="user_not_found", ip_address=ip_address,
+            )
             raise AuthenticationError("Invalid username or password")
 
         if not user.is_active:
@@ -167,6 +183,11 @@ class UserService:
                 reason="account_inactive",
                 user_id=user.id,
             )
+            await self._audit_login_failed(
+                username=user.username, user_id=user.id,
+                reason="account_inactive", ip_address=ip_address,
+                campus_id=user.campus_id,
+            )
             raise AuthenticationError("Account is inactive")
 
         if not verify_password(data.password, user.password_hash):
@@ -175,6 +196,11 @@ class UserService:
                 ip_address=ip_address,
                 reason="invalid_password",
                 user_id=user.id,
+            )
+            await self._audit_login_failed(
+                username=user.username, user_id=user.id,
+                reason="invalid_password", ip_address=ip_address,
+                campus_id=user.campus_id,
             )
             raise AuthenticationError("Invalid username or password")
 
@@ -224,6 +250,41 @@ class UserService:
 
         return access_token, refresh_token_str, settings.access_token_expire_minutes * 60
 
+    async def _audit_login_failed(
+        self,
+        *,
+        username: str,
+        reason: str,
+        ip_address: str | None = None,
+        user_id: int | None = None,
+        campus_id: int | None = None,
+    ) -> None:
+        """Record a failed login attempt with the SYSTEM "unattributed"
+        actor (there is no authenticated user to attribute it to).
+
+        Best-effort — audit failure never masks the login error.
+        """
+        try:
+            audit_svc = AuditService(self.repo.session)
+            await audit_svc.record(
+                action=LOGIN_FAILED,
+                resource_type=USER,
+                resource_id=str(user_id) if user_id is not None else None,
+                details={"username": username, "reason": reason},
+                result="FAILURE",
+                failure_reason=reason,
+                ip_address=ip_address,
+                campus_id=campus_id,
+            )
+            # Commit immediately: the login request is about to raise, which
+            # would otherwise roll the shared session back and silently drop
+            # the failed-login trail entry.  A failed attempt must be durable.
+            await self.repo.session.commit()
+        except Exception:
+            logger.warning(
+                "Failed to write audit entry for failed login (non-fatal)", exc_info=True
+            )
+
     async def refresh_token(
         self,
         token: str,
@@ -255,6 +316,12 @@ class UserService:
                     ip_address=ip_address,
                 )
                 await self.repo.revoke_all_user_tokens(int(user_id), except_hash=token_hash)
+                # The request is about to fail, which would roll the shared
+                # session back and silently undo the family revocation.
+                # Commit now so the reuse containment is durable — an
+                # attacker replaying a stolen refresh token must kill the
+                # whole token family, not just the one token.
+                await self.repo.session.commit()
             raise AuthenticationError("Invalid or expired refresh token")
 
         user = await self.repo.get_by_id(int(user_id))
@@ -278,6 +345,12 @@ class UserService:
             payload = decode_token(token)
         except ValueError:
             raise AuthenticationError("Invalid or expired token")
+
+        # Only *access* tokens authenticate API requests.  Refresh tokens
+        # are single-purpose credentials (rotation + reuse detection) and
+        # must not double as bearer credentials.
+        if payload.get("type") != "access":
+            raise AuthenticationError("Invalid token type")
 
         user_id = payload.get("sub")
         if user_id is None:
@@ -437,9 +510,17 @@ class UserService:
         self,
         role: Optional[str] = None,
         is_active: Optional[bool] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[User], int]:
+        """List users, optionally restricted to a single campus.
+
+        Tenant-scoped admins pass their own ``campus_id``; the repository
+        applies the filter at query construction time so cross-tenant
+        user records can never be returned.
+        """
         return await self.repo.list(
-            role=role, is_active=is_active, skip=skip, limit=limit
+            role=role, is_active=is_active,
+            campus_id=campus_id, skip=skip, limit=limit,
         )

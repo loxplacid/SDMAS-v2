@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, Sequence
 
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
@@ -16,6 +16,15 @@ from app.domains.academic.models import (
     Teacher,
     TeacherAssignment,
 )
+from app.multi_tenant.models import TenantContext
+from app.multi_tenant.repository import TenantScopedRepository
+
+
+class _AcademicRepo(TenantScopedRepository):
+    """Shared tenant-scoping for the academic domain repositories."""
+
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
 
 # ---------------------------------------------------------------------------
@@ -23,13 +32,13 @@ from app.domains.academic.models import (
 # ---------------------------------------------------------------------------
 
 
-class AcademicYearRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class AcademicYearRepository(_AcademicRepo):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, year_id: int) -> AcademicYear:
         result = await self.session.execute(
-            select(AcademicYear).where(AcademicYear.id == year_id)
+            self.scoped_query(AcademicYear).where(AcademicYear.id == year_id)
         )
         year = result.scalar_one_or_none()
         if year is None:
@@ -38,13 +47,13 @@ class AcademicYearRepository:
 
     async def get_by_name(self, name: str) -> AcademicYear | None:
         result = await self.session.execute(
-            select(AcademicYear).where(AcademicYear.name == name)
+            self.scoped_query(AcademicYear).where(AcademicYear.name == name)
         )
         return result.scalar_one_or_none()
 
     async def exists_by_name(self, name: str) -> bool:
         result = await self.session.execute(
-            select(func.count(AcademicYear.id)).where(AcademicYear.name == name)
+            self.scoped_count(AcademicYear).where(AcademicYear.name == name)
         )
         return (result.scalar() or 0) > 0
 
@@ -55,8 +64,8 @@ class AcademicYearRepository:
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[AcademicYear], int]:
-        query = select(AcademicYear)
-        count_query = select(func.count(AcademicYear.id))
+        query = self.scoped_query(AcademicYear)
+        count_query = self.scoped_count(AcademicYear)
 
         if status is not None:
             query = query.where(AcademicYear.status == status)
@@ -93,13 +102,13 @@ class AcademicYearRepository:
 # ---------------------------------------------------------------------------
 
 
-class ClassRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class ClassRepository(_AcademicRepo):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, class_id: int) -> Class:
         result = await self.session.execute(
-            select(Class).where(Class.id == class_id)
+            self.scoped_query(Class).where(Class.id == class_id)
         )
         cls = result.scalar_one_or_none()
         if cls is None:
@@ -108,7 +117,7 @@ class ClassRepository:
 
     async def get_by_name_and_year(self, name: str, year_id: int) -> Class | None:
         result = await self.session.execute(
-            select(Class).where(
+            self.scoped_query(Class).where(
                 Class.name == name, Class.academic_year_id == year_id
             )
         )
@@ -121,13 +130,13 @@ class ClassRepository:
         limit: int = 100,
     ) -> tuple[Sequence[Class], int]:
         query = (
-            select(Class)
+            self.scoped_query(Class)
             .where(Class.academic_year_id == year_id)
             .offset(skip)
             .limit(limit)
             .order_by(Class.name)
         )
-        count_query = select(func.count(Class.id)).where(
+        count_query = self.scoped_count(Class).where(
             Class.academic_year_id == year_id
         )
 
@@ -147,8 +156,8 @@ class ClassRepository:
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Class], int]:
-        query = select(Class)
-        count_query = select(func.count(Class.id))
+        query = self.scoped_query(Class)
+        count_query = self.scoped_count(Class)
 
         if year_id is not None:
             query = query.where(Class.academic_year_id == year_id)
@@ -188,13 +197,13 @@ class ClassRepository:
 # ---------------------------------------------------------------------------
 
 
-class SectionRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class SectionRepository(_AcademicRepo):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, section_id: int) -> Section:
         result = await self.session.execute(
-            select(Section).where(Section.id == section_id)
+            self.scoped_query(Section).where(Section.id == section_id)
         )
         section = result.scalar_one_or_none()
         if section is None:
@@ -203,7 +212,7 @@ class SectionRepository:
 
     async def get_by_name_and_class(self, name: str, class_id: int) -> Section | None:
         result = await self.session.execute(
-            select(Section).where(
+            self.scoped_query(Section).where(
                 Section.name == name, Section.class_id == class_id
             )
         )
@@ -216,13 +225,13 @@ class SectionRepository:
         limit: int = 100,
     ) -> tuple[Sequence[Section], int]:
         query = (
-            select(Section)
+            self.scoped_query(Section)
             .where(Section.class_id == class_id)
             .offset(skip)
             .limit(limit)
             .order_by(Section.name)
         )
-        count_query = select(func.count(Section.id)).where(
+        count_query = self.scoped_count(Section).where(
             Section.class_id == class_id
         )
 
@@ -242,8 +251,8 @@ class SectionRepository:
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Section], int]:
-        query = select(Section)
-        count_query = select(func.count(Section.id))
+        query = self.scoped_query(Section)
+        count_query = self.scoped_count(Section)
 
         if class_id is not None:
             query = query.where(Section.class_id == class_id)
@@ -283,13 +292,13 @@ class SectionRepository:
 # ---------------------------------------------------------------------------
 
 
-class EnrollmentRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class EnrollmentRepository(_AcademicRepo):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, enrollment_id: int) -> Enrollment:
         result = await self.session.execute(
-            select(Enrollment).where(Enrollment.id == enrollment_id)
+            self.scoped_query(Enrollment).where(Enrollment.id == enrollment_id)
         )
         enrollment = result.scalar_one_or_none()
         if enrollment is None:
@@ -300,7 +309,7 @@ class EnrollmentRepository:
         self, student_id: int, year_id: int
     ) -> Enrollment | None:
         result = await self.session.execute(
-            select(Enrollment).where(
+            self.scoped_query(Enrollment).where(
                 Enrollment.student_id == student_id,
                 Enrollment.academic_year_id == year_id,
             )
@@ -311,7 +320,7 @@ class EnrollmentRepository:
         self, student_id: int, year_id: int
     ) -> bool:
         result = await self.session.execute(
-            select(func.count(Enrollment.id)).where(
+            self.scoped_count(Enrollment).where(
                 Enrollment.student_id == student_id,
                 Enrollment.academic_year_id == year_id,
             )
@@ -328,8 +337,8 @@ class EnrollmentRepository:
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Enrollment], int]:
-        query = select(Enrollment)
-        count_query = select(func.count(Enrollment.id))
+        query = self.scoped_query(Enrollment)
+        count_query = self.scoped_count(Enrollment)
 
         if student_id is not None:
             query = query.where(Enrollment.student_id == student_id)
@@ -377,13 +386,13 @@ class EnrollmentRepository:
 # ---------------------------------------------------------------------------
 
 
-class TermRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class TermRepository(_AcademicRepo):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, term_id: int) -> Term:
         result = await self.session.execute(
-            select(Term).where(Term.id == term_id)
+            self.scoped_query(Term).where(Term.id == term_id)
         )
         term = result.scalar_one_or_none()
         if term is None:
@@ -394,7 +403,7 @@ class TermRepository:
         self, academic_year_id: int
     ) -> Sequence[Term]:
         result = await self.session.execute(
-            select(Term)
+            self.scoped_query(Term)
             .where(Term.academic_year_id == academic_year_id)
             .order_by(Term.start_date)
         )
@@ -418,7 +427,7 @@ class TermRepository:
             conditions.append(Term.id != exclude_id)
 
         result = await self.session.execute(
-            select(Term).where(and_(*conditions))
+            self.scoped_query(Term).where(and_(*conditions))
         )
         return result.scalar_one_or_none()
 
@@ -437,13 +446,13 @@ class TermRepository:
 # ---------------------------------------------------------------------------
 
 
-class SubjectRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class SubjectRepository(_AcademicRepo):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, subject_id: int) -> Subject:
         result = await self.session.execute(
-            select(Subject).where(Subject.id == subject_id)
+            self.scoped_query(Subject).where(Subject.id == subject_id)
         )
         subject = result.scalar_one_or_none()
         if subject is None:
@@ -452,13 +461,13 @@ class SubjectRepository:
 
     async def get_by_name(self, name: str) -> Subject | None:
         result = await self.session.execute(
-            select(Subject).where(Subject.name == name)
+            self.scoped_query(Subject).where(Subject.name == name)
         )
         return result.scalar_one_or_none()
 
     async def get_by_code(self, code: str) -> Subject | None:
         result = await self.session.execute(
-            select(Subject).where(Subject.code == code)
+            self.scoped_query(Subject).where(Subject.code == code)
         )
         return result.scalar_one_or_none()
 
@@ -469,8 +478,8 @@ class SubjectRepository:
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Subject], int]:
-        query = select(Subject)
-        count_query = select(func.count(Subject.id))
+        query = self.scoped_query(Subject)
+        count_query = self.scoped_count(Subject)
 
         if status is not None:
             query = query.where(Subject.status == status)
@@ -504,13 +513,13 @@ class SubjectRepository:
 # ---------------------------------------------------------------------------
 
 
-class TeacherRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class TeacherRepository(_AcademicRepo):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, teacher_id: int) -> Teacher:
         result = await self.session.execute(
-            select(Teacher).where(Teacher.id == teacher_id)
+            self.scoped_query(Teacher).where(Teacher.id == teacher_id)
         )
         teacher = result.scalar_one_or_none()
         if teacher is None:
@@ -521,7 +530,7 @@ class TeacherRepository:
         self, employee_number: str
     ) -> Teacher | None:
         result = await self.session.execute(
-            select(Teacher).where(
+            self.scoped_query(Teacher).where(
                 Teacher.employee_number == employee_number
             )
         )
@@ -534,8 +543,8 @@ class TeacherRepository:
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Teacher], int]:
-        query = select(Teacher)
-        count_query = select(func.count(Teacher.id))
+        query = self.scoped_query(Teacher)
+        count_query = self.scoped_count(Teacher)
 
         if status is not None:
             query = query.where(Teacher.status == status)
@@ -573,13 +582,13 @@ class TeacherRepository:
 # ---------------------------------------------------------------------------
 
 
-class TeacherAssignmentRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class TeacherAssignmentRepository(_AcademicRepo):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, assignment_id: int) -> TeacherAssignment:
         result = await self.session.execute(
-            select(TeacherAssignment).where(
+            self.scoped_query(TeacherAssignment).where(
                 TeacherAssignment.id == assignment_id
             )
         )
@@ -594,7 +603,7 @@ class TeacherAssignmentRepository:
         self, class_id: int
     ) -> Sequence[TeacherAssignment]:
         result = await self.session.execute(
-            select(TeacherAssignment)
+            self.scoped_query(TeacherAssignment)
             .where(TeacherAssignment.class_id == class_id)
             .order_by(TeacherAssignment.id)
         )
@@ -604,7 +613,7 @@ class TeacherAssignmentRepository:
         self, teacher_id: int
     ) -> Sequence[TeacherAssignment]:
         result = await self.session.execute(
-            select(TeacherAssignment)
+            self.scoped_query(TeacherAssignment)
             .where(TeacherAssignment.teacher_id == teacher_id)
             .order_by(TeacherAssignment.id)
         )
@@ -614,7 +623,7 @@ class TeacherAssignmentRepository:
         self, class_id: int, subject_id: int
     ) -> TeacherAssignment | None:
         result = await self.session.execute(
-            select(TeacherAssignment).where(
+            self.scoped_query(TeacherAssignment).where(
                 TeacherAssignment.class_id == class_id,
                 TeacherAssignment.subject_id == subject_id,
             )

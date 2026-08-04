@@ -4,9 +4,11 @@ import datetime
 import logging
 from typing import Any, Sequence
 
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import NotFoundError, PaymentRequiredError
+from app.core.exceptions import ConflictError, NotFoundError, PaymentRequiredError
 from app.domains.billing.models import Invoice, Plan, Subscription, UsageRecord
 from app.domains.billing.repository import (
     InvoiceRepository,
@@ -22,6 +24,21 @@ from app.domains.billing.schemas import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _ensure_aware(dt: datetime.datetime | None) -> datetime.datetime | None:
+    """Normalise a DB-read datetime to timezone-aware UTC.
+
+    ``DateTime(timezone=True)`` columns return **naive** datetimes from
+    SQLite and from MySQL ``DATETIME`` columns.  The billing worker reads
+    subscription rows in a fresh session (so tzinfo is never preserved),
+    and comparing those against an aware ``now`` raises
+    ``TypeError: can't compare offset-naive and offset-aware datetimes``.
+    Every comparison against ``now`` in this module normalises first.
+    """
+    if dt is not None and dt.tzinfo is None:
+        return dt.replace(tzinfo=datetime.timezone.utc)
+    return dt
 
 
 # ── Plan Service ──────────────────────────────────────────────────────
@@ -115,7 +132,16 @@ class SubscriptionService:
             created_at=now,
             updated_at=now,
         )
-        created = await self.sub_repo.create(sub)
+        try:
+            created = await self.sub_repo.create(sub)
+        except IntegrityError:
+            # A concurrent request already created this campus's subscription
+            # (unique ``campus_id``).  Return the winner instead of 500ing.
+            await self.session.rollback()
+            existing = await self.sub_repo.get_by_campus(campus_id)
+            if existing is not None:
+                return existing
+            raise
         logger.info("Created trial subscription for campus %d (plan=%s)", campus_id, plan_code)
         return created
 
@@ -170,6 +196,15 @@ class SubscriptionService:
         if sub is None:
             raise NotFoundError("No subscription found for this campus")
 
+        # A cancelled / expired subscription must NOT be reactivated for free
+        # by calling ``renew`` — that would bypass billing entirely.  It has
+        # to be replaced by a fresh (paid) subscription instead.
+        if sub.status in ("cancelled", "expired"):
+            raise ConflictError(
+                f"Cannot renew a {sub.status} subscription — start a new "
+                "subscription instead."
+            )
+
         if sub.status == "active" and not sub.cancel_at_period_end:
             return sub
 
@@ -193,7 +228,7 @@ class SubscriptionService:
         expired = await self.sub_repo.list_by_status("past_due")
         expired_list: list[Subscription] = []
         for sub in expired:
-            if sub.current_period_end < now:
+            if _ensure_aware(sub.current_period_end) < now:
                 await self.sub_repo.update_status(sub.id, "expired")
                 expired_list.append(sub)
                 logger.info("Subscription %d expired (past_due beyond period end)", sub.id)
@@ -204,10 +239,31 @@ class SubscriptionService:
         active = await self.sub_repo.list_active_and_trial()
         results: list[tuple[Subscription, Invoice]] = []
         for sub in active:
-            if sub.current_period_end > now:
+            # ``current_period_end`` may be naive when read from SQLite /
+            # MySQL — normalise before comparing against aware ``now``.
+            if _ensure_aware(sub.current_period_end) > now:
                 continue
             plan = await self.plan_repo.get_by_id(sub.plan_id)
             if plan is None:
+                continue
+
+            # Lock the subscription row so two concurrent workers cannot both
+            # invoice the same billing period (double-invoicing).
+            locked = await self.sub_repo.get_by_id_for_update(sub.id)
+            if locked is None:
+                continue
+            sub = locked
+
+            # Idempotency: if a pending invoice already exists for this
+            # subscription, the period was already invoiced (or the previous
+            # invoice is still unpaid) — never stack a second one.
+            pending = await self.session.execute(
+                select(Invoice).where(
+                    Invoice.subscription_id == sub.id,
+                    Invoice.status == "pending",
+                )
+            )
+            if pending.scalars().first() is not None:
                 continue
 
             invoice = Invoice(

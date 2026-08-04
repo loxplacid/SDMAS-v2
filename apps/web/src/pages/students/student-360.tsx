@@ -1,19 +1,25 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { student360Api, type Student360Response } from '../../api/student-360/student-360-api'
+import { student360Api, type Student360Response, type LifecycleState } from '../../api/student-360/student-360-api'
 import {
   Card, TabGroup, Badge, Button, Breadcrumbs, PageHeader, ErrorState,
 } from '../../components/ui'
 import { Timeline } from '../../components/timeline/timeline'
 import { Can } from '../../components/auth/can'
 import { usePermission } from '../../hooks/use-permission'
-import { FEES_VIEW } from '../../types/permissions'
+import { FEES_VIEW, STUDENTS_UPDATE } from '../../types/permissions'
 import { cn, formatDate } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
+  prospective: 'info',
+  admitted: 'info',
+  enrolled: 'info',
   active: 'success',
-  inactive: 'danger',
+  transferred: 'warning',
+  withdrawn: 'danger',
   graduated: 'info',
+  alumni: 'info',
+  inactive: 'danger',
 }
 
 const attendanceStatusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
@@ -51,7 +57,125 @@ function InfoRow({ label, value }: { label: string; value: string | number | nul
 
 // ── Tab: Overview ──────────────────────────────────────────────────────
 
-function OverviewTab({ data }: { data: Student360Response }) {
+// ── Lifecycle card with quick transition action ───────────────────────
+
+const lifecycleStatusLabel: Record<string, string> = {
+  prospective: 'Prospective',
+  admitted: 'Admitted',
+  enrolled: 'Enrolled',
+  active: 'Active',
+  transferred: 'Transferred',
+  withdrawn: 'Withdrawn',
+  graduated: 'Graduated',
+  alumni: 'Alumni',
+  inactive: 'Inactive',
+}
+
+function LifecycleCard({ data, onTransitioned }: { data: Student360Response; onTransitioned?: () => void }) {
+  const { can } = usePermission()
+  const canUpdate = can(STUDENTS_UPDATE)
+  const lifecycle = data.lifecycle
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [transitioningTo, setTransitioningTo] = useState<string | null>(null)
+  const [reason, setReason] = useState('')
+
+  if (!lifecycle) return null
+
+  const current = lifecycle.current_status
+  const allowed = lifecycle.allowed_transitions
+  const order = lifecycle.lifecycle_order
+  const currentIndex = order.indexOf(current)
+
+  const runTransition = async (toStatus: string) => {
+    setBusy(true)
+    setError(null)
+    setTransitioningTo(toStatus)
+    try {
+      await student360Api.transition(data.identity.id, {
+        to_status: toStatus,
+        reason: reason.trim() || null,
+      })
+      setReason('')
+      // Refetch the full 360 so the hero badge, page header and every tab
+      // reflect the new lifecycle status (not just this card).
+      onTransitioned?.()
+    } catch (err: any) {
+      setError(err?.detail || 'Failed to update status')
+    } finally {
+      setBusy(false)
+      setTransitioningTo(null)
+    }
+  }
+
+  return (
+    <Card title="Lifecycle" subtitle="Deterministic, auditable student status flow">
+      <div className="flex items-center gap-3 mb-4">
+        <Badge variant={statusBadge[current]}>{lifecycleStatusLabel[current] ?? current}</Badge>
+        {currentIndex >= 0 && (
+          <div className="flex-1 flex items-center gap-1">
+            {order.slice(0, currentIndex + 1).map((step) => (
+              <span key={step} className="h-1.5 flex-1 rounded-full bg-[var(--color-success)]/70" aria-hidden="true" />
+            ))}
+            {order.slice(currentIndex + 1).map((step) => (
+              <span key={step} className="h-1.5 flex-1 rounded-full bg-[var(--color-border)]" aria-hidden="true" />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {canUpdate && allowed.length > 0 && (
+        <div className="mb-4">
+          <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1.5">
+            Transition to
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {allowed.map((toStatus) => (
+              <button
+                key={toStatus}
+                type="button"
+                disabled={busy}
+                onClick={() => runTransition(toStatus)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium border border-[var(--color-border)] hover:border-[var(--color-brand-accent)] hover:text-[var(--color-brand-accent)] transition-colors disabled:opacity-50"
+              >
+                {busy && transitioningTo === toStatus ? 'Updating…' : (lifecycleStatusLabel[toStatus] ?? toStatus)}
+              </button>
+            ))}
+          </div>
+          {allowed.length > 0 && (
+            <input
+              type="text"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Optional reason (audited)"
+              className="mt-2 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-brand-accent)]"
+            />
+          )}
+          {error && <p className="mt-2 text-xs text-[var(--color-danger)]">{error}</p>}
+        </div>
+      )}
+
+      {lifecycle.recent_events.length === 0 ? (
+        <p className="text-sm text-[var(--color-text-tertiary)]">No lifecycle transitions recorded yet.</p>
+      ) : (
+        <div className="space-y-2">
+          {lifecycle.recent_events.map((e) => (
+            <div key={e.id} className="flex items-center justify-between text-sm py-1.5 border-b border-[var(--color-border)] last:border-0">
+              <span className="text-[var(--color-text-muted)] capitalize">
+                {lifecycleStatusLabel[e.from_status] ?? e.from_status} → {lifecycleStatusLabel[e.to_status] ?? e.to_status}
+              </span>
+              <span className="text-xs text-[var(--color-text-tertiary)]">
+                {e.reason ? `${e.reason} · ` : ''}{formatDate(e.created_at)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  )
+}
+
+function OverviewTab({ data, onTransitioned }: { data: Student360Response; onTransitioned?: () => void }) {
   const { identity: s, current_enrollment: ce, financial: fin, attendance: att, guardians, contacts, health } = data
   return (
     <div className="space-y-6">
@@ -152,6 +276,9 @@ function OverviewTab({ data }: { data: Student360Response }) {
           )}
         </div>
       )}
+
+      {/* Lifecycle */}
+      <LifecycleCard data={data} onTransitioned={onTransitioned} />
     </div>
   )
 }
@@ -331,32 +458,39 @@ function FinanceTab({ data }: { data: Student360Response }) {
 // ── Tab: Documents ─────────────────────────────────────────────────────
 
 function DocumentsTab({ data }: { data: Student360Response }) {
+  const docs = data.documents || []
   return (
     <div className="space-y-6">
       <Card title="Student Documents">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[
-            { name: 'Admission Form', type: 'form', icon: '📋' },
-            { name: 'ID Card', type: 'id', icon: '🪪' },
-            { name: 'Transcript', type: 'academic', icon: '📜' },
-            { name: 'Fee Receipts', type: 'finance', icon: '🧾' },
-            { name: 'Medical Records', type: 'health', icon: '🏥' },
-            { name: 'Transfer Certificate', type: 'tc', icon: '📄' },
-          ].map((doc) => (
-            <Card key={doc.name} variant="bordered" className="hover:shadow-sm cursor-pointer transition-shadow">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{doc.icon}</span>
-                <div>
-                  <p className="font-medium text-sm text-[var(--color-text-primary)]">{doc.name}</p>
-                  <p className="text-xs text-[var(--color-text-tertiary)] capitalize">{doc.type} document</p>
+        {docs.length === 0 ? (
+          <div className="py-8 text-center">
+            <div className="flex items-center justify-center h-12 w-12 rounded-full bg-[var(--color-surface-hover)] mx-auto mb-3">
+              <svg className="h-6 w-6 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <p className="text-sm text-[var(--color-text-tertiary)]">No documents uploaded for this student</p>
+            <p className="text-xs text-[var(--color-text-tertiary)] mt-1">Uploaded documents appear here.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {docs.map((doc) => (
+              <Card key={doc.id} variant="bordered" className="hover:shadow-sm transition-shadow">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">📄</span>
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm text-[var(--color-text-primary)] truncate" title={doc.title}>{doc.title}</p>
+                    <p className="text-xs text-[var(--color-text-tertiary)]">
+                      {doc.category || 'Document'}
+                      {doc.file_size ? ` · ${(doc.file_size / 1024).toFixed(0)} KB` : ''}
+                    </p>
+                    {doc.uploaded_at && <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">{formatDate(doc.uploaded_at)}</p>}
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-        <p className="text-xs text-[var(--color-text-tertiary)] mt-4 text-center">
-          Document management coming soon &mdash; upload and manage files here.
-        </p>
+              </Card>
+            ))}
+          </div>
+        )}
       </Card>
 
       <Card title="Health Information">
@@ -586,6 +720,13 @@ export function Student360Page() {
       .finally(() => setLoading(false))
   }, [id])
 
+  const refresh = useCallback(() => {
+    if (!id) return
+    student360Api.get(Number(id))
+      .then(setData)
+      .catch(() => { /* keep the current data on a background refresh failure */ })
+  }, [id])
+
   if (loading) {
     return (
       <div className="space-y-6 animate-fade-in-up">
@@ -643,7 +784,7 @@ export function Student360Page() {
       />
 
       <div className="mt-2">
-        {activeTab === 'overview' && <OverviewTab data={data} />}
+        {activeTab === 'overview' && <OverviewTab data={data} onTransitioned={refresh} />}
         {activeTab === 'academic' && <AcademicTab data={data} />}
         {activeTab === 'attendance' && <AttendanceTab data={data} />}
         {activeTab === 'finance' && (

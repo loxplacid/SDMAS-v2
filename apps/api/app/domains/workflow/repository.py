@@ -15,6 +15,21 @@ from app.domains.workflow.models import (
     WorkflowInstance,
     ApprovalHistory,
 )
+from app.multi_tenant.models import TenantContext
+from app.multi_tenant.repository import TenantScopedRepository
+
+
+class _WorkflowRepo(TenantScopedRepository):
+    """Base for workflow repositories.
+
+    ``Workflow`` / steps / transitions / actions are platform data and are
+    never filtered; ``WorkflowInstance`` (campus-tagged) and
+    ``ApprovalHistory`` (parent-scoped) ARE filtered — automatically, via
+    the tenancy registry, at query construction time.
+    """
+
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
 
 # ---------------------------------------------------------------------------
@@ -22,13 +37,13 @@ from app.domains.workflow.models import (
 # ---------------------------------------------------------------------------
 
 
-class WorkflowRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class WorkflowRepository(_WorkflowRepo):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, workflow_id: int) -> Workflow:
         result = await self.session.execute(
-            select(Workflow)
+            self.scoped_query(Workflow)
             .options(selectinload(Workflow.steps), selectinload(Workflow.transitions))
             .where(Workflow.id == workflow_id)
         )
@@ -39,7 +54,7 @@ class WorkflowRepository:
 
     async def get_by_code(self, code: str) -> Workflow | None:
         result = await self.session.execute(
-            select(Workflow)
+            self.scoped_query(Workflow)
             .options(selectinload(Workflow.steps), selectinload(Workflow.transitions))
             .where(Workflow.code == code)
         )
@@ -47,7 +62,7 @@ class WorkflowRepository:
 
     async def get_by_entity_type(self, entity_type: str) -> list[Workflow]:
         result = await self.session.execute(
-            select(Workflow)
+            self.scoped_query(Workflow)
             .where(Workflow.entity_type == entity_type, Workflow.status == "active")
             .order_by(Workflow.name)
         )
@@ -60,8 +75,8 @@ class WorkflowRepository:
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Workflow], int]:
-        query = select(Workflow)
-        count_query = select(func.count(Workflow.id))
+        query = self.scoped_query(Workflow)
+        count_query = self.scoped_count(Workflow)
 
         if status is not None:
             query = query.where(Workflow.status == status)
@@ -98,13 +113,13 @@ class WorkflowRepository:
 # ---------------------------------------------------------------------------
 
 
-class WorkflowStepRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class WorkflowStepRepository(_WorkflowRepo):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, step_id: int) -> WorkflowStep:
         result = await self.session.execute(
-            select(WorkflowStep).where(WorkflowStep.id == step_id)
+            self.scoped_query(WorkflowStep).where(WorkflowStep.id == step_id)
         )
         step = result.scalar_one_or_none()
         if step is None:
@@ -113,7 +128,7 @@ class WorkflowStepRepository:
 
     async def get_initial_step(self, workflow_id: int) -> WorkflowStep | None:
         result = await self.session.execute(
-            select(WorkflowStep).where(
+            self.scoped_query(WorkflowStep).where(
                 WorkflowStep.workflow_id == workflow_id,
                 WorkflowStep.is_initial == True,
             )
@@ -122,7 +137,7 @@ class WorkflowStepRepository:
 
     async def list_by_workflow(self, workflow_id: int) -> Sequence[WorkflowStep]:
         result = await self.session.execute(
-            select(WorkflowStep)
+            self.scoped_query(WorkflowStep)
             .where(WorkflowStep.workflow_id == workflow_id)
             .order_by(WorkflowStep.step_order)
         )
@@ -146,13 +161,13 @@ class WorkflowStepRepository:
 # ---------------------------------------------------------------------------
 
 
-class WorkflowTransitionRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class WorkflowTransitionRepository(_WorkflowRepo):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, transition_id: int) -> WorkflowTransition:
         result = await self.session.execute(
-            select(WorkflowTransition).where(
+            self.scoped_query(WorkflowTransition).where(
                 WorkflowTransition.id == transition_id
             )
         )
@@ -167,7 +182,7 @@ class WorkflowTransitionRepository:
         self, step_id: int
     ) -> Sequence[WorkflowTransition]:
         result = await self.session.execute(
-            select(WorkflowTransition).where(
+            self.scoped_query(WorkflowTransition).where(
                 WorkflowTransition.from_step_id == step_id
             )
         )
@@ -177,7 +192,7 @@ class WorkflowTransitionRepository:
         self, workflow_id: int
     ) -> Sequence[WorkflowTransition]:
         result = await self.session.execute(
-            select(WorkflowTransition)
+            self.scoped_query(WorkflowTransition)
             .where(WorkflowTransition.workflow_id == workflow_id)
         )
         return result.scalars().all()
@@ -198,13 +213,13 @@ class WorkflowTransitionRepository:
 # ---------------------------------------------------------------------------
 
 
-class WorkflowActionRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class WorkflowActionRepository(_WorkflowRepo):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, action_id: int) -> WorkflowAction:
         result = await self.session.execute(
-            select(WorkflowAction).where(WorkflowAction.id == action_id)
+            self.scoped_query(WorkflowAction).where(WorkflowAction.id == action_id)
         )
         action = result.scalar_one_or_none()
         if action is None:
@@ -215,7 +230,7 @@ class WorkflowActionRepository:
 
     async def get_by_step(self, step_id: int) -> Sequence[WorkflowAction]:
         result = await self.session.execute(
-            select(WorkflowAction).where(WorkflowAction.step_id == step_id)
+            self.scoped_query(WorkflowAction).where(WorkflowAction.step_id == step_id)
         )
         return result.scalars().all()
 
@@ -223,7 +238,7 @@ class WorkflowActionRepository:
         self, workflow_id: int
     ) -> Sequence[WorkflowAction]:
         result = await self.session.execute(
-            select(WorkflowAction).where(
+            self.scoped_query(WorkflowAction).where(
                 WorkflowAction.workflow_id == workflow_id
             )
         )
@@ -243,13 +258,13 @@ class WorkflowActionRepository:
 # ---------------------------------------------------------------------------
 
 
-class WorkflowInstanceRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class WorkflowInstanceRepository(_WorkflowRepo):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, instance_id: int) -> WorkflowInstance:
         result = await self.session.execute(
-            select(WorkflowInstance)
+            self.scoped_query(WorkflowInstance)
             .options(
                 selectinload(WorkflowInstance.workflow),
                 selectinload(WorkflowInstance.current_step),
@@ -268,7 +283,7 @@ class WorkflowInstanceRepository:
         self, entity_type: str, entity_id: int
     ) -> WorkflowInstance | None:
         result = await self.session.execute(
-            select(WorkflowInstance)
+            self.scoped_query(WorkflowInstance)
             .options(
                 selectinload(WorkflowInstance.workflow),
                 selectinload(WorkflowInstance.current_step),
@@ -291,8 +306,8 @@ class WorkflowInstanceRepository:
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[WorkflowInstance], int]:
-        query = select(WorkflowInstance)
-        count_query = select(func.count(WorkflowInstance.id))
+        query = self.scoped_query(WorkflowInstance)
+        count_query = self.scoped_count(WorkflowInstance)
 
         if status is not None:
             query = query.where(WorkflowInstance.status == status)
@@ -342,15 +357,15 @@ class WorkflowInstanceRepository:
 # ---------------------------------------------------------------------------
 
 
-class ApprovalHistoryRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class ApprovalHistoryRepository(_WorkflowRepo):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def list_by_instance(
         self, instance_id: int
     ) -> Sequence[ApprovalHistory]:
         result = await self.session.execute(
-            select(ApprovalHistory)
+            self.scoped_query(ApprovalHistory)
             .where(ApprovalHistory.instance_id == instance_id)
             .order_by(ApprovalHistory.created_at)
         )

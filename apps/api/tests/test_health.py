@@ -41,6 +41,17 @@ async def test_ready_response_structure(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_not_found_returns_404(client: AsyncClient):
-    response = await client.get("/nonexistent")
+async def test_not_found_returns_404(api_client: AsyncClient, admin_headers: dict):
+    """An authenticated request to a non-existent route falls through to
+    the global 404 handler (the auth gate lets authenticated requests
+    pass first)."""
+    response = await api_client.get("/nonexistent", headers=admin_headers)
     assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_private_path_requires_auth(client: AsyncClient):
+    """The default-deny auth gate rejects unauthenticated requests to
+    non-public paths with 401 before any router sees them."""
+    response = await client.get("/nonexistent")
+    assert response.status_code == 401

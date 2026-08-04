@@ -53,7 +53,18 @@ from app.domains.academic_ops.service import (
     TimeSlotService,
     TimetableService,
 )
+from app.domains.auth.dependencies import require_permission
+from app.domains.auth.models import User
+from app.domains.auth.permissions import (
+    ACADEMIC_CREATE,
+    ACADEMIC_DELETE,
+    ACADEMIC_UPDATE,
+    ACADEMIC_VIEW,
+)
 from app.infrastructure.database import get_session
+from app.multi_tenant.dependencies import require_tenant_context
+from app.multi_tenant.guards import assert_tenant_scope, effective_campus_id, inject_campus
+from app.multi_tenant.models import TenantContext
 
 router = APIRouter(prefix="/api/academic", tags=["academic-ops"])
 
@@ -102,16 +113,24 @@ async def get_curriculum_service(session: AsyncSession = Depends(get_session)) -
 async def create_room(
     data: RoomCreate,
     service: RoomService = Depends(get_room_service),
+    _actor: User = Depends(require_permission(ACADEMIC_CREATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> RoomResponse:
-    return RoomResponse.model_validate(await service.create(data))
+    room = await service.create(data)
+    inject_campus(room, tenant)
+    return RoomResponse.model_validate(room)
 
 
 @router.get("/rooms/{room_id}", response_model=RoomResponse)
 async def get_room(
     room_id: int,
     service: RoomService = Depends(get_room_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> RoomResponse:
-    return RoomResponse.model_validate(await service.get(room_id))
+    room = await service.get(room_id)
+    assert_tenant_scope(room, tenant, resource="room")
+    return RoomResponse.model_validate(room)
 
 
 @router.get("/rooms", response_model=RoomPage)
@@ -121,9 +140,11 @@ async def list_rooms(
     status_filter: Optional[str] = Query(None, alias="status"),
     campus_id: Optional[int] = Query(None, alias="campus_id"),
     service: RoomService = Depends(get_room_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> RoomPage:
     items, total = await service.list(
-        room_type=room_type, status=status_filter, campus_id=campus_id,
+        room_type=room_type, status=status_filter, campus_id=effective_campus_id(tenant, campus_id),
         skip=pagination.offset, limit=pagination.limit,
     )
     return Page.create(
@@ -137,7 +158,11 @@ async def update_room(
     room_id: int,
     data: RoomUpdate,
     service: RoomService = Depends(get_room_service),
+    _actor: User = Depends(require_permission(ACADEMIC_UPDATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> RoomResponse:
+    existing = await service.get(room_id)
+    assert_tenant_scope(existing, tenant, resource="room")
     return RoomResponse.model_validate(await service.update(room_id, data))
 
 
@@ -145,7 +170,11 @@ async def update_room(
 async def delete_room(
     room_id: int,
     service: RoomService = Depends(get_room_service),
+    _actor: User = Depends(require_permission(ACADEMIC_DELETE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
+    existing = await service.get(room_id)
+    assert_tenant_scope(existing, tenant, resource="room")
     await service.delete(room_id)
 
 
@@ -158,16 +187,24 @@ async def delete_room(
 async def create_time_slot(
     data: TimeSlotCreate,
     service: TimeSlotService = Depends(get_timeslot_service),
+    _actor: User = Depends(require_permission(ACADEMIC_CREATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> TimeSlotResponse:
-    return TimeSlotResponse.model_validate(await service.create(data))
+    slot = await service.create(data)
+    inject_campus(slot, tenant)
+    return TimeSlotResponse.model_validate(slot)
 
 
 @router.get("/time-slots/{slot_id}", response_model=TimeSlotResponse)
 async def get_time_slot(
     slot_id: int,
     service: TimeSlotService = Depends(get_timeslot_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> TimeSlotResponse:
-    return TimeSlotResponse.model_validate(await service.get(slot_id))
+    slot = await service.get(slot_id)
+    assert_tenant_scope(slot, tenant, resource="time slot")
+    return TimeSlotResponse.model_validate(slot)
 
 
 @router.get("/time-slots", response_model=TimeSlotPage)
@@ -178,10 +215,12 @@ async def list_time_slots(
     status_filter: Optional[str] = Query(None, alias="status"),
     campus_id: Optional[int] = Query(None, alias="campus_id"),
     service: TimeSlotService = Depends(get_timeslot_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> TimeSlotPage:
     items, total = await service.list(
         day_of_week=day_of_week, slot_type=slot_type, status=status_filter,
-        campus_id=campus_id, skip=pagination.offset, limit=pagination.limit,
+        campus_id=effective_campus_id(tenant, campus_id), skip=pagination.offset, limit=pagination.limit,
     )
     return Page.create(
         items=[TimeSlotResponse.model_validate(s) for s in items],
@@ -194,7 +233,11 @@ async def update_time_slot(
     slot_id: int,
     data: TimeSlotUpdate,
     service: TimeSlotService = Depends(get_timeslot_service),
+    _actor: User = Depends(require_permission(ACADEMIC_UPDATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> TimeSlotResponse:
+    existing = await service.get(slot_id)
+    assert_tenant_scope(existing, tenant, resource="time slot")
     return TimeSlotResponse.model_validate(await service.update(slot_id, data))
 
 
@@ -202,7 +245,11 @@ async def update_time_slot(
 async def delete_time_slot(
     slot_id: int,
     service: TimeSlotService = Depends(get_timeslot_service),
+    _actor: User = Depends(require_permission(ACADEMIC_DELETE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
+    existing = await service.get(slot_id)
+    assert_tenant_scope(existing, tenant, resource="time slot")
     await service.delete(slot_id)
 
 
@@ -215,8 +262,11 @@ async def delete_time_slot(
 async def create_timetable_entry(
     data: TimetableEntryCreate,
     service: TimetableService = Depends(get_timetable_service),
+    _actor: User = Depends(require_permission(ACADEMIC_CREATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> dict:
     entry, check = await service.create_entry(data)
+    inject_campus(entry, tenant)
     return {
         "entry": TimetableEntryResponse.model_validate(entry).model_dump(),
         "conflict_check": check.model_dump(),
@@ -227,6 +277,8 @@ async def create_timetable_entry(
 async def check_timetable_conflicts(
     data: TimetableEntryCreate,
     service: TimetableService = Depends(get_timetable_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> TimetableCheckResult:
     return await service.check_conflicts(data)
 
@@ -235,8 +287,12 @@ async def check_timetable_conflicts(
 async def get_timetable_entry(
     entry_id: int,
     service: TimetableService = Depends(get_timetable_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> TimetableEntryResponse:
-    return TimetableEntryResponse.model_validate(await service.get_entry(entry_id))
+    entry = await service.get_entry(entry_id)
+    assert_tenant_scope(entry, tenant, resource="timetable entry")
+    return TimetableEntryResponse.model_validate(entry)
 
 
 @router.get("/timetable", response_model=TimetableEntryPage)
@@ -249,12 +305,16 @@ async def list_timetable_entries(
     day_of_week: Optional[int] = Query(None, alias="day_of_week"),
     academic_year_id: Optional[int] = Query(None, alias="academic_year_id"),
     status_filter: Optional[str] = Query(None, alias="status"),
+    campus_id: Optional[int] = Query(None, alias="campus_id"),
     service: TimetableService = Depends(get_timetable_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> TimetableEntryPage:
     items, total = await service.list_entries(
         class_id=class_id, section_id=section_id, teacher_id=teacher_id,
         room_id=room_id, day_of_week=day_of_week, academic_year_id=academic_year_id,
-        status=status_filter, skip=pagination.offset, limit=pagination.limit,
+        status=status_filter, campus_id=effective_campus_id(tenant, campus_id),
+        skip=pagination.offset, limit=pagination.limit,
     )
     return Page.create(
         items=[TimetableEntryResponse.model_validate(e) for e in items],
@@ -267,7 +327,11 @@ async def update_timetable_entry(
     entry_id: int,
     data: TimetableEntryUpdate,
     service: TimetableService = Depends(get_timetable_service),
+    _actor: User = Depends(require_permission(ACADEMIC_UPDATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> dict:
+    existing = await service.get_entry(entry_id)
+    assert_tenant_scope(existing, tenant, resource="timetable entry")
     entry, check = await service.update_entry(entry_id, data)
     return {
         "entry": TimetableEntryResponse.model_validate(entry).model_dump(),
@@ -279,7 +343,11 @@ async def update_timetable_entry(
 async def delete_timetable_entry(
     entry_id: int,
     service: TimetableService = Depends(get_timetable_service),
+    _actor: User = Depends(require_permission(ACADEMIC_DELETE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
+    existing = await service.get_entry(entry_id)
+    assert_tenant_scope(existing, tenant, resource="timetable entry")
     await service.delete_entry(entry_id)
 
 
@@ -293,9 +361,12 @@ async def get_class_timetable_week(
     class_id: int,
     academic_year_id: Optional[int] = Query(None, alias="academic_year_id"),
     service: TimetableService = Depends(get_timetable_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> TimetableWeekView:
     return await service.get_week_view(
         class_id=class_id, academic_year_id=academic_year_id,
+        campus_id=effective_campus_id(tenant, None),
     )
 
 
@@ -304,9 +375,12 @@ async def get_teacher_timetable_week(
     teacher_id: int,
     academic_year_id: Optional[int] = Query(None, alias="academic_year_id"),
     service: TimetableService = Depends(get_timetable_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> TimetableWeekView:
     return await service.get_week_view(
         teacher_id=teacher_id, academic_year_id=academic_year_id,
+        campus_id=effective_campus_id(tenant, None),
     )
 
 
@@ -315,9 +389,12 @@ async def get_room_timetable_week(
     room_id: int,
     academic_year_id: Optional[int] = Query(None, alias="academic_year_id"),
     service: TimetableService = Depends(get_timetable_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> TimetableWeekView:
     return await service.get_week_view(
         room_id=room_id, academic_year_id=academic_year_id,
+        campus_id=effective_campus_id(tenant, None),
     )
 
 
@@ -330,16 +407,24 @@ async def get_room_timetable_week(
 async def create_substitution(
     data: SubstitutionCreate,
     service: SubstitutionService = Depends(get_substitution_service),
+    _actor: User = Depends(require_permission(ACADEMIC_CREATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> SubstitutionResponse:
-    return SubstitutionResponse.model_validate(await service.create(data))
+    sub = await service.create(data)
+    inject_campus(sub, tenant)
+    return SubstitutionResponse.model_validate(sub)
 
 
 @router.get("/substitutions/{sub_id}", response_model=SubstitutionResponse)
 async def get_substitution(
     sub_id: int,
     service: SubstitutionService = Depends(get_substitution_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> SubstitutionResponse:
-    return SubstitutionResponse.model_validate(await service.get(sub_id))
+    sub = await service.get(sub_id)
+    assert_tenant_scope(sub, tenant, resource="substitution")
+    return SubstitutionResponse.model_validate(sub)
 
 
 @router.get("/substitutions", response_model=SubstitutionPage)
@@ -350,11 +435,15 @@ async def list_substitutions(
     status_filter: Optional[str] = Query(None, alias="status"),
     from_date: Optional[str] = Query(None, alias="from_date"),
     to_date: Optional[str] = Query(None, alias="to_date"),
+    campus_id: Optional[int] = Query(None, alias="campus_id"),
     service: SubstitutionService = Depends(get_substitution_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> SubstitutionPage:
     items, total = await service.list(
         timetable_entry_id=timetable_entry_id, substitute_teacher_id=substitute_teacher_id,
         status=status_filter, from_date=from_date, to_date=to_date,
+        campus_id=effective_campus_id(tenant, campus_id),
         skip=pagination.offset, limit=pagination.limit,
     )
     return Page.create(
@@ -368,7 +457,11 @@ async def update_substitution(
     sub_id: int,
     data: SubstitutionUpdate,
     service: SubstitutionService = Depends(get_substitution_service),
+    _actor: User = Depends(require_permission(ACADEMIC_UPDATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> SubstitutionResponse:
+    existing = await service.get(sub_id)
+    assert_tenant_scope(existing, tenant, resource="substitution")
     return SubstitutionResponse.model_validate(await service.update(sub_id, data))
 
 
@@ -376,7 +469,11 @@ async def update_substitution(
 async def approve_substitution(
     sub_id: int,
     service: SubstitutionService = Depends(get_substitution_service),
+    _actor: User = Depends(require_permission(ACADEMIC_UPDATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> SubstitutionResponse:
+    existing = await service.get(sub_id)
+    assert_tenant_scope(existing, tenant, resource="substitution")
     return SubstitutionResponse.model_validate(await service.approve(sub_id))
 
 
@@ -384,7 +481,11 @@ async def approve_substitution(
 async def decline_substitution(
     sub_id: int,
     service: SubstitutionService = Depends(get_substitution_service),
+    _actor: User = Depends(require_permission(ACADEMIC_UPDATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> SubstitutionResponse:
+    existing = await service.get(sub_id)
+    assert_tenant_scope(existing, tenant, resource="substitution")
     return SubstitutionResponse.model_validate(await service.decline(sub_id))
 
 
@@ -392,7 +493,11 @@ async def decline_substitution(
 async def delete_substitution(
     sub_id: int,
     service: SubstitutionService = Depends(get_substitution_service),
+    _actor: User = Depends(require_permission(ACADEMIC_DELETE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
+    existing = await service.get(sub_id)
+    assert_tenant_scope(existing, tenant, resource="substitution")
     await service.delete(sub_id)
 
 
@@ -405,16 +510,24 @@ async def delete_substitution(
 async def create_exam_schedule(
     data: ExamScheduleCreate,
     service: ExamScheduleService = Depends(get_exam_service),
+    _actor: User = Depends(require_permission(ACADEMIC_CREATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> ExamScheduleResponse:
-    return ExamScheduleResponse.model_validate(await service.create(data))
+    exam = await service.create(data)
+    inject_campus(exam, tenant)
+    return ExamScheduleResponse.model_validate(exam)
 
 
 @router.get("/exam-schedules/{exam_id}", response_model=ExamScheduleResponse)
 async def get_exam_schedule(
     exam_id: int,
     service: ExamScheduleService = Depends(get_exam_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> ExamScheduleResponse:
-    return ExamScheduleResponse.model_validate(await service.get(exam_id))
+    exam = await service.get(exam_id)
+    assert_tenant_scope(exam, tenant, resource="exam schedule")
+    return ExamScheduleResponse.model_validate(exam)
 
 
 @router.get("/exam-schedules", response_model=ExamSchedulePage)
@@ -427,11 +540,15 @@ async def list_exam_schedules(
     status_filter: Optional[str] = Query(None, alias="status"),
     from_date: Optional[str] = Query(None, alias="from_date"),
     to_date: Optional[str] = Query(None, alias="to_date"),
+    campus_id: Optional[int] = Query(None, alias="campus_id"),
     service: ExamScheduleService = Depends(get_exam_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> ExamSchedulePage:
     items, total = await service.list(
         class_id=class_id, subject_id=subject_id, academic_year_id=academic_year_id,
         term_id=term_id, status=status_filter, from_date=from_date, to_date=to_date,
+        campus_id=effective_campus_id(tenant, campus_id),
         skip=pagination.offset, limit=pagination.limit,
     )
     return Page.create(
@@ -445,7 +562,11 @@ async def update_exam_schedule(
     exam_id: int,
     data: ExamScheduleUpdate,
     service: ExamScheduleService = Depends(get_exam_service),
+    _actor: User = Depends(require_permission(ACADEMIC_UPDATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> ExamScheduleResponse:
+    existing = await service.get(exam_id)
+    assert_tenant_scope(existing, tenant, resource="exam schedule")
     return ExamScheduleResponse.model_validate(await service.update(exam_id, data))
 
 
@@ -453,7 +574,11 @@ async def update_exam_schedule(
 async def delete_exam_schedule(
     exam_id: int,
     service: ExamScheduleService = Depends(get_exam_service),
+    _actor: User = Depends(require_permission(ACADEMIC_DELETE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
+    existing = await service.get(exam_id)
+    assert_tenant_scope(existing, tenant, resource="exam schedule")
     await service.delete(exam_id)
 
 
@@ -466,16 +591,24 @@ async def delete_exam_schedule(
 async def create_grading_structure(
     data: GradingStructureCreate,
     service: GradingStructureService = Depends(get_grading_service),
+    _actor: User = Depends(require_permission(ACADEMIC_CREATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> GradingStructureResponse:
-    return GradingStructureResponse.model_validate(await service.create(data))
+    gs = await service.create(data)
+    inject_campus(gs, tenant)
+    return GradingStructureResponse.model_validate(gs)
 
 
 @router.get("/grading-structures/{gs_id}", response_model=GradingStructureResponse)
 async def get_grading_structure(
     gs_id: int,
     service: GradingStructureService = Depends(get_grading_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> GradingStructureResponse:
-    return GradingStructureResponse.model_validate(await service.get(gs_id))
+    gs = await service.get(gs_id)
+    assert_tenant_scope(gs, tenant, resource="grading structure")
+    return GradingStructureResponse.model_validate(gs)
 
 
 @router.get("/grading-structures", response_model=GradingStructurePage)
@@ -485,11 +618,15 @@ async def list_grading_structures(
     class_id: Optional[int] = Query(None, alias="class_id"),
     subject_id: Optional[int] = Query(None, alias="subject_id"),
     status_filter: Optional[str] = Query(None, alias="status"),
+    campus_id: Optional[int] = Query(None, alias="campus_id"),
     service: GradingStructureService = Depends(get_grading_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> GradingStructurePage:
     items, total = await service.list(
         academic_year_id=academic_year_id, class_id=class_id, subject_id=subject_id,
-        status=status_filter, skip=pagination.offset, limit=pagination.limit,
+        status=status_filter, campus_id=effective_campus_id(tenant, campus_id),
+        skip=pagination.offset, limit=pagination.limit,
     )
     return Page.create(
         items=[GradingStructureResponse.model_validate(g) for g in items],
@@ -502,7 +639,11 @@ async def update_grading_structure(
     gs_id: int,
     data: GradingStructureUpdate,
     service: GradingStructureService = Depends(get_grading_service),
+    _actor: User = Depends(require_permission(ACADEMIC_UPDATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> GradingStructureResponse:
+    existing = await service.get(gs_id)
+    assert_tenant_scope(existing, tenant, resource="grading structure")
     return GradingStructureResponse.model_validate(await service.update(gs_id, data))
 
 
@@ -510,7 +651,11 @@ async def update_grading_structure(
 async def delete_grading_structure(
     gs_id: int,
     service: GradingStructureService = Depends(get_grading_service),
+    _actor: User = Depends(require_permission(ACADEMIC_DELETE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
+    existing = await service.get(gs_id)
+    assert_tenant_scope(existing, tenant, resource="grading structure")
     await service.delete(gs_id)
 
 
@@ -523,16 +668,24 @@ async def delete_grading_structure(
 async def create_grade_record(
     data: GradeRecordCreate,
     service: GradeRecordService = Depends(get_grade_record_service),
+    _actor: User = Depends(require_permission(ACADEMIC_UPDATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> GradeRecordResponse:
-    return GradeRecordResponse.model_validate(await service.create(data))
+    record = await service.create(data)
+    inject_campus(record, tenant)
+    return GradeRecordResponse.model_validate(record)
 
 
 @router.get("/grade-records/{rec_id}", response_model=GradeRecordResponse)
 async def get_grade_record(
     rec_id: int,
     service: GradeRecordService = Depends(get_grade_record_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> GradeRecordResponse:
-    return GradeRecordResponse.model_validate(await service.get(rec_id))
+    record = await service.get(rec_id)
+    assert_tenant_scope(record, tenant, resource="grade record")
+    return GradeRecordResponse.model_validate(record)
 
 
 @router.get("/grade-records", response_model=GradeRecordPage)
@@ -542,11 +695,15 @@ async def list_grade_records(
     subject_id: Optional[int] = Query(None, alias="subject_id"),
     term_id: Optional[int] = Query(None, alias="term_id"),
     status_filter: Optional[str] = Query(None, alias="status"),
+    campus_id: Optional[int] = Query(None, alias="campus_id"),
     service: GradeRecordService = Depends(get_grade_record_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> GradeRecordPage:
     items, total = await service.list(
         enrollment_id=enrollment_id, subject_id=subject_id, term_id=term_id,
-        status=status_filter, skip=pagination.offset, limit=pagination.limit,
+        status=status_filter, campus_id=effective_campus_id(tenant, campus_id),
+        skip=pagination.offset, limit=pagination.limit,
     )
     return Page.create(
         items=[GradeRecordResponse.model_validate(r) for r in items],
@@ -559,7 +716,11 @@ async def update_grade_record(
     rec_id: int,
     data: GradeRecordUpdate,
     service: GradeRecordService = Depends(get_grade_record_service),
+    _actor: User = Depends(require_permission(ACADEMIC_UPDATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> GradeRecordResponse:
+    existing = await service.get(rec_id)
+    assert_tenant_scope(existing, tenant, resource="grade record")
     return GradeRecordResponse.model_validate(await service.update(rec_id, data))
 
 
@@ -567,7 +728,11 @@ async def update_grade_record(
 async def delete_grade_record(
     rec_id: int,
     service: GradeRecordService = Depends(get_grade_record_service),
+    _actor: User = Depends(require_permission(ACADEMIC_DELETE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
+    existing = await service.get(rec_id)
+    assert_tenant_scope(existing, tenant, resource="grade record")
     await service.delete(rec_id)
 
 
@@ -580,16 +745,24 @@ async def delete_grade_record(
 async def create_curriculum(
     data: CurriculumCreate,
     service: CurriculumService = Depends(get_curriculum_service),
+    _actor: User = Depends(require_permission(ACADEMIC_CREATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> CurriculumResponse:
-    return CurriculumResponse.model_validate(await service.create(data))
+    curr = await service.create(data)
+    inject_campus(curr, tenant)
+    return CurriculumResponse.model_validate(curr)
 
 
 @router.get("/curricula/{curr_id}", response_model=CurriculumResponse)
 async def get_curriculum(
     curr_id: int,
     service: CurriculumService = Depends(get_curriculum_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> CurriculumResponse:
-    return CurriculumResponse.model_validate(await service.get(curr_id))
+    curr = await service.get(curr_id)
+    assert_tenant_scope(curr, tenant, resource="curriculum")
+    return CurriculumResponse.model_validate(curr)
 
 
 @router.get("/curricula", response_model=CurriculumPage)
@@ -600,11 +773,14 @@ async def list_curricula(
     subject_id: Optional[int] = Query(None, alias="subject_id"),
     term_id: Optional[int] = Query(None, alias="term_id"),
     status_filter: Optional[str] = Query(None, alias="status"),
+    campus_id: Optional[int] = Query(None, alias="campus_id"),
     service: CurriculumService = Depends(get_curriculum_service),
+    _actor: User = Depends(require_permission(ACADEMIC_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> CurriculumPage:
     items, total = await service.list(
         academic_year_id=academic_year_id, class_id=class_id, subject_id=subject_id,
-        term_id=term_id, status=status_filter,
+        term_id=term_id, status=status_filter, campus_id=effective_campus_id(tenant, campus_id),
         skip=pagination.offset, limit=pagination.limit,
     )
     return Page.create(
@@ -618,7 +794,11 @@ async def update_curriculum(
     curr_id: int,
     data: CurriculumUpdate,
     service: CurriculumService = Depends(get_curriculum_service),
+    _actor: User = Depends(require_permission(ACADEMIC_UPDATE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> CurriculumResponse:
+    existing = await service.get(curr_id)
+    assert_tenant_scope(existing, tenant, resource="curriculum")
     return CurriculumResponse.model_validate(await service.update(curr_id, data))
 
 
@@ -626,5 +806,9 @@ async def update_curriculum(
 async def delete_curriculum(
     curr_id: int,
     service: CurriculumService = Depends(get_curriculum_service),
+    _actor: User = Depends(require_permission(ACADEMIC_DELETE)),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
+    existing = await service.get(curr_id)
+    assert_tenant_scope(existing, tenant, resource="curriculum")
     await service.delete(curr_id)

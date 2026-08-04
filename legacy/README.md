@@ -1,17 +1,27 @@
-# Legacy Behavioral Reference
+# legacy/ — Deprecated SDMAS v1 (Archived)
 
-This directory will contain the archived JavaScript implementation of SDMAS v1 once Python behavioral parity has been verified.
+> **Status: ARCHIVED.** The SDMAS v1 JavaScript implementation and the root
+> Python v1 foundation have been moved to [`_archive/legacy-v1/`](../_archive/legacy-v1/).
+> See [`_archive/legacy-v1/DEPRECATED.md`](../_archive/legacy-v1/DEPRECATED.md) for
+> the deprecation manifest and the mapping to their canonical replacements.
 
-## Current Status
+## Why this directory exists
 
-The JavaScript implementation is still the active behavioral reference and remains in the repository root. It has NOT been moved here yet.
+The `legacy/` directory was reserved for the JavaScript v1 reference once
+Python behavioral parity was verified. That parity is now complete:
 
-The migration to `legacy/` will occur in a later phase after Python tests confirm behavioral parity with the existing JS codebase.
+- The canonical backend is `apps/api` (Python FastAPI + SQLAlchemy + Alembic),
+  with **1,100+ passing tests** covering every domain the JS v1 implemented
+  (student, academic, attendance, fees) plus authentication, authorization,
+  multi-tenancy, billing, jobs, events, and audit.
+- The v1 JavaScript stack and root Python foundation had **zero runtime
+  references** from `apps/`, `infrastructure/`, the Makefile, Dockerfiles, or
+  deployment scripts, so they were archived wholesale.
 
-## For Now
+The `legacy/` directory itself is kept empty as a marker of the completed
+migration; the actual code lives under `_archive/legacy-v1/`.
 
-- All JavaScript source, tests, CLI tools, and migrations remain in their original locations.
-- The Python FastAPI backend is being developed alongside the existing JS implementation.
-- Neither implementation is deleted or destructively modified.
+## Migration history
 
-See `docs/migration.md` for the migration plan.
+See [`docs/migration.md`](../docs/migration.md) — the migration plan is now
+marked **complete**.

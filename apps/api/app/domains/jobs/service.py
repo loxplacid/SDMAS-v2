@@ -10,23 +10,33 @@ from app.domains.jobs.models import Job
 from app.domains.jobs.registry import get_job_class
 from app.domains.jobs.repository import JobRepository
 from app.domains.jobs.schemas import JobCreate, JobUpdate
+from app.multi_tenant.models import TenantContext
 
 logger = logging.getLogger(__name__)
 
 
 class JobService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        tenant: TenantContext | None = None,
+    ) -> None:
         self.session = session
-        self.repo = JobRepository(session)
+        self.tenant = tenant
+        self.repo = JobRepository(session, tenant)
 
     async def create_job(self, data: JobCreate) -> Job:
         now = datetime.datetime.now(datetime.timezone.utc)
 
         if data.identity_key:
             existing = await self.repo.get_by_identity_key(data.identity_key)
-            if existing is not None and existing.status not in (
-                "completed", "cancelled", "dead_letter",
-            ):
+            if existing is not None:
+                # identity_key is a hard one-job-per-key invariant backed by
+                # ``uq_jobs_identity_key``.  Returning the existing row for
+                # ANY status makes enqueue idempotent — a scheduler that
+                # re-runs (or two scheduler instances racing) can never
+                # double-enqueue the same cycle, and can never crash on the
+                # unique constraint after a job completed.
                 logger.debug(
                     "Returning existing job %d for identity_key '%s'",
                     existing.id, data.identity_key,
@@ -138,16 +148,74 @@ class JobService:
             return
 
         job_instance = job_cls()
+        job_instance.job = job
+        job_instance.tenant = TenantContext(
+            campus_id=job.campus_id, user_id=job.user_id
+        )
+
+        # ── Tenant + actor context restoration.  The worker runs with no
+        # tenant scope (platform), but the job itself must execute pinned to
+        # the campus it was created for — a job for campus A must never be
+        # able to touch campus B.  ``event_context`` makes the school_id /
+        # actor visible to the job and to any event handlers it triggers.
+        from app.domains.events.context import event_context
+
+        with event_context(
+            correlation_id=job.identity_key,
+            actor_user_id=job.user_id,
+            school_id=job.campus_id,
+        ):
+            try:
+                await job_instance.before_run(job, self.session)
+                result = await job_instance.run(job, self.session)
+                await job_instance.after_run(job, self.session, result)
+                await self.repo.complete(job_id, result)
+                logger.info("Job %d [type=%s] completed successfully", job_id, job.job_type)
+                await self._audit_run(job_id, success=True)
+            except Exception as exc:
+                await job_instance.on_failure(job, self.session, exc)
+                logger.warning("Job %d [type=%s] failed: %s", job_id, job.job_type, exc)
+                await self._audit_run(job_id, success=False, failure_reason=str(exc))
+                await self._handle_failure(job_id, str(exc))
+
+    async def _audit_run(
+        self,
+        job_id: int,
+        *,
+        success: bool,
+        failure_reason: str | None = None,
+    ) -> None:
+        """Record a job execution audit entry with the WORKER actor.
+
+        Best-effort and shares the caller's transaction — an audit failure
+        never aborts the job.
+        """
         try:
-            await job_instance.before_run(job, self.session)
-            result = await job_instance.run(job, self.session)
-            await job_instance.after_run(job, self.session, result)
-            await self.repo.complete(job_id, result)
-            logger.info("Job %d [type=%s] completed successfully", job_id, job.job_type)
-        except Exception as exc:
-            await job_instance.on_failure(job, self.session, exc)
-            logger.warning("Job %d [type=%s] failed: %s", job_id, job.job_type, exc)
-            await self._handle_failure(job_id, str(exc))
+            from app.domains.audit.actors import AuditActor
+            from app.domains.audit.service import AuditService
+
+            job = await self.repo.get_by_id(job_id)
+            if job is None:
+                return
+            audit_svc = AuditService(self.session)
+            await audit_svc.record(
+                action="JOB_EXECUTED",
+                resource_type="job",
+                resource_id=str(job_id),
+                actor=AuditActor.worker(),
+                details={
+                    "job_type": job.job_type,
+                    "status_after": job.status,
+                },
+                result="SUCCESS" if success else "FAILURE",
+                failure_reason=failure_reason,
+                campus_id=job.campus_id,
+            )
+        except Exception:
+            logger.warning(
+                "Failed to write audit entry for job %d (non-fatal)", job_id,
+                exc_info=True,
+            )
 
     async def _handle_failure(self, job_id: int, error: str) -> None:
         job = await self.repo.get_by_id(job_id)

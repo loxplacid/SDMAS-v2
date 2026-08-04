@@ -121,6 +121,23 @@ class RiskFindingBrief(BaseModel):
     detected_at: datetime.datetime
 
 
+class StudentLifecycleSummary(BaseModel):
+    current_status: str
+    allowed_transitions: list[str] = []
+    lifecycle_order: list[str] = []
+    recent_events: list[dict] = []
+
+
+class StudentDocumentBrief(BaseModel):
+    id: int
+    title: str
+    category: str | None = None
+    mime_type: str | None = None
+    file_size: int = 0
+    uploaded_at: str | None = None
+    lifecycle_state: str | None = None
+
+
 class Student360Response(BaseModel):
     identity: StudentIdentity
     guardians: list[GuardianInfo] = []
@@ -140,3 +157,5 @@ class Student360Response(BaseModel):
     behavior: list[dict] = []
     communications: list[dict] = []
     risk_findings: list[RiskFindingBrief] = []
+    lifecycle: Optional[StudentLifecycleSummary] = None
+    documents: list[StudentDocumentBrief] = []

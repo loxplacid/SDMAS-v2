@@ -32,18 +32,24 @@ from app.domains.teacher_360.schemas import (
     WorkloadItem,
 )
 from app.domains.academic.repository import TeacherRepository
+from app.multi_tenant.models import TenantContext
 
 logger = logging.getLogger(__name__)
 
 
 class Teacher360Service:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        tenant: Optional[TenantContext] = None,
+    ) -> None:
         self.session = session
+        self.tenant = tenant
 
     async def get_teacher_360(
         self, teacher_id: int, campus_id: Optional[int] = None
     ) -> Teacher360Response:
-        teacher_repo = TeacherRepository(self.session)
+        teacher_repo = TeacherRepository(self.session, self.tenant)
         teacher = await teacher_repo.get_by_id(teacher_id)
 
         profile = TeacherProfile.model_validate(teacher)

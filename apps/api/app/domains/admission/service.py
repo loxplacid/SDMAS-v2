@@ -269,7 +269,8 @@ class AdmissionDocumentService:
 
     async def verify(
         self, doc_id: int, verification_status: str,
-        verified_by: int, remarks: Optional[str] = None
+        verified_by: int, remarks: Optional[str] = None,
+        actor: Optional["AuditActor"] = None,
     ) -> AdmissionDocument:
         if verification_status not in VALID_DOCUMENT_VERIFICATION_STATUSES:
             raise ValidationError(
@@ -282,7 +283,31 @@ class AdmissionDocumentService:
         doc.verified_at = datetime.datetime.now(timezone.utc)
         if remarks is not None:
             doc.remarks = remarks
-        return await self.repo.update(doc)
+        updated = await self.repo.update(doc)
+
+        # Audit: document verified (shares the caller's transaction).
+        try:
+            from app.domains.audit.service import AuditService
+
+            audit_svc = AuditService(self.repo.session)
+            await audit_svc.record(
+                action="VERIFY",
+                resource_type="document",
+                resource_id=str(doc_id),
+                actor=actor,
+                details={
+                    "application_id": doc.application_id,
+                    "verification_status": verification_status,
+                    "verified_by": verified_by,
+                },
+            )
+        except Exception:
+            logger.warning(
+                "Failed to write audit entry for document verification (non-fatal)",
+                exc_info=True,
+            )
+
+        return updated
 
     async def delete(self, doc_id: int) -> None:
         doc = await self.repo.get_by_id(doc_id)

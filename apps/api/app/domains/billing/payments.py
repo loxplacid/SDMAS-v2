@@ -23,9 +23,12 @@ class PaymentProvider(Protocol):
         total_amount_inr: int,
         billing_interval: str,
         trial_days: int,
+        notes: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Create a recurring subscription at the provider.
 
+        ``notes`` (e.g. ``{"campus_id": "7"}``) is echoed back in payment
+        webhooks so captures can be attributed to the correct tenant.
         Returns a dict with at least ``provider_subscription_id``.
         """
 
@@ -39,9 +42,12 @@ class PaymentProvider(Protocol):
         amount_inr: int,
         description: str,
         customer_email: str | None = None,
+        notes: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Generate a one-time payment link.
 
+        ``notes`` (e.g. ``{"campus_id": "7"}``) is echoed back in payment
+        webhooks so captures can be attributed to the correct tenant.
         Returns a dict with ``url`` and ``id``.
         """
 

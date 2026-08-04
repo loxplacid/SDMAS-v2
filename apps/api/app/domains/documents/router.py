@@ -25,7 +25,7 @@ from app.domains.documents.schemas import (
 )
 from app.domains.documents.service import DocumentCategoryService, DocumentService
 from app.infrastructure.database import get_session
-from app.multi_tenant.dependencies import get_optional_tenant
+from app.multi_tenant.dependencies import require_tenant_context
 from app.multi_tenant.guards import assert_tenant_scope, effective_campus_id
 from app.multi_tenant.models import TenantContext
 
@@ -36,8 +36,11 @@ async def get_cat_svc(session: AsyncSession = Depends(get_session)) -> DocumentC
     return DocumentCategoryService(session)
 
 
-async def get_doc_svc(session: AsyncSession = Depends(get_session)) -> DocumentService:
-    return DocumentService(session)
+async def get_doc_svc(
+    session: AsyncSession = Depends(get_session),
+    tenant: TenantContext = Depends(require_tenant_context),
+) -> DocumentService:
+    return DocumentService(session, tenant)
 
 
 # ── Categories ──
@@ -65,7 +68,7 @@ async def upload_document(
     request: Request = None,
     current_user: User = Depends(require_role("admin", "staff", "teacher", "accountant")),
     svc: DocumentService = Depends(get_doc_svc),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> DocumentUploadResponse:
     file_data = await file.read()
     tag_list = [t.strip() for t in tags.split(",")] if tags else None
@@ -112,7 +115,7 @@ async def list_documents(
     campus_id: Optional[int] = Query(default=None, alias="campus_id"),
     current_user: User = Depends(require_role("admin", "staff", "teacher", "accountant", "principal")),
     svc: DocumentService = Depends(get_doc_svc),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> DocumentPage:
     effective_campus = effective_campus_id(tenant, campus_id)
     items, total = await svc.list(
@@ -140,7 +143,7 @@ async def get_document(
     doc_id: int,
     current_user: User = Depends(require_role("admin", "staff", "teacher", "accountant", "principal")),
     svc: DocumentService = Depends(get_doc_svc),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> DocumentResponse:
     doc = await svc.get(doc_id, current_user)
     assert_tenant_scope(doc, tenant, resource="document")
@@ -158,7 +161,7 @@ async def update_document(
     request: Request = None,
     current_user: User = Depends(require_role("admin", "staff", "teacher", "accountant")),
     svc: DocumentService = Depends(get_doc_svc),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> DocumentResponse:
     existing = await svc.get(doc_id, current_user)
     assert_tenant_scope(existing, tenant, resource="document")
@@ -176,7 +179,7 @@ async def delete_document(
     request: Request = None,
     current_user: User = Depends(require_role("admin", "staff", "teacher", "accountant")),
     svc: DocumentService = Depends(get_doc_svc),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
     existing = await svc.get(doc_id, current_user)
     assert_tenant_scope(existing, tenant, resource="document")
@@ -192,7 +195,7 @@ async def download_document(
     request: Request = None,
     current_user: User = Depends(require_role("admin", "staff", "teacher", "accountant", "principal")),
     svc: DocumentService = Depends(get_doc_svc),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> Response:
     existing = await svc.get(doc_id, current_user)
     assert_tenant_scope(existing, tenant, resource="document")
@@ -215,7 +218,7 @@ async def add_document_version(
     request: Request = None,
     current_user: User = Depends(require_role("admin", "staff", "teacher", "accountant")),
     svc: DocumentService = Depends(get_doc_svc),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> DocumentVersionResponse:
     existing = await svc.get(doc_id, current_user)
     assert_tenant_scope(existing, tenant, resource="document")
@@ -232,7 +235,7 @@ async def list_document_versions(
     doc_id: int,
     current_user: User = Depends(require_role("admin", "staff", "teacher", "accountant", "principal")),
     svc: DocumentService = Depends(get_doc_svc),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> list[DocumentVersionResponse]:
     doc = await svc.get(doc_id, current_user)
     assert_tenant_scope(doc, tenant, resource="document")
@@ -249,7 +252,7 @@ async def create_document_share(
     request: Request = None,
     current_user: User = Depends(require_role("admin", "staff", "teacher", "accountant")),
     svc: DocumentService = Depends(get_doc_svc),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> DocumentShareResponse:
     existing = await svc.get(doc_id, current_user)
     assert_tenant_scope(existing, tenant, resource="document")
@@ -267,7 +270,7 @@ async def list_document_shares(
     doc_id: int,
     current_user: User = Depends(require_role("admin", "staff", "teacher", "accountant", "principal")),
     svc: DocumentService = Depends(get_doc_svc),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> list[DocumentShareResponse]:
     existing = await svc.get(doc_id, current_user)
     assert_tenant_scope(existing, tenant, resource="document")
@@ -291,7 +294,7 @@ async def revoke_document_share(
     share_id: int,
     current_user: User = Depends(require_role("admin", "staff", "teacher", "accountant")),
     svc: DocumentService = Depends(get_doc_svc),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> DocumentShareResponse:
     share = await svc.session.get(DocumentShare, share_id)
     if share is None:

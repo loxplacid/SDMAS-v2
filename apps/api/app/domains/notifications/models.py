@@ -47,6 +47,16 @@ class Notification(Base):
         type_=JSONText,
         nullable=True,
     )
+    event_key: Mapped[Optional[str]] = mapped_column(
+        String(128),
+        nullable=True,
+        index=True,
+        comment=(
+            "Deterministic deduplication key for the originating business "
+            "event (e.g. fee_due:12:2026). DB-level guard against duplicate "
+            "notifications for the same event across processes/restarts."
+        ),
+    )
     read_at: Mapped[Optional[datetime.datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

@@ -67,6 +67,17 @@ class SubscriptionRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_by_id_for_update(self, sub_id: int) -> Subscription | None:
+        """Lock a subscription row for the current transaction (SELECT ...
+        FOR UPDATE) — used to serialize period-end invoicing so concurrent
+        workers cannot double-invoice a billing period."""
+        result = await self.session.execute(
+            select(Subscription)
+            .where(Subscription.id == sub_id)
+            .with_for_update()
+        )
+        return result.scalar_one_or_none()
+
     async def update_status(
         self,
         sub_id: int,

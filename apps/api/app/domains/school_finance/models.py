@@ -174,6 +174,12 @@ class PaymentReconciliation(Base):
     reconciled_by: Mapped[Optional[int]] = mapped_column(
         ForeignKey("users.id"), nullable=True
     )
+    verified_by: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    approved_by: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
     campus_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True
     )

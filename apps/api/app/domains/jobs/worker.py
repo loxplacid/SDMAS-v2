@@ -28,9 +28,21 @@ def main() -> None:
     """Entrypoint for the standalone worker process.
 
     Used by ``Dockerfile.worker`` (``python -m app.domains.jobs.worker``)
-    and by local dev invocations. Polls the database for pending jobs
-    and periodically reclaims stale ``running`` jobs (reaper), looping
-    until the process receives SIGTERM/SIGINT.
+    and by local dev invocations.  This process is the **only** consumer of
+    the job queue and the durable event outbox:
+
+    1. ``JobWorker`` polls the database for pending jobs and periodically
+       reclaims stale ``running`` jobs (reaper).
+    2. ``OutboxWorker`` delivers durable integration events from the outbox
+       with retry / dead-letter semantics.
+    3. ``Scheduler`` enqueues the periodic maintenance jobs (billing
+       period-end, past-due expiration, scheduled-message dispatch) with
+       cycle-scoped identity keys so they run exactly once per cycle.
+
+    The API process never starts a worker (see ``app.main``), so scaling API
+    replicas never creates competing workers against the same queue.  All
+    loops claim work with atomic ``UPDATE ... RETURNING`` statements, so
+    multiple worker replicas are safe too.
     """
     import signal
 
@@ -41,22 +53,71 @@ def main() -> None:
             logger.warning("Invalid %s, falling back to %s", name, default)
             return default
 
+    def _env_int(name: str, default: int) -> int:
+        try:
+            return int(os.environ.get(name, default))
+        except (TypeError, ValueError):
+            logger.warning("Invalid %s, falling back to %s", name, default)
+            return default
+
     poll_interval = _env_float("WORKER_POLL_INTERVAL", 5.0)
     reap_interval = _env_float("WORKER_REAP_INTERVAL", _DEFAULT_REAP_INTERVAL_S)
     stale_after = _env_float("WORKER_STALE_AFTER", _DEFAULT_STALE_AFTER_S)
+
+    # Load every job implementation so the registry resolves all job types.
+    from app.domains.jobs.loader import load_all_jobs
+    load_all_jobs()
+
+    # Register durable outbox handlers (delivery happens only here).
+    from app.domains.events.outbox import OutboxWorker, outbox_dispatcher
+    from app.domains.events.outbox_handlers import register_outbox_handlers
+    register_outbox_handlers(outbox_dispatcher)
+
+    outbox_poll = _env_float("OUTBOX_POLL_INTERVAL", 2.0)
+    outbox_batch = _env_int("OUTBOX_BATCH_SIZE", 10)
+    outbox_max_attempts = _env_int("OUTBOX_MAX_ATTEMPTS", 10)
+    outbox_reap = _env_float("OUTBOX_REAP_INTERVAL", 60.0)
+    outbox_stale = _env_float("OUTBOX_STALE_AFTER", 600.0)
+
     worker = JobWorker(
         poll_interval=poll_interval,
         reap_interval=reap_interval,
         stale_after=stale_after,
     )
 
+    # Scheduler enqueues the periodic maintenance jobs.  Disable via
+    # ``SCHEDULER_ENABLED=false`` if a deployment wants to run it in its
+    # own process instead (enqueue is idempotent, so running multiple is
+    # safe, but a single scheduler is the default posture).
+    scheduler_enabled = os.environ.get("SCHEDULER_ENABLED", "true").lower() not in (
+        "0", "false", "no",
+    )
+    scheduler = None
+    if scheduler_enabled:
+        from app.domains.jobs.scheduler import Scheduler
+        scheduler = Scheduler(poll_interval=_env_float("SCHEDULER_POLL_INTERVAL", 60.0))
+
+    outbox_worker = OutboxWorker(
+        poll_interval=outbox_poll,
+        batch_size=outbox_batch,
+        max_attempts=outbox_max_attempts,
+        reap_interval=outbox_reap,
+        stale_after=outbox_stale,
+    )
+
     async def _run() -> None:
-        # start() schedules the poll task with asyncio.create_task, so it
+        # start() schedules the poll tasks with asyncio.create_task, so they
         # must run while the event loop is active.
         worker.start()
+        if scheduler is not None:
+            scheduler.start()
+        outbox_worker.start()
         logger.info(
-            "Worker entrypoint started (poll=%ss reap=%ss stale=%ss)",
+            "Worker entrypoint started (poll=%ss reap=%ss stale=%ss; "
+            "scheduler=%s; outbox poll=%ss batch=%d max_attempts=%d)",
             poll_interval, reap_interval, stale_after,
+            "enabled" if scheduler is not None else "disabled",
+            outbox_poll, outbox_batch, outbox_max_attempts,
         )
 
         stop = asyncio.Event()
@@ -73,7 +134,10 @@ def main() -> None:
         try:
             await stop.wait()
         finally:
-            # Cancel the poll task and let the worker clean up.
+            # Cancel the poll tasks and let the workers clean up.
+            await outbox_worker.stop()
+            if scheduler is not None:
+                await scheduler.stop()
             await worker.stop()
             logger.info("Worker entrypoint exited cleanly")
 

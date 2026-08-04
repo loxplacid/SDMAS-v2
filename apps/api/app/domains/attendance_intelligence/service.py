@@ -184,6 +184,7 @@ class PeriodAttendanceService:
         academic_year_id: Optional[int] = None,
         from_date: Optional[str] = None,
         to_date: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[PeriodAttendance], int]:
@@ -202,6 +203,8 @@ class PeriodAttendanceService:
             conditions.append(PeriodAttendance.attendance_date >= from_date)
         if to_date is not None:
             conditions.append(PeriodAttendance.attendance_date <= to_date)
+        if campus_id is not None:
+            conditions.append(PeriodAttendance.campus_id == campus_id)
 
         cnt = select(func.count(PeriodAttendance.id))
         if conditions:
@@ -217,6 +220,20 @@ class PeriodAttendanceService:
         result = await self.session.execute(q)
         items = list({r.id: r for r in result.scalars().all()}.values())
         return items[:limit], total
+
+    async def get_record(
+        self, record_id: int
+    ) -> PeriodAttendanceRecord:
+        """Fetch a period record with its parent period (for tenant scope)."""
+        result = await self.session.execute(
+            select(PeriodAttendanceRecord)
+            .where(PeriodAttendanceRecord.id == record_id)
+            .options(joinedload(PeriodAttendanceRecord.period_attendance))
+        )
+        record = result.scalar_one_or_none()
+        if record is None:
+            raise NotFoundError(f"Period attendance record {record_id} not found")
+        return record
 
     async def update_record(
         self, record_id: int, data: PeriodAttendanceRecordUpdate
@@ -240,10 +257,17 @@ class PeriodAttendanceService:
         student_id: int,
         from_date: Optional[str] = None,
         to_date: Optional[str] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[PeriodAttendanceRecord], int]:
         conditions = [PeriodAttendanceRecord.student_id == student_id]
+        if campus_id is not None:
+            conditions.append(
+                PeriodAttendanceRecord.period_attendance.has(
+                    PeriodAttendance.campus_id == campus_id
+                )
+            )
         if from_date is not None:
             conditions.append(
                 PeriodAttendanceRecord.period_attendance.has(
@@ -348,6 +372,7 @@ class AttendanceCorrectionService:
         status_filter: Optional[str] = None,
         record_type: Optional[str] = None,
         requested_by: Optional[int] = None,
+        campus_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[AttendanceCorrection], int]:
@@ -358,6 +383,8 @@ class AttendanceCorrectionService:
             conditions.append(AttendanceCorrection.record_type == record_type)
         if requested_by is not None:
             conditions.append(AttendanceCorrection.requested_by == requested_by)
+        if campus_id is not None:
+            conditions.append(AttendanceCorrection.campus_id == campus_id)
 
         cnt = select(func.count(AttendanceCorrection.id))
         if conditions:
@@ -555,14 +582,19 @@ class AttendanceAnalyticsService:
         student_id: int,
         start_date: str,
         end_date: str,
+        campus_id: Optional[int] = None,
     ) -> dict:
+        conditions = [
+            PeriodAttendanceRecord.student_id == student_id,
+            PeriodAttendanceRecord.created_at >= start_date,
+            PeriodAttendanceRecord.created_at <= end_date,
+        ]
+        if campus_id is not None:
+            conditions.append(PeriodAttendance.campus_id == campus_id)
         records = await self.session.execute(
             select(PeriodAttendanceRecord)
-            .where(
-                PeriodAttendanceRecord.student_id == student_id,
-                PeriodAttendanceRecord.created_at >= start_date,
-                PeriodAttendanceRecord.created_at <= end_date,
-            )
+            .join(PeriodAttendanceRecord.period_attendance)
+            .where(and_(*conditions))
             .options(joinedload(PeriodAttendanceRecord.period_attendance))
             .order_by(PeriodAttendanceRecord.period_attendance.has(
                 PeriodAttendance.attendance_date
@@ -617,13 +649,17 @@ class AttendanceAnalyticsService:
         class_id: int,
         start_date: str,
         end_date: str,
+        campus_id: Optional[int] = None,
     ) -> dict:
+        conditions = [
+            PeriodAttendance.class_id == class_id,
+            PeriodAttendance.attendance_date >= start_date,
+            PeriodAttendance.attendance_date <= end_date,
+        ]
+        if campus_id is not None:
+            conditions.append(PeriodAttendance.campus_id == campus_id)
         periods = await self.session.execute(
-            select(PeriodAttendance).where(
-                PeriodAttendance.class_id == class_id,
-                PeriodAttendance.attendance_date >= start_date,
-                PeriodAttendance.attendance_date <= end_date,
-            )
+            select(PeriodAttendance).where(and_(*conditions))
         )
         period_ids = [p.id for p in periods.scalars().all()]
         if not period_ids:
@@ -672,13 +708,17 @@ class AttendanceAnalyticsService:
         section_id: int,
         start_date: str,
         end_date: str,
+        campus_id: Optional[int] = None,
     ) -> dict:
+        conditions = [
+            PeriodAttendance.section_id == section_id,
+            PeriodAttendance.attendance_date >= start_date,
+            PeriodAttendance.attendance_date <= end_date,
+        ]
+        if campus_id is not None:
+            conditions.append(PeriodAttendance.campus_id == campus_id)
         periods = await self.session.execute(
-            select(PeriodAttendance).where(
-                PeriodAttendance.section_id == section_id,
-                PeriodAttendance.attendance_date >= start_date,
-                PeriodAttendance.attendance_date <= end_date,
-            )
+            select(PeriodAttendance).where(and_(*conditions))
         )
         period_ids = [p.id for p in periods.scalars().all()]
         if not period_ids:

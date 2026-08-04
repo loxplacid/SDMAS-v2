@@ -165,6 +165,7 @@ class FeeDueResponse(BaseModel):
     fee_structure_id: int
     original_amount: int
     amount_paid: int
+    campus_id: Optional[int] = None
     due_date: Optional[str] = None
     status: str
     created_at: datetime.datetime
@@ -183,6 +184,7 @@ class PaymentCreate(BaseModel):
     payment_date: Optional[str] = None
     payment_method: Optional[str] = None
     receipt_number: Optional[str] = None
+    idempotency_key: Optional[str] = None
 
     @field_validator("amount")
     @classmethod
@@ -200,6 +202,35 @@ class PaymentCreate(BaseModel):
             raise ValueError(f"Invalid payment method. Must be one of: {', '.join(sorted(VALID_PAYMENT_METHODS))}")
         return v
 
+    @field_validator("idempotency_key")
+    @classmethod
+    def normalize_key(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        stripped = v.strip()
+        if not stripped:
+            raise ValueError("idempotency_key cannot be blank")
+        if len(stripped) > 255:
+            raise ValueError("idempotency_key is too long (max 255 characters)")
+        return stripped
+
+
+class RefundCreate(BaseModel):
+    amount: int
+    reason: Optional[str] = None
+
+    @field_validator("amount")
+    @classmethod
+    def amount_positive(cls, v: int) -> int:
+        if v <= 0:
+            raise ValueError("Refund amount must be a positive integer")
+        return v
+
+
+class RefundResult(BaseModel):
+    payment: PaymentResponse
+    fee_due: FeeDueResponse
+
 
 class PaymentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -207,11 +238,16 @@ class PaymentResponse(BaseModel):
     id: int
     student_id: int
     fee_due_id: int
+    campus_id: Optional[int] = None
     amount: int
     payment_date: Optional[str] = None
     payment_method: Optional[str] = None
     receipt_number: Optional[str] = None
+    idempotency_key: Optional[str] = None
+    status: str = "completed"
+    refunded_amount: int = 0
     created_at: datetime.datetime
+    updated_at: datetime.datetime
 
 
 class PaymentResult(BaseModel):

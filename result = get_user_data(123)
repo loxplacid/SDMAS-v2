@@ -1,5 +1,0 @@
-
-## Configuration
-
-The logging system automatically creates log files in the `logs/` directory:
-

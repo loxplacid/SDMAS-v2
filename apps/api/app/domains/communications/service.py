@@ -360,7 +360,10 @@ class CommunicationService:
 
         total = len(msg.recipients)
         failed = sum(1 for r in msg.recipients if r.status == RECIPIENT_STATUS_FAILED)
-        if failed == total:
+        # A message with zero recipients (e.g. a broadcast-style announcement
+        # with no explicit recipient rows) is vacuously delivered — never
+        # treat ``0 == 0`` as "all failed".
+        if total > 0 and failed == total:
             msg.status = STATUS_FAILED
         elif failed > 0:
             msg.status = STATUS_PARTIAL
@@ -384,6 +387,112 @@ class CommunicationService:
                     return student.email or ""
                 return f"{student.first_name} {student.last_name}"
         return None
+
+    async def dispatch_due_schedules(self) -> dict[str, int]:
+        """Dispatch every pending message schedule whose time has come.
+
+        Called by the periodic ``communications.scheduled`` job (worker
+        process).  Selects ``MessageSchedule`` rows in ``pending`` whose
+        ``scheduled_at`` is in the past, marks the message ``sent`` and
+        delivers it, then marks the schedule ``completed`` (or ``failed``
+        when every recipient failed).  A recurring schedule is advanced to
+        its next occurrence instead of being completed.
+
+        Returns a summary dict ``{"dispatched": n, "failed": n}``.  The
+        method is safe to re-run: schedules that are already ``completed``
+        or ``sending`` are never selected again, so a worker restart or
+        duplicate job execution cannot double-deliver.
+        """
+        from sqlalchemy import select as _select
+        from sqlalchemy.orm import selectinload as _selectinload
+
+        from app.domains.communications.models import MessageSchedule
+        from app.domains.communications.constants import (
+            SCHEDULE_STATUS_PENDING,
+            SCHEDULE_STATUS_COMPLETED,
+            SCHEDULE_STATUS_FAILED,
+            RECURRENCE_NONE,
+        )
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+        result = await self.session.execute(
+            _select(MessageSchedule)
+            .where(
+                MessageSchedule.status == SCHEDULE_STATUS_PENDING,
+                MessageSchedule.scheduled_at <= now,
+            )
+            .options(
+                _selectinload(MessageSchedule.message).selectinload(
+                    CommunicationMessage.recipients
+                )
+            )
+        )
+        schedules = list(result.scalars().all())
+
+        dispatched = 0
+        failed = 0
+        for schedule in schedules:
+            msg = schedule.message
+            if msg is None:
+                schedule.status = SCHEDULE_STATUS_FAILED
+                await self.session.flush()
+                failed += 1
+                continue
+
+            # Deliver (updates recipient + message status, commits).
+            msg.status = STATUS_SENT
+            msg.sent_at = datetime.datetime.now(datetime.timezone.utc)
+            await self._deliver(msg)
+
+            # Advance recurring schedules; complete one-shot schedules.
+            next_at = None
+            if schedule.recurrence != RECURRENCE_NONE:
+                next_at = self._next_schedule_occurrence(schedule)
+            if next_at is not None:
+                schedule.scheduled_at = next_at
+                schedule.last_sent_at = msg.sent_at
+                schedule.status = SCHEDULE_STATUS_PENDING
+            elif msg.status == STATUS_FAILED:
+                schedule.status = SCHEDULE_STATUS_FAILED
+                failed += 1
+            else:
+                schedule.status = SCHEDULE_STATUS_COMPLETED
+                schedule.last_sent_at = msg.sent_at
+                dispatched += 1
+            await self.session.flush()
+
+        await self.session.commit()
+        return {"dispatched": dispatched, "failed": failed}
+
+    @staticmethod
+    def _next_schedule_occurrence(schedule: Any) -> Optional[datetime.datetime]:
+        """Compute the next occurrence for a recurring schedule, or None."""
+        from app.domains.communications.constants import (
+            RECURRENCE_DAILY,
+            RECURRENCE_WEEKLY,
+            RECURRENCE_MONTHLY,
+        )
+
+        base = schedule.scheduled_at
+        if schedule.recurrence == RECURRENCE_DAILY:
+            nxt = base + datetime.timedelta(days=1)
+        elif schedule.recurrence == RECURRENCE_WEEKLY:
+            nxt = base + datetime.timedelta(weeks=1)
+        elif schedule.recurrence == RECURRENCE_MONTHLY:
+            year = base.year + (1 if base.month == 12 else 0)
+            month = 1 if base.month == 12 else base.month + 1
+            try:
+                nxt = base.replace(year=year, month=month)
+            except ValueError:  # e.g. Jan 31 -> Feb (no 31st)
+                nxt = (base + datetime.timedelta(days=28)).replace(
+                    hour=base.hour, minute=base.minute, second=base.second
+                )
+        else:
+            return None
+
+        if schedule.recurrence_end is not None and nxt > schedule.recurrence_end:
+            return None
+        return nxt
 
     async def list_messages(
         self,

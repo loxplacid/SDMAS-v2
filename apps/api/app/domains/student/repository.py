@@ -2,20 +2,31 @@ from __future__ import annotations
 
 from typing import Optional, Sequence
 
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
 from app.domains.student.models import Student
+from app.multi_tenant.models import TenantContext
+from app.multi_tenant.repository import TenantScopedRepository
 
 
-class StudentRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class StudentRepository(TenantScopedRepository):
+    """Student data access.
+
+    Every query is built through :class:`TenantScopedRepository` so the
+    current tenant's ``campus_id`` predicate is applied at query
+    construction time — a student belonging to another campus simply
+    does not exist to a scoped caller (IDOR is closed here, not by
+    remembering to call a guard afterwards).
+    """
+
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, student_id: int) -> Student:
         result = await self.session.execute(
-            select(Student).where(Student.id == student_id)
+            self.scoped_query(Student).where(Student.id == student_id)
         )
         student = result.scalar_one_or_none()
         if student is None:
@@ -24,13 +35,15 @@ class StudentRepository:
 
     async def get_by_student_number(self, student_number: str) -> Student | None:
         result = await self.session.execute(
-            select(Student).where(Student.student_number == student_number)
+            self.scoped_query(Student).where(
+                Student.student_number == student_number
+            )
         )
         return result.scalar_one_or_none()
 
     async def exists_by_student_number(self, student_number: str) -> bool:
         result = await self.session.execute(
-            select(func.count(Student.id)).where(
+            self.scoped_count(Student).where(
                 Student.student_number == student_number
             )
         )
@@ -43,8 +56,8 @@ class StudentRepository:
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[Student], int]:
-        query = select(Student)
-        count_query = select(func.count(Student.id))
+        query = self.scoped_query(Student)
+        count_query = self.scoped_count(Student)
 
         if status is not None:
             query = query.where(Student.status == status)
@@ -81,13 +94,13 @@ class StudentRepository:
             where_clause = where_clause & (Student.campus_id == campus_id)
 
         stmt = (
-            select(Student)
+            self.scoped_query(Student)
             .where(where_clause)
             .order_by(Student.id)
             .offset(skip)
             .limit(limit)
         )
-        count_stmt = select(func.count(Student.id)).where(where_clause)
+        count_stmt = self.scoped_count(Student).where(where_clause)
 
         total_result = await self.session.execute(count_stmt)
         total = total_result.scalar() or 0

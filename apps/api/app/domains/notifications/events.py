@@ -105,6 +105,11 @@ class BatchOperationCompletedEvent(DomainEvent):
     success_count: int
     error_count: int = 0
     summary: str = ""
+    target_user_id: int | None = None
+    """The staff/admin user who initiated the operation (dedup scope)."""
+    event_key: str | None = None
+    """Deterministic dedup key so repeated publishes of the same run do not
+    create duplicate notifications."""
     tenant_id: int | None = None
     """Optional tenant (campus) scope for multi-tenant routing."""
 

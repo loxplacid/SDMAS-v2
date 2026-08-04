@@ -493,14 +493,16 @@ class TermService:
     async def _list_all(
         self, skip: int, limit: int
     ) -> tuple[Sequence[Term], int]:
-        from sqlalchemy import func, select
-
+        # Tenant-scoped via the repository (no unscoped ``select`` here).
         count_result = await self.repo.session.execute(
-            select(func.count(Term.id))
+            self.repo.scoped_count(Term)
         )
         total = count_result.scalar() or 0
         result = await self.repo.session.execute(
-            select(Term).offset(skip).limit(limit).order_by(Term.start_date)
+            self.repo.scoped_query(Term)
+            .offset(skip)
+            .limit(limit)
+            .order_by(Term.start_date)
         )
         return result.scalars().all(), total
 
@@ -708,16 +710,13 @@ class TeacherAssignmentService:
             return items, len(items)
         if teacher_id is not None:
             items = await self.repo.find_by_teacher(teacher_id)
-            return items, len(items)
-
-        from sqlalchemy import func, select
-
+            return items, len(items)        # Tenant-scoped via the repository (no unscoped ``select`` here).
         count_result = await self.repo.session.execute(
-            select(func.count(TeacherAssignment.id))
+            self.repo.scoped_count(TeacherAssignment)
         )
         total = count_result.scalar() or 0
         result = await self.repo.session.execute(
-            select(TeacherAssignment)
+            self.repo.scoped_query(TeacherAssignment)
             .offset(skip)
             .limit(limit)
             .order_by(TeacherAssignment.id)

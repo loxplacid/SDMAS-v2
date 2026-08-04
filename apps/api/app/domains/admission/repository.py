@@ -13,6 +13,13 @@ from app.domains.admission.models import (
     AdmissionMeritEntry,
     AdmissionSeatAllocation,
 )
+from app.multi_tenant.models import TenantContext
+from app.multi_tenant.repository import TenantScopedRepository
+
+
+class _AdmissionRepo(TenantScopedRepository):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
 
 # ---------------------------------------------------------------------------
@@ -20,13 +27,13 @@ from app.domains.admission.models import (
 # ---------------------------------------------------------------------------
 
 
-class AdmissionApplicationRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class AdmissionApplicationRepository(_AdmissionRepo):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, application_id: int) -> AdmissionApplication:
         result = await self.session.execute(
-            select(AdmissionApplication).where(
+            self.scoped_query(AdmissionApplication).where(
                 AdmissionApplication.id == application_id
             )
         )
@@ -47,8 +54,8 @@ class AdmissionApplicationRepository:
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[AdmissionApplication], int]:
-        query = select(AdmissionApplication)
-        count_query = select(func.count(AdmissionApplication.id))
+        query = self.scoped_query(AdmissionApplication)
+        count_query = self.scoped_count(AdmissionApplication)
 
         if status is not None:
             query = query.where(AdmissionApplication.status == status)
@@ -115,13 +122,13 @@ class AdmissionApplicationRepository:
 # ---------------------------------------------------------------------------
 
 
-class AdmissionDocumentRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class AdmissionDocumentRepository(_AdmissionRepo):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, doc_id: int) -> AdmissionDocument:
         result = await self.session.execute(
-            select(AdmissionDocument).where(AdmissionDocument.id == doc_id)
+            self.scoped_query(AdmissionDocument).where(AdmissionDocument.id == doc_id)
         )
         doc = result.scalar_one_or_none()
         if doc is None:
@@ -134,7 +141,7 @@ class AdmissionDocumentRepository:
         self, application_id: int
     ) -> Sequence[AdmissionDocument]:
         result = await self.session.execute(
-            select(AdmissionDocument)
+            self.scoped_query(AdmissionDocument)
             .where(AdmissionDocument.application_id == application_id)
             .order_by(AdmissionDocument.created_at)
         )
@@ -158,13 +165,13 @@ class AdmissionDocumentRepository:
 # ---------------------------------------------------------------------------
 
 
-class AdmissionInterviewRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class AdmissionInterviewRepository(_AdmissionRepo):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, interview_id: int) -> AdmissionInterview:
         result = await self.session.execute(
-            select(AdmissionInterview).where(
+            self.scoped_query(AdmissionInterview).where(
                 AdmissionInterview.id == interview_id
             )
         )
@@ -179,7 +186,7 @@ class AdmissionInterviewRepository:
         self, application_id: int
     ) -> Sequence[AdmissionInterview]:
         result = await self.session.execute(
-            select(AdmissionInterview)
+            self.scoped_query(AdmissionInterview)
             .where(AdmissionInterview.application_id == application_id)
             .order_by(AdmissionInterview.created_at)
         )
@@ -204,13 +211,13 @@ class AdmissionInterviewRepository:
 # ---------------------------------------------------------------------------
 
 
-class AdmissionMeritEntryRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class AdmissionMeritEntryRepository(_AdmissionRepo):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, entry_id: int) -> AdmissionMeritEntry:
         result = await self.session.execute(
-            select(AdmissionMeritEntry).where(
+            self.scoped_query(AdmissionMeritEntry).where(
                 AdmissionMeritEntry.id == entry_id
             )
         )
@@ -225,7 +232,7 @@ class AdmissionMeritEntryRepository:
         self, program_id: int, academic_year_id: int
     ) -> Sequence[AdmissionMeritEntry]:
         result = await self.session.execute(
-            select(AdmissionMeritEntry)
+            self.scoped_query(AdmissionMeritEntry)
             .where(
                 AdmissionMeritEntry.program_id == program_id,
                 AdmissionMeritEntry.academic_year_id == academic_year_id,
@@ -243,8 +250,8 @@ class AdmissionMeritEntryRepository:
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[AdmissionMeritEntry], int]:
-        query = select(AdmissionMeritEntry)
-        count_query = select(func.count(AdmissionMeritEntry.id))
+        query = self.scoped_query(AdmissionMeritEntry)
+        count_query = self.scoped_count(AdmissionMeritEntry)
 
         if program_id is not None:
             query = query.where(AdmissionMeritEntry.program_id == program_id)
@@ -264,6 +271,7 @@ class AdmissionMeritEntryRepository:
                 AdmissionMeritEntry.status == status
             )
         # Merit entries inherit tenancy from their parent application.
+        # (Also applied unconditionally by the registry-based tenant filter.)
         if campus_id is not None:
             query = query.join(
                 AdmissionApplication,
@@ -303,13 +311,13 @@ class AdmissionMeritEntryRepository:
 # ---------------------------------------------------------------------------
 
 
-class AdmissionSeatAllocationRepository:
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+class AdmissionSeatAllocationRepository(_AdmissionRepo):
+    def __init__(self, session: AsyncSession, tenant: Optional[TenantContext] = None) -> None:
+        super().__init__(session, tenant)
 
     async def get_by_id(self, allocation_id: int) -> AdmissionSeatAllocation:
         result = await self.session.execute(
-            select(AdmissionSeatAllocation).where(
+            self.scoped_query(AdmissionSeatAllocation).where(
                 AdmissionSeatAllocation.id == allocation_id
             )
         )
@@ -324,7 +332,7 @@ class AdmissionSeatAllocationRepository:
         self, application_id: int
     ) -> Sequence[AdmissionSeatAllocation]:
         result = await self.session.execute(
-            select(AdmissionSeatAllocation)
+            self.scoped_query(AdmissionSeatAllocation)
             .where(AdmissionSeatAllocation.application_id == application_id)
             .order_by(AdmissionSeatAllocation.created_at)
         )

@@ -61,7 +61,7 @@ from app.domains.institution.service import (
 )
 from app.core.exceptions import AuthorizationError
 from app.infrastructure.database import get_session
-from app.multi_tenant.dependencies import get_optional_tenant
+from app.multi_tenant.dependencies import require_tenant_context
 from app.multi_tenant.models import TenantContext
 
 router = APIRouter(prefix="/api/institution", tags=["institution"])
@@ -284,7 +284,7 @@ async def create_institution(
     data: InstitutionCreate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> InstitutionResponse:
     if tenant.is_tenant_scoped:
         # A school-scoped admin must not create institutions at platform level.
@@ -301,7 +301,7 @@ async def get_institution(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> InstitutionResponse:
     svc = _ins(session)
     entity = await svc.get(entity_id)
@@ -315,7 +315,7 @@ async def list_institutions(
     status_filter: Optional[str] = Query(default=None, alias="status"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> Page[InstitutionResponse]:
     svc = _ins(session)
     institution_ids = await _scoped_institution_ids(session, tenant)
@@ -339,7 +339,7 @@ async def delete_institution(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
     if tenant.is_tenant_scoped:
         raise AuthorizationError(
@@ -355,7 +355,7 @@ async def update_institution(
     data: InstitutionUpdate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> InstitutionResponse:
     if tenant.is_tenant_scoped:
         raise AuthorizationError(
@@ -378,7 +378,7 @@ async def create_campus(
     data: CampusCreate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> CampusResponse:
     if tenant.is_tenant_scoped and data.institution_id != tenant.institution_id:
         raise AuthorizationError(
@@ -397,7 +397,7 @@ async def get_campus(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> CampusResponse:
     svc = _cam(session)
     entity = await svc.get(entity_id)
@@ -412,7 +412,7 @@ async def list_campuses(
     status_filter: Optional[str] = Query(default=None, alias="status"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> Page[CampusResponse]:
     effective_institution_id = (
         tenant.institution_id if tenant.is_tenant_scoped else institution_id
@@ -433,7 +433,7 @@ async def delete_campus(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
     svc = _cam(session)
     entity = await svc.get(entity_id)
@@ -447,7 +447,7 @@ async def update_campus(
     data: CampusUpdate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> CampusResponse:
     svc = _cam(session)
     existing = await svc.get(entity_id)
@@ -469,7 +469,7 @@ async def create_school(
     data: SchoolCreate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> SchoolResponse:
     if tenant.is_tenant_scoped and data.campus_id != tenant.campus_id:
         raise AuthorizationError(
@@ -488,7 +488,7 @@ async def get_school(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> SchoolResponse:
     svc = _sch(session)
     entity = await svc.get(entity_id)
@@ -503,7 +503,7 @@ async def list_schools(
     status_filter: Optional[str] = Query(default=None, alias="status"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> Page[SchoolResponse]:
     effective_campus_id = tenant.campus_id if tenant.is_tenant_scoped else campus_id
     svc = _sch(session)
@@ -522,7 +522,7 @@ async def delete_school(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
     svc = _sch(session)
     entity = await svc.get(entity_id)
@@ -536,7 +536,7 @@ async def update_school(
     data: SchoolUpdate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> SchoolResponse:
     svc = _sch(session)
     existing = await svc.get(entity_id)
@@ -561,7 +561,7 @@ async def create_department(
     data: DepartmentCreate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> DepartmentResponse:
     if tenant.is_tenant_scoped:
         school = await SchoolRepository(session).get_by_id(data.school_id)
@@ -579,7 +579,7 @@ async def get_department(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> DepartmentResponse:
     svc = _dep(session)
     entity = await svc.get(entity_id)
@@ -594,7 +594,7 @@ async def list_departments(
     status_filter: Optional[str] = Query(default=None, alias="status"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> Page[DepartmentResponse]:
     svc = _dep(session)
     if tenant.is_tenant_scoped:
@@ -630,7 +630,7 @@ async def delete_department(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
     svc = _dep(session)
     entity = await svc.get(entity_id)
@@ -644,7 +644,7 @@ async def update_department(
     data: DepartmentUpdate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> DepartmentResponse:
     svc = _dep(session)
     existing = await svc.get(entity_id)
@@ -666,7 +666,7 @@ async def create_program(
     data: ProgramCreate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> ProgramResponse:
     if tenant.is_tenant_scoped:
         department = await DepartmentRepository(session).get_by_id(data.department_id)
@@ -684,7 +684,7 @@ async def get_program(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> ProgramResponse:
     svc = _prog(session)
     entity = await svc.get(entity_id)
@@ -699,7 +699,7 @@ async def list_programs(
     status_filter: Optional[str] = Query(default=None, alias="status"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> Page[ProgramResponse]:
     svc = _prog(session)
     if tenant.is_tenant_scoped:
@@ -735,7 +735,7 @@ async def delete_program(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
     svc = _prog(session)
     entity = await svc.get(entity_id)
@@ -749,7 +749,7 @@ async def update_program(
     data: ProgramUpdate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> ProgramResponse:
     svc = _prog(session)
     existing = await svc.get(entity_id)
@@ -772,7 +772,7 @@ async def create_branch(
     data: BranchCreate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> BranchResponse:
     if tenant.is_tenant_scoped:
         program = await ProgramRepository(session).get_by_id(data.program_id)
@@ -790,7 +790,7 @@ async def get_branch(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> BranchResponse:
     svc = _bra(session)
     entity = await svc.get(entity_id)
@@ -805,7 +805,7 @@ async def list_branches(
     status_filter: Optional[str] = Query(default=None, alias="status"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> Page[BranchResponse]:
     svc = _bra(session)
     if tenant.is_tenant_scoped:
@@ -841,7 +841,7 @@ async def delete_branch(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
     svc = _bra(session)
     entity = await svc.get(entity_id)
@@ -855,7 +855,7 @@ async def update_branch(
     data: BranchUpdate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> BranchResponse:
     svc = _bra(session)
     existing = await svc.get(entity_id)
@@ -879,7 +879,7 @@ async def create_semester(
     data: SemesterCreate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> SemesterResponse:
     if tenant.is_tenant_scoped:
         program = await ProgramRepository(session).get_by_id(data.program_id)
@@ -898,7 +898,7 @@ async def get_semester(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> SemesterResponse:
     svc = _sem(session)
     entity = await svc.get(entity_id)
@@ -913,7 +913,7 @@ async def list_semesters(
     status_filter: Optional[str] = Query(default=None, alias="status"),
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(get_current_user),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> Page[SemesterResponse]:
     svc = _sem(session)
     if tenant.is_tenant_scoped:
@@ -949,7 +949,7 @@ async def delete_semester(
     entity_id: int,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> None:
     svc = _sem(session)
     entity = await svc.get(entity_id)
@@ -963,7 +963,7 @@ async def update_semester(
     data: SemesterUpdate,
     session: AsyncSession = Depends(get_session),
     _current_user: User = Depends(require_role("admin")),
-    tenant: TenantContext = Depends(get_optional_tenant),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> SemesterResponse:
     svc = _sem(session)
     existing = await svc.get(entity_id)

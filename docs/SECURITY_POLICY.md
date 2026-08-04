@@ -1,103 +1,91 @@
-# Security Policy
+# Security Policy & Implemented Controls
 
 ## Overview
-This document outlines the security requirements, practices, and procedures that must be followed throughout this project to ensure robust protection of data and systems.
 
-## Security Principles
+This document describes both the security **policy** (requirements that must
+be followed) and the security **controls actually implemented** in SDMAS v2 as
+of the current codebase. Where a control is implemented, this is stated
+explicitly. `SECURITY.md` at the repository root is the canonical
+implementation-focused summary; this file is the policy document.
 
-### Defense in Depth
-- Implement multiple layers of security controls
-- Don't rely on a single security mechanism
-- Apply security at all levels: network, application, database, and code
+## Authentication
 
-### Secure by Design
-- Security considerations must be part of the design phase
-- Assume that attackers will attempt to exploit vulnerabilities
-- Minimize attack surface through least privilege principles
+- **Policy**: strong authentication, secure session/password handling.
+- **Implemented**:
+  - JWT access tokens (short-lived, configurable via `ACCESS_TOKEN_EXPIRE_*`)
+    plus refresh tokens; secrets via Pydantic Settings (env), never hardcoded.
+  - Passwords hashed with a strong algorithm (bcrypt/argon-style) — see
+    `app/domains/auth/service.py`.
+  - Login rate limiting (`auth/router.py` limiter) and account audit logging.
 
-## Data Protection
+## Authorization
 
-### Input Validation
-- All inputs from external sources must be validated
-- Implement strict validation for all user-provided data
-- Use parameterized queries to prevent injection attacks
-- Sanitize and escape output before display
+- **Policy**: enforce role-based access control (RBAC); least privilege.
+- **Implemented**:
+  - Permission-based RBAC (`app/domains/auth/permissions.py`) with granular
+    permissions (`ACADEMIC_*`, `FEES_*`, `STUDENT_*`, `BILLING_*`, …) and
+    platform-level permissions (`PLATFORM_MANAGE`, `PLATFORM_ADMIN`, …) that
+    tenant admins cannot hold.
+  - `require_permission(...)` dependency; platform-scoped operations require
+    explicit platform authorization.
+  - See `AUTHORIZATION.md` for the full model.
 
-### Authentication & Authorization
-- Implement strong authentication mechanisms (multi-factor where appropriate)
-- Enforce role-based access control
-- Secure session management with proper timeout handling
-- Implement secure password storage using industry-standard hashing
+## Data isolation (multi-tenancy)
 
-### Data Encryption
-- Encrypt sensitive data at rest using approved encryption algorithms
-- Use TLS for all network communications
-- Protect keys properly and rotate them regularly
-- Implement proper key management practices
+- **Policy**: tenant data must never leak across tenants.
+- **Implemented**:
+  - Structural multi-tenancy: every tenant-owned query runs through
+    `TenantScopedRepository` (`app/multi_tenant/repository.py`), which appends
+    tenant/campus predicates at query construction time.
+  - `require_tenant_context` + `assert_tenant_scope` / `effective_campus_id`
+    guards on routers; tenant identity comes from the authenticated user's
+    membership, never from client-supplied headers.
+  - Platform-scoped queries require explicit authorization.
+  - See `TENANCY.md` and `apps/api/tests/test_multi_tenant/` (security suite).
 
-## Code Security Practices
+## Input validation & injection
 
-### Vulnerability Management
-- Regular code reviews with security focus
-- Static analysis tools integration during CI/CD pipeline
-- Dependency scanning for known vulnerabilities
-- Prompt patching of identified security issues
+- **Policy**: strict validation; parameterized queries; no dangerous eval.
+- **Implemented**: Pydantic v2 schema validation on every request body/query;
+  SQLAlchemy parameterized queries throughout (no string-built SQL in
+  application code).
 
-### Secure Coding Guidelines
-- Never hardcode sensitive information (passwords, keys)
-- Use parameterized queries to prevent SQL injection
-- Implement proper error handling without exposing system details
-- Validate all external inputs and API parameters
-- Avoid using eval() or similar dangerous functions
+## Money & financial integrity
 
-## Infrastructure Security
+- **Policy**: monetary precision; immutable financial history.
+- **Implemented**:
+  - Integer paise for all monetary columns (`Integer`, never `Float`); DB
+    `check` constraints (`amount > 0`, `refunded_amount ≤ amount`, …).
+  - Idempotency keys (`payments`, `transaction_logs`) and webhook event
+    dedup, all UNIQUE-constrained; HMAC-SHA256 webhook signature verification
+    over the raw body with `compare_digest`.
+  - Payments/refunds journaled to immutable `transaction_logs`; audit entries
+    on financial actions.
+  - See `KNOWN_LIMITATIONS.md` for remaining risks.
 
-### Network Security
-- Implement network segmentation where appropriate
-- Use firewalls and access control lists
-- Monitor network traffic for suspicious activity
-- Regular security audits of network configurations
+## Infrastructure
 
-### Database Security
-- Follow principle of least privilege for database users
-- Implement proper backup and recovery procedures
-- Encrypt sensitive data in databases
-- Regular audit of database access logs
+- **Policy**: least-privilege DB users, TLS everywhere, network segmentation.
+- **Implemented**: Docker Compose with separate API/worker containers, Nginx
+  reverse proxy (TLS terminated at the proxy), secrets via env/`infrastructure/
+  secrets/`, Prometheus/Grafana/OTel monitoring in `infrastructure/monitoring/`.
 
-## Incident Response
+## Incident response & compliance
 
-### Reporting Procedures
-- Establish clear channels for reporting security incidents
-- Define roles and responsibilities during incident response
-- Document all security events with appropriate details
-- Conduct post-incident analysis to prevent recurrence
+- **Policy**: defined reporting channels, documented events, audit trails,
+  retention; GDPR/HIPAA-appropriate controls where applicable.
+- **Implemented**: audit trail system (`app/domains/audit/`) records security
+  events (login, registration, financial actions, permission changes).
 
-### Compliance Requirements
-- Ensure compliance with relevant regulations (GDPR, HIPAA, etc.)
-- Maintain audit trails of sensitive operations
-- Implement data retention policies appropriately
-- Regular compliance assessments and updates
+## Third-party security
 
-## Third-Party Security
+- **Policy**: assess vendor posture; secure API integrations; HTTPS.
+- **Implemented**: Razorpay integration with webhook signature verification
+  (`app/domains/billing/razorpay.py`), provider keys from env, tenant
+  attribution via server-side notes (never client headers).
 
-### Vendor Management
-- Assess security posture of third-party vendors
-- Implement vendor risk management processes
-- Monitor for security changes in external services
-- Update dependencies regularly with security patches
+## Developer education
 
-### API Security
-- Secure all APIs with authentication and rate limiting
-- Implement proper input validation on API endpoints
-- Use HTTPS for all communications
-- Implement proper error handling without exposing internal details
-
-## Training & Awareness
-
-### Developer Education
-- Regular training on secure coding practices
-- Stay updated on common security threats and mitigation techniques
-- Understand the security implications of architectural decisions
-- Participate in security awareness programs
-
-This policy is a living document that will be reviewed and updated regularly to address emerging threats and maintain robust security posture.
+- **Policy**: regular secure-coding training; keep docs current.
+- **Implemented**: `docs/CODING_STANDARDS.md`, `CONTRIBUTING.md`, security and
+  tenancy docs kept in sync with the codebase.

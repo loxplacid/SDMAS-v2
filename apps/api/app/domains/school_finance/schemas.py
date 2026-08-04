@@ -186,7 +186,9 @@ class ReconciliationItemCreate(BaseModel):
 
 
 class ReconciliationCreate(BaseModel):
-    reconciliation_date: str
+    # ``date`` matches the DB column type — ISO strings ("2026-08-01")
+    # are parsed automatically, so the wire format is unchanged.
+    reconciliation_date: datetime.date
     total_amount: int = 0
     total_count: int = 0
     notes: Optional[str] = None
@@ -212,7 +214,7 @@ class ReconciliationResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    reconciliation_date: str
+    reconciliation_date: datetime.date
     total_amount: int
     total_count: int
     status: str
