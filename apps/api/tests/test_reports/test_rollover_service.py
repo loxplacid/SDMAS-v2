@@ -17,17 +17,18 @@ from app.domains.academic.repository import (
 from app.domains.reports.rollover_service import RolloverService
 from app.domains.student.models import Student
 from app.domains.student.repository import StudentRepository
+from app.multi_tenant.models import platform_context
 
 
 @pytest.fixture
 async def seeded_rollover(db_session: AsyncSession):
     """Seed data for rollover testing."""
-    student_repo = StudentRepository(db_session)
-    year_repo = AcademicYearRepository(db_session)
-    class_repo = ClassRepository(db_session)
-    section_repo = SectionRepository(db_session)
-    enrollment_repo = EnrollmentRepository(db_session)
-    rollover_svc = RolloverService(db_session)
+    student_repo = StudentRepository(db_session, platform_context())
+    year_repo = AcademicYearRepository(db_session, platform_context())
+    class_repo = ClassRepository(db_session, platform_context())
+    section_repo = SectionRepository(db_session, platform_context())
+    enrollment_repo = EnrollmentRepository(db_session, platform_context())
+    rollover_svc = RolloverService(db_session, platform_context())
 
     year = await year_repo.create(
         AcademicYear(

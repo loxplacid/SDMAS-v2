@@ -37,18 +37,19 @@ from app.domains.fees.service import (
 )
 from app.domains.student.models import Student
 from app.domains.student.repository import StudentRepository
+from app.multi_tenant.models import platform_context
 
 
 @pytest.fixture
 async def seeded_env(db_session: AsyncSession):
-    ft_repo = FeeTypeRepository(db_session)
-    fs_repo = FeeStructureRepository(db_session)
-    fd_repo = FeeDueRepository(db_session)
-    pmt_repo = PaymentRepository(db_session)
-    student_repo = StudentRepository(db_session)
-    year_repo = AcademicYearRepository(db_session)
-    class_repo = ClassRepository(db_session)
-    enrollment_repo = EnrollmentRepository(db_session)
+    ft_repo = FeeTypeRepository(db_session, platform_context())
+    fs_repo = FeeStructureRepository(db_session, platform_context())
+    fd_repo = FeeDueRepository(db_session, platform_context())
+    pmt_repo = PaymentRepository(db_session, platform_context())
+    student_repo = StudentRepository(db_session, platform_context())
+    year_repo = AcademicYearRepository(db_session, platform_context())
+    class_repo = ClassRepository(db_session, platform_context())
+    enrollment_repo = EnrollmentRepository(db_session, platform_context())
 
     fee_type_svc = FeeTypeService(ft_repo)
     fee_structure_svc = FeeStructureService(fs_repo, year_repo, class_repo, ft_repo)

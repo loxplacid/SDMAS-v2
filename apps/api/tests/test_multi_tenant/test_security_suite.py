@@ -77,6 +77,7 @@ from app.domains.parent.models import Guardian  # noqa: F401
 from app.domains.communications.models import CommunicationMessage  # noqa: F401
 from app.domains.student_portal.models import Assignment  # noqa: F401
 from app.domains.audit.models import AuditLog  # noqa: F401
+from app.multi_tenant.models import platform_context
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 

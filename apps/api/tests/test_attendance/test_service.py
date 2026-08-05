@@ -21,19 +21,25 @@ from app.domains.attendance.schemas import (
 from app.domains.attendance.service import AttendanceService
 from app.domains.student.models import Student
 from app.domains.student.repository import StudentRepository
+from app.multi_tenant.models import platform_context
 
 
 @pytest.fixture
 async def seeded_env(db_session: AsyncSession):
-    student_repo = StudentRepository(db_session)
-    year_repo = AcademicYearRepository(db_session)
-    class_repo = ClassRepository(db_session)
-    section_repo = SectionRepository(db_session)
-    enrollment_repo = EnrollmentRepository(db_session)
-    att_repo = AttendanceRepository(db_session)
+    student_repo = StudentRepository(db_session, platform_context())
+    year_repo = AcademicYearRepository(db_session, platform_context())
+    class_repo = ClassRepository(db_session, platform_context())
+    section_repo = SectionRepository(db_session, platform_context())
+    enrollment_repo = EnrollmentRepository(db_session, platform_context())
+    att_repo = AttendanceRepository(db_session, platform_context())
 
     service = AttendanceService(
-        att_repo, student_repo, year_repo, class_repo, section_repo
+        att_repo,
+        student_repo,
+        year_repo,
+        class_repo,
+        section_repo,
+        platform_context(),
     )
 
     year = await year_repo.create(
@@ -153,7 +159,7 @@ async def test_student_summary_edge_cases(seeded_env):
 @pytest.mark.asyncio
 async def test_section_summary_no_enrollments(seeded_env, db_session: AsyncSession):
     service = seeded_env["service"]
-    section_repo = SectionRepository(db_session)
+    section_repo = SectionRepository(db_session, platform_context())
     empty_section = await section_repo.create(
         Section(name="Empty Section", class_id=seeded_env["class"].id, status="active")
     )

@@ -39,6 +39,7 @@ from app.domains.events.outbox import (
 from app.domains.events.outbox_handlers import register_outbox_handlers
 from app.domains.notifications.events import FeeDueCreatedEvent
 from app.domains.notifications.repository import NotificationRepository
+from app.multi_tenant.models import platform_context
 
 NOW = datetime.datetime.now(datetime.timezone.utc)
 
@@ -315,7 +316,7 @@ class TestEndToEnd:
             await outbox_dispatcher.deliver(claimed, db_session)
             await repo.complete(claimed.event_id)
 
-            repo_notif = NotificationRepository(db_session)
+            repo_notif = NotificationRepository(db_session, platform_context())
             items, _ = await repo_notif.find_by_user(99)
             assert len(items) == 1
 

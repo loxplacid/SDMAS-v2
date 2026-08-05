@@ -61,12 +61,16 @@ class TenantContext:
 
     @property
     def scope(self) -> TenantScope:
-        """Classify the context into an explicit scope."""
+        """Classify the context into an explicit scope.
+
+        ``tenant=None`` or an authenticated user without a campus
+        and without explicit platform permission is ANON — never
+        PLATFORM.  Platform scope requires an explicit platform
+        grant.
+        """
         if self.campus_id is not None:
             return TenantScope.TENANT
         if self.platform:
-            return TenantScope.PLATFORM
-        if self.user_id is not None:
             return TenantScope.PLATFORM
         return TenantScope.ANON
 
@@ -83,3 +87,15 @@ class TenantContext:
             user_id=self.user_id,
             platform=True,
         )
+
+
+def platform_context(user_id: int | None = None) -> TenantContext:
+    """Return an **explicitly platform-authorized** tenant context.
+
+    The ONLY sanctioned way for platform-level code (background workers,
+    schedulers, platform admin flows) to construct an unscoped context:
+    ``tenant=None`` fails closed in :class:`TenantScopedRepository`, so
+    legitimate cross-tenant operations must declare their platform scope
+    explicitly instead of relying on the absence of a tenant.
+    """
+    return TenantContext(user_id=user_id, platform=True)

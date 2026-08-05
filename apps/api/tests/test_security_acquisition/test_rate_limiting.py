@@ -87,33 +87,33 @@ async def test_rate_limit_does_not_block_legitimate_single_login(
 # ---------------------------------------------------------------------------
 
 
-def test_rate_limiter_sliding_window():
+async def test_rate_limiter_sliding_window():
     from app.core.security.rate_limiter import RateLimiter
 
     limiter = RateLimiter()
     for _ in range(5):
-        allowed, _ = limiter.check("login:ip", max_requests=5, window_seconds=60)
+        allowed, _ = await limiter.check("login:ip", max_requests=5, window_seconds=60)
         assert allowed is True
 
-    allowed, retry_after = limiter.check("login:ip", max_requests=5, window_seconds=60)
+    allowed, retry_after = await limiter.check("login:ip", max_requests=5, window_seconds=60)
     assert allowed is False
     assert retry_after >= 1
 
 
-def test_rate_limiter_reset_clears_window():
+async def test_rate_limiter_reset_clears_window():
     from app.core.security.rate_limiter import RateLimiter
 
     limiter = RateLimiter()
     for _ in range(5):
-        limiter.check("login:ip", max_requests=5, window_seconds=60)
-    assert limiter.check("login:ip", max_requests=5, window_seconds=60)[0] is False
+        await limiter.check("login:ip", max_requests=5, window_seconds=60)
+    assert (await limiter.check("login:ip", max_requests=5, window_seconds=60))[0] is False
 
     limiter.reset()
-    allowed, _ = limiter.check("login:ip", max_requests=5, window_seconds=60)
+    allowed, _ = await limiter.check("login:ip", max_requests=5, window_seconds=60)
     assert allowed is True
 
 
-def test_rate_limiter_instances_do_not_share_state():
+async def test_rate_limiter_instances_do_not_share_state():
     """Documented assumption: the in-memory limiter is per-process.  Two
     instances (two workers) do NOT share windows — production must swap in
     a shared (Redis) backend to enforce limits across instances."""
@@ -122,11 +122,11 @@ def test_rate_limiter_instances_do_not_share_state():
     limiter_a = RateLimiter()
     limiter_b = RateLimiter()
     for _ in range(5):
-        limiter_a.check("login:ip", max_requests=5, window_seconds=60)
+        await limiter_a.check("login:ip", max_requests=5, window_seconds=60)
 
     # Instance B has an empty window — the A-side pressure is invisible.
-    allowed, _ = limiter_b.check("login:ip", max_requests=5, window_seconds=60)
+    allowed, _ = await limiter_b.check("login:ip", max_requests=5, window_seconds=60)
     assert allowed is True
     # Instance A is still exhausted.
-    allowed, _ = limiter_a.check("login:ip", max_requests=5, window_seconds=60)
+    allowed, _ = await limiter_a.check("login:ip", max_requests=5, window_seconds=60)
     assert allowed is False

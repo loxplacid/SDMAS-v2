@@ -110,16 +110,17 @@ class Class360Service:
         """Return an AND clause fragment pinning rows to the campus.
 
         ``table`` is the SQL table/alias whose ``campus_id`` column is
-        compared — multi-table queries must qualify the column or the
-        scope clause becomes ambiguous.  ``None`` (platform admin /
-        legacy mode) means no restriction.
+        compared - multi-table queries must qualify the column or the
+        scope clause becomes ambiguous.  ``None`` (platform admin)
+        means no restriction; scoped tenants only see their own campus.
+
+        Legacy rows whose ``campus_id`` is NULL are **never** matched by
+        this clause: a scoped tenant must not see records that carry no
+        explicit campus ownership (fail-closed on ambiguous ownership).
         """
         if not campus_id:
             return ""
-        return (
-            f"AND ({table}.campus_id = :campus_id "
-            f"OR {table}.campus_id IS NULL)"
-        )
+        return f"AND {table}.campus_id = :campus_id"
 
     async def _get_sections(
         self, class_id: int, campus_id: Optional[int]

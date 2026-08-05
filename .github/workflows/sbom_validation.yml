@@ -1,0 +1,80 @@
+name: SBOM Validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/api/uv.lock'
+      - 'apps/api/requirements.txt'
+      - 'apps/api/pyproject.toml'
+      - '**/package-lock.json'
+      - 'sbom/**'
+      - 'scripts/python_sbom.sh'
+      - 'scripts/node_sbom.sh'
+  pull_request:
+    paths:
+      - 'apps/api/uv.lock'
+      - 'apps/api/requirements.txt'
+      - 'apps/api/pyproject.toml'
+      - '**/package-lock.json'
+      - 'sbom/**'
+      - 'scripts/python_sbom.sh'
+      - 'scripts/node_sbom.sh'
+  schedule:
+    - cron: '0 3 * * 1'   # weekly: dependency drift guard
+
+permissions:
+  contents: read
+
+jobs:
+  generate-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Reproducible-build gate: pin SOURCE_DATE_EPOCH so the generated
+      # documents are byte-identical on every run.
+      - name: Generate inventories
+        env:
+          SOURCE_DATE_EPOCH: '0'
+        run: |
+          bash scripts/python_sbom.sh
+          bash scripts/node_sbom.sh
+
+      - name: Generate SBOM documents + analysis
+        env:
+          SOURCE_DATE_EPOCH: '0'
+        run: |
+          python -m sbom.cli generate --output-dir sbom/output
+
+      - name: Validate schema + data quality
+        run: |
+          python -m sbom.cli validate --dir sbom/output
+          python -m sbom.cli analyze --output-dir sbom/output
+
+      - name: Determinism gate (committed outputs must match)
+        run: |
+          git diff --exit-code -- sbom/output || {
+            echo "::error::SBOM outputs are not reproducible or not up to date. "
+            echo "Run bash scripts/python_sbom.sh && bash scripts/node_sbom.sh "
+            echo "&& python -m sbom.cli generate --output-dir sbom/output and commit the result."
+            exit 1
+          }
+
+      - name: Fail on high-severity inventory findings
+        run: |
+          python - <<'EOF'
+          import json
+          report = json.load(open('sbom/output/dependency_risk_report.json'))
+          high = [f for f in report['findings'] if f['severity'] == 'high']
+          if high:
+              print('HIGH-SEVERITY FINDINGS:')
+              for f in high:
+                  print(' -', f['category'], f.get('package', ''), '-', f['message'])
+              raise SystemExit(1)
+          print(f"ok: {len(high)} high-severity findings")
+          EOF

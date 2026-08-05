@@ -23,20 +23,21 @@ from app.domains.fees.repository import (
 from app.domains.reports.fee_reports import FeeReportService
 from app.domains.student.models import Student
 from app.domains.student.repository import StudentRepository
+from app.multi_tenant.models import platform_context
 
 
 @pytest.fixture
 async def seeded_fees(db_session: AsyncSession):
     """Seed fee data for report testing."""
-    student_repo = StudentRepository(db_session)
-    year_repo = AcademicYearRepository(db_session)
-    class_repo = ClassRepository(db_session)
-    enrollment_repo = EnrollmentRepository(db_session)
-    ft_repo = FeeTypeRepository(db_session)
-    fs_repo = FeeStructureRepository(db_session)
-    fd_repo = FeeDueRepository(db_session)
-    pmt_repo = PaymentRepository(db_session)
-    report_svc = FeeReportService(db_session)
+    student_repo = StudentRepository(db_session, platform_context())
+    year_repo = AcademicYearRepository(db_session, platform_context())
+    class_repo = ClassRepository(db_session, platform_context())
+    enrollment_repo = EnrollmentRepository(db_session, platform_context())
+    ft_repo = FeeTypeRepository(db_session, platform_context())
+    fs_repo = FeeStructureRepository(db_session, platform_context())
+    fd_repo = FeeDueRepository(db_session, platform_context())
+    pmt_repo = PaymentRepository(db_session, platform_context())
+    report_svc = FeeReportService(db_session, platform_context())
 
     year = await year_repo.create(
         AcademicYear(
@@ -151,8 +152,8 @@ async def test_collection_report_with_date_range(seeded_fees):
 
 @pytest.mark.asyncio
 async def test_collection_report_empty(db_session: AsyncSession):
-    svc = FeeReportService(db_session)
-    year_repo = AcademicYearRepository(db_session)
+    svc = FeeReportService(db_session, platform_context())
+    year_repo = AcademicYearRepository(db_session, platform_context())
 
     year = await year_repo.create(
         AcademicYear(
@@ -218,8 +219,8 @@ async def test_outstanding_report_fully_paid_excluded(seeded_fees):
 
 @pytest.mark.asyncio
 async def test_outstanding_report_empty(db_session: AsyncSession):
-    svc = FeeReportService(db_session)
-    year_repo = AcademicYearRepository(db_session)
+    svc = FeeReportService(db_session, platform_context())
+    year_repo = AcademicYearRepository(db_session, platform_context())
 
     year = await year_repo.create(
         AcademicYear(
@@ -238,7 +239,9 @@ async def test_outstanding_report_empty(db_session: AsyncSession):
 async def test_detailed_receipt(seeded_fees):
     svc = seeded_fees["report_svc"]
     from app.domains.fees.repository import PaymentRepository
-    payments = await PaymentRepository(seeded_fees["report_svc"].session).list(skip=0, limit=1)
+    payments = await PaymentRepository(
+        seeded_fees["report_svc"].session, platform_context()
+    ).list(skip=0, limit=1)
     items, _ = payments
     if not items:
         pytest.skip("No payments available")

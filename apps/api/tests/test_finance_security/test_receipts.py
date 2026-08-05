@@ -35,19 +35,20 @@ from app.domains.school_finance.schemas import ReceiptGenerate
 from app.domains.school_finance.service import ReceiptService
 from app.domains.student.models import Student
 from app.domains.student.repository import StudentRepository
+from app.multi_tenant.models import platform_context
 
 
 @pytest.fixture
 async def receipt_env(db_session: AsyncSession) -> dict:
     """A payment with an escaping-hostile student name, ready for receipts."""
-    ft_repo = FeeTypeRepository(db_session)
-    fs_repo = FeeStructureRepository(db_session)
-    fd_repo = FeeDueRepository(db_session)
-    pmt_repo = PaymentRepository(db_session)
-    student_repo = StudentRepository(db_session)
-    year_repo = AcademicYearRepository(db_session)
-    class_repo = ClassRepository(db_session)
-    enrollment_repo = EnrollmentRepository(db_session)
+    ft_repo = FeeTypeRepository(db_session, platform_context())
+    fs_repo = FeeStructureRepository(db_session, platform_context())
+    fd_repo = FeeDueRepository(db_session, platform_context())
+    pmt_repo = PaymentRepository(db_session, platform_context())
+    student_repo = StudentRepository(db_session, platform_context())
+    year_repo = AcademicYearRepository(db_session, platform_context())
+    class_repo = ClassRepository(db_session, platform_context())
+    enrollment_repo = EnrollmentRepository(db_session, platform_context())
 
     year = await year_repo.create(
         AcademicYear(
@@ -126,14 +127,14 @@ async def test_receipt_numbers_are_unique_and_sequential(receipt_env):
 @pytest.mark.asyncio
 async def test_receipt_numbers_unique_across_payments(db_session: AsyncSession):
     """Two distinct payments produce two distinct receipt numbers."""
-    ft_repo = FeeTypeRepository(db_session)
-    fs_repo = FeeStructureRepository(db_session)
-    fd_repo = FeeDueRepository(db_session)
-    pmt_repo = PaymentRepository(db_session)
-    student_repo = StudentRepository(db_session)
-    year_repo = AcademicYearRepository(db_session)
-    class_repo = ClassRepository(db_session)
-    enrollment_repo = EnrollmentRepository(db_session)
+    ft_repo = FeeTypeRepository(db_session, platform_context())
+    fs_repo = FeeStructureRepository(db_session, platform_context())
+    fd_repo = FeeDueRepository(db_session, platform_context())
+    pmt_repo = PaymentRepository(db_session, platform_context())
+    student_repo = StudentRepository(db_session, platform_context())
+    year_repo = AcademicYearRepository(db_session, platform_context())
+    class_repo = ClassRepository(db_session, platform_context())
+    enrollment_repo = EnrollmentRepository(db_session, platform_context())
 
     year = await year_repo.create(
         AcademicYear(

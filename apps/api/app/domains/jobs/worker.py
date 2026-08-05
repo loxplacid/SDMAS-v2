@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.jobs.repository import JobRepository
 from app.domains.jobs.service import JobService
+from app.multi_tenant.models import platform_context
 from app.infrastructure.database import async_session_factory
 
 logger = logging.getLogger(__name__)
@@ -224,13 +225,16 @@ class JobWorker:
 
     async def _poll(self) -> None:
         async with _worker_session() as session:
-            repo = JobRepository(session)
+            # The worker is a platform-level operation: it must claim and
+            # execute jobs across every campus, so it uses an explicit
+            # platform context (tenant=None would fail closed).
+            repo = JobRepository(session, platform_context())
             for _ in range(self._batch_size):
                 job = await repo.acquire_next(job_types=self._job_types)
                 if job is None:
                     return
 
-                service = JobService(session)
+                service = JobService(session, platform_context())
                 await service.execute_job(job.id)
 
     async def _maybe_reap(self) -> None:
@@ -251,7 +255,7 @@ class JobWorker:
         )
         try:
             async with _worker_session() as session:
-                repo = JobRepository(session)
+                repo = JobRepository(session, platform_context())
                 requeued, dead_lettered = await repo.reclaim_stale_running(stale_before)
                 if requeued or dead_lettered:
                     logger.warning(

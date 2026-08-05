@@ -188,16 +188,19 @@ async def auth_client(api_client: AsyncClient) -> AsyncClient:
 
 @pytest.fixture(autouse=True)
 def _reset_login_rate_limiter():
-    """Reset the shared login rate limiter before every test.
+    """Reset the shared rate limiters before every test.
 
-    The ``_login_limiter`` in ``auth/router.py`` is a module-level singleton
-    keyed by client IP; every ``api_client``/``client`` request shares the
-    same test IP, so without a reset the 5-logins/60s window would 429 later
-    tests in a full suite run.
+    The ``_login_limiter`` in ``auth/router.py`` and the app-wide
+    ``rate_limit`` decorator limiter are module-level singletons keyed by
+    client IP; every ``api_client``/``client`` request shares the same test
+    IP, so without a reset the per-endpoint windows would 429 later tests
+    in a full suite run.
     """
     from app.domains.auth.router import _login_limiter
+    from app.core.security.rate_limiter import _global_limiter
 
     _login_limiter.reset()
+    _global_limiter.reset()
     yield
 
 

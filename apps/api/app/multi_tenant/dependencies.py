@@ -79,9 +79,13 @@ async def resolve_tenant_context(
     3. If the user has no memberships (legacy / platform admin), the
        legacy ``campus_id`` column is honoured for backward
        compatibility; ``require_school`` turns this into a 403.
+    4. If the user has no campus and no platform permission,
+       ``AuthorizationError`` (403) is raised — fail-closed.
 
     Never returns a context whose campus the user is not a member of —
     this is the server-side enforcement that prevents cross-tenant reads.
+    An unscoped, non-platform authenticated user is never given
+    cross-tenant access.
     """
     if current_user is None:
         return TenantContext(user_id=None)
@@ -126,20 +130,17 @@ async def resolve_tenant_context(
             campus_id=current_user.campus_id,
             institution_id=institution_id,
             user_id=current_user.id,
-        )
-
-    # No campus at all.  Default-deny: only an explicit platform
+        )    # No campus at all.  Default-deny: only an explicit platform
     # permission converts this into cross-tenant access.  A plain
-    # authenticated user without any tenant membership is denied.
+    # authenticated user without any tenant membership and without
+    # platform permission is denied.
     if await _has_platform_access(session, current_user):
         return TenantContext(user_id=current_user.id, platform=True)
 
-    if require_school:
-        raise AuthorizationError(
-            "No active school context for this user — "
-            "an authenticated user without tenant membership is denied."
-        )
-    return TenantContext(user_id=current_user.id)
+    raise AuthorizationError(
+        "No active school context and no platform permission - "
+        "cross-tenant access requires an explicit platform grant."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -153,8 +154,10 @@ async def get_current_tenant(
 ) -> TenantContext:
     """Return the current tenant context for the authenticated user.
 
-    Backward-compatible: users without memberships (platform admins)
-    resolve to an unscoped context exactly as before.
+    Fail-closed: an authenticated user without a campus membership
+    and without explicit platform permission raises ``AuthorizationError``.
+    Only platform admins (``platform.access``) may operate without
+    a concrete school context.
     """
     return await resolve_tenant_context(session, current_user)
 

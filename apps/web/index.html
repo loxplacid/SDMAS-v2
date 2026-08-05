@@ -15,19 +15,10 @@
     <link rel="mask-icon" href="/icons/icon-512.svg" color="#3b82f6" />
     <title>SDMAS</title>
 
-    <!-- Blocking script to prevent flash of wrong theme -->
-    <script>
-      (function() {
-        var isDark = false;
-        try { var stored = localStorage.getItem('sdmas-theme'); if (stored === 'dark') isDark = true; else if (stored === 'light') isDark = false; else isDark = window.matchMedia('(prefers-color-scheme: dark)').matches; }
-        catch(e) { isDark = window.matchMedia('(prefers-color-scheme: dark)').matches; }
-        if (isDark) {
-          document.documentElement.setAttribute('data-theme', 'dark');
-        }
-        var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute('content', isDark ? '#0b0f1e' : '#f8fafc');
-      })();
-    </script>
+    <!-- Blocking script to prevent flash of wrong theme.
+         Externalized (public/theme-init.js) so the Content-Security-Policy
+         can use script-src 'self' without 'unsafe-inline'. -->
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>

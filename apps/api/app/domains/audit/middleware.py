@@ -30,6 +30,7 @@ from typing import Awaitable, Callable
 from fastapi import FastAPI, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.core.security.client_ip import get_client_ip, get_client_scheme
 from app.domains.audit.actors import ActorType, AuditActor
 from app.domains.auth.security import decode_token
 from app.domains.audit.service import AuditService
@@ -90,7 +91,8 @@ def _extract_audit_metadata(
         "actor_id": None,
         "campus_id": None,
         "tenant_id": None,
-        "ip_address": request.client.host if request.client else None,
+        "ip_address": get_client_ip(request),
+        "scheme": get_client_scheme(request),
         "user_agent": request.headers.get("user-agent"),
         "correlation_id": (
             request.headers.get("X-Correlation-ID")
@@ -287,6 +289,7 @@ class AuditMiddleware(BaseHTTPMiddleware):
                     "method": request.method,
                     "path": request.url.path,
                     "status_code": response.status_code,
+                    "scheme": metadata.get("scheme"),
                 },
                 result=result,
                 failure_reason=failure_reason,

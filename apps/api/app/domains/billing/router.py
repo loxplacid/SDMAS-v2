@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
+from app.core.security.client_ip import get_client_ip
 
 logger = logging.getLogger(__name__)
 from app.domains.auth.dependencies import get_current_user, require_permission
@@ -599,7 +600,7 @@ async def _audit_webhook(
                 "payment_id": payment.get("id"),
                 "status": payment.get("status"),
             },
-            ip_address=request.client.host if request.client else None,
+            ip_address=get_client_ip(request),
             user_agent=request.headers.get("user-agent"),
             commit=True,
         )

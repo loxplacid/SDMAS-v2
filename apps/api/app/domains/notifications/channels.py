@@ -17,6 +17,7 @@ from app.domains.notifications.models import Notification
 from app.domains.notifications.push_service import send_push_via_expo
 from app.domains.notifications.repository import NotificationRepository, DeviceTokenRepository
 from app.domains.notifications.sse_manager import sse_manager
+from app.multi_tenant.models import platform_context
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +72,10 @@ class InAppChannel:
 
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
-        self.repo = NotificationRepository(session)
+        # Notification delivery is a platform-level operation (events fire
+        # for users across every campus), so the repository is constructed
+        # with an explicit platform context — tenant=None would fail closed.
+        self.repo = NotificationRepository(session, platform_context())
 
     async def deliver(self, msg: ChannelMessage) -> bool:
         try:
@@ -121,7 +125,9 @@ class PushChannel:
 
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
-        self.token_repo = DeviceTokenRepository(session)
+        # Platform-level delivery (devices across every campus) — explicit
+        # platform context, never implicit tenant=None.
+        self.token_repo = DeviceTokenRepository(session, platform_context())
 
     async def deliver(self, msg: ChannelMessage) -> bool:
         try:

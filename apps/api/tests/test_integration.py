@@ -16,6 +16,7 @@ from app.domains.academic.repository import (
 from app.domains.student.models import Student
 from app.domains.student.repository import StudentRepository
 from tests.conftest import pytest_register_postgres
+from app.multi_tenant.models import platform_context
 
 
 @pytest.mark.integration
@@ -75,7 +76,7 @@ async def test_postgres_rollback(postgres_session: AsyncSession):
 @pytest.mark.asyncio
 async def test_student_postgres_create_and_retrieve(postgres_session: AsyncSession):
     """Create a Student via the repository and retrieve it from PostgreSQL."""
-    repo = StudentRepository(postgres_session)
+    repo = StudentRepository(postgres_session, platform_context())
     student = Student(
         first_name="PG",
         last_name="Student",
@@ -96,7 +97,7 @@ async def test_student_postgres_create_and_retrieve(postgres_session: AsyncSessi
 @pytest.mark.asyncio
 async def test_student_postgres_unique_constraint(postgres_session: AsyncSession):
     """Verify the unique constraint on student_number in PostgreSQL."""
-    repo = StudentRepository(postgres_session)
+    repo = StudentRepository(postgres_session, platform_context())
     s1 = Student(first_name="First", last_name="Student", student_number="UNIQ01", status="active")
     await repo.create(s1)
 
@@ -111,7 +112,7 @@ async def test_student_postgres_unique_constraint(postgres_session: AsyncSession
 @pytest.mark.asyncio
 async def test_student_postgres_list_and_count(postgres_session: AsyncSession):
     """Create multiple students and verify list with count in PostgreSQL."""
-    repo = StudentRepository(postgres_session)
+    repo = StudentRepository(postgres_session, platform_context())
     for i in range(3):
         s = Student(
             first_name=f"PG{i}",
@@ -136,7 +137,7 @@ async def test_student_postgres_list_and_count(postgres_session: AsyncSession):
 @pytest.mark.asyncio
 async def test_academic_year_postgres_create(postgres_session: AsyncSession):
     """Create an academic year and retrieve it from PostgreSQL."""
-    repo = AcademicYearRepository(postgres_session)
+    repo = AcademicYearRepository(postgres_session, platform_context())
     year = AcademicYear(
         name="PG Year",
         start_date=datetime.date(2026, 1, 1),
@@ -156,9 +157,9 @@ async def test_academic_year_postgres_create(postgres_session: AsyncSession):
 @pytest.mark.asyncio
 async def test_academic_class_section_relationship(postgres_session: AsyncSession):
     """Create academic year -> class -> section hierarchy in PostgreSQL."""
-    year_repo = AcademicYearRepository(postgres_session)
-    class_repo = ClassRepository(postgres_session)
-    section_repo = SectionRepository(postgres_session)
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    class_repo = ClassRepository(postgres_session, platform_context())
+    section_repo = SectionRepository(postgres_session, platform_context())
 
     year = await year_repo.create(
         AcademicYear(
@@ -188,9 +189,9 @@ async def test_academic_class_section_relationship(postgres_session: AsyncSessio
 @pytest.mark.asyncio
 async def test_enrollment_postgres_create(postgres_session: AsyncSession):
     """Create a student, academic year, and enrollment in PostgreSQL."""
-    student_repo = StudentRepository(postgres_session)
-    year_repo = AcademicYearRepository(postgres_session)
-    enrollment_repo = EnrollmentRepository(postgres_session)
+    student_repo = StudentRepository(postgres_session, platform_context())
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    enrollment_repo = EnrollmentRepository(postgres_session, platform_context())
 
     student = await student_repo.create(
         Student(first_name="PG", last_name="Student", student_number="PGENR001", status="active")
@@ -221,9 +222,9 @@ async def test_enrollment_postgres_create(postgres_session: AsyncSession):
 @pytest.mark.asyncio
 async def test_enrollment_postgres_unique_constraint(postgres_session: AsyncSession):
     """Verify unique constraint on (student_id, academic_year_id) in PostgreSQL."""
-    student_repo = StudentRepository(postgres_session)
-    year_repo = AcademicYearRepository(postgres_session)
-    enrollment_repo = EnrollmentRepository(postgres_session)
+    student_repo = StudentRepository(postgres_session, platform_context())
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    enrollment_repo = EnrollmentRepository(postgres_session, platform_context())
 
     student = await student_repo.create(
         Student(first_name="PG", last_name="Unique", student_number="PGUNIQ001", status="active")
@@ -261,12 +262,12 @@ async def test_attendance_postgres_create_and_retrieve(postgres_session: AsyncSe
     from app.domains.attendance.models import AttendanceRecord
     from app.domains.attendance.repository import AttendanceRepository
 
-    repo = AttendanceRepository(postgres_session)
-    student_repo = StudentRepository(postgres_session)
-    year_repo = AcademicYearRepository(postgres_session)
-    class_repo = ClassRepository(postgres_session)
-    section_repo = SectionRepository(postgres_session)
-    enrollment_repo = EnrollmentRepository(postgres_session)
+    repo = AttendanceRepository(postgres_session, platform_context())
+    student_repo = StudentRepository(postgres_session, platform_context())
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    class_repo = ClassRepository(postgres_session, platform_context())
+    section_repo = SectionRepository(postgres_session, platform_context())
+    enrollment_repo = EnrollmentRepository(postgres_session, platform_context())
 
     student = await student_repo.create(
         Student(first_name="PG", last_name="Attend", student_number="PGATT001", status="active")
@@ -314,12 +315,12 @@ async def test_attendance_postgres_unique_constraint(postgres_session: AsyncSess
     from app.domains.attendance.models import AttendanceRecord
     from app.domains.attendance.repository import AttendanceRepository
 
-    repo = AttendanceRepository(postgres_session)
-    student_repo = StudentRepository(postgres_session)
-    year_repo = AcademicYearRepository(postgres_session)
-    class_repo = ClassRepository(postgres_session)
-    section_repo = SectionRepository(postgres_session)
-    enrollment_repo = EnrollmentRepository(postgres_session)
+    repo = AttendanceRepository(postgres_session, platform_context())
+    student_repo = StudentRepository(postgres_session, platform_context())
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    class_repo = ClassRepository(postgres_session, platform_context())
+    section_repo = SectionRepository(postgres_session, platform_context())
+    enrollment_repo = EnrollmentRepository(postgres_session, platform_context())
 
     student = await student_repo.create(
         Student(first_name="PG", last_name="Unique", student_number="PGUNIQ02", status="active")
@@ -367,12 +368,12 @@ async def test_attendance_postgres_find_by_student(postgres_session: AsyncSessio
     from app.domains.attendance.models import AttendanceRecord
     from app.domains.attendance.repository import AttendanceRepository
 
-    repo = AttendanceRepository(postgres_session)
-    student_repo = StudentRepository(postgres_session)
-    year_repo = AcademicYearRepository(postgres_session)
-    class_repo = ClassRepository(postgres_session)
-    section_repo = SectionRepository(postgres_session)
-    enrollment_repo = EnrollmentRepository(postgres_session)
+    repo = AttendanceRepository(postgres_session, platform_context())
+    student_repo = StudentRepository(postgres_session, platform_context())
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    class_repo = ClassRepository(postgres_session, platform_context())
+    section_repo = SectionRepository(postgres_session, platform_context())
+    enrollment_repo = EnrollmentRepository(postgres_session, platform_context())
 
     student = await student_repo.create(
         Student(first_name="PG", last_name="Find", student_number="PGFIND01", status="active")
@@ -419,7 +420,7 @@ async def test_fee_type_postgres_create_and_retrieve(postgres_session: AsyncSess
     from app.domains.fees.models import FeeType
     from app.domains.fees.repository import FeeTypeRepository
 
-    repo = FeeTypeRepository(postgres_session)
+    repo = FeeTypeRepository(postgres_session, platform_context())
     ft = await repo.create(FeeType(name="PG Tuition", description="Tuition in PG"))
     assert ft.id is not None
     assert ft.name == "PG Tuition"
@@ -437,7 +438,7 @@ async def test_fee_type_postgres_unique_constraint(postgres_session: AsyncSessio
     from app.domains.fees.models import FeeType
     from app.domains.fees.repository import FeeTypeRepository
 
-    repo = FeeTypeRepository(postgres_session)
+    repo = FeeTypeRepository(postgres_session, platform_context())
     await repo.create(FeeType(name="Unique FT"))
 
     import sqlalchemy.exc
@@ -456,10 +457,10 @@ async def test_fee_structure_postgres_fk_relationships(postgres_session: AsyncSe
     from app.domains.academic.models import AcademicYear, Class
     from app.domains.academic.repository import AcademicYearRepository, ClassRepository
 
-    ft_repo = FeeTypeRepository(postgres_session)
-    fs_repo = FeeStructureRepository(postgres_session)
-    year_repo = AcademicYearRepository(postgres_session)
-    class_repo = ClassRepository(postgres_session)
+    ft_repo = FeeTypeRepository(postgres_session, platform_context())
+    fs_repo = FeeStructureRepository(postgres_session, platform_context())
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    class_repo = ClassRepository(postgres_session, platform_context())
 
     ft = await ft_repo.create(FeeType(name="Structure FT"))
     year = await year_repo.create(
@@ -494,10 +495,10 @@ async def test_fee_structure_postgres_unique_constraint(postgres_session: AsyncS
     from app.domains.academic.models import AcademicYear, Class
     from app.domains.academic.repository import AcademicYearRepository, ClassRepository
 
-    ft_repo = FeeTypeRepository(postgres_session)
-    fs_repo = FeeStructureRepository(postgres_session)
-    year_repo = AcademicYearRepository(postgres_session)
-    class_repo = ClassRepository(postgres_session)
+    ft_repo = FeeTypeRepository(postgres_session, platform_context())
+    fs_repo = FeeStructureRepository(postgres_session, platform_context())
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    class_repo = ClassRepository(postgres_session, platform_context())
 
     ft = await ft_repo.create(FeeType(name="Uniq Struct FT"))
     year = await year_repo.create(
@@ -534,12 +535,12 @@ async def test_fee_due_postgres_create_with_relationships(postgres_session: Asyn
     from app.domains.student.models import Student
     from app.domains.student.repository import StudentRepository
 
-    student_repo = StudentRepository(postgres_session)
-    ft_repo = FeeTypeRepository(postgres_session)
-    fs_repo = FeeStructureRepository(postgres_session)
-    fd_repo = FeeDueRepository(postgres_session)
-    year_repo = AcademicYearRepository(postgres_session)
-    class_repo = ClassRepository(postgres_session)
+    student_repo = StudentRepository(postgres_session, platform_context())
+    ft_repo = FeeTypeRepository(postgres_session, platform_context())
+    fs_repo = FeeStructureRepository(postgres_session, platform_context())
+    fd_repo = FeeDueRepository(postgres_session, platform_context())
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    class_repo = ClassRepository(postgres_session, platform_context())
 
     student = await student_repo.create(
         Student(first_name="PG FeeDue", last_name="Test", student_number="PGFD001", status="active")
@@ -585,12 +586,12 @@ async def test_fee_due_postgres_unique_constraint(postgres_session: AsyncSession
     from app.domains.student.models import Student
     from app.domains.student.repository import StudentRepository
 
-    student_repo = StudentRepository(postgres_session)
-    ft_repo = FeeTypeRepository(postgres_session)
-    fs_repo = FeeStructureRepository(postgres_session)
-    fd_repo = FeeDueRepository(postgres_session)
-    year_repo = AcademicYearRepository(postgres_session)
-    class_repo = ClassRepository(postgres_session)
+    student_repo = StudentRepository(postgres_session, platform_context())
+    ft_repo = FeeTypeRepository(postgres_session, platform_context())
+    fs_repo = FeeStructureRepository(postgres_session, platform_context())
+    fd_repo = FeeDueRepository(postgres_session, platform_context())
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    class_repo = ClassRepository(postgres_session, platform_context())
 
     student = await student_repo.create(
         Student(first_name="PG Uniq FD", last_name="Test", student_number="PGUNIQFD", status="active")
@@ -639,13 +640,13 @@ async def test_payment_postgres_create_with_relationships(postgres_session: Asyn
     from app.domains.student.models import Student
     from app.domains.student.repository import StudentRepository
 
-    student_repo = StudentRepository(postgres_session)
-    ft_repo = FeeTypeRepository(postgres_session)
-    fs_repo = FeeStructureRepository(postgres_session)
-    fd_repo = FeeDueRepository(postgres_session)
-    pmt_repo = PaymentRepository(postgres_session)
-    year_repo = AcademicYearRepository(postgres_session)
-    class_repo = ClassRepository(postgres_session)
+    student_repo = StudentRepository(postgres_session, platform_context())
+    ft_repo = FeeTypeRepository(postgres_session, platform_context())
+    fs_repo = FeeStructureRepository(postgres_session, platform_context())
+    fd_repo = FeeDueRepository(postgres_session, platform_context())
+    pmt_repo = PaymentRepository(postgres_session, platform_context())
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    class_repo = ClassRepository(postgres_session, platform_context())
 
     student = await student_repo.create(
         Student(first_name="PG Pmt", last_name="Test", student_number="PGPMT001", status="active")
@@ -698,13 +699,13 @@ async def test_payment_receipt_unique_constraint_postgres(postgres_session: Asyn
     from app.domains.student.models import Student
     from app.domains.student.repository import StudentRepository
 
-    student_repo = StudentRepository(postgres_session)
-    ft_repo = FeeTypeRepository(postgres_session)
-    fs_repo = FeeStructureRepository(postgres_session)
-    fd_repo = FeeDueRepository(postgres_session)
-    pmt_repo = PaymentRepository(postgres_session)
-    year_repo = AcademicYearRepository(postgres_session)
-    class_repo = ClassRepository(postgres_session)
+    student_repo = StudentRepository(postgres_session, platform_context())
+    ft_repo = FeeTypeRepository(postgres_session, platform_context())
+    fs_repo = FeeStructureRepository(postgres_session, platform_context())
+    fd_repo = FeeDueRepository(postgres_session, platform_context())
+    pmt_repo = PaymentRepository(postgres_session, platform_context())
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    class_repo = ClassRepository(postgres_session, platform_context())
 
     student = await student_repo.create(
         Student(first_name="PG Receipt", last_name="Test", student_number="PGRCP01", status="active")
@@ -756,13 +757,13 @@ async def test_payment_postgres_no_overpayment_postgres(postgres_session: AsyncS
     from app.domains.student.models import Student
     from app.domains.student.repository import StudentRepository
 
-    student_repo = StudentRepository(postgres_session)
-    ft_repo = FeeTypeRepository(postgres_session)
-    fs_repo = FeeStructureRepository(postgres_session)
-    fd_repo = FeeDueRepository(postgres_session)
-    pmt_repo = PaymentRepository(postgres_session)
-    year_repo = AcademicYearRepository(postgres_session)
-    class_repo = ClassRepository(postgres_session)
+    student_repo = StudentRepository(postgres_session, platform_context())
+    ft_repo = FeeTypeRepository(postgres_session, platform_context())
+    fs_repo = FeeStructureRepository(postgres_session, platform_context())
+    fd_repo = FeeDueRepository(postgres_session, platform_context())
+    pmt_repo = PaymentRepository(postgres_session, platform_context())
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    class_repo = ClassRepository(postgres_session, platform_context())
 
     student = await student_repo.create(
         Student(first_name="PG Mon", last_name="Test", student_number="PGMON01", status="active")
@@ -824,7 +825,7 @@ async def test_teacher_postgres_create_and_retrieve(postgres_session: AsyncSessi
     from app.domains.academic.models import Teacher
     from app.domains.academic.repository import TeacherRepository
 
-    repo = TeacherRepository(postgres_session)
+    repo = TeacherRepository(postgres_session, platform_context())
     teacher = Teacher(
         first_name="PG",
         last_name="Teacher",
@@ -848,7 +849,7 @@ async def test_teacher_postgres_unique_constraint(postgres_session: AsyncSession
     from app.domains.academic.models import Teacher
     from app.domains.academic.repository import TeacherRepository
 
-    repo = TeacherRepository(postgres_session)
+    repo = TeacherRepository(postgres_session, platform_context())
     await repo.create(
         Teacher(first_name="A", last_name="B", employee_number="PGUNIQT01")
     )
@@ -867,7 +868,7 @@ async def test_subject_postgres_create_and_retrieve(postgres_session: AsyncSessi
     from app.domains.academic.models import Subject
     from app.domains.academic.repository import SubjectRepository
 
-    repo = SubjectRepository(postgres_session)
+    repo = SubjectRepository(postgres_session, platform_context())
     subject = Subject(name="PG Subject", code="PGSUB01", status="active")
     created = await repo.create(subject)
     assert created.id is not None
@@ -885,7 +886,7 @@ async def test_subject_postgres_unique_constraints(postgres_session: AsyncSessio
     from app.domains.academic.models import Subject
     from app.domains.academic.repository import SubjectRepository
 
-    repo = SubjectRepository(postgres_session)
+    repo = SubjectRepository(postgres_session, platform_context())
     await repo.create(Subject(name="Uniq Name", code="UNIQ01"))
 
     import sqlalchemy.exc
@@ -905,8 +906,8 @@ async def test_term_postgres_create_and_retrieve(postgres_session: AsyncSession)
     from app.domains.academic.models import AcademicYear, Term
     from app.domains.academic.repository import AcademicYearRepository, TermRepository
 
-    year_repo = AcademicYearRepository(postgres_session)
-    term_repo = TermRepository(postgres_session)
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    term_repo = TermRepository(postgres_session, platform_context())
 
     year = await year_repo.create(
         AcademicYear(
@@ -947,11 +948,11 @@ async def test_teacher_assignment_postgres_fk_chains(postgres_session: AsyncSess
         TeacherRepository, SubjectRepository, TeacherAssignmentRepository,
     )
 
-    year_repo = AcademicYearRepository(postgres_session)
-    class_repo = ClassRepository(postgres_session)
-    teacher_repo = TeacherRepository(postgres_session)
-    subject_repo = SubjectRepository(postgres_session)
-    assignment_repo = TeacherAssignmentRepository(postgres_session)
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    class_repo = ClassRepository(postgres_session, platform_context())
+    teacher_repo = TeacherRepository(postgres_session, platform_context())
+    subject_repo = SubjectRepository(postgres_session, platform_context())
+    assignment_repo = TeacherAssignmentRepository(postgres_session, platform_context())
 
     year = await year_repo.create(
         AcademicYear(
@@ -1007,11 +1008,11 @@ async def test_teacher_assignment_unique_constraint_postgres(postgres_session: A
         TeacherRepository, SubjectRepository, TeacherAssignmentRepository,
     )
 
-    year_repo = AcademicYearRepository(postgres_session)
-    class_repo = ClassRepository(postgres_session)
-    teacher_repo = TeacherRepository(postgres_session)
-    subject_repo = SubjectRepository(postgres_session)
-    assignment_repo = TeacherAssignmentRepository(postgres_session)
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    class_repo = ClassRepository(postgres_session, platform_context())
+    teacher_repo = TeacherRepository(postgres_session, platform_context())
+    subject_repo = SubjectRepository(postgres_session, platform_context())
+    assignment_repo = TeacherAssignmentRepository(postgres_session, platform_context())
 
     year = await year_repo.create(
         AcademicYear(
@@ -1059,12 +1060,12 @@ async def test_reports_attendance_class_report_postgres(postgres_session: AsyncS
     from app.domains.attendance.models import AttendanceRecord
     from app.domains.attendance.repository import AttendanceRepository
 
-    student_repo = StudentRepository(postgres_session)
-    year_repo = AcademicYearRepository(postgres_session)
-    class_repo = ClassRepository(postgres_session)
-    section_repo = SectionRepository(postgres_session)
-    enrollment_repo = EnrollmentRepository(postgres_session)
-    att_repo = AttendanceRepository(postgres_session)
+    student_repo = StudentRepository(postgres_session, platform_context())
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    class_repo = ClassRepository(postgres_session, platform_context())
+    section_repo = SectionRepository(postgres_session, platform_context())
+    enrollment_repo = EnrollmentRepository(postgres_session, platform_context())
+    att_repo = AttendanceRepository(postgres_session, platform_context())
     report_svc = AttendanceReportService(postgres_session)
 
     year = await year_repo.create(
@@ -1103,14 +1104,14 @@ async def test_reports_fee_collection_postgres(postgres_session: AsyncSession):
     from app.domains.fees.repository import FeeTypeRepository, FeeStructureRepository, FeeDueRepository, PaymentRepository
     from app.domains.reports.fee_reports import FeeReportService
 
-    student_repo = StudentRepository(postgres_session)
-    year_repo = AcademicYearRepository(postgres_session)
-    class_repo = ClassRepository(postgres_session)
-    enrollment_repo = EnrollmentRepository(postgres_session)
-    ft_repo = FeeTypeRepository(postgres_session)
-    fs_repo = FeeStructureRepository(postgres_session)
-    fd_repo = FeeDueRepository(postgres_session)
-    pmt_repo = PaymentRepository(postgres_session)
+    student_repo = StudentRepository(postgres_session, platform_context())
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    class_repo = ClassRepository(postgres_session, platform_context())
+    enrollment_repo = EnrollmentRepository(postgres_session, platform_context())
+    ft_repo = FeeTypeRepository(postgres_session, platform_context())
+    fs_repo = FeeStructureRepository(postgres_session, platform_context())
+    fd_repo = FeeDueRepository(postgres_session, platform_context())
+    pmt_repo = PaymentRepository(postgres_session, platform_context())
     report_svc = FeeReportService(postgres_session)
 
     year = await year_repo.create(
@@ -1151,9 +1152,9 @@ async def test_reports_batch_enroll_rollback_postgres(postgres_session: AsyncSes
     """Verify batch enroll rolls back properly on failure in PostgreSQL."""
     from app.domains.reports.batch_service import BatchService
 
-    student_repo = StudentRepository(postgres_session)
-    year_repo = AcademicYearRepository(postgres_session)
-    class_repo = ClassRepository(postgres_session)
+    student_repo = StudentRepository(postgres_session, platform_context())
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    class_repo = ClassRepository(postgres_session, platform_context())
     batch_svc = BatchService(postgres_session)
 
     year = await year_repo.create(
@@ -1182,7 +1183,7 @@ async def test_reports_export_csv_postgres(postgres_session: AsyncSession):
     """Verify CSV export works with PostgreSQL data."""
     from app.domains.reports.export_service import ExportService
 
-    student_repo = StudentRepository(postgres_session)
+    student_repo = StudentRepository(postgres_session, platform_context())
     s = await student_repo.create(
         Student(first_name="PG Export", last_name="Test", student_number="PGEXPT01", status="active")
     )
@@ -1204,11 +1205,11 @@ async def test_reports_rollover_execute_postgres(postgres_session: AsyncSession)
     """Verify academic year rollover in PostgreSQL."""
     from app.domains.reports.rollover_service import RolloverService
 
-    year_repo = AcademicYearRepository(postgres_session)
-    class_repo = ClassRepository(postgres_session)
-    section_repo = SectionRepository(postgres_session)
-    enrollment_repo = EnrollmentRepository(postgres_session)
-    student_repo = StudentRepository(postgres_session)
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    class_repo = ClassRepository(postgres_session, platform_context())
+    section_repo = SectionRepository(postgres_session, platform_context())
+    enrollment_repo = EnrollmentRepository(postgres_session, platform_context())
+    student_repo = StudentRepository(postgres_session, platform_context())
     rollover_svc = RolloverService(postgres_session)
 
     year = await year_repo.create(
@@ -1250,14 +1251,14 @@ async def test_reports_fee_outstanding_postgres(postgres_session: AsyncSession):
     from app.domains.fees.repository import FeeTypeRepository, FeeStructureRepository, FeeDueRepository, PaymentRepository
     from app.domains.reports.fee_reports import FeeReportService
 
-    student_repo = StudentRepository(postgres_session)
-    year_repo = AcademicYearRepository(postgres_session)
-    class_repo = ClassRepository(postgres_session)
-    enrollment_repo = EnrollmentRepository(postgres_session)
-    ft_repo = FeeTypeRepository(postgres_session)
-    fs_repo = FeeStructureRepository(postgres_session)
-    fd_repo = FeeDueRepository(postgres_session)
-    pmt_repo = PaymentRepository(postgres_session)
+    student_repo = StudentRepository(postgres_session, platform_context())
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    class_repo = ClassRepository(postgres_session, platform_context())
+    enrollment_repo = EnrollmentRepository(postgres_session, platform_context())
+    ft_repo = FeeTypeRepository(postgres_session, platform_context())
+    fs_repo = FeeStructureRepository(postgres_session, platform_context())
+    fd_repo = FeeDueRepository(postgres_session, platform_context())
+    pmt_repo = PaymentRepository(postgres_session, platform_context())
     report_svc = FeeReportService(postgres_session)
 
     year = await year_repo.create(
@@ -1299,13 +1300,13 @@ async def test_reports_detailed_receipt_postgres(postgres_session: AsyncSession)
     from app.domains.fees.repository import FeeTypeRepository, FeeStructureRepository, FeeDueRepository, PaymentRepository
     from app.domains.reports.fee_reports import FeeReportService
 
-    student_repo = StudentRepository(postgres_session)
-    year_repo = AcademicYearRepository(postgres_session)
-    class_repo = ClassRepository(postgres_session)
-    ft_repo = FeeTypeRepository(postgres_session)
-    fs_repo = FeeStructureRepository(postgres_session)
-    fd_repo = FeeDueRepository(postgres_session)
-    pmt_repo = PaymentRepository(postgres_session)
+    student_repo = StudentRepository(postgres_session, platform_context())
+    year_repo = AcademicYearRepository(postgres_session, platform_context())
+    class_repo = ClassRepository(postgres_session, platform_context())
+    ft_repo = FeeTypeRepository(postgres_session, platform_context())
+    fs_repo = FeeStructureRepository(postgres_session, platform_context())
+    fd_repo = FeeDueRepository(postgres_session, platform_context())
+    pmt_repo = PaymentRepository(postgres_session, platform_context())
     report_svc = FeeReportService(postgres_session)
 
     year = await year_repo.create(

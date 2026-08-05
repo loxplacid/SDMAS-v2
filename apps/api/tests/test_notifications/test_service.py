@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.notifications.models import Notification
 from app.domains.notifications.service import NotificationService
+from app.multi_tenant.models import platform_context
 
 
 async def _create_test_notifications(
@@ -22,7 +23,7 @@ async def _create_test_notifications(
 
 
 async def test_create_notification(db_session: AsyncSession) -> None:
-    svc = NotificationService(db_session)
+    svc = NotificationService(db_session, platform_context())
     n = await svc.create_notification(
         user_id=1,
         type="info",
@@ -40,7 +41,7 @@ async def test_create_notification(db_session: AsyncSession) -> None:
 
 
 async def test_notification_defaults(db_session: AsyncSession) -> None:
-    svc = NotificationService(db_session)
+    svc = NotificationService(db_session, platform_context())
     n = await svc.create_notification(
         user_id=1,
         type="alert",
@@ -53,7 +54,7 @@ async def test_notification_defaults(db_session: AsyncSession) -> None:
 
 
 async def test_list_notifications(db_session: AsyncSession) -> None:
-    svc = NotificationService(db_session)
+    svc = NotificationService(db_session, platform_context())
     await _create_test_notifications(svc, 5)
 
     items, total = await svc.get_user_notifications(user_id=1, limit=50)
@@ -63,7 +64,7 @@ async def test_list_notifications(db_session: AsyncSession) -> None:
 
 
 async def test_list_notifications_pagination(db_session: AsyncSession) -> None:
-    svc = NotificationService(db_session)
+    svc = NotificationService(db_session, platform_context())
     await _create_test_notifications(svc, 10)
 
     page1, total = await svc.get_user_notifications(user_id=1, skip=0, limit=3)
@@ -77,7 +78,7 @@ async def test_list_notifications_pagination(db_session: AsyncSession) -> None:
 
 
 async def test_unread_count(db_session: AsyncSession) -> None:
-    svc = NotificationService(db_session)
+    svc = NotificationService(db_session, platform_context())
     assert await svc.get_unread_count(1) == 0
 
     n = await svc.create_notification(
@@ -90,7 +91,7 @@ async def test_unread_count(db_session: AsyncSession) -> None:
 
 
 async def test_unread_only_filter(db_session: AsyncSession) -> None:
-    svc = NotificationService(db_session)
+    svc = NotificationService(db_session, platform_context())
     n1 = await svc.create_notification(
         user_id=1, type="info", title="Read me", message="Read me"
     )
@@ -108,7 +109,7 @@ async def test_unread_only_filter(db_session: AsyncSession) -> None:
 
 
 async def test_mark_as_read(db_session: AsyncSession) -> None:
-    svc = NotificationService(db_session)
+    svc = NotificationService(db_session, platform_context())
     n = await svc.create_notification(
         user_id=1, type="info", title="Read me", message="Read me"
     )
@@ -119,7 +120,7 @@ async def test_mark_as_read(db_session: AsyncSession) -> None:
 
 
 async def test_mark_all_as_read(db_session: AsyncSession) -> None:
-    svc = NotificationService(db_session)
+    svc = NotificationService(db_session, platform_context())
     await _create_test_notifications(svc, 3)
 
     updated_count = await svc.mark_all_as_read(user_id=1)
@@ -128,7 +129,7 @@ async def test_mark_all_as_read(db_session: AsyncSession) -> None:
 
 
 async def test_delete_notification(db_session: AsyncSession) -> None:
-    svc = NotificationService(db_session)
+    svc = NotificationService(db_session, platform_context())
     n = await svc.create_notification(
         user_id=1, type="info", title="Delete me", message="Delete me"
     )
@@ -139,7 +140,7 @@ async def test_delete_notification(db_session: AsyncSession) -> None:
 
 
 async def test_notification_is_read_property(db_session: AsyncSession) -> None:
-    svc = NotificationService(db_session)
+    svc = NotificationService(db_session, platform_context())
     n = await svc.create_notification(
         user_id=1, type="info", title="Test", message="Test"
     )

@@ -29,6 +29,7 @@ from app.domains.notifications.handlers import (
 from app.domains.notifications.models import Notification
 from app.domains.notifications.repository import NotificationRepository
 from app.domains.reports.batch_service import BatchService
+from app.multi_tenant.models import platform_context
 
 
 # ===========================================================================
@@ -57,7 +58,7 @@ class TestBatchNotifications:
         )
         await dispatcher.dispatch(event, session=db_session)
 
-        repo = NotificationRepository(db_session)
+        repo = NotificationRepository(db_session, platform_context())
         items, total = await repo.find_by_user(101)
         assert total == 1
         assert items[0].type == "system"
@@ -81,7 +82,7 @@ class TestBatchNotifications:
         )
         await dispatcher.dispatch(event, session=db_session)
 
-        repo = NotificationRepository(db_session)
+        repo = NotificationRepository(db_session, platform_context())
         _, total = await repo.find_by_user(99999)
         assert total == 0
 
@@ -104,7 +105,7 @@ class TestBatchNotifications:
         db_session.add(year)
         await db_session.flush()
 
-        service = BatchService(db_session)
+        service = BatchService(db_session, platform_context())
         # Empty payload: batch completes with zero processed.
         result = await service.batch_enroll(year.id, [], actor_user_id=42)
         assert result["total"] == 0
@@ -150,7 +151,7 @@ class TestBatchNotifications:
             boom,
         )
 
-        service = BatchService(db_session)
+        service = BatchService(db_session, platform_context())
         result = await service.batch_create_fee_dues(year.id, [], actor_user_id=1)
         assert result["total"] == 0
         assert result["succeeded"] == 0
@@ -178,7 +179,7 @@ class TestDedup:
         # Duplicate delivery of the same event -> skipped.
         assert await channel.deliver(msg) is False
 
-        repo = NotificationRepository(db_session)
+        repo = NotificationRepository(db_session, platform_context())
         _, total = await repo.find_by_user(1)
         assert total == 1
 
@@ -196,7 +197,7 @@ class TestDedup:
             )
             await channel.deliver(msg)
 
-        repo = NotificationRepository(db_session)
+        repo = NotificationRepository(db_session, platform_context())
         _, total = await repo.find_by_user(1)
         assert total == 2
 
@@ -219,7 +220,7 @@ class TestDedup:
         await dispatcher.dispatch(event, session=db_session)
         await dispatcher.dispatch(event, session=db_session)
 
-        repo = NotificationRepository(db_session)
+        repo = NotificationRepository(db_session, platform_context())
         items, total = await repo.find_by_user(1)
         assert total == 1
 
@@ -234,7 +235,7 @@ class TestDedup:
         )
         await channel.deliver(msg)
 
-        repo = NotificationRepository(db_session)
+        repo = NotificationRepository(db_session, platform_context())
         items, _ = await repo.find_by_user(1)
         await repo.mark_read(items[0].id)
 
@@ -288,7 +289,7 @@ class TestAdminFanOut:
         )
         await dispatcher.dispatch(event, session=db_session)
 
-        repo = NotificationRepository(db_session)
+        repo = NotificationRepository(db_session, platform_context())
         for uid, role in roles.items():
             _, total = await repo.find_by_user(uid)
             if role in ("admin", "staff"):
@@ -313,7 +314,7 @@ class TestAdminFanOut:
         )
         await dispatcher.dispatch(event, session=db_session)
 
-        repo = NotificationRepository(db_session)
+        repo = NotificationRepository(db_session, platform_context())
         _, total = await repo.find_by_user(3)
         assert total == 1
         _, admin_total = await repo.find_by_user(1)
@@ -354,7 +355,7 @@ class TestAdminFanOut:
             session=db_session,
         )
 
-        repo = NotificationRepository(db_session)
+        repo = NotificationRepository(db_session, platform_context())
         items, total = await repo.find_by_user(1)  # admin
         assert total >= 1
         assert any("Rollover Failed" in n.title for n in items)
@@ -396,7 +397,7 @@ class TestAdminFanOut:
             session=db_session,
         )
 
-        repo = NotificationRepository(db_session)
+        repo = NotificationRepository(db_session, platform_context())
         items, total = await repo.find_by_user(1)
         assert total >= 1
         assert any("Rollover Complete" in n.title for n in items)

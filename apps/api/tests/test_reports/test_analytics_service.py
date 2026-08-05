@@ -24,21 +24,22 @@ from app.domains.fees.repository import (
 )
 from app.domains.student.models import Student
 from app.domains.student.repository import StudentRepository
+from app.multi_tenant.models import platform_context
 
 
 @pytest.fixture
 async def seeded_analytics(db_session: AsyncSession):
     """Seed comprehensive data for analytics testing."""
-    sr = StudentRepository(db_session)
-    yr = AcademicYearRepository(db_session)
-    cr = ClassRepository(db_session)
-    secr = SectionRepository(db_session)
-    er = EnrollmentRepository(db_session)
-    ar = AttendanceRepository(db_session)
-    ftr = FeeTypeRepository(db_session)
-    fsr = FeeStructureRepository(db_session)
-    fdr = FeeDueRepository(db_session)
-    pmtr = PaymentRepository(db_session)
+    sr = StudentRepository(db_session, platform_context())
+    yr = AcademicYearRepository(db_session, platform_context())
+    cr = ClassRepository(db_session, platform_context())
+    secr = SectionRepository(db_session, platform_context())
+    er = EnrollmentRepository(db_session, platform_context())
+    ar = AttendanceRepository(db_session, platform_context())
+    ftr = FeeTypeRepository(db_session, platform_context())
+    fsr = FeeStructureRepository(db_session, platform_context())
+    fdr = FeeDueRepository(db_session, platform_context())
+    pmtr = PaymentRepository(db_session, platform_context())
     svc = AnalyticsService(db_session)
 
     year = await yr.create(

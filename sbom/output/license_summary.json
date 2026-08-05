@@ -1,0 +1,29 @@
+{
+  "by_license": {
+    "(Apache-2.0 AND MIT)": 1,
+    "(BSD-2-Clause OR MIT OR Apache-2.0)": 1,
+    "(BSD-3-Clause OR GPL-2.0)": 1,
+    "(MIT AND Zlib)": 1,
+    "(MIT OR CC0-1.0)": 5,
+    "(MPL-2.0 OR Apache-2.0)": 1,
+    "(Unlicense OR Apache-2.0)": 1,
+    "0BSD": 2,
+    "Apache-2.0": 37,
+    "BSD": 1,
+    "BSD-2-Clause": 22,
+    "BSD-3-Clause": 43,
+    "BlueOak-1.0.0": 14,
+    "CC-BY-4.0": 2,
+    "ISC": 107,
+    "MIT": 1526,
+    "MIT AND ISC": 1,
+    "MIT OR SEE LICENSE IN FEEL-FREE.md": 1,
+    "MIT-0": 1,
+    "MPL-2.0": 21,
+    "Python-2.0": 1,
+    "Unlicense": 2
+  },
+  "packages_with_license": 1792,
+  "packages_without_license": 70,
+  "total_packages": 1862
+}

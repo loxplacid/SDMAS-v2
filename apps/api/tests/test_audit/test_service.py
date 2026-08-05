@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.domains.audit.models import AuditLog
 from app.domains.audit.repository import AuditLogRepository
 from app.domains.audit.service import AuditService
+from app.multi_tenant.models import platform_context
 
 
 # ======================================================================
@@ -20,7 +21,7 @@ from app.domains.audit.service import AuditService
 
 class TestAuditLogRepository:
     async def test_create_entry(self, db_session: AsyncSession):
-        repo = AuditLogRepository(db_session)
+        repo = AuditLogRepository(db_session, platform_context())
         entry = AuditLog(
             action="CREATE",
             resource_type="student",
@@ -31,7 +32,7 @@ class TestAuditLogRepository:
         assert created.action == "CREATE"
 
     async def test_get_by_id_found(self, db_session: AsyncSession):
-        repo = AuditLogRepository(db_session)
+        repo = AuditLogRepository(db_session, platform_context())
         entry = AuditLog(action="DELETE", resource_type="fee_type", resource_id="7")
         created = await repo.create(entry)
 
@@ -40,14 +41,14 @@ class TestAuditLogRepository:
         assert found.action == "DELETE"
 
     async def test_get_by_id_not_found(self, db_session: AsyncSession):
-        repo = AuditLogRepository(db_session)
+        repo = AuditLogRepository(db_session, platform_context())
         from app.core.exceptions import NotFoundError
 
         with pytest.raises(NotFoundError):
             await repo.get_by_id(999)
 
     async def test_list_with_filters(self, db_session: AsyncSession):
-        repo = AuditLogRepository(db_session)
+        repo = AuditLogRepository(db_session, platform_context())
         for i in range(3):
             await repo.create(
                 AuditLog(
@@ -76,7 +77,7 @@ class TestAuditLogRepository:
         assert total == 1
 
     async def test_list_pagination(self, db_session: AsyncSession):
-        repo = AuditLogRepository(db_session)
+        repo = AuditLogRepository(db_session, platform_context())
         for i in range(10):
             await repo.create(
                 AuditLog(
@@ -94,13 +95,13 @@ class TestAuditLogRepository:
         assert len(items) == 5
 
     async def test_list_empty(self, db_session: AsyncSession):
-        repo = AuditLogRepository(db_session)
+        repo = AuditLogRepository(db_session, platform_context())
         items, total = await repo.list()
         assert total == 0
         assert items == []
 
     async def test_list_ordered_by_created_at_desc(self, db_session: AsyncSession):
-        repo = AuditLogRepository(db_session)
+        repo = AuditLogRepository(db_session, platform_context())
         import datetime
         from datetime import timezone
 
@@ -125,7 +126,7 @@ class TestAuditLogRepository:
 
 class TestAuditService:
     async def test_record_minimal(self, db_session: AsyncSession):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         entry = await svc.record(
             action="CREATE",
             resource_type="student",
@@ -135,7 +136,7 @@ class TestAuditService:
         assert entry.resource_type == "student"
 
     async def test_record_full(self, db_session: AsyncSession):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         entry = await svc.record(
             user_id=1,
             username="admin",
@@ -158,14 +159,14 @@ class TestAuditService:
         assert entry.campus_id == 2
 
     async def test_record_no_details(self, db_session: AsyncSession):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         entry = await svc.record(
             action="DELETE", resource_type="student", resource_id="10",
         )
         assert entry.details is None
 
     async def test_list_entries(self, db_session: AsyncSession):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         for i in range(5):
             await svc.record(
                 user_id=1, action="CREATE",
@@ -177,7 +178,7 @@ class TestAuditService:
         assert len(items) == 5
 
     async def test_get_entry(self, db_session: AsyncSession):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         created = await svc.record(action="CREATE", resource_type="test")
         found = await svc.get_entry(created.id)
         assert found.id == created.id

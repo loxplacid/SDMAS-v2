@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import AuthorizationError, NotFoundError
 from app.multi_tenant import registry
 from app.multi_tenant.models import TenantContext
+from app.multi_tenant.models import platform_context
 
 
 class TenantScopedRepository:
@@ -29,11 +30,16 @@ class TenantScopedRepository:
     Scope rules
     -----------
     * ``tenant.campus_id`` set → every query is pinned to that campus.
-    * ``tenant`` is ``None`` or unscoped and ``tenant.platform`` is True
-      → explicit platform access; no filter is applied (cross-tenant read).
-    * ``tenant`` is unscoped and NOT platform-authorized → calls that go
-      through :meth:`scoped_query` / :meth:`get_by_id` raise
-      :class:`AuthorizationError`; platform data models are exempt.
+    * ``tenant`` explicitly platform-authorized (``platform=True``)
+      → no filter is applied (cross-tenant read).
+    * ``tenant`` is ``None`` or unscoped and NOT platform-authorized
+      → calls that go through :meth:`scoped_query` / :meth:`get_by_id`
+      raise :class:`AuthorizationError`; platform data models are exempt.
+
+    ``tenant=None`` is **never** treated as platform access — a missing
+    tenant context fails closed instead of silently granting cross-tenant
+    visibility.  Platform callers must pass an explicit platform
+    ``TenantContext`` (see ``multi_tenant.models.platform_context()``).
 
     Platform-owned models (see :mod:`app.multi_tenant.registry`) are never
     filtered, so global tables keep working unchanged.
@@ -59,9 +65,14 @@ class TenantScopedRepository:
         return None
 
     def _has_platform_access(self) -> bool:
-        """True when the caller may legally query across campuses."""
+        """True when the caller may legally query across campuses.
+
+        ``tenant=None`` is treated as **no access** (fail-closed).
+        Only an explicitly platform-authorized ``TenantContext``
+        (``platform=True``) may operate outside tenant boundaries.
+        """
         if self.tenant is None:
-            return True  # legacy / non-tenant-aware callers
+            return False
         if not self.tenant.is_tenant_scoped:
             return self.tenant.allow_cross_tenant
         return False
@@ -178,6 +189,7 @@ class TenantScopedRepository:
 
     async def exists(self, model: Any, entity_id: int) -> bool:
         """Tenant-scoped existence check."""
+        self.require_tenant_scope(model)
         campus_id = self._effective_campus_id()
         count_query = select(func.count(model.id)).where(model.id == entity_id)
         if campus_id is not None:
@@ -209,16 +221,11 @@ class TenantScopedRepository:
     ) -> tuple[list, int]:
         """Generic paginated list with automatic tenant scoping.
 
-        Args:
-            model: The SQLAlchemy model class.
-            order_by_attr: Attribute name to order results by.
-            skip: Offset for pagination.
-            limit: Page size.
-            extra_filters: Optional list of additional WHERE conditions.
-
-        Returns:
-            ``(items, total_count)`` tuple.
+        Raises :class:`AuthorizationError` when the caller is
+        neither tenant-scoped nor explicitly platform-authorized.
         """
+        self.require_tenant_scope(model)
+
         query = select(model)
         count_query = select(func.count(model.id))
 

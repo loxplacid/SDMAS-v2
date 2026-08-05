@@ -34,6 +34,7 @@ from app.domains.jobs.scheduler import (
 )
 from app.domains.jobs.schemas import JobCreate
 from app.domains.jobs.service import JobService
+from app.multi_tenant.models import platform_context
 
 NOW = datetime.datetime.now(datetime.timezone.utc)
 
@@ -108,7 +109,7 @@ class TestCycleEnqueue:
     async def test_completed_cycle_job_does_not_block_next_cycle(self, db_session):
         """After a cycle's job completes, re-enqueuing the same key returns
         the completed row (no crash, no duplicate)."""
-        svc = JobService(db_session)
+        svc = JobService(db_session, platform_context())
         key = _daily_key("billing.period_end", NOW)
         first = await svc.create_job(JobCreate(job_type="billing.period_end", identity_key=key))
         first.status = "completed"
@@ -171,8 +172,8 @@ class TestPeriodicJobs:
 
         await _seed_plan_and_subscription(db_session, campus_id=c1.id)
 
-        svc = JobService(db_session)
-        repo = JobRepository(db_session)
+        svc = JobService(db_session, platform_context())
+        repo = JobRepository(db_session, platform_context())
         job = await svc.create_job(
             JobCreate(
                 job_type="billing.period_end",
@@ -216,8 +217,8 @@ class TestPeriodicJobs:
             period_end_offset=datetime.timedelta(days=10),
         )
 
-        svc = JobService(db_session)
-        repo = JobRepository(db_session)
+        svc = JobService(db_session, platform_context())
+        repo = JobRepository(db_session, platform_context())
         await svc.create_job(
             JobCreate(
                 job_type="billing.expire_past_due",
@@ -262,8 +263,8 @@ class TestPeriodicJobs:
         )
         await db_session.commit()
 
-        svc = JobService(db_session)
-        repo = JobRepository(db_session)
+        svc = JobService(db_session, platform_context())
+        repo = JobRepository(db_session, platform_context())
         job = await svc.create_job(
             JobCreate(
                 job_type="communications.scheduled",
@@ -319,8 +320,8 @@ class TestPeriodicJobs:
         )
         await db_session.commit()
 
-        svc = JobService(db_session)
-        repo = JobRepository(db_session)
+        svc = JobService(db_session, platform_context())
+        repo = JobRepository(db_session, platform_context())
         await svc.create_job(
             JobCreate(
                 job_type="communications.scheduled",

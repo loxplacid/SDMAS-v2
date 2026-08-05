@@ -29,6 +29,7 @@ from app.domains.events.outbox import (
 from app.domains.events.outbox_handlers import register_outbox_handlers
 from app.domains.notifications.events import FeeDueCreatedEvent
 from app.domains.notifications.repository import NotificationRepository
+from app.multi_tenant.models import platform_context
 
 NOW = datetime.datetime.now(datetime.timezone.utc)
 
@@ -145,7 +146,7 @@ class TestReplayIdempotency:
             await outbox_dispatcher.deliver(claimed, db_session)
             await repo.complete(claimed.event_id)
 
-            notif_repo = NotificationRepository(db_session)
+            notif_repo = NotificationRepository(db_session, platform_context())
             items, _ = await notif_repo.find_by_user(201)
             assert len(items) == 1
 

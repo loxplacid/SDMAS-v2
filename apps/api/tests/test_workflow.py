@@ -36,6 +36,7 @@ from app.domains.workflow.service import (
     WorkflowExecutionService,
 )
 from app.domains.workflow.schemas import AvailableTransition
+from app.multi_tenant.models import platform_context
 
 
 # ---------------------------------------------------------------------------
@@ -85,21 +86,21 @@ async def _create_minimal_workflow(session: AsyncSession) -> dict:
 
 def _exec_service(session: AsyncSession) -> WorkflowExecutionService:
     return WorkflowExecutionService(
-        instance_repo=WorkflowInstanceRepository(session),
-        workflow_repo=WorkflowRepository(session),
-        step_repo=WorkflowStepRepository(session),
-        transition_repo=WorkflowTransitionRepository(session),
-        action_repo=WorkflowActionRepository(session),
-        history_repo=ApprovalHistoryRepository(session),
+        instance_repo=WorkflowInstanceRepository(session, platform_context()),
+        workflow_repo=WorkflowRepository(session, platform_context()),
+        step_repo=WorkflowStepRepository(session, platform_context()),
+        transition_repo=WorkflowTransitionRepository(session, platform_context()),
+        action_repo=WorkflowActionRepository(session, platform_context()),
+        history_repo=ApprovalHistoryRepository(session, platform_context()),
     )
 
 
 def _admin_service(session: AsyncSession) -> WorkflowAdminService:
     return WorkflowAdminService(
-        workflow_repo=WorkflowRepository(session),
-        step_repo=WorkflowStepRepository(session),
-        transition_repo=WorkflowTransitionRepository(session),
-        action_repo=WorkflowActionRepository(session),
+        workflow_repo=WorkflowRepository(session, platform_context()),
+        step_repo=WorkflowStepRepository(session, platform_context()),
+        transition_repo=WorkflowTransitionRepository(session, platform_context()),
+        action_repo=WorkflowActionRepository(session, platform_context()),
     )
 
 
@@ -224,7 +225,7 @@ class TestWorkflowExecution:
     async def test_start_instance_inactive_workflow(self, db_session):
         """Starting an instance on an inactive workflow should fail."""
         ids = await _create_minimal_workflow(db_session)
-        wf_repo = WorkflowRepository(db_session)
+        wf_repo = WorkflowRepository(db_session, platform_context())
         wf = await wf_repo.get_by_id(ids["workflow_id"])
         wf.status = "inactive"
         await wf_repo.update(wf)
@@ -467,7 +468,7 @@ class TestAuditIntegration:
 
         # Verify audit entries exist
         from app.domains.audit.repository import AuditLogRepository
-        audit_repo = AuditLogRepository(db_session)
+        audit_repo = AuditLogRepository(db_session, platform_context())
         items, total = await audit_repo.list()
         audit_workflow_entries = [
             a for a in items
@@ -496,7 +497,7 @@ class TestAuditIntegration:
         )
 
         from app.domains.audit.repository import AuditLogRepository
-        audit_repo = AuditLogRepository(db_session)
+        audit_repo = AuditLogRepository(db_session, platform_context())
         items, total = await audit_repo.list()
         audit_workflow_entries = [
             a for a in items

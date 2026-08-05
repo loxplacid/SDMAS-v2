@@ -25,6 +25,7 @@ from app.domains.jobs.registry import BaseJob, register_job
 from app.domains.jobs.repository import JobRepository
 from app.domains.jobs.schemas import JobCreate
 from app.domains.jobs.service import JobService
+from app.multi_tenant.models import platform_context
 
 NOW = datetime.datetime.now(datetime.timezone.utc)
 
@@ -58,8 +59,8 @@ class TestAtomicClaim:
             await s1.commit()
             job_id = job.id
 
-            repo1 = JobRepository(s1)
-            repo2 = JobRepository(s2)
+            repo1 = JobRepository(s1, platform_context())
+            repo2 = JobRepository(s2, platform_context())
 
             claimed1 = await repo1.acquire_next()
             claimed2 = await repo2.acquire_next()
@@ -78,7 +79,7 @@ class TestAtomicClaim:
             s1.add(job)
             await s1.commit()
             job_id = job.id
-            claimed = await JobRepository(s1).acquire_next()
+            claimed = await JobRepository(s1, platform_context()).acquire_next()
             assert claimed is not None
             # Persist the claim, exactly as the worker's ``_worker_session``
             # commits after a poll cycle.  An uncommitted claim would be
@@ -89,7 +90,7 @@ class TestAtomicClaim:
 
         # Fresh worker session (simulates a second worker replica).
         async with session_factory() as s2:
-            again = await JobRepository(s2).acquire_next()
+            again = await JobRepository(s2, platform_context()).acquire_next()
             assert again is None
             # The original job is still running — not double-claimed.
             row = (await s2.execute(select(Job).where(Job.id == job_id))).scalar_one()
@@ -104,8 +105,8 @@ class TestAtomicClaim:
                 s1.add(Job(**_job_fields(job_type="test.drain")))
             await s1.commit()
 
-            repo1 = JobRepository(s1)
-            repo2 = JobRepository(s2)
+            repo1 = JobRepository(s1, platform_context())
+            repo2 = JobRepository(s2, platform_context())
 
             claimed_ids = []
             for repo in (repo1, repo2, repo1):
@@ -125,7 +126,7 @@ class TestAtomicClaim:
 class TestDuplicateExecution:
     async def test_enqueue_same_identity_key_returns_same_job(self, db_session):
         """Two enqueues with the same identity key collapse into one row."""
-        svc = JobService(db_session)
+        svc = JobService(db_session, platform_context())
 
         first = await svc.create_job(
             JobCreate(
@@ -156,7 +157,7 @@ class TestDuplicateExecution:
         terminal status, violating the unique constraint and 500ing the
         scheduler cycle after the job completed.
         """
-        svc = JobService(db_session)
+        svc = JobService(db_session, platform_context())
         job = await svc.create_job(
             JobCreate(job_type="test.keyed", identity_key="once-only")
         )
@@ -190,8 +191,8 @@ class AlwaysFailJob(BaseJob):
 class TestRetryAndDeadLetter:
     async def test_job_retries_then_dead_letters(self, db_session):
         """A failing job is retried with backoff, then dead-lettered."""
-        svc = JobService(db_session)
-        repo = JobRepository(db_session)
+        svc = JobService(db_session, platform_context())
+        repo = JobRepository(db_session, platform_context())
 
         job = await svc.create_job(
             JobCreate(job_type="test.always_fail", max_retries=1)
@@ -221,8 +222,8 @@ class TestRetryAndDeadLetter:
     async def test_job_with_zero_retries_dead_letters_immediately(
         self, db_session
     ):
-        svc = JobService(db_session)
-        repo = JobRepository(db_session)
+        svc = JobService(db_session, platform_context())
+        repo = JobRepository(db_session, platform_context())
 
         job = await svc.create_job(
             JobCreate(job_type="test.always_fail", max_retries=0)
@@ -241,8 +242,8 @@ class TestRetryAndDeadLetter:
         from app.domains.report_builder.jobs import ReportExportJob  # noqa: F401
         from app.domains.report_builder.service import REPORT_EXPORT_JOB_TYPE
 
-        svc = JobService(db_session)
-        repo = JobRepository(db_session)
+        svc = JobService(db_session, platform_context())
+        repo = JobRepository(db_session, platform_context())
 
         # Register a simple inline job that returns a result.
         from app.domains.jobs.registry import get_job_class
@@ -296,7 +297,7 @@ class TestRestartSafety:
             await s.commit()
             job_id = job.id
 
-            repo = JobRepository(s)
+            repo = JobRepository(s, platform_context())
             requeued, dead_lettered = await repo.reclaim_stale_running(
                 NOW - datetime.timedelta(minutes=30)
             )
@@ -312,7 +313,7 @@ class TestRestartSafety:
         """Jobs live in the DB, not in process memory: an API restart does
         not lose queued work."""
         async with session_factory() as s:
-            svc = JobService(s)
+            svc = JobService(s, platform_context())
             job = await svc.create_job(
                 JobCreate(job_type="test.keyed", identity_key="restart:1")
             )
@@ -356,8 +357,8 @@ class TestTenantPinning:
     async def test_job_restores_campus_context(self, db_session):
         """A job created for campus 5 must execute with school_id=5 and the
         pinned TenantContext — never unscoped or another campus."""
-        svc = JobService(db_session)
-        repo = JobRepository(db_session)
+        svc = JobService(db_session, platform_context())
+        repo = JobRepository(db_session, platform_context())
 
         job = await svc.create_job(
             JobCreate(
@@ -381,8 +382,8 @@ class TestTenantPinning:
 
     async def test_unscoped_job_runs_with_no_tenant(self, db_session):
         """Platform-level jobs (no campus) run unscoped by design."""
-        svc = JobService(db_session)
-        repo = JobRepository(db_session)
+        svc = JobService(db_session, platform_context())
+        repo = JobRepository(db_session, platform_context())
 
         job = await svc.create_job(
             JobCreate(job_type="test.capture_context", identity_key="platform:job")
@@ -400,8 +401,8 @@ class TestTenantPinning:
         """Job executions are audited with the WORKER actor — never a user."""
         from app.domains.audit.models import AuditLog
 
-        svc = JobService(db_session)
-        repo = JobRepository(db_session)
+        svc = JobService(db_session, platform_context())
+        repo = JobRepository(db_session, platform_context())
 
         job = await svc.create_job(
             JobCreate(

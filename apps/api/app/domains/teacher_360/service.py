@@ -77,15 +77,16 @@ class Teacher360Service:
 
         ``table`` is the SQL table/alias whose ``campus_id`` column is
         compared — multi-table queries must qualify the column or the
-        scope clause becomes ambiguous.  ``None`` (platform admin /
-        legacy mode) means no restriction.
+        scope clause becomes ambiguous.  ``None`` (platform admin)
+        means no restriction; scoped tenants only see their own campus.
+
+        Legacy rows whose ``campus_id`` is NULL are **never** matched:
+        ambiguous ownership must not surface to a scoped tenant
+        (fail-closed on NULL campus, same as ``class_360``).
         """
         if not campus_id:
             return ""
-        return (
-            f"AND ({table}.campus_id = :campus_id "
-            f"OR {table}.campus_id IS NULL)"
-        )
+        return f"AND {table}.campus_id = :campus_id"
 
     async def _get_subjects(
         self, teacher_id: int, campus_id: Optional[int]

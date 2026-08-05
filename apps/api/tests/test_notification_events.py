@@ -40,6 +40,7 @@ from app.domains.notifications.channels import (
     get_channel,
 )
 from app.domains.notifications.models import Notification
+from app.multi_tenant.models import platform_context
 
 
 # ===========================================================================
@@ -429,7 +430,7 @@ class TestChannels:
 
         from app.domains.notifications.repository import NotificationRepository
 
-        repo = NotificationRepository(db_session)
+        repo = NotificationRepository(db_session, platform_context())
         items, total = await repo.find_by_user(1)
         assert total >= 1
         assert items[-1].title == "Test Title"
@@ -498,7 +499,7 @@ class TestHandlers:
 
         from app.domains.notifications.repository import NotificationRepository
 
-        repo = NotificationRepository(db_session)
+        repo = NotificationRepository(db_session, platform_context())
         items, total = await repo.find_by_user(1)
         assert total >= 1
         assert any("fee" in n.type or "Fee" in n.title for n in items)
@@ -524,7 +525,7 @@ class TestHandlers:
 
         from app.domains.notifications.repository import NotificationRepository
 
-        repo = NotificationRepository(db_session)
+        repo = NotificationRepository(db_session, platform_context())
         items, total = await repo.find_by_user(11)
         assert total >= 1
         assert any("payment" in n.type or "Payment" in n.title for n in items)
@@ -549,7 +550,7 @@ class TestHandlers:
 
         from app.domains.notifications.repository import NotificationRepository
 
-        repo = NotificationRepository(db_session)
+        repo = NotificationRepository(db_session, platform_context())
         items, total = await repo.find_by_user(12)
         assert total >= 1
         assert any("attendance" in n.type or "Attendance" in n.title for n in items)
@@ -573,7 +574,7 @@ class TestHandlers:
 
         from app.domains.notifications.repository import NotificationRepository
 
-        repo = NotificationRepository(db_session)
+        repo = NotificationRepository(db_session, platform_context())
         items, total = await repo.find_by_user(13)
         assert total >= 1
         assert any("User" in n.title for n in items)
@@ -604,7 +605,7 @@ class TestHandlers:
 
         from app.domains.notifications.repository import NotificationRepository
 
-        repo = NotificationRepository(db_session)
+        repo = NotificationRepository(db_session, platform_context())
         items, total = await repo.find_by_user(14)
         assert total == 0
 
@@ -639,7 +640,7 @@ class TestFullIntegration:
 
         from app.domains.notifications.repository import NotificationRepository
 
-        repo = NotificationRepository(db_session)
+        repo = NotificationRepository(db_session, platform_context())
         items, total = await repo.find_by_user(20)
         assert total >= 1
 

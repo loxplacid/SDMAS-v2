@@ -23,6 +23,7 @@ from app.domains.student.models import (
 from app.domains.student.repository import StudentRepository
 from app.domains.student.schemas import StudentCreate
 from app.domains.student.service import StudentService
+from app.multi_tenant.models import platform_context
 
 
 # ---------------------------------------------------------------------------
@@ -31,7 +32,7 @@ from app.domains.student.service import StudentService
 
 
 async def _create_student(db_session: AsyncSession, number: str = "LC001") -> Student:
-    svc = StudentService(StudentRepository(db_session))
+    svc = StudentService(StudentRepository(db_session, platform_context()))
     return await svc.create_student(
         StudentCreate(
             first_name="Life", last_name="Cycle", student_number=number
@@ -40,7 +41,7 @@ async def _create_student(db_session: AsyncSession, number: str = "LC001") -> St
 
 
 def _svc(db_session: AsyncSession) -> StudentLifecycleService:
-    return StudentLifecycleService(db_session)
+    return StudentLifecycleService(db_session, platform_context())
 
 
 async def _transition_events(db_session: AsyncSession, student_id: int) -> list[StudentLifecycleEvent]:
@@ -83,7 +84,7 @@ async def test_transition_happy_path_records_event_and_updates_status(db_session
     assert events[0].reason == "Enrolled for term"
 
     # Student row reflects the new status.
-    reloaded = await StudentRepository(db_session).get_by_id(student.id)
+    reloaded = await StudentRepository(db_session, platform_context()).get_by_id(student.id)
     assert reloaded.status == STUDENT_STATUS_ENROLLED
 
 

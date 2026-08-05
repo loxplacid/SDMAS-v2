@@ -36,4 +36,11 @@ EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]
+# Trusted-proxy handling is implemented in-app (app.core.security.client_ip)
+# against the TRUSTED_PROXIES allowlist.  We deliberately do NOT pass
+# --proxy-headers/--forwarded-allow-ips to uvicorn: ``*`` would trust
+# X-Forwarded-For from any client, letting an attacker forge an IP and
+# rotate the IP-keyed rate-limit/audit keys.  Without it, request.client.host
+# stays the immediate peer (the nginx container) and the app decides whether
+# to honour forwarded headers based on TRUSTED_PROXIES.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

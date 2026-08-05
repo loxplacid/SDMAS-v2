@@ -18,6 +18,7 @@ import pytest
 from sqlalchemy import select
 
 from app.domains.audit.models import AuditLog
+from app.multi_tenant.models import platform_context
 
 
 # ======================================================================
@@ -148,11 +149,11 @@ class TestWorkerAuditIntegration:
             db_session.add(job)
             await db_session.flush()
 
-            claimed = await JobRepository(db_session).acquire_next(
+            claimed = await JobRepository(db_session, platform_context()).acquire_next(
                 job_types=["audit.test_job"]
             )
             assert claimed is not None, "test job was not claimed"
-            await JobService(db_session).execute_job(claimed.id)
+            await JobService(db_session, platform_context()).execute_job(claimed.id)
             await db_session.flush()
 
             result = await db_session.execute(

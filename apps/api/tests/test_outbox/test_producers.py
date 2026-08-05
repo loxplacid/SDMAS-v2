@@ -35,6 +35,7 @@ from app.domains.jobs.models import Job
 from app.domains.jobs.service import JobService
 from app.domains.report_builder.service import ExportJobService
 from app.domains.report_builder.registry import ReportRegistry
+from app.multi_tenant.models import platform_context
 
 NOW = datetime.datetime.now(timezone.utc)
 
@@ -68,13 +69,13 @@ class TestFeeProducers:
         from app.domains.student.models import Student
         from app.domains.student.repository import StudentRepository
 
-        year_repo = AcademicYearRepository(db_session)
-        class_repo = ClassRepository(db_session)
-        enrollment_repo = EnrollmentRepository(db_session)
-        student_repo = StudentRepository(db_session)
-        ft_repo = FeeTypeRepository(db_session)
-        fs_repo = FeeStructureRepository(db_session)
-        fd_repo = FeeDueRepository(db_session)
+        year_repo = AcademicYearRepository(db_session, platform_context())
+        class_repo = ClassRepository(db_session, platform_context())
+        enrollment_repo = EnrollmentRepository(db_session, platform_context())
+        student_repo = StudentRepository(db_session, platform_context())
+        ft_repo = FeeTypeRepository(db_session, platform_context())
+        fs_repo = FeeStructureRepository(db_session, platform_context())
+        fd_repo = FeeDueRepository(db_session, platform_context())
 
         year = await year_repo.create(
             AcademicYear(
@@ -149,9 +150,9 @@ class TestFeeProducers:
         await db_session.flush()
 
         svc = PaymentService(
-            PaymentRepository(db_session),
-            FeeDueRepository(db_session),
-            StudentRepository(db_session),
+            PaymentRepository(db_session, platform_context()),
+            FeeDueRepository(db_session, platform_context()),
+            StudentRepository(db_session, platform_context()),
         )
         result = await svc.record_payment(
             PaymentCreate(
@@ -209,13 +210,13 @@ class TestRolloverProducer:
         from app.domains.reports.rollover_service import RolloverService
         from app.domains.student.repository import StudentRepository
 
-        year = await AcademicYearRepository(db_session).create(
+        year = await AcademicYearRepository(db_session, platform_context()).create(
             AcademicYear(
                 name="From Year", start_date=datetime.date(2025, 1, 1),
                 end_date=datetime.date(2025, 12, 31), status="active",
             )
         )
-        svc = RolloverService(session=db_session)
+        svc = RolloverService(session=db_session, tenant=platform_context())
         result = await svc.execute_rollover(
             from_year_id=year.id,
             to_year_name="To Year",
@@ -259,6 +260,8 @@ class TestExportJob:
         from app.domains.report_builder.schemas import ExportJobCreate
 
         definition_id = await self._definition_id(db_session, "student_directory")
+        # ExportJobService is tenant-agnostic (raw selects) — it takes only
+        # a session.
         svc = ExportJobService(db_session)
         export_job = await svc.create_job(
             1,
@@ -301,10 +304,10 @@ class TestExportJob:
         # The worker claims the job (flips to running) then executes it.
         from app.domains.jobs.repository import JobRepository
 
-        claimed = await JobRepository(db_session).acquire_next()
+        claimed = await JobRepository(db_session, platform_context()).acquire_next()
         assert claimed is not None and claimed.id == job_id
 
-        job_service = JobService(db_session)
+        job_service = JobService(db_session, platform_context())
         await job_service.execute_job(claimed.id)
 
         completed = (
@@ -349,9 +352,9 @@ class TestExportJob:
         job_id = job.id
         export_job_id = export_job.id
 
-        claimed = await JobRepository(db_session).acquire_next()
+        claimed = await JobRepository(db_session, platform_context()).acquire_next()
         assert claimed is not None and claimed.id == job_id
-        await JobService(db_session).execute_job(claimed.id)
+        await JobService(db_session, platform_context()).execute_job(claimed.id)
 
         first = (
             await db_session.execute(
@@ -411,9 +414,9 @@ class TestJobTenantContext:
             # The worker claims (flips to running) then executes the job.
             from app.domains.jobs.repository import JobRepository
 
-            claimed = await JobRepository(db_session).acquire_next()
+            claimed = await JobRepository(db_session, platform_context()).acquire_next()
             assert claimed is not None and claimed.id == job.id
-            await JobService(db_session).execute_job(claimed.id)
+            await JobService(db_session, platform_context()).execute_job(claimed.id)
 
             assert captured["school_id"] == 99
             assert captured["job_campus"] == 99

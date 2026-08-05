@@ -17,18 +17,19 @@ from app.domains.attendance.repository import AttendanceRepository
 from app.domains.reports.attendance_reports import AttendanceReportService
 from app.domains.student.models import Student
 from app.domains.student.repository import StudentRepository
+from app.multi_tenant.models import platform_context
 
 
 @pytest.fixture
 async def seeded_attendance(db_session: AsyncSession):
     """Seed attendance data for report testing."""
-    student_repo = StudentRepository(db_session)
-    year_repo = AcademicYearRepository(db_session)
-    class_repo = ClassRepository(db_session)
-    section_repo = SectionRepository(db_session)
-    enrollment_repo = EnrollmentRepository(db_session)
-    att_repo = AttendanceRepository(db_session)
-    report_svc = AttendanceReportService(db_session)
+    student_repo = StudentRepository(db_session, platform_context())
+    year_repo = AcademicYearRepository(db_session, platform_context())
+    class_repo = ClassRepository(db_session, platform_context())
+    section_repo = SectionRepository(db_session, platform_context())
+    enrollment_repo = EnrollmentRepository(db_session, platform_context())
+    att_repo = AttendanceRepository(db_session, platform_context())
+    report_svc = AttendanceReportService(db_session, platform_context())
 
     year = await year_repo.create(
         AcademicYear(
@@ -140,9 +141,9 @@ async def test_class_attendance_summary_with_date_range(seeded_attendance):
 
 @pytest.mark.asyncio
 async def test_class_attendance_summary_empty_results(db_session: AsyncSession):
-    svc = AttendanceReportService(db_session)
-    year_repo = AcademicYearRepository(db_session)
-    class_repo = ClassRepository(db_session)
+    svc = AttendanceReportService(db_session, platform_context())
+    year_repo = AcademicYearRepository(db_session, platform_context())
+    class_repo = ClassRepository(db_session, platform_context())
 
     year = await year_repo.create(
         AcademicYear(
@@ -188,10 +189,10 @@ async def test_section_attendance_summary_with_date_range(seeded_attendance):
 
 @pytest.mark.asyncio
 async def test_section_attendance_summary_empty(db_session: AsyncSession):
-    svc = AttendanceReportService(db_session)
-    class_repo = ClassRepository(db_session)
-    section_repo = SectionRepository(db_session)
-    year_repo = AcademicYearRepository(db_session)
+    svc = AttendanceReportService(db_session, platform_context())
+    class_repo = ClassRepository(db_session, platform_context())
+    section_repo = SectionRepository(db_session, platform_context())
+    year_repo = AcademicYearRepository(db_session, platform_context())
 
     year = await year_repo.create(
         AcademicYear(
@@ -229,8 +230,8 @@ async def test_attendance_overview(seeded_attendance):
 
 @pytest.mark.asyncio
 async def test_attendance_overview_empty(db_session: AsyncSession):
-    svc = AttendanceReportService(db_session)
-    year_repo = AcademicYearRepository(db_session)
+    svc = AttendanceReportService(db_session, platform_context())
+    year_repo = AcademicYearRepository(db_session, platform_context())
 
     year = await year_repo.create(
         AcademicYear(

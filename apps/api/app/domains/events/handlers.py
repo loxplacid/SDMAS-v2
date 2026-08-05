@@ -32,6 +32,7 @@ from app.domains.audit.constants import (
 )
 from app.domains.audit.repository import AuditLogRepository
 from app.domains.audit.service import AuditService
+from app.multi_tenant.models import platform_context
 from app.domains.events.base import serialize_event
 from app.domains.events.events import (
     AcademicYearRolloverCompletedEvent,
@@ -126,7 +127,10 @@ async def handle_student_created_audit(
     (source of truth), so this handler only fills the gap when that entry is
     missing — it never produces a duplicate side effect.
     """
-    repo = AuditLogRepository(session)
+    # Domain-event audit recording is a platform-level operation (events
+    # fire across every campus) — explicit platform context, never
+    # implicit tenant=None (which fails closed).
+    repo = AuditLogRepository(session, platform_context())
     _, existing_count = await repo.list(
         action=CREATE,
         resource_type=STUDENT,

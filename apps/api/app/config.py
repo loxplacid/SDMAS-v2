@@ -26,6 +26,31 @@ class Settings(BaseSettings):
 
     redis_url: str | None = Field(default=None)
 
+    # ── Reverse proxy / rate limiting ──────────────────────────────────
+    # Trusted reverse proxies whose X-Forwarded-For / X-Forwarded-Proto
+    # headers are honoured when resolving the real client IP.  Accepts IP
+    # literals and CIDR ranges (comma-separated via env).  NEVER set this
+    # to "*" — only the proxy infrastructure itself may append forwarded
+    # headers; anything else lets clients forge their IP and bypass
+    # IP-keyed rate limiting and audit attribution.
+    trusted_proxies: list[str] = Field(
+        default=["127.0.0.1"],
+        description=(
+            "IPs / CIDRs of reverse proxies whose forwarded headers are "
+            "trusted (e.g. '172.16.0.0/12')."
+        ),
+    )
+    # When True, a Redis outage fails CLOSED (429 on protected endpoints)
+    # instead of fail-open (allow + log a warning).  Fail-open is the
+    # default: availability must not be held hostage by the limiter store.
+    rate_limit_fail_closed: bool = Field(
+        default=False,
+        description=(
+            "True → Redis outage rejects protected requests (fail-closed); "
+            "False (default) → allow through and log (fail-open)."
+        ),
+    )
+
     # ── Background processing ──────────────────────────────────────────
     # The API and the worker are separate deployment units: API processes
     # serve requests only, and the dedicated worker process (Dockerfile.worker)

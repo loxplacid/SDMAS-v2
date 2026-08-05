@@ -38,6 +38,7 @@ from app.domains.student.models import Student
 from app.domains.student.schemas import StudentCreate, StudentUpdate
 from app.domains.student.service import StudentService
 from app.domains.student.repository import StudentRepository
+from app.multi_tenant.models import platform_context
 
 
 # =====================================================================
@@ -49,7 +50,7 @@ class TestAuditService:
     """Verify the AuditService records and queries correctly."""
 
     async def test_record_creates_audit_entry(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         entry = await svc.record(
             user_id=1,
             username="admin",
@@ -72,17 +73,17 @@ class TestAuditService:
         assert entry.created_at is not None
 
     async def test_record_strips_action_case(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         entry = await svc.record(action="create", resource_type="user")
         assert entry.action == "CREATE"
 
     async def test_record_lowercases_resource_type(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         entry = await svc.record(action="CREATE", resource_type="Student")
         assert entry.resource_type == "student"
 
     async def test_record_serializes_details_to_json(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         entry = await svc.record(
             action=CREATE,
             resource_type=USER,
@@ -93,7 +94,7 @@ class TestAuditService:
         assert parsed["nested"]["a"] == 1
 
     async def test_list_entries_paginates(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         for i in range(5):
             await svc.record(action=CREATE, resource_type=USER)
         await db_session.flush()
@@ -103,7 +104,7 @@ class TestAuditService:
         assert total == 5
 
     async def test_list_entries_filters_by_action(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         await svc.record(action=CREATE, resource_type=USER)
         await svc.record(action=DELETE, resource_type=USER)
         await db_session.flush()
@@ -114,7 +115,7 @@ class TestAuditService:
         assert items[0].action == "CREATE"
 
     async def test_list_entries_filters_by_resource_type(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         await svc.record(action=CREATE, resource_type=USER)
         await svc.record(action=CREATE, resource_type=STUDENT)
         await db_session.flush()
@@ -123,7 +124,7 @@ class TestAuditService:
         assert len(items) == 1
 
     async def test_list_entries_filters_by_user_id(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         await svc.record(user_id=1, action=CREATE, resource_type=USER)
         await svc.record(user_id=2, action=CREATE, resource_type=USER)
         await db_session.flush()
@@ -132,7 +133,7 @@ class TestAuditService:
         assert len(items) == 1
 
     async def test_get_entry_by_id(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         created = await svc.record(action=CREATE, resource_type=USER)
         fetched = await svc.get_entry(created.id)
         assert fetched.id == created.id
@@ -140,7 +141,7 @@ class TestAuditService:
 
     async def test_record_null_fields(self, db_session):
         """Null fields should be stored as None without error."""
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         entry = await svc.record(
             action=CREATE,
             resource_type=USER,
@@ -356,7 +357,7 @@ class TestStudentAuditHooks:
     """Verify that student operations produce audit entries."""
 
     async def test_create_student_creates_audit_entry(self, db_session):
-        svc = StudentService(StudentRepository(db_session))
+        svc = StudentService(StudentRepository(db_session, platform_context()))
         student = await svc.create_student(
             StudentCreate(
                 first_name="Audit",
@@ -376,7 +377,7 @@ class TestStudentAuditHooks:
         assert entry is not None
 
     async def test_update_student_captures_diff(self, db_session):
-        svc = StudentService(StudentRepository(db_session))
+        svc = StudentService(StudentRepository(db_session, platform_context()))
         student = await svc.create_student(
             StudentCreate(
                 first_name="Diff",
@@ -407,7 +408,7 @@ class TestStudentAuditHooks:
         assert "after" in details
 
     async def test_delete_student_creates_audit_entry(self, db_session):
-        svc = StudentService(StudentRepository(db_session))
+        svc = StudentService(StudentRepository(db_session, platform_context()))
         student = await svc.create_student(
             StudentCreate(
                 first_name="Del",
@@ -451,7 +452,7 @@ class TestAuditResilience:
 
         monkeypatch.setattr(AuditService, "__init__", broken_init)
 
-        svc = StudentService(StudentRepository(db_session))
+        svc = StudentService(StudentRepository(db_session, platform_context()))
         student = await svc.create_student(
             StudentCreate(
                 first_name="Resilient",

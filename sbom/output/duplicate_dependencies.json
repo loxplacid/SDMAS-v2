@@ -1,0 +1,5996 @@
+{
+  "cross_ecosystem_collisions": [],
+  "duplicates": [
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@babel/code-frame",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.10.4",
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/compat-data",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/core",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@babel/generator",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.2.0",
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/helper-annotate-as-pure",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/helper-compilation-targets",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/helper-create-class-features-plugin",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/helper-create-regexp-features-plugin",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/helper-define-polyfill-provider",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.6.8"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/helper-globals",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/helper-member-expression-to-functions",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/helper-module-imports",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/helper-module-transforms",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/helper-optimise-call-expression",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/helper-plugin-utils",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/helper-remap-async-to-generator",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/helper-replace-supers",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/helper-skip-transparent-expression-wrappers",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/helper-string-parser",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/helper-validator-identifier",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/helper-validator-option",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/helper-wrap-function",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/helpers",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/parser",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-bugfix-firefox-class-in-computed-class-key",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-bugfix-safari-class-field-initializer-scope",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-bugfix-safari-id-destructuring-collision-in-function-expression",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-bugfix-safari-rest-destructuring-rhs-array",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-bugfix-v8-spread-parameters-in-optional-chaining",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-bugfix-v8-static-class-fields-redefine-readonly",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-proposal-private-property-in-object",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.21.0-placeholder-for-preset-env.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-syntax-import-assertions",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-syntax-import-attributes",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-syntax-unicode-sets-regex",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.18.6"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-arrow-functions",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-async-generator-functions",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-async-to-generator",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-block-scoped-functions",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-block-scoping",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-class-properties",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-class-static-block",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-classes",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-computed-properties",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-destructuring",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-dotall-regex",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-duplicate-keys",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-duplicate-named-capturing-groups-regex",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-dynamic-import",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-explicit-resource-management",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-exponentiation-operator",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-export-namespace-from",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-for-of",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-function-name",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-json-strings",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-literals",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-logical-assignment-operators",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-member-expression-literals",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-modules-amd",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-modules-commonjs",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-modules-systemjs",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-modules-umd",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-named-capturing-groups-regex",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-new-target",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-nullish-coalescing-operator",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-numeric-separator",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-object-rest-spread",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-object-super",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-optional-catch-binding",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-optional-chaining",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-parameters",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-private-methods",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-private-property-in-object",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-property-literals",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-react-jsx-self",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-react-jsx-source",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-regenerator",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-regexp-modifiers",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-reserved-words",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-shorthand-properties",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-spread",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-sticky-regex",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-template-literals",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-typeof-symbol",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-unicode-escapes",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-unicode-property-regex",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-unicode-regex",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/plugin-transform-unicode-sets-regex",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/preset-env",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/preset-modules",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.1.6-no-external-plugins"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/runtime",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/template",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/traverse",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@babel/types",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.29.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/aix-ppc64",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/android-arm",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/android-arm64",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/android-x64",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/darwin-arm64",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/darwin-x64",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/freebsd-arm64",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/freebsd-x64",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/linux-arm",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/linux-arm64",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/linux-ia32",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/linux-loong64",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/linux-mips64el",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/linux-ppc64",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/linux-riscv64",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/linux-s390x",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/linux-x64",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/netbsd-x64",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/openbsd-x64",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/sunos-x64",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/win32-arm64",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/win32-ia32",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@esbuild/win32-x64",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@expo/json-file",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "11.0.1",
+        "8.3.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@isaacs/cliui",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "8.0.2",
+        "9.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@jest/types",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "24.9.0",
+        "26.6.2",
+        "29.6.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@jridgewell/gen-mapping",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.3.13"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@jridgewell/remapping",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.3.5"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@jridgewell/resolve-uri",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.1.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@jridgewell/source-map",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.3.11"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@jridgewell/sourcemap-codec",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.5.5"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@jridgewell/trace-mapping",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.3.31"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@react-native/debugger-frontend",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "0.74.85",
+        "0.74.87"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@react-native/dev-middleware",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "0.74.85",
+        "0.74.87"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@react-native/normalize-colors",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "0.74.85",
+        "0.74.87"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@react-navigation/bottom-tabs",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "6.5.20",
+        "6.6.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@types/babel__core",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.20.5"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@types/babel__generator",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.27.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@types/babel__template",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.4.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "@types/babel__traverse",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.28.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@types/istanbul-reports",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "1.1.2",
+        "3.0.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@types/react",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "18.2.79",
+        "19.2.17"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@types/yargs",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "13.0.12",
+        "15.0.20",
+        "17.0.35"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "@xmldom/xmldom",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "0.7.13",
+        "0.9.10"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "acorn",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "8.18.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "agent-base",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "6.0.2",
+        "7.1.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "ajv",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "8.20.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "ansi-escapes",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "4.3.2",
+        "6.2.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "ansi-regex",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "4.1.1",
+        "5.0.1",
+        "6.2.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "ansi-styles",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.2.1",
+        "4.3.0",
+        "5.2.0",
+        "6.2.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "argparse",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "1.0.10",
+        "2.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "array-buffer-byte-length",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "arraybuffer.prototype.slice",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "async-function",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "asynckit",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.4.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "at-least-node",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "available-typed-arrays",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "babel-plugin-polyfill-corejs2",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.4.17"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "babel-plugin-polyfill-corejs3",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.13.0",
+        "0.14.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "babel-plugin-polyfill-regenerator",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.6.8"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "balanced-match",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.2",
+        "4.0.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "baseline-browser-mapping",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.11.6"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "bplist-creator",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "0.0.7",
+        "0.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "bplist-parser",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "0.3.1",
+        "0.3.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "brace-expansion",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.17",
+        "2.1.3",
+        "5.0.8"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "browserslist",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "4.28.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "buffer-from",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "call-bind",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.9"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "call-bind-apply-helpers",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "call-bound",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "callsites",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.0.0",
+        "3.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "camelcase",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "5.3.1",
+        "6.3.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "caniuse-lite",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.30001806"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "chalk",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.4.2",
+        "3.0.0",
+        "4.1.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "char-regex",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "1.0.2",
+        "2.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "ci-info",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.0.0",
+        "3.9.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "cli-cursor",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.1.0",
+        "3.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "cliui",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "6.0.0",
+        "8.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "clone",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "1.0.4",
+        "2.1.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "color-convert",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "1.9.3",
+        "2.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "color-name",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "1.1.3",
+        "1.1.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "combined-stream",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.8"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "commander",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.20.3",
+        "4.1.1",
+        "7.2.0",
+        "9.5.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "convert-source-map",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "cookie",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.7.2",
+        "1.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "core-js-compat",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.49.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "cross-spawn",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "6.0.6",
+        "7.0.6"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "crypto-random-string",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.0",
+        "2.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "cssom",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "0.3.8",
+        "0.5.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "cssstyle",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.3.0",
+        "4.6.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "csstype",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.2.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "data-urls",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.0.2",
+        "5.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "data-view-buffer",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "data-view-byte-length",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "data-view-byte-offset",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "debug",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.6.9",
+        "3.2.7",
+        "4.4.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "decimal.js",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "10.6.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "deepmerge",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "4.3.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "define-data-property",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "define-properties",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.2.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "delayed-stream",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "detect-libc",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.3",
+        "2.1.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "dom-accessibility-api",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.5.16",
+        "0.6.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "dunder-proto",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "electron-to-chromium",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.5.397",
+        "1.5.398"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "emoji-regex",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "8.0.0",
+        "9.2.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "encodeurl",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "1.0.2",
+        "2.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "entities",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "6.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "es-abstract",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.24.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "es-abstract-get",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "es-define-property",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "es-errors",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.3.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "es-object-atoms",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "es-set-tostringtag",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "es-to-primitive",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.3.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "esbuild",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.21.5",
+        "0.25.12"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "escalade",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.2.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "escape-string-regexp",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "1.0.5",
+        "2.0.0",
+        "4.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "estree-walker",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.0.2",
+        "3.0.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "esutils",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "execa",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "1.0.0",
+        "5.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "expo-font",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "12.0.10",
+        "57.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "fast-deep-equal",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.1.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "fast-json-stable-stringify",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "fast-uri",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.1.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "find-up",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "3.0.0",
+        "4.1.0",
+        "5.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "for-each",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.3.5"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "foreground-child",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.3.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "form-data",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.0.5",
+        "4.0.6"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "fs-extra",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "8.1.0",
+        "9.0.0",
+        "9.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "fs-minipass",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.1.0",
+        "3.0.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "fsevents",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.3.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "function-bind",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "function.prototype.name",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.2.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "functions-have-names",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.2.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "generator-function",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "gensync",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.0-beta.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "get-intrinsic",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.3.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "get-proto",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "get-stream",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "4.1.0",
+        "6.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "get-symbol-description",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "glob",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "10.5.0",
+        "11.1.0",
+        "7.1.6",
+        "7.2.3",
+        "9.3.5"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "globalthis",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "gopd",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.2.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "graceful-fs",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "4.2.11"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "has-bigints",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "has-flag",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "3.0.0",
+        "4.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "has-property-descriptors",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "has-proto",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.2.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "has-symbols",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "has-tostringtag",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "hasown",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.0.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "hermes-estree",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "0.19.1",
+        "0.23.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "hermes-parser",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "0.19.1",
+        "0.23.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "hosted-git-info",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "3.0.8",
+        "7.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "html-encoding-sniffer",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.0.0",
+        "4.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "http-errors",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.0.0",
+        "2.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "http-proxy-agent",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "5.0.0",
+        "7.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "https-proxy-agent",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "5.0.1",
+        "7.0.6"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "iconv-lite",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.6.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "indent-string",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "4.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "internal-slot",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-array-buffer",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.0.5"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "is-arrayish",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "0.2.1",
+        "0.3.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-async-function",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-bigint",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-boolean-object",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.2.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-callable",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.2.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-core-module",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.16.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-data-view",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-date-object",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-document.all",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "is-extglob",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "1.0.0",
+        "2.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-finalizationregistry",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "is-fullwidth-code-point",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.0.0",
+        "3.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-generator-function",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "is-glob",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.0.1",
+        "4.0.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-map",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-negative-zero",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-number-object",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-potential-custom-element-name",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-regex",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.2.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-set",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.0.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-shared-array-buffer",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "is-stream",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.0",
+        "2.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-string",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-symbol",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-typed-array",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.15"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-weakmap",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-weakref",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "is-weakset",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.0.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "is-wsl",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "1.1.0",
+        "2.2.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "isarray",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.0",
+        "2.0.5"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "isexe",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "istanbul-lib-instrument",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "5.2.1",
+        "6.0.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "jackspeak",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.4.3",
+        "4.2.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "js-tokens",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "4.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "js-yaml",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "3.15.0",
+        "4.3.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "jsdom",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "20.0.3",
+        "25.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "jsesc",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.5.2",
+        "3.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "json-schema-traverse",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "json5",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.2.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "jsonfile",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "4.0.0",
+        "6.2.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "leven",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "lightningcss",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.19.0",
+        "1.32.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "lightningcss-darwin-arm64",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.19.0",
+        "1.32.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "lightningcss-darwin-x64",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.19.0",
+        "1.32.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "lightningcss-linux-arm-gnueabihf",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.19.0",
+        "1.32.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "lightningcss-linux-arm64-gnu",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.19.0",
+        "1.32.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "lightningcss-linux-arm64-musl",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.19.0",
+        "1.32.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "lightningcss-linux-x64-gnu",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.19.0",
+        "1.32.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "lightningcss-linux-x64-musl",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.19.0",
+        "1.32.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "lightningcss-win32-x64-msvc",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.19.0",
+        "1.32.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "locate-path",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "3.0.0",
+        "5.0.0",
+        "6.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "lodash.debounce",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "4.0.8"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "log-symbols",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.2.0",
+        "4.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "lru-cache",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "10.4.3",
+        "11.5.2",
+        "5.1.1",
+        "6.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "make-dir",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.1.0",
+        "4.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "math-intrinsics",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "md5",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.2.1",
+        "2.3.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "mime",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "1.6.0",
+        "2.6.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "mime-db",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.52.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "mime-types",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.1.35"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "mimic-fn",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "1.2.0",
+        "2.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "minimatch",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "10.2.6",
+        "3.1.5",
+        "5.1.9",
+        "8.0.7",
+        "9.0.9"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "minipass",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.3.6",
+        "4.2.8",
+        "5.0.0",
+        "7.1.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "mkdirp",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "0.5.6",
+        "1.0.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "ms",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.0.0",
+        "2.1.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "nanoid",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.3.16"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "negotiator",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "0.6.3",
+        "0.6.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "node-releases",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.0.51"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "npm-package-arg",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "11.0.3",
+        "7.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "npm-run-path",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.0.2",
+        "4.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "nwsapi",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.2.24"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "object-inspect",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.13.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "object-keys",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "object.assign",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "4.1.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "on-finished",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.3.0",
+        "2.4.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "onetime",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.0.1",
+        "5.1.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "open",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "6.4.0",
+        "7.4.2",
+        "8.4.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "ora",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "3.4.0",
+        "5.4.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "own-keys",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "p-limit",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.3.0",
+        "3.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "p-locate",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "3.0.0",
+        "4.1.0",
+        "5.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "package-json-from-dist",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "parse-json",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "4.0.0",
+        "5.2.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "parse5",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "7.3.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "path-exists",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "3.0.0",
+        "4.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "path-key",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.0.1",
+        "3.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "path-parse",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.7"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "path-scurry",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.11.1",
+        "2.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "picocolors",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "picomatch",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.3.2",
+        "3.0.2",
+        "4.0.5"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "pkg-dir",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "3.0.0",
+        "4.2.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "possible-typed-array-names",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "postcss",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "8.4.49",
+        "8.5.24"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "pretty-bytes",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "5.6.0",
+        "6.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "pretty-format",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "24.9.0",
+        "26.6.2",
+        "27.5.1",
+        "29.7.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "promise",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "7.3.1",
+        "8.3.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "punycode",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.3.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "react",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "18.2.0",
+        "19.2.8"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "react-is",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "16.13.1",
+        "17.0.2",
+        "18.3.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "react-refresh",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.14.2",
+        "0.17.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "readable-stream",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.3.8",
+        "3.6.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "reflect.getprototypeof",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.10"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "regenerate",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.4.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "regenerate-unicode-properties",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "10.2.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "regenerator-runtime",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.13.11"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "regexp.prototype.flags",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.5.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "regexpu-core",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "6.4.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "regjsgen",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.8.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "regjsparser",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.13.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "require-from-string",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "reselect",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "4.1.8",
+        "5.2.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "resolve",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.22.12",
+        "1.7.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "resolve-from",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "3.0.0",
+        "5.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "restore-cursor",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.0.0",
+        "3.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "rimraf",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.6.3",
+        "3.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "rrweb-cssom",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.7.1",
+        "0.8.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "safe-array-concat",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "safe-buffer",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "5.1.2",
+        "5.2.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "safe-push-apply",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "safe-regex-test",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "safer-buffer",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.1.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "saxes",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "6.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "scheduler",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.23.2",
+        "0.24.0-canary-efb381bbf-20230505",
+        "0.27.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "semver",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "5.7.2",
+        "6.3.1",
+        "7.8.5"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "send",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "0.18.0",
+        "0.19.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "set-cookie-parser",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.7.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "set-function-length",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.2.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "set-function-name",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "set-proto",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "shebang-command",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.2.0",
+        "2.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "shebang-regex",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.0",
+        "3.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "side-channel",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "side-channel-list",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "side-channel-map",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "side-channel-weakmap",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "signal-exit",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.0.7",
+        "4.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "slash",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "3.0.0",
+        "5.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "source-map",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.5.6",
+        "0.5.7",
+        "0.6.1",
+        "0.7.6",
+        "0.8.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "source-map-js",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.2.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "source-map-support",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.5.13",
+        "0.5.21"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "statuses",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "1.5.0",
+        "2.0.1",
+        "2.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "stop-iteration-iterator",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "string-length",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "4.0.2",
+        "5.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "string-width",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "4.2.3",
+        "5.1.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "string.prototype.trim",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.2.11"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "string.prototype.trimend",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.10"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "string.prototype.trimstart",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.8"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "strip-ansi",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "5.2.0",
+        "6.0.1",
+        "7.2.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "strip-json-comments",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.0.1",
+        "3.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "supports-color",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "5.5.0",
+        "7.2.0",
+        "8.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "supports-preserve-symlinks-flag",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "symbol-tree",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.2.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "temp-dir",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.0",
+        "2.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "tempy",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.3.0",
+        "0.6.0",
+        "0.7.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "terser",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "5.49.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "tough-cookie",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "4.1.4",
+        "5.1.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "tr46",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.0.3",
+        "3.0.0",
+        "5.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "type-fest",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.16.0",
+        "0.21.3",
+        "0.3.1",
+        "0.7.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "typed-array-buffer",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "typed-array-byte-length",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "typed-array-byte-offset",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.4"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "typed-array-length",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.8"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "typescript",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "5.3.3",
+        "5.9.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "ua-parser-js",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "0.7.41",
+        "1.0.41"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "unbox-primitive",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "unicode-canonical-property-names-ecmascript",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "unicode-match-property-ecmascript",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "unicode-match-property-value-ecmascript",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.2.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "unicode-property-aliases-ecmascript",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.2.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "unique-string",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.0",
+        "2.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "universalify",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "0.1.2",
+        "0.2.0",
+        "1.0.0",
+        "2.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "update-browserslist-db",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.2.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "uuid",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "7.0.3",
+        "8.3.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "validate-npm-package-name",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "3.0.0",
+        "5.0.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "vite",
+      "severity": "medium",
+      "sources": [
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "5.4.21",
+        "6.4.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "w3c-xmlserializer",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "4.0.0",
+        "5.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "webidl-conversions",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.0.1",
+        "5.0.0",
+        "7.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "whatwg-encoding",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.0.0",
+        "3.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "whatwg-mimetype",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.0.0",
+        "4.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "whatwg-url",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "11.0.0",
+        "14.2.0",
+        "5.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "which",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.3.1",
+        "2.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "which-boxed-primitive",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "which-builtin-type",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.2.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "which-collection",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "which-typed-array",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "1.1.22"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "wrap-ansi",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "6.2.0",
+        "7.0.0",
+        "8.1.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "write-file-atomic",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "2.4.3",
+        "4.0.2"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "ws",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "6.2.6",
+        "7.5.13",
+        "8.21.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "xml-name-validator",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "4.0.0",
+        "5.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "xmlbuilder",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "11.0.1",
+        "14.0.0",
+        "15.1.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "xmlchars",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.2.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "y18n",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "4.0.3",
+        "5.0.8"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "yallist",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "3.1.1",
+        "4.0.0"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "yargs",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "15.4.1",
+        "17.7.3"
+      ]
+    },
+    {
+      "ecosystem": "npm",
+      "kind": "multiple_versions",
+      "name": "yargs-parser",
+      "severity": "medium",
+      "sources": [
+        "apps/mobile/package-lock.json"
+      ],
+      "versions": [
+        "18.1.3",
+        "21.1.1"
+      ]
+    }
+  ]
+}

@@ -61,6 +61,7 @@ from app.domains.admission import models as _admission_models  # noqa: F401
 from app.domains.attendance import models as _attendance_models  # noqa: F401
 from app.domains.student import models as _student_models  # noqa: F401
 from app.domains.workflow import models as _workflow_models  # noqa: F401
+from app.multi_tenant.models import platform_context
 
 
 # ---------------------------------------------------------------------------
@@ -87,12 +88,12 @@ async def seeded_rollover(db_session):
     from app.domains.student.repository import StudentRepository
     from app.domains.reports.rollover_service import RolloverService
 
-    student_repo = StudentRepository(db_session)
-    year_repo = AcademicYearRepository(db_session)
-    class_repo = ClassRepository(db_session)
-    section_repo = SectionRepository(db_session)
-    enrollment_repo = EnrollmentRepository(db_session)
-    rollover_svc = RolloverService(db_session)
+    student_repo = StudentRepository(db_session, platform_context())
+    year_repo = AcademicYearRepository(db_session, platform_context())
+    class_repo = ClassRepository(db_session, platform_context())
+    section_repo = SectionRepository(db_session, platform_context())
+    enrollment_repo = EnrollmentRepository(db_session, platform_context())
+    rollover_svc = RolloverService(db_session, platform_context())
 
     year = await year_repo.create(
         AcademicYear(
@@ -180,12 +181,12 @@ async def seeded_workflow(db_session):
     await db_session.flush()
 
     exec_svc = WorkflowExecutionService(
-        instance_repo=WorkflowInstanceRepository(db_session),
-        workflow_repo=WorkflowRepository(db_session),
-        step_repo=WorkflowStepRepository(db_session),
-        transition_repo=WorkflowTransitionRepository(db_session),
-        action_repo=WorkflowActionRepository(db_session),
-        history_repo=ApprovalHistoryRepository(db_session),
+        instance_repo=WorkflowInstanceRepository(db_session, platform_context()),
+        workflow_repo=WorkflowRepository(db_session, platform_context()),
+        step_repo=WorkflowStepRepository(db_session, platform_context()),
+        transition_repo=WorkflowTransitionRepository(db_session, platform_context()),
+        action_repo=WorkflowActionRepository(db_session, platform_context()),
+        history_repo=ApprovalHistoryRepository(db_session, platform_context()),
     )
     return {"exec": exec_svc, "workflow_id": wf.id}
 
@@ -487,7 +488,7 @@ class TestHandlers:
             school_id=1,
         )
         await handle_student_created_audit(event, session=db_session)
-        repo = AuditLogRepository(db_session)
+        repo = AuditLogRepository(db_session, platform_context())
         items, total = await repo.list(resource_type="student", resource_id="10")
         assert total >= 1
         assert items[-1].action == "CREATE"
@@ -510,7 +511,7 @@ class TestHandlers:
         )
         await db_session.flush()
 
-        repo = AuditLogRepository(db_session)
+        repo = AuditLogRepository(db_session, platform_context())
         _, before = await repo.list(resource_type="student", resource_id="10")
 
         event = StudentCreatedEvent(
@@ -532,7 +533,7 @@ class TestHandlers:
             total_absences=9,
         )
         await handle_attendance_threshold_risk(event, session=db_session)
-        repo = AuditLogRepository(db_session)
+        repo = AuditLogRepository(db_session, platform_context())
         items, total = await repo.list(resource_type="attendance", resource_id="11")
         assert total >= 1
         assert items[-1].action == RISK
@@ -546,7 +547,7 @@ class TestHandlers:
             school_id=1,
         )
         await handle_admission_approved_lifecycle(event, session=db_session)
-        repo = AuditLogRepository(db_session)
+        repo = AuditLogRepository(db_session, platform_context())
         items, total = await repo.list(resource_type="admission", resource_id="12")
         assert total >= 1
         assert items[-1].action == "APPROVE"
@@ -626,7 +627,7 @@ class TestHandlers:
             school_id=1,
         )
         await handle_rollover_completed_notification(event, session=db_session)
-        repo = AuditLogRepository(db_session)
+        repo = AuditLogRepository(db_session, platform_context())
         items, total = await repo.list(resource_type="academic", resource_id="2025")
         assert total >= 1
 
@@ -688,7 +689,7 @@ class TestServiceEmissions:
         from app.domains.student.schemas import StudentCreate
         from app.domains.student.service import StudentService
 
-        service = StudentService(StudentRepository(db_session))
+        service = StudentService(StudentRepository(db_session, platform_context()))
         student = await service.create_student(
             StudentCreate(
                 first_name="Ada",
@@ -705,7 +706,7 @@ class TestServiceEmissions:
         from app.domains.admission.repository import AdmissionApplicationRepository
         from app.domains.admission.service import AdmissionApplicationService
 
-        service = AdmissionApplicationService(AdmissionApplicationRepository(db_session))
+        service = AdmissionApplicationService(AdmissionApplicationRepository(db_session, platform_context()))
         from app.domains.admission.schemas import AdmissionApplicationCreate
 
         app = await service.create(
@@ -764,16 +765,17 @@ class TestServiceEmissions:
         from app.domains.student.models import Student
         from app.domains.student.repository import StudentRepository
 
-        student_repo = StudentRepository(db_session)
-        year_repo = AcademicYearRepository(db_session)
-        class_repo = ClassRepository(db_session)
-        section_repo = SectionRepository(db_session)
-        enrollment_repo = EnrollmentRepository(db_session)
-        att_repo = AttendanceRepository(db_session)
+        student_repo = StudentRepository(db_session, platform_context())
+        year_repo = AcademicYearRepository(db_session, platform_context())
+        class_repo = ClassRepository(db_session, platform_context())
+        section_repo = SectionRepository(db_session, platform_context())
+        enrollment_repo = EnrollmentRepository(db_session, platform_context())
+        att_repo = AttendanceRepository(db_session, platform_context())
 
         service = AttendanceService(
-            att_repo, student_repo, year_repo, class_repo, section_repo
-        )
+            att_repo, student_repo, year_repo, class_repo, section_repo,
+        platform_context(),
+    )
 
         year = await year_repo.create(
             AcademicYear(

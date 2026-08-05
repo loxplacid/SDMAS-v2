@@ -39,6 +39,9 @@ services:
       DEBUG: "true"
       DATABASE_URL: postgresql+asyncpg://sdmas:sdmas_dev@postgres:5432/sdmas
       REDIS_URL: redis://redis:6379/0
+      # Only the docker-network nginx proxy is trusted to append
+      # X-Forwarded-For; direct clients can never forge their IP.
+      TRUSTED_PROXIES: 127.0.0.1,172.16.0.0/12
       JWT_SECRET: dev-secret-do-not-use-in-production
       LOG_LEVEL: DEBUG
       CORS_ORIGINS: '["http://localhost:5173","http://localhost:3000"]'

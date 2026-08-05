@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 
 from app.core.pagination import Page, PaginationParams
+from app.core.security.rate_limiter import rate_limit
 from app.domains.auth.dependencies import get_current_user, get_user_service, require_role
 from app.domains.auth.models import User
 from app.domains.auth.schemas import (
@@ -70,8 +71,10 @@ async def get_user(
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@rate_limit("admin_user_create", max_requests=10, window_seconds=60)
 async def create_user(
     data: UserCreate,
+    request: Request,
     _admin_ctx: tuple[UserService, TenantContext] = Depends(_admin_user),
 ) -> UserResponse:
     service, tenant = _admin_ctx
@@ -83,9 +86,11 @@ async def create_user(
 
 
 @router.patch("/{user_id}", response_model=UserResponse)
+@rate_limit("admin_user_update", max_requests=30, window_seconds=60)
 async def update_user(
     user_id: int,
     data: AdminUserUpdate,
+    request: Request,
     _admin_ctx: tuple[UserService, TenantContext] = Depends(_admin_user),
 ) -> UserResponse:
     service, tenant = _admin_ctx
@@ -96,9 +101,11 @@ async def update_user(
 
 
 @router.post("/{user_id}/roles", response_model=UserResponse)
+@rate_limit("admin_user_roles", max_requests=30, window_seconds=60)
 async def set_user_roles(
     user_id: int,
     role_codes: list[str],
+    request: Request,
     _admin_ctx: tuple[UserService, TenantContext] = Depends(_admin_user),
 ) -> UserResponse:
     """Replace all M2M role assignments for a user.

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request, status
 
-from app.core.security import RateLimiter, SecurityAuditLogger
+from app.core.security import SecurityAuditLogger
+from app.core.security.client_ip import get_client_ip
+from app.core.security.rate_limiter import get_rate_limiter, rate_limit
 from app.domains.audit.constants import CREATE, USER
 from app.domains.audit.utils import get_request_metadata
 from app.domains.auth.dependencies import (
@@ -36,6 +38,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@rate_limit("register", max_requests=20, window_seconds=60)
 async def register(
     data: UserCreate,
     request: Request,
@@ -71,7 +74,11 @@ async def register(
     return UserResponse.model_validate(user)
 
 
-_login_limiter = RateLimiter()
+# Login throttling is a *distributed* concern: the limiter is resolved
+# through the factory so it is Redis-backed in production (shared across
+# replicas) and in-memory in dev/tests.  IP is resolved through the
+# trusted-proxy boundary so a forged X-Forwarded-For cannot rotate keys.
+_login_limiter = get_rate_limiter()
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -80,10 +87,10 @@ async def login(
     request: Request,
     service: UserService = Depends(get_user_service),
 ) -> TokenResponse:
-    ip_address = request.client.host if request.client else None
+    ip_address = get_client_ip(request)
     client_key = f"login:{ip_address or 'unknown'}"
 
-    allowed, retry_after = _login_limiter.check(client_key, max_requests=5, window_seconds=60)
+    allowed, retry_after = await _login_limiter.check(client_key, max_requests=5, window_seconds=60)
     if not allowed:
         SecurityAuditLogger.rate_limit_hit(
             key=client_key,
@@ -111,6 +118,7 @@ async def login(
 
 
 @router.post("/refresh", response_model=TokenResponse)
+@rate_limit("refresh", max_requests=30, window_seconds=60)
 async def refresh(
     data: RefreshRequest,
     request: Request,
@@ -122,7 +130,7 @@ async def refresh(
     URL, so it cannot leak into proxy/access logs).  Rotation + reuse
     detection are enforced in :meth:`UserService.refresh_token`.
     """
-    ip_address = request.client.host if request.client else None
+    ip_address = get_client_ip(request)
     access, new_refresh, expires_in = await service.refresh_token(
         data.refresh_token,
         ip_address=ip_address,
@@ -152,8 +160,10 @@ async def update_me(
 
 
 @router.patch("/me/password", status_code=status.HTTP_200_OK)
+@rate_limit("password_change", max_requests=10, window_seconds=60)
 async def change_my_password(
     data: PasswordChange,
+    request: Request,
     service: UserService = Depends(get_user_service),
     current_user: User = Depends(get_current_user),
 ) -> dict[str, str]:
@@ -191,6 +201,7 @@ async def list_my_schools(
     response_model=TokenResponse,
     tags=["auth", "multi-tenant"],
 )
+@rate_limit("school_switch", max_requests=20, window_seconds=60)
 async def switch_school(
     data: SchoolSwitchRequest,
     request: Request,
@@ -207,7 +218,7 @@ async def switch_school(
     """
     await membership_service.switch_school(current_user, data.campus_id)
 
-    ip_address = request.client.host if request.client else None
+    ip_address = get_client_ip(request)
     access_token, refresh_token_str, expires_in = await service.issue_tokens(
         current_user, campus_id=data.campus_id, ip_address=ip_address
     )

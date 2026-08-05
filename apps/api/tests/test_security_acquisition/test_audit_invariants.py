@@ -22,6 +22,7 @@ from app.domains.audit.models import AuditLog
 from app.domains.audit.service import AuditService
 
 from .conftest import AcqEnv, login
+from app.multi_tenant.models import platform_context
 
 pytestmark = pytest.mark.asyncio
 
@@ -92,7 +93,7 @@ async def test_system_actor_explicit_when_no_human(acq_env: AcqEnv):
     """Invariant: an action with no human actor is recorded as an explicit
     SYSTEM actor (``unknown`` id), never fabricated as user 0."""
     async with acq_env.factory() as s:
-        svc = AuditService(s)
+        svc = AuditService(s, platform_context())
         entry = await svc.record(
             action=CREATE,
             resource_type="institution",
@@ -110,7 +111,7 @@ async def test_worker_actor_recorded_for_background_jobs(acq_env: AcqEnv):
     """Invariant: background workers are typed WORKER, so operator actions
     can never be confused with scheduled/system actions."""
     async with acq_env.factory() as s:
-        svc = AuditService(s)
+        svc = AuditService(s, platform_context())
         entry = await svc.record(
             action=CREATE,
             resource_type="job",
@@ -129,7 +130,7 @@ async def test_webhook_actor_recorded_for_provider_events(acq_env: AcqEnv):
     as actor id — payment events are attributable to Razorpay, not to a
     forged user."""
     async with acq_env.factory() as s:
-        svc = AuditService(s)
+        svc = AuditService(s, platform_context())
         entry = await svc.record(
             action=CREATE,
             resource_type="payment",

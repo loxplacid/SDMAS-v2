@@ -24,36 +24,37 @@ from app.domains.attendance.schemas import (
 from app.domains.attendance.service import AttendanceService
 from app.domains.student.models import Student
 from app.domains.student.repository import StudentRepository
+from app.multi_tenant.models import platform_context
 
 
 @pytest.fixture
 def student_repo(db_session: AsyncSession) -> StudentRepository:
-    return StudentRepository(db_session)
+    return StudentRepository(db_session, platform_context())
 
 
 @pytest.fixture
 def year_repo(db_session: AsyncSession) -> AcademicYearRepository:
-    return AcademicYearRepository(db_session)
+    return AcademicYearRepository(db_session, platform_context())
 
 
 @pytest.fixture
 def class_repo(db_session: AsyncSession) -> ClassRepository:
-    return ClassRepository(db_session)
+    return ClassRepository(db_session, platform_context())
 
 
 @pytest.fixture
 def section_repo(db_session: AsyncSession) -> SectionRepository:
-    return SectionRepository(db_session)
+    return SectionRepository(db_session, platform_context())
 
 
 @pytest.fixture
 def enrollment_repo(db_session: AsyncSession) -> EnrollmentRepository:
-    return EnrollmentRepository(db_session)
+    return EnrollmentRepository(db_session, platform_context())
 
 
 @pytest.fixture
 def att_repo(db_session: AsyncSession) -> AttendanceRepository:
-    return AttendanceRepository(db_session)
+    return AttendanceRepository(db_session, platform_context())
 
 
 @pytest.fixture
@@ -65,7 +66,8 @@ def service(
     section_repo: SectionRepository,
 ) -> AttendanceService:
     return AttendanceService(
-        att_repo, student_repo, year_repo, class_repo, section_repo
+        att_repo, student_repo, year_repo, class_repo, section_repo,
+        platform_context(),
     )
 
 

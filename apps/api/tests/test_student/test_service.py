@@ -8,11 +8,12 @@ from app.domains.student.models import Student
 from app.domains.student.repository import StudentRepository
 from app.domains.student.schemas import StudentCreate, StudentUpdate
 from app.domains.student.service import StudentService
+from app.multi_tenant.models import platform_context
 
 
 @pytest.fixture
 def repo(db_session: AsyncSession) -> StudentRepository:
-    return StudentRepository(db_session)
+    return StudentRepository(db_session, platform_context())
 
 
 @pytest.fixture

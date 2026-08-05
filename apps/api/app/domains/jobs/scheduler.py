@@ -35,6 +35,7 @@ from typing import Any, Callable
 from app.domains.jobs.models import Job
 from app.domains.jobs.schemas import JobCreate
 from app.domains.jobs.service import JobService
+from app.multi_tenant.models import platform_context
 from app.infrastructure.database import async_session_factory
 
 logger = logging.getLogger(__name__)
@@ -138,7 +139,10 @@ class Scheduler:
         """Enqueue every periodic job for the current cycle (idempotent)."""
         now = self._clock()
         async with self._session_factory() as session:
-            service = JobService(session)
+            # Scheduler cycles are platform-level: they enqueue jobs for
+            # every campus, so an explicit platform context is required
+            # (tenant=None would fail closed on tenant-owned Job rows).
+            service = JobService(session, platform_context())
             created: list[Job] = []
             for job_type, key_factory, max_retries, priority in _PERIODIC_JOBS:
                 identity_key = str(key_factory(now))

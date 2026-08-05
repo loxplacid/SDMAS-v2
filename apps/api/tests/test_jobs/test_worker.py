@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.jobs.models import Job
 from app.domains.jobs.repository import JobRepository
+from app.multi_tenant.models import platform_context
 
 NOW = datetime.datetime.now(datetime.timezone.utc)
 
@@ -62,7 +63,7 @@ async def _make_job(
 @pytest.mark.asyncio
 async def test_acquire_next_claims_single_pending_job(db_session: AsyncSession):
     await _make_job(db_session)
-    repo = JobRepository(db_session)
+    repo = JobRepository(db_session, platform_context())
 
     claimed = await repo.acquire_next()
 
@@ -75,7 +76,7 @@ async def test_acquire_next_claims_single_pending_job(db_session: AsyncSession):
 async def test_acquire_next_does_not_reclaim_same_job(db_session: AsyncSession):
     """A second claim must not return the same (already running) job."""
     await _make_job(db_session)
-    repo = JobRepository(db_session)
+    repo = JobRepository(db_session, platform_context())
 
     first = await repo.acquire_next()
     assert first is not None
@@ -91,7 +92,7 @@ async def test_acquire_next_does_not_reclaim_same_job(db_session: AsyncSession):
 async def test_acquire_next_respects_priority_order(db_session: AsyncSession):
     await _make_job(db_session, priority=100)
     await _make_job(db_session, priority=50)
-    repo = JobRepository(db_session)
+    repo = JobRepository(db_session, platform_context())
 
     claimed = await repo.acquire_next()
 
@@ -104,7 +105,7 @@ async def test_acquire_next_respects_priority_order(db_session: AsyncSession):
 async def test_acquire_next_skips_future_scheduled_jobs(db_session: AsyncSession):
     future = NOW + datetime.timedelta(hours=1)
     await _make_job(db_session, scheduled_at=future)
-    repo = JobRepository(db_session)
+    repo = JobRepository(db_session, platform_context())
 
     assert await repo.acquire_next() is None
 
@@ -112,7 +113,7 @@ async def test_acquire_next_skips_future_scheduled_jobs(db_session: AsyncSession
 @pytest.mark.asyncio
 async def test_acquire_next_filters_by_job_type(db_session: AsyncSession):
     await _make_job(db_session, job_type="other.job")
-    repo = JobRepository(db_session)
+    repo = JobRepository(db_session, platform_context())
 
     assert await repo.acquire_next(job_types=["wanted.job"]) is None
     assert await repo.acquire_next(job_types=["other.job"]) is not None
@@ -121,7 +122,7 @@ async def test_acquire_next_filters_by_job_type(db_session: AsyncSession):
 @pytest.mark.asyncio
 async def test_acquire_next_skips_dead_lettered_jobs(db_session: AsyncSession):
     await _make_job(db_session, status="dead_letter")
-    repo = JobRepository(db_session)
+    repo = JobRepository(db_session, platform_context())
 
     assert await repo.acquire_next() is None
 
@@ -138,7 +139,7 @@ FRESH = NOW - datetime.timedelta(minutes=1)
 @pytest.mark.asyncio
 async def test_reclaim_requeues_stale_running_job(db_session: AsyncSession):
     job = await _make_job(db_session, status="running", started_at=STALE, updated_at=STALE)
-    repo = JobRepository(db_session)
+    repo = JobRepository(db_session, platform_context())
 
     requeued, dead_lettered = await repo.reclaim_stale_running(
         NOW - datetime.timedelta(minutes=30)
@@ -167,7 +168,7 @@ async def test_reclaim_dead_letters_job_past_max_retries(db_session: AsyncSessio
         retry_count=3,
         max_retries=3,
     )
-    repo = JobRepository(db_session)
+    repo = JobRepository(db_session, platform_context())
 
     requeued, dead_lettered = await repo.reclaim_stale_running(
         NOW - datetime.timedelta(minutes=30)
@@ -187,7 +188,7 @@ async def test_reclaim_dead_letters_job_past_max_retries(db_session: AsyncSessio
 @pytest.mark.asyncio
 async def test_reclaim_skips_fresh_running_job(db_session: AsyncSession):
     job = await _make_job(db_session, status="running", started_at=FRESH, updated_at=FRESH)
-    repo = JobRepository(db_session)
+    repo = JobRepository(db_session, platform_context())
 
     requeued, dead_lettered = await repo.reclaim_stale_running(
         NOW - datetime.timedelta(minutes=30)
@@ -206,7 +207,7 @@ async def test_reclaim_skips_fresh_running_job(db_session: AsyncSession):
 async def test_reclaim_skips_pending_and_completed_jobs(db_session: AsyncSession):
     await _make_job(db_session, status="pending", updated_at=STALE)
     await _make_job(db_session, status="completed", updated_at=STALE)
-    repo = JobRepository(db_session)
+    repo = JobRepository(db_session, platform_context())
 
     requeued, dead_lettered = await repo.reclaim_stale_running(
         NOW - datetime.timedelta(minutes=30)
@@ -218,7 +219,7 @@ async def test_reclaim_skips_pending_and_completed_jobs(db_session: AsyncSession
 
 @pytest.mark.asyncio
 async def test_reclaim_empty_table(db_session: AsyncSession):
-    repo = JobRepository(db_session)
+    repo = JobRepository(db_session, platform_context())
     assert await repo.reclaim_stale_running(
         NOW - datetime.timedelta(minutes=30)
     ) == (0, 0)

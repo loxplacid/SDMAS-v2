@@ -55,6 +55,7 @@ from app.domains.academic.service import (
 )
 from app.domains.student.models import Student
 from app.domains.student.repository import StudentRepository
+from app.multi_tenant.models import platform_context
 
 
 # ---------------------------------------------------------------------------
@@ -63,27 +64,27 @@ from app.domains.student.repository import StudentRepository
 
 @pytest.fixture
 def year_repo(db_session: AsyncSession) -> AcademicYearRepository:
-    return AcademicYearRepository(db_session)
+    return AcademicYearRepository(db_session, platform_context())
 
 
 @pytest.fixture
 def class_repo(db_session: AsyncSession) -> ClassRepository:
-    return ClassRepository(db_session)
+    return ClassRepository(db_session, platform_context())
 
 
 @pytest.fixture
 def section_repo(db_session: AsyncSession) -> SectionRepository:
-    return SectionRepository(db_session)
+    return SectionRepository(db_session, platform_context())
 
 
 @pytest.fixture
 def enrollment_repo(db_session: AsyncSession) -> EnrollmentRepository:
-    return EnrollmentRepository(db_session)
+    return EnrollmentRepository(db_session, platform_context())
 
 
 @pytest.fixture
 def student_repo(db_session: AsyncSession) -> StudentRepository:
-    return StudentRepository(db_session)
+    return StudentRepository(db_session, platform_context())
 
 
 @pytest.fixture
@@ -151,7 +152,7 @@ async def seeded_section(
 async def seeded_student(
     db_session: AsyncSession,
 ) -> Student:
-    repo = StudentRepository(db_session)
+    repo = StudentRepository(db_session, platform_context())
     s = Student(
         first_name="Test",
         last_name="Student",
@@ -163,22 +164,22 @@ async def seeded_student(
 
 @pytest.fixture
 def term_repo(db_session: AsyncSession) -> TermRepository:
-    return TermRepository(db_session)
+    return TermRepository(db_session, platform_context())
 
 
 @pytest.fixture
 def subject_repo(db_session: AsyncSession) -> SubjectRepository:
-    return SubjectRepository(db_session)
+    return SubjectRepository(db_session, platform_context())
 
 
 @pytest.fixture
 def teacher_repo(db_session: AsyncSession) -> TeacherRepository:
-    return TeacherRepository(db_session)
+    return TeacherRepository(db_session, platform_context())
 
 
 @pytest.fixture
 def assignment_repo(db_session: AsyncSession) -> TeacherAssignmentRepository:
-    return TeacherAssignmentRepository(db_session)
+    return TeacherAssignmentRepository(db_session, platform_context())
 
 
 @pytest.fixture
@@ -423,7 +424,9 @@ class TestClassCreate:
         y2_data = AcademicYearCreate(
             name="AY2", start_date=datetime.date(2027, 1, 1), end_date=datetime.date(2027, 12, 31)
         )
-        year_svc = AcademicYearService(AcademicYearRepository(class_service.repo.session))
+        year_svc = AcademicYearService(
+            AcademicYearRepository(class_service.repo.session, platform_context())
+        )
         y1 = await year_svc.create_year(y1_data)
         y2 = await year_svc.create_year(y2_data)
 
@@ -521,8 +524,8 @@ class TestSectionCreate:
     @pytest.mark.asyncio
     async def test_same_name_diff_class(self, section_service: SectionService, seeded_year: AcademicYear, seeded_class: Class):
         c2 = await ClassService(
-            ClassRepository(section_service.repo.session),
-            AcademicYearRepository(section_service.repo.session),
+            ClassRepository(section_service.repo.session, platform_context()),
+            AcademicYearRepository(section_service.repo.session, platform_context()),
         ).create_class(ClassCreate(name="Grade 11", academic_year_id=seeded_year.id))
 
         s1 = await section_service.create_section(SectionCreate(name="A", class_id=seeded_class.id))
@@ -645,7 +648,7 @@ class TestEnrollmentCreate:
     async def test_inactive_student(
         self, enrollment_service: EnrollmentService, seeded_year: AcademicYear, db_session: AsyncSession
     ):
-        repo = StudentRepository(db_session)
+        repo = StudentRepository(db_session, platform_context())
         s = Student(first_name="Inactive", last_name="Student", student_number="INACTIVE", status="inactive")
         await repo.create(s)
         with pytest.raises(ValidationError, match="inactive student"):

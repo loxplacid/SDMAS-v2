@@ -28,6 +28,7 @@ from app.domains.audit.service import (
     RESULT_SUCCESS,
     AuditService,
 )
+from app.multi_tenant.models import platform_context
 
 
 # ======================================================================
@@ -106,7 +107,7 @@ class TestAuditActor:
 
 class TestActorResolution:
     async def test_explicit_actor_wins(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         entry = await svc.record(
             action="VERIFY",
             resource_type="document",
@@ -120,7 +121,7 @@ class TestActorResolution:
         assert entry.username == "legacy"
 
     async def test_user_id_maps_to_user_actor(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         entry = await svc.record(
             action="CREATE",
             resource_type="student",
@@ -132,14 +133,14 @@ class TestActorResolution:
 
     async def test_no_actor_is_system_unattributed(self, db_session):
         """No actor supplied → explicit SYSTEM "unattributed", never 0."""
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         entry = await svc.record(action="CREATE", resource_type="student")
         assert entry.actor_type == "system"
         assert entry.actor_id == UNKNOWN
         assert entry.user_id is None
 
     async def test_webhook_actor_round_trip(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         entry = await svc.record(
             action=WEBHOOK_RECEIVED,
             resource_type="billing",
@@ -157,7 +158,7 @@ class TestActorResolution:
 
 class TestCanonicalEventFields:
     async def test_event_id_auto_generated_and_unique(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         first = await svc.record(action="CREATE", resource_type="student")
         second = await svc.record(action="CREATE", resource_type="student")
         assert len(first.event_id) == 32
@@ -166,7 +167,7 @@ class TestCanonicalEventFields:
         uuid.UUID(hex=first.event_id)  # raises if not valid hex
 
     async def test_result_and_failure_reason(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         entry = await svc.record(
             action="CREATE",
             resource_type="payment",
@@ -177,12 +178,12 @@ class TestCanonicalEventFields:
         assert entry.failure_reason == "provider declined"
 
     async def test_success_result_default(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         entry = await svc.record(action="CREATE", resource_type="student")
         assert entry.result == RESULT_SUCCESS
 
     async def test_before_after_state_serialized(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         entry = await svc.record(
             action="VERIFY",
             resource_type="document",
@@ -193,7 +194,7 @@ class TestCanonicalEventFields:
         assert json.loads(entry.after_state) == {"status": "verified", "verified_by": 4}
 
     async def test_tenant_and_correlation_ids(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         entry = await svc.record(
             action="CREATE",
             resource_type="student",
@@ -208,7 +209,7 @@ class TestCanonicalEventFields:
         assert entry.correlation_id == "corr-1"
 
     async def test_request_id_falls_back_to_correlation_id(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         entry = await svc.record(
             action="CREATE",
             resource_type="student",
@@ -224,7 +225,7 @@ class TestCanonicalEventFields:
 
 class TestSecretStripping:
     async def test_secrets_never_stored_in_payloads(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         entry = await svc.record(
             action="CREATE",
             resource_type="user",
@@ -258,7 +259,7 @@ class TestSecretStripping:
         assert meta["safe"] == 1
 
     async def test_actor_metadata_not_leaked(self, db_session):
-        svc = AuditService(db_session)
+        svc = AuditService(db_session, platform_context())
         entry = await svc.record(
             action="CREATE",
             resource_type="user",
@@ -275,7 +276,7 @@ class TestSecretStripping:
 
 class TestRepositoryActorFilters:
     async def test_filter_by_actor_type(self, db_session):
-        repo = AuditLogRepository(db_session)
+        repo = AuditLogRepository(db_session, platform_context())
         await repo.create(
             AuditLog(action="CREATE", resource_type="student", actor_type="user", actor_id="1")
         )
@@ -289,7 +290,7 @@ class TestRepositoryActorFilters:
         assert items[0].actor_id == UNKNOWN
 
     async def test_filter_by_actor_id(self, db_session):
-        repo = AuditLogRepository(db_session)
+        repo = AuditLogRepository(db_session, platform_context())
         await repo.create(
             AuditLog(action="VERIFY", resource_type="document", actor_type="user", actor_id="4")
         )
@@ -303,7 +304,7 @@ class TestRepositoryActorFilters:
         assert items[0].actor_id == "4"
 
     async def test_filter_by_result(self, db_session):
-        repo = AuditLogRepository(db_session)
+        repo = AuditLogRepository(db_session, platform_context())
         await repo.create(
             AuditLog(action="CREATE", resource_type="payment", result=RESULT_SUCCESS)
         )

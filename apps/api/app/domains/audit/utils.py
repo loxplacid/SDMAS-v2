@@ -16,6 +16,7 @@ from typing import Any
 
 from fastapi import Request
 
+from app.core.security.client_ip import get_client_ip
 from app.domains.auth.security import decode_token
 
 logger = logging.getLogger(__name__)
@@ -58,7 +59,7 @@ def get_request_metadata(request: Request | None) -> dict[str, Any]:
         }
 
     metadata: dict[str, Any] = {
-        "ip_address": request.client.host if request.client else None,
+        "ip_address": get_client_ip(request),
         "user_agent": request.headers.get("user-agent") or "unknown",
         "campus_id": None,
     }

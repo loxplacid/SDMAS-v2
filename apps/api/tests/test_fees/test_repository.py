@@ -15,41 +15,42 @@ from app.domains.fees.repository import (
 )
 from app.domains.student.models import Student
 from app.domains.student.repository import StudentRepository
+from app.multi_tenant.models import platform_context
 
 
 @pytest.fixture
 def fee_type_repo(db_session: AsyncSession) -> FeeTypeRepository:
-    return FeeTypeRepository(db_session)
+    return FeeTypeRepository(db_session, platform_context())
 
 
 @pytest.fixture
 def fee_structure_repo(db_session: AsyncSession) -> FeeStructureRepository:
-    return FeeStructureRepository(db_session)
+    return FeeStructureRepository(db_session, platform_context())
 
 
 @pytest.fixture
 def fee_due_repo(db_session: AsyncSession) -> FeeDueRepository:
-    return FeeDueRepository(db_session)
+    return FeeDueRepository(db_session, platform_context())
 
 
 @pytest.fixture
 def payment_repo(db_session: AsyncSession) -> PaymentRepository:
-    return PaymentRepository(db_session)
+    return PaymentRepository(db_session, platform_context())
 
 
 @pytest.fixture
 def student_repo(db_session: AsyncSession) -> StudentRepository:
-    return StudentRepository(db_session)
+    return StudentRepository(db_session, platform_context())
 
 
 @pytest.fixture
 def year_repo(db_session: AsyncSession) -> AcademicYearRepository:
-    return AcademicYearRepository(db_session)
+    return AcademicYearRepository(db_session, platform_context())
 
 
 @pytest.fixture
 def class_repo(db_session: AsyncSession) -> ClassRepository:
-    return ClassRepository(db_session)
+    return ClassRepository(db_session, platform_context())
 
 
 @pytest.fixture
