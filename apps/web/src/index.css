@@ -318,12 +318,22 @@ a:hover { color: var(--color-brand-accent-hover); }
   border-radius: var(--radius-sm);
 }
 
-/* ---- Page Transitions (View Transitions API) ---- */
+/* ---- Page Transitions (View Transitions API, spec §6.3) ----
+   Arriving page: Slide E + Fade, D4, I3 → 500ms, enter curve, 8px travel.
+   Departing page: slides W 8px + fades at 0.7× enter (350ms), exit curve. */
+@keyframes page-transition-in {
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes page-transition-out {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(-8px); }
+}
 ::view-transition-old(page-content) {
-  animation: fade-out 150ms var(--ease-standard) both;
+  animation: page-transition-out 350ms var(--ease-emphasized-accelerate) both;
 }
 ::view-transition-new(page-content) {
-  animation: fade-in-up 300ms var(--ease-decelerate) both;
+  animation: page-transition-in var(--motion-slowest) var(--ease-emphasized-decelerate) both;
 }
 
 /* ---- Reduced Motion ---- */
@@ -373,6 +383,26 @@ a:hover { color: var(--color-brand-accent-hover); }
 
 /* Interaction */
 @keyframes skeleton-pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+/* Glint §3.1 — the success checkmark draws its stroke, then settles (scale
+   1 → 1.06 → 1) on the spring. Draw is a one-shot fill-both; the settle
+   plays once at 220ms (draw + 40ms). Both are transform/opacity/paint-\
+   scoped — the draw animates stroke-dashoffset on a 16px element only. */
+@keyframes draw-check {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes check-settle {
+  0% { transform: scale(1); }
+  55% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+/* Same spring pop, zero delay — the counter settle fires the moment a roll
+   completes (Glint §3.3); the toast checkmark keeps its 40ms beat. */
+@keyframes counter-settle {
+  0% { transform: scale(1); }
+  55% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
 @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 @keyframes shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-4px); } 40% { transform: translateX(4px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
 @keyframes slide-down { from { max-height: 0; opacity: 0; transform: translateY(-4px); } to { max-height: 200px; opacity: 1; transform: translateY(0); } }
@@ -415,6 +445,9 @@ a:hover { color: var(--color-brand-accent-hover); }
 .animate-pulse-soft { animation: pulse-soft 2.5s var(--ease-standard) infinite; }
 .animate-slide-down { animation: slide-down var(--motion-base) var(--ease-decelerate) both; }
 .animate-active-indicator { animation: active-indicator var(--motion-base) var(--ease-emphasized-decelerate) both; }
+.animate-draw-check { animation: draw-check 180ms var(--ease-emphasized-decelerate) both; }
+.animate-check-settle { animation: check-settle 220ms var(--ease-spring) both; animation-delay: 40ms; }
+.animate-counter-settle { animation: counter-settle 220ms var(--ease-spring) both; }
 .animate-badge-pop { animation: badge-pop var(--motion-fast) var(--ease-spring) both; }
 .animate-notification-pulse { animation: notification-pulse 2s var(--ease-standard) infinite; }
 .animate-attention-ring { animation: attention-ring 2s var(--ease-standard) infinite; }

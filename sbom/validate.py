@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import re
 import uuid
-from typing import Iterable
 
 from .licenses import COMMON_SPDX_IDS, SPECIAL, is_valid_expression
 
@@ -46,6 +45,7 @@ def validate(documents: list[tuple[str, dict]]) -> list[str]:
 
 
 def _validate_spdx(doc: dict) -> list[str]:
+    """Validate the SPDX 2.3 document subset we emit; return error strings."""
     errors: list[str] = []
 
     if doc.get("spdxVersion") != "SPDX-2.3":
@@ -104,15 +104,13 @@ def _validate_spdx(doc: dict) -> list[str]:
     return errors
 
 
-
-
-
 # ---------------------------------------------------------------------------
 # CycloneDX 1.5
 # ---------------------------------------------------------------------------
 
 
 def _validate_cyclonedx(doc: dict) -> list[str]:
+    """Validate the CycloneDX 1.5 document subset we emit; return error strings."""
     errors: list[str] = []
     if doc.get("bomFormat") != "CycloneDX":
         errors.append(f"bomFormat must be CycloneDX, got {doc.get('bomFormat')!r}")

@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../lib/utils'
+import { useMove, MOTION_DURATIONS, MOTION_EASINGS } from '../../lib/motion'
 
 interface CommandItem {
   id: string
@@ -36,6 +37,62 @@ interface CommandPaletteProps {
   emptyMessage?: string
 }
 
+/**
+ * One result row (spec §11.3.2): `Fade + 4px Slide N` — results settle from
+ * above, matching the palette's Z arrival — staggered 20ms in reading order.
+ * While an active query is filtering, the stagger collapses to 0 so new
+ * results cross-fade fast instead of re-staggering (§11.3.4).
+ */
+function PaletteItem({
+  item,
+  index,
+  selected,
+  filtering,
+  onSelect,
+  onClick,
+}: {
+  item: CommandItem | SmartSearchResult
+  index: number
+  selected: boolean
+  filtering: boolean
+  onSelect: () => void
+  onClick: () => void
+}) {
+  const { ref, style } = useMove(
+    { verb: 'slide', direction: 'N', distance: 'D2', importance: 'I1' },
+    { animateOnMount: true, staggerIndex: filtering ? 0 : index }
+  )
+  return (
+    <div ref={ref} style={style}>
+      <button
+        data-command-item
+        role="option"
+        aria-selected={selected}
+        className={cn(
+          'relative flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left transition-colors duration-100',
+          selected
+            ? 'text-[var(--color-brand-accent)]'
+            : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'
+        )}
+        onClick={onClick}
+        onMouseEnter={onSelect}
+      >
+        {item.icon && (
+          <svg className="h-4.5 w-4.5 flex-shrink-0 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={item.icon} />
+          </svg>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium truncate">{item.label}</p>
+          {item.description && (
+            <p className="text-xs text-[var(--color-text-tertiary)] truncate">{item.description}</p>
+          )}
+        </div>
+      </button>
+    </div>
+  )
+}
+
 export function CommandPalette({
   open,
   onClose,
@@ -51,6 +108,24 @@ export function CommandPalette({
   const [closing, setClosing] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  const accentRef = useRef<HTMLDivElement>(null)
+  const closingRef = useRef(false)
+
+  // Choreography (spec §6.10): backdrop `Fade` (base, 180ms) + panel
+  // `Scale Z + Fade, D4, I3` (380ms) from center. Specs are memoized so the
+  // resolved moves — and therefore `play` — stay referentially stable.
+  const panelSpec = useMemo(
+    () => ({ verb: 'scale', direction: 'Z', distance: 'D4', importance: 'I3' }) as const,
+    []
+  )
+  const backdropSpec = useMemo(
+    () => ({ verb: 'fade', distance: 'D2', importance: 'I2' }) as const,
+    []
+  )
+  const panelMove = useMove(panelSpec, { animateOnMount: true })
+  const backdropMove = useMove(backdropSpec, { animateOnMount: true })
+  const panelRef = useRef<HTMLDivElement>(null)
+  const backdropRef = useRef<HTMLDivElement>(null)
 
   const smartResults = smartSearch ? smartSearch(query) : []
 
@@ -72,6 +147,7 @@ export function CommandPalette({
     : filteredGroups
 
   const flatFiltered = displayGroups.flatMap((g) => g.items)
+  const filtering = query.length > 0
 
   useEffect(() => {
     if (open) {
@@ -86,12 +162,21 @@ export function CommandPalette({
   }, [open])
 
   const handleClose = useCallback(() => {
+    if (closingRef.current) return
+    closingRef.current = true
     setClosing(true)
-    setTimeout(() => {
+    const done = () => {
+      closingRef.current = false
       setClosing(false)
       onClose()
-    }, 120)
-  }, [onClose])
+    }
+    // Exit is the reverse of entry at 0.7× (spec §11.3.5): panel scales to
+    // 0.98 + fades (220ms), backdrop fades (120ms). `onfinish` unmounts the
+    // palette; under reduced tiers `play` applies instantly and completes
+    // synchronously.
+    panelMove.play(panelRef.current, 'exit', { onfinish: done })
+    backdropMove.play(backdropRef.current, 'exit')
+  }, [onClose, panelMove.play, backdropMove.play])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -112,20 +197,42 @@ export function CommandPalette({
       if (e.key === 'Enter' && flatFiltered[selectedIndex]) {
         e.preventDefault()
         flatFiltered[selectedIndex].action()
-        onClose()
+        handleClose()
         return
       }
     },
-    [flatFiltered, selectedIndex, onClose, handleClose]
+    [flatFiltered, selectedIndex, handleClose]
   )
 
-  // Scroll selected item into view
+  // Scroll selected item into view (guarded — jsdom lacks scrollIntoView)
   useEffect(() => {
-    if (listRef.current) {
-      const items = listRef.current.querySelectorAll('[data-command-item]')
-      items[selectedIndex]?.scrollIntoView({ block: 'nearest' })
+    const item = listRef.current?.querySelectorAll<HTMLElement>('[data-command-item]')[selectedIndex]
+    if (typeof item?.scrollIntoView === 'function') {
+      item.scrollIntoView({ block: 'nearest' })
     }
   }, [selectedIndex])
+
+  // Sliding selection accent (spec §11.3.3): the wash block moves between
+  // rows at fast (120ms) via transform — the eye tracks the block, not the
+  // text. A spatial move, so it is gated to the precise tier (§8).
+  const accentTransition =
+    panelMove.tier === 'precise'
+      ? `transform ${MOTION_DURATIONS.fast}ms ${MOTION_EASINGS.standard}, height ${MOTION_DURATIONS.fast}ms ${MOTION_EASINGS.standard}`
+      : 'none'
+
+  useEffect(() => {
+    const list = listRef.current
+    const block = accentRef.current
+    const items = list?.querySelectorAll<HTMLElement>('[data-command-item]')
+    const item = items?.[selectedIndex]
+    if (!list || !block || !item) {
+      if (block) block.style.opacity = '0'
+      return
+    }
+    block.style.opacity = '1'
+    block.style.transform = `translateY(${item.offsetTop}px)`
+    block.style.height = `${item.offsetHeight}px`
+  }, [selectedIndex, displayGroups, accentTransition])
 
   // Global keyboard shortcut
   useEffect(() => {
@@ -144,26 +251,25 @@ export function CommandPalette({
 
   if (!open && !closing) return null
 
-  const show = open && !closing
-
   return (
     <div
-      className={cn(
-        'fixed inset-0 z-[200] flex items-start justify-center pt-[12vh]',
-        show ? 'animate-fade-in' : 'animate-fade-out'
-      )}
+      className="fixed inset-0 z-[200] flex items-start justify-center pt-[12vh]"
       onClick={(e) => { if (e.target === e.currentTarget) handleClose() }}
       role="dialog"
       aria-modal="true"
       aria-label="Command palette"
     >
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
+      <div
+        ref={backdropRef}
+        style={backdropMove.style}
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+        aria-hidden="true"
+      />
 
       <div
-        className={cn(
-          'relative w-full max-w-xl bg-[var(--color-surface)] rounded-2xl shadow-2xl border border-[var(--color-border)] overflow-hidden',
-          show ? 'animate-fade-in-scale' : 'animate-fade-out-scale'
-        )}
+        ref={panelRef}
+        style={panelMove.style}
+        className="relative w-full max-w-xl bg-[var(--color-surface)] rounded-2xl shadow-2xl border border-[var(--color-border)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input */}
@@ -190,10 +296,17 @@ export function CommandPalette({
         {/* Results */}
         <div
           ref={listRef}
-          className="max-h-[320px] overflow-y-auto px-2 py-2"
+          className="relative max-h-[320px] overflow-y-auto px-2 py-2"
           role="listbox"
           aria-label="Commands"
         >
+          {/* Sliding selection wash — positioned behind the rows */}
+          <div
+            ref={accentRef}
+            aria-hidden="true"
+            className="absolute left-2 right-2 rounded-lg bg-[var(--color-brand-accent-subtle)] pointer-events-none"
+            style={{ top: 0, opacity: 0, transition: accentTransition }}
+          />
           {displayGroups.length === 0 ? (
             <div className="flex flex-col items-center py-8 text-center">
               <svg className="h-8 w-8 text-[var(--color-text-muted)] mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,34 +333,16 @@ export function CommandPalette({
                   </p>
                   {group.items.map((item, ii) => {
                     const idx = globalIndex + ii
-                    const isSelected = idx === selectedIndex
                     return (
-                      <button
+                      <PaletteItem
                         key={item.id}
-                        data-command-item
-                        role="option"
-                        aria-selected={isSelected}
-                        className={cn(
-                          'flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left transition-all duration-100',
-                          isSelected
-                            ? 'bg-[var(--color-brand-accent-subtle)] text-[var(--color-brand-accent)]'
-                            : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'
-                        )}
+                        item={item}
+                        index={idx}
+                        selected={idx === selectedIndex}
+                        filtering={filtering}
+                        onSelect={() => setSelectedIndex(idx)}
                         onClick={() => { item.action(); handleClose() }}
-                        onMouseEnter={() => setSelectedIndex(idx)}
-                      >
-                        {item.icon && (
-                          <svg className="h-4.5 w-4.5 flex-shrink-0 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={item.icon} />
-                          </svg>
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium truncate">{item.label}</p>
-                          {item.description && (
-                            <p className="text-xs text-[var(--color-text-tertiary)] truncate">{item.description}</p>
-                          )}
-                        </div>
-                      </button>
+                      />
                     )
                   })}
                 </div>

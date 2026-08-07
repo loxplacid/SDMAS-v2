@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Generates the Python dependency inventory SBOM artefacts for SDMAS-v2.
+# Generates the Python dependency inventory SBOM artefact for SDMAS-v2.
 #
 # Usage:  bash scripts/python_sbom.sh [--venv]
 #   --venv   additionally augment the inventory from the installed virtualenv
@@ -9,23 +9,9 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-
-# Resolve a Python interpreter: prefer the project venv, then PYTHON env,
-# then python3/python.
-if [[ -x "$ROOT/apps/api/.venv/Scripts/python.exe" ]]; then
-  PY="$ROOT/apps/api/.venv/Scripts/python.exe"
-elif [[ -x "$ROOT/apps/api/.venv/bin/python" ]]; then
-  PY="$ROOT/apps/api/.venv/bin/python"
-elif [[ -n "${PYTHON:-}" ]]; then
-  PY="$PYTHON"
-else
-  PY="$(command -v python3 || command -v python)"
-fi
-
-if [[ -z "$PY" ]]; then
-  echo "error: no Python interpreter found" >&2
-  exit 1
-fi
+# shellcheck source=scripts/_sbom_common.sh
+source "$ROOT/scripts/_sbom_common.sh"
+resolve_python "$ROOT"
 
 VENV_FLAG=()
 if [[ "${1:-}" == "--venv" ]]; then

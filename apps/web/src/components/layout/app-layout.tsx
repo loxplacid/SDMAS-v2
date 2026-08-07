@@ -6,12 +6,12 @@ import { QuickCreate } from './quick-create'
 import { OrganizationSwitcher } from './organization-switcher'
 import { ContextualPageActions } from './contextual-actions'
 import { CommandPalette } from '../ui/command-palette'
-import { GlobalSearchModal } from '../ui/global-search-modal'
+import { UniversalSearchModal } from '../ui/universal-search-modal'
 import { KeyboardShortcutsDialog } from '../ui/keyboard-shortcuts-dialog'
 import { InstallPWA } from '../ui/install-pwa'
 import { SystemThemeToast } from '../ui/system-theme-toast'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
-import { useGlobalSearch } from '../../hooks/use-global-search'
+import { useUniversalSearch } from '../../hooks/use-universal-search'
 import { useNavPersistence } from '../../hooks/use-nav-persistence'
 import { RouteTransition } from '../ui/route-transition'
 
@@ -96,8 +96,8 @@ export function AppLayout() {
     reactNavigate(path)
   }, [reactNavigate])
 
-  // Global search across all entities (backend-powered)
-  const globalSearch = useGlobalSearch({ debounceMs: 300, minQueryLength: 1 })
+  // Universal search: instant local FTS5 index, synced in the background.
+  const universalSearch = useUniversalSearch()
 
   // Command palette groups (memoized to avoid re-creation)
   const commandGroups = useMemo(() => buildCommandGroups(navigate), [navigate])
@@ -105,8 +105,14 @@ export function AppLayout() {
   // `?` opens the keyboard shortcuts dialog
   useKeyboardShortcut({ '?': () => setShortcutsOpen(true) }, [])
 
-  // `Cmd+Shift+K` opens global search modal
-  useKeyboardShortcut({ 'mod+shift+k': () => setSearchOpen(true) }, [])
+  // `Cmd+K` and `Cmd+Shift+K` open the universal search modal
+  useKeyboardShortcut(
+    {
+      'mod+k': () => setSearchOpen(true),
+      'mod+shift+k': () => setSearchOpen(true),
+    },
+    [],
+  )
 
   // Track page views for recent items
   useEffect(() => {
@@ -170,18 +176,15 @@ export function AppLayout() {
         groups={commandGroups}
       />
 
-      {/* Global Search Modal (entity search, backend-powered) */}
-      <GlobalSearchModal
+      {/* Universal Search Modal (instant local FTS5, background-synced) */}
+      <UniversalSearchModal
         open={searchOpen}
-        onClose={() => {
-          setSearchOpen(false)
-          globalSearch.clear()
-        }}
-        globalSearch={globalSearch}
+        onClose={() => setSearchOpen(false)}
+        search={universalSearch.search}
+        status={universalSearch.status}
         onNavigate={(route) => {
           navigate(route)
           setSearchOpen(false)
-          globalSearch.clear()
         }}
       />
 

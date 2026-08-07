@@ -1,0 +1,15 @@
+[tool.ruff]
+# Lint configuration for the standalone `sbom` package.  Matches the repo
+# convention in apps/api/pyproject.toml, plus UP for modernisation
+# (collections.abc, `X | None`, ...).
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

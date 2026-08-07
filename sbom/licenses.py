@@ -1,10 +1,10 @@
-"""Shared SPDX licence-expression handling for emitters and validators.
+"""Shared SPDX license-expression handling for emitters and validators.
 
-The generator deliberately does not ship a full SPDX licence list database.
+The generator deliberately does not ship a full SPDX license list database.
 Instead it recognises a compact set of common ids plus the special values
 ``NOASSERTION``/``NONE``.  Anything else is treated as *unresolvable*:
 
-* emitters downgrade the declared licence to ``NOASSERTION`` and preserve
+* emitters downgrade the declared license to ``NOASSERTION`` and preserve
   the original text verbatim in a package comment / property, so no
   information is lost while the document stays schema-valid;
 * the analyser flags the raw value as a ``custom_license`` finding so it is

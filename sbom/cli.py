@@ -40,7 +40,7 @@ from .inventory import (
     parse_uv_lock,
     parse_venv_dist_info,
 )
-from .models import PYPI, Package
+from .models import PYPI, Dependency, Package
 from .validate import validate
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -52,6 +52,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _find_python_lock() -> Path | None:
+    """Locate the Python lock file, preferring uv.lock over requirements.txt."""
     uv = REPO_ROOT / "apps" / "api" / "uv.lock"
     if uv.is_file():
         return uv
@@ -60,10 +61,12 @@ def _find_python_lock() -> Path | None:
 
 
 def _find_node_locks() -> list[Path]:
+    """Find every npm lock file under ``apps/``, sorted for determinism."""
     return sorted((REPO_ROOT / "apps").glob("*/package-lock.json"))
 
 
 def _find_site_packages() -> Path | None:
+    """Locate site-packages inside the API venv (Windows or POSIX layout)."""
     venv = REPO_ROOT / "apps" / "api" / ".venv"
     win = venv / "Lib" / "site-packages"
     if win.is_dir():
@@ -86,7 +89,7 @@ def _root_component() -> tuple[str, str]:
             version = project.get("version")
             if isinstance(name, str) and isinstance(version, str) and name and version:
                 return name, version
-        except Exception:
+        except (OSError, ValueError, tomllib.TOMLDecodeError):
             pass
     return "SDMAS-v2", "2.0.0"
 
@@ -115,6 +118,11 @@ def _relative_source(source: str) -> str:
 
 
 def _relativize(packages: list[Package]) -> list[Package]:
+    """Rewrite every package ``source`` to a repo-relative, slash-normalised path.
+
+    Keeps identifiers that embed the source (bom-refs) portable across
+    machines and path case.
+    """
     out: list[Package] = []
     for p in packages:
         src = _relative_source(p.source)
@@ -167,7 +175,7 @@ def _direct_pypi_names(pyproject: Path | None) -> set[str]:
         import tomllib
 
         data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
-    except Exception:
+    except (OSError, ValueError, tomllib.TOMLDecodeError):
         return set()
     names: set[str] = set()
     project = data.get("project", {}) if isinstance(data, dict) else {}
@@ -183,19 +191,28 @@ def _direct_pypi_names(pyproject: Path | None) -> set[str]:
 
 
 def _req_names(requirements: list) -> set[str]:
+    """Extract normalised package names from pyproject requirement strings."""
     out: set[str] = set()
     for req in requirements:
         if isinstance(req, str):
             name = req.split("[", 1)[0].split(";", 1)[0].strip()
-            name = name.replace("==", " ").replace(">=", " ").replace("<=", " ").replace(
-                "~=", " "
-            ).replace("!=", " ").split()[0] if name else ""
+            name = (
+                name.replace("==", " ")
+                .replace(">=", " ")
+                .replace("<=", " ")
+                .replace("~=", " ")
+                .replace("!=", " ")
+                .split()[0]
+                if name
+                else ""
+            )
             if name:
                 out.add(name.lower().replace("_", "-").replace(".", "-"))
     return out
 
 
 def _set_direct(packages: list[Package], direct_names: set[str]) -> list[Package]:
+    """Mark PyPI packages listed in pyproject.toml as direct dependencies."""
     out: list[Package] = []
     for pkg in packages:
         key = pkg.name.lower().replace("_", "-").replace(".", "-")
@@ -217,7 +234,9 @@ def _set_direct(packages: list[Package], direct_names: set[str]) -> list[Package
     return out
 
 
-def _augment_from_venv(packages: list[Package], venv_inv: Inventory) -> tuple[list[Package], list[str]]:
+def _augment_from_venv(
+    packages: list[Package], venv_inv: Inventory
+) -> tuple[list[Package], list[str]]:
     """Merge license + checksum metadata from installed dist-info into the
     lock-derived packages where name AND version match.  venv-only packages
     (including version-mismatched ones — environment drift) are appended
@@ -247,8 +266,7 @@ def _augment_from_venv(packages: list[Package], venv_inv: Inventory) -> tuple[li
                     version=target.version,
                     ecosystem=target.ecosystem,
                     source=f"{target.source} (+{venv_pkg.source})",
-                    license_expression=target.license_expression
-                    or venv_pkg.license_expression,
+                    license_expression=target.license_expression or venv_pkg.license_expression,
                     purl=target.purl,
                     download_url=target.download_url,
                     checksums=target.checksums or venv_pkg.checksums,
@@ -265,8 +283,7 @@ def _augment_from_venv(packages: list[Package], venv_inv: Inventory) -> tuple[li
     warnings = list(venv_inv.warnings)
     if appended:
         warnings.append(
-            f"venv contains {len(appended)} package(s) absent from uv.lock "
-            "(partial environment?)"
+            f"venv contains {len(appended)} package(s) absent from uv.lock (partial environment?)"
         )
     return sorted(
         retained + merged + appended, key=lambda p: (p.ecosystem, p.name, p.version)
@@ -279,6 +296,7 @@ def _augment_from_venv(packages: list[Package], venv_inv: Inventory) -> tuple[li
 
 
 def cmd_python_inventory(args: argparse.Namespace) -> int:
+    """``python-inventory`` subcommand: write the Python inventory JSON."""
     lock = Path(args.lock) if args.lock else _find_python_lock()
     if not lock:
         print("error: no Python lock file found", file=sys.stderr)
@@ -301,11 +319,12 @@ def cmd_python_inventory(args: argparse.Namespace) -> int:
 
 
 def cmd_node_inventory(args: argparse.Namespace) -> int:
-    locks = [Path(l) for l in args.lock] or _find_node_locks()
+    """``node-inventory`` subcommand: write the merged Node inventory JSON."""
+    locks = [Path(lock) for lock in (args.lock or [])] or _find_node_locks()
     if not locks:
         print("error: no package-lock.json files found", file=sys.stderr)
         return 1
-    invs = [parse_package_lock(l) for l in locks]
+    invs = [parse_package_lock(lock) for lock in locks]
     packages, warnings = merge_inventories(*invs)
     inv = Inventory(packages=_relativize(packages), warnings=warnings)
     _write_json(_inventory_to_dict(inv), Path(args.output))
@@ -314,6 +333,7 @@ def cmd_node_inventory(args: argparse.Namespace) -> int:
 
 
 def cmd_generate(args: argparse.Namespace) -> int:
+    """``generate`` subcommand: run the full SBOM pipeline end-to-end."""
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -334,14 +354,12 @@ def cmd_generate(args: argparse.Namespace) -> int:
         site = _find_site_packages()
         if site:
             venv_inv = parse_venv_dist_info(site)
-            python_inv.packages, venv_warnings = _augment_from_venv(
-                python_inv.packages, venv_inv
-            )
+            python_inv.packages, venv_warnings = _augment_from_venv(python_inv.packages, venv_inv)
             python_inv.warnings.extend(venv_warnings)
     python_inv.dedupe()
 
-    node_locks = [Path(l) for l in args.node_lock] if args.node_lock else _find_node_locks()
-    node_invs = [parse_package_lock(l) for l in node_locks]
+    node_locks = [Path(lock) for lock in args.node_lock] if args.node_lock else _find_node_locks()
+    node_invs = [parse_package_lock(lock) for lock in node_locks]
 
     packages, warnings = merge_inventories(python_inv, *node_invs)
     # single normalization point: source paths must be repo-relative in the
@@ -350,15 +368,9 @@ def cmd_generate(args: argparse.Namespace) -> int:
     packages = _relativize(packages)
     graph = resolve_graph(packages)
 
-    _write_json(
-        _inventory_to_dict(python_inv), output_dir / "python_dependency_inventory.json"
-    )
-    node_merged = Inventory(
-        packages=[p for p in packages if p.ecosystem != PYPI], warnings=[]
-    )
-    _write_json(
-        _inventory_to_dict(node_merged), output_dir / "node_dependency_inventory.json"
-    )
+    _write_json(_inventory_to_dict(python_inv), output_dir / "python_dependency_inventory.json")
+    node_merged = Inventory(packages=[p for p in packages if p.ecosystem != PYPI], warnings=[])
+    _write_json(_inventory_to_dict(node_merged), output_dir / "node_dependency_inventory.json")
 
     # analysis artefacts
     _write_json(license_summary(packages), output_dir / "license_summary.json")
@@ -419,6 +431,7 @@ def cmd_analyze(args: argparse.Namespace) -> int:
 
 
 def cmd_validate(args: argparse.Namespace) -> int:
+    """``validate`` subcommand: schema-check generated documents."""
     files: list[Path] = []
     if args.dir:
         files = sorted(Path(args.dir).glob("sbom.*.json"))
@@ -434,8 +447,10 @@ def cmd_validate(args: argparse.Namespace) -> int:
         except (OSError, json.JSONDecodeError) as exc:
             print(f"  ERROR {f}: unreadable ({exc})", file=sys.stderr)
             return 1
-        kind = "spdx" if f.name.startswith("sbom.spdx") else (
-            "cyclonedx" if f.name.startswith("sbom.cdx") else None
+        kind = (
+            "spdx"
+            if f.name.startswith("sbom.spdx")
+            else ("cyclonedx" if f.name.startswith("sbom.cdx") else None)
         )
         if kind is None:
             continue
@@ -454,6 +469,7 @@ def cmd_validate(args: argparse.Namespace) -> int:
 
 
 def _inventory_to_dict(inv: Inventory) -> dict:
+    """Serialise an inventory to the persisted JSON shape."""
     return {
         "generator": f"sdmas-sbom-{__version__}",
         "packages": [_pkg_to_dict(p) for p in inv.packages],
@@ -462,6 +478,7 @@ def _inventory_to_dict(inv: Inventory) -> dict:
 
 
 def _pkg_to_dict(pkg: Package) -> dict:
+    """Serialise a package to the persisted JSON shape."""
     return {
         "name": pkg.name,
         "version": pkg.version,
@@ -478,6 +495,7 @@ def _pkg_to_dict(pkg: Package) -> dict:
 
 
 def _pkg_from_dict(d: dict) -> Package:
+    """Rehydrate a Package from its persisted JSON shape."""
     return Package(
         name=d["name"],
         version=d["version"],
@@ -488,7 +506,7 @@ def _pkg_from_dict(d: dict) -> Package:
         download_url=d.get("download_url"),
         checksums=tuple((a, h) for a, h in d.get("checksums") or []),
         dependencies=tuple(
-            {"name": x["name"], "specifier": x.get("specifier", "")}
+            Dependency(name=x["name"], specifier=x.get("specifier", ""))
             for x in d.get("dependencies") or []
         ),
         is_direct=d.get("is_direct", True),
@@ -497,6 +515,7 @@ def _pkg_from_dict(d: dict) -> Package:
 
 
 def _read_inventory(path: Path) -> Inventory:
+    """Load a persisted inventory; unreadable files yield an empty inventory."""
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
@@ -508,6 +527,7 @@ def _read_inventory(path: Path) -> Inventory:
 
 
 def _write_json(obj: dict, path: Path) -> None:
+    """Write a dict as sorted-key, 2-space-indented UTF-8 JSON."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(obj, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
@@ -516,6 +536,7 @@ def _write_json(obj: dict, path: Path) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Parse CLI arguments and dispatch to the requested subcommand."""
     parser = argparse.ArgumentParser(prog="sbom", description=__doc__)
     parser.add_argument("--version", action="version", version=__version__)
     sub = parser.add_subparsers(dest="command", required=True)

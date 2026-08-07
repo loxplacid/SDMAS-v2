@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import copy
-
 from sbom.emit_cyclonedx import build_cyclonedx
 from sbom.emit_spdx import build_spdx
 from sbom.graph import resolve_graph

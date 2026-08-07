@@ -36,6 +36,17 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install lint + test dependencies
+        run: pip install ruff pytest
+
+      - name: Lint sbom package (ruff)
+        run: |
+          ruff check sbom/
+          ruff format --check sbom/
+
+      - name: Unit tests
+        run: python -m pytest sbom/tests -q
+
       # Reproducible-build gate: pin SOURCE_DATE_EPOCH so the generated
       # documents are byte-identical on every run.
       - name: Generate inventories

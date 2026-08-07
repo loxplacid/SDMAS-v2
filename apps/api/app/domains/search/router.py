@@ -11,6 +11,7 @@ from app.domains.search.schemas import (
     FrequentSearchResponse,
     GlobalSearchQuery,
     GlobalSearchResponse,
+    IndexSyncResponse,
     SearchHistoryPage,
     SearchHistoryResponse,
 )
@@ -20,6 +21,29 @@ from app.multi_tenant.dependencies import get_current_tenant
 from app.multi_tenant.models import TenantContext
 
 router = APIRouter(prefix="/api/search", tags=["Search"])
+
+
+@router.get("/index/sync", response_model=IndexSyncResponse)
+async def index_sync(
+    entity_type: str = Query(..., description="Entity type to sync"),
+    page: int = Query(default=0, ge=0, le=10000),
+    size: int = Query(default=200, ge=1, le=500),
+    since: Optional[str] = Query(
+        default=None,
+        description="Only rows changed after this ISO timestamp (incremental)",
+    ),
+    current_user: User = Depends(get_current_user),
+    tenant: TenantContext = Depends(get_current_tenant),
+    session: AsyncSession = Depends(get_session),
+) -> IndexSyncResponse:
+    """Feed the browser's local FTS5 index.
+
+    Permission-scoped: only entity types the caller's role may view are
+    returned (``service.sync_index`` enforces this). Tenant-scoped: rows
+    are filtered to the active campus.
+    """
+    service = SearchService(session, current_user, tenant)
+    return await service.sync_index(entity_type, page, size, since)
 
 
 @router.post("")

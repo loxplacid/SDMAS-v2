@@ -41,16 +41,39 @@ export type SearchEntityType =
   | 'teacher'
   | 'class'
   | 'section'
+  | 'subject'
   | 'fee'
   | 'payment'
+  | 'receipt'
   | 'notification'
   | 'document'
+  | 'attendance'
+  | 'grade_record'
+  | 'leave_request'
+  | 'admission_application'
 
 export interface GlobalSearchParams {
   query: string
   types?: SearchEntityType[]
   page?: number
   size?: number
+}
+
+export interface IndexSyncItem {
+  id: string
+  entity_type: string
+  entity_id: number
+  label: string
+  description: string | null
+  route: string
+  search_text: string
+  changed_at: string | null
+}
+
+export interface IndexSyncResponse {
+  entity_type: string
+  items: IndexSyncItem[]
+  has_more: boolean
 }
 
 export const searchApi = {
@@ -60,6 +83,15 @@ export const searchApi = {
       types: params.types ?? null,
       page: params.page ?? 1,
       size: params.size ?? 20,
+    }),
+
+  /** Permission-scoped index feed for the local FTS5 index (universal search). */
+  indexSync: (entityType: string, page = 0, size = 200, since?: string) =>
+    api.get<IndexSyncResponse>('/api/search/index/sync', {
+      entity_type: entityType,
+      page,
+      size,
+      ...(since ? { since } : {}),
     }),
 
   recent: (limit = 10) =>

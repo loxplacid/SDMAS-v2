@@ -26,7 +26,7 @@ import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .models import Dependency, NPM, PYPI, Package, norm_npm_name, norm_pypi_name
+from .models import NPM, PYPI, Dependency, Package, norm_pypi_name
 
 # ---------------------------------------------------------------------------
 # Inventory container
@@ -45,9 +45,7 @@ class Inventory:
         keep a stable, sorted order."""
         seen: set[tuple[str, str, str, str]] = set()
         unique: list[Package] = []
-        for pkg in sorted(
-            self.packages, key=lambda p: (p.ecosystem, p.name, p.version, p.source)
-        ):
+        for pkg in sorted(self.packages, key=lambda p: (p.ecosystem, p.name, p.version, p.source)):
             k = (pkg.ecosystem, pkg.name, pkg.version, pkg.source)
             if k in seen:
                 continue
@@ -182,9 +180,7 @@ def parse_uv_lock(path: str | Path) -> Inventory:
     return inv
 
 
-def _add_hash(
-    checksums: list[tuple[str, str]], raw: object, lock: Path, name: str
-) -> None:
+def _add_hash(checksums: list[tuple[str, str]], raw: object, lock: Path, name: str) -> None:
     """Parse a uv hash string ('sha256:<hex>') into (algorithm, hexdigest)."""
     if not isinstance(raw, str) or ":" not in raw:
         return
@@ -197,6 +193,7 @@ def _add_hash(
 
 
 def _pypi_download_url(name: str, version: str) -> str:
+    """Fallback project-page URL when the lock file has no artifact URL."""
     return f"https://pypi.org/project/{name}/{version}/"
 
 
@@ -305,9 +302,7 @@ def parse_requirements(path: str | Path) -> Inventory:
                     f"'{req}' is not resolved to a name/version"
                 )
             else:
-                inv.warnings.append(
-                    f"requirements.txt '{p}':{lineno} unparsable line '{req}'"
-                )
+                inv.warnings.append(f"requirements.txt '{p}':{lineno} unparsable line '{req}'")
             continue
         spec = spec.strip()
         # drop pip inline-hash options: 'name==1.0 --hash=sha256:…'
@@ -360,23 +355,27 @@ def parse_package_lock(path: str | Path) -> Inventory:
         return inv
 
     lockfile_version = data.get("lockfileVersion")
-    if isinstance(lockfile_version, int) and lockfile_version >= 3 and isinstance(
-        data.get("packages"), dict
+    if (
+        isinstance(lockfile_version, int)
+        and lockfile_version >= 3
+        and isinstance(data.get("packages"), dict)
     ):
         _parse_v3(inv, p, data["packages"])
     elif isinstance(data.get("dependencies"), dict):
         _parse_v2(inv, p, data["dependencies"], direct=True, depth=0)
     else:
         inv.warnings.append(
-            f"package-lock.json '{p}': neither 'packages' (v3) nor "
-            "'dependencies' (v2) present"
+            f"package-lock.json '{p}': neither 'packages' (v3) nor 'dependencies' (v2) present"
         )
     return inv
 
 
 def _parse_v3(inv: Inventory, lock: Path, packages: dict) -> None:
-    root = packages.get("") if isinstance(packages.get(""), dict) else {}
-    root_deps = root.get("dependencies") if isinstance(root.get("dependencies"), dict) else {}
+    """Parse npm lockfile v3 entries, keyed by ``node_modules/`` path."""
+    root = packages.get("")
+    root = root if isinstance(root, dict) else {}
+    root_deps = root.get("dependencies")
+    root_deps = root_deps if isinstance(root_deps, dict) else {}
     # direct packages are the *names* declared by the root entry, not the
     # node_modules/ install paths
     direct_names = {str(k) for k in root_deps}
@@ -391,9 +390,7 @@ def _parse_v3(inv: Inventory, lock: Path, packages: dict) -> None:
             )
             continue
         if not isinstance(version, str) or not version:
-            inv.warnings.append(
-                f"package-lock.json '{lock}': entry '{pkg_path}' has no version"
-            )
+            inv.warnings.append(f"package-lock.json '{lock}': entry '{pkg_path}' has no version")
             version = ""
 
         # NOTE: npm v3 locks do not record per-package dependency edges for
@@ -449,14 +446,13 @@ def _parse_v2(
     direct: bool,
     depth: int,
 ) -> None:
+    """Parse npm lockfile v1/v2 nested dependency trees (recursive)."""
     if depth > 50:  # belt-and-braces guard against corrupt cyclic trees
         inv.warnings.append(f"package-lock.json '{lock}': dependency tree too deep")
         return
     for name, meta in deps.items():
         if not isinstance(meta, dict):
-            inv.warnings.append(
-                f"package-lock.json '{lock}': malformed dependency '{name}'"
-            )
+            inv.warnings.append(f"package-lock.json '{lock}': malformed dependency '{name}'")
             continue
         version = meta.get("version")
         license_expr = meta.get("license")
@@ -470,10 +466,7 @@ def _parse_v2(
 
         nested: list[Dependency] = []
         if isinstance(meta.get("dependencies"), dict):
-            nested = [
-                Dependency(name=child, specifier="")
-                for child in meta["dependencies"]
-            ]
+            nested = [Dependency(name=child, specifier="") for child in meta["dependencies"]]
 
         inv.packages.append(
             Package(
@@ -513,6 +506,7 @@ def _name_from_lock_path(pkg_path: str) -> str | None:
 
 
 def _npm_purl(name: str, version: str) -> str:
+    """Build a canonical purl, percent-encoding scoped npm names."""
     # scoped names are percent-encoded per the purl spec (canonical form)
     if name.startswith("@"):
         scope, _, rest = name.partition("/")
@@ -523,6 +517,7 @@ def _npm_purl(name: str, version: str) -> str:
 
 
 def _purl_quote(seg: str) -> str:
+    """Percent-encode a purl path segment per the purl spec."""
     return re.sub(r"[^A-Za-z0-9.\-_]", lambda m: f"%{ord(m.group(0)):02X}", seg)
 
 
@@ -573,14 +568,14 @@ def parse_venv_dist_info(site_packages: str | Path) -> Inventory:
             inv.warnings.append(f"dist-info '{dist.name}': METADATA unreadable")
             continue
         meta = _parse_metadata(metadata_bytes.decode("utf-8", errors="replace"))
-        if not meta.get("Name") or not meta.get("Version"):
+        name = meta.get("Name")
+        version = meta.get("Version")
+        if not isinstance(name, str) or not isinstance(version, str):
             inv.warnings.append(f"dist-info '{dist.name}': METADATA lacks Name/Version")
             continue
 
         if not record_path.is_file():
-            inv.warnings.append(
-                f"dist-info '{dist.name}': RECORD missing (partial install?)"
-            )
+            inv.warnings.append(f"dist-info '{dist.name}': RECORD missing (partial install?)")
             record_ok = False
         else:
             record_ok = _validate_record(record_path, dist, inv)
@@ -588,12 +583,12 @@ def parse_venv_dist_info(site_packages: str | Path) -> Inventory:
         checksums = (("SHA256", hashlib.sha256(metadata_bytes).hexdigest()),)
         inv.packages.append(
             Package(
-                name=meta["Name"],
-                version=meta["Version"],
+                name=name,
+                version=version,
                 ecosystem=PYPI,
                 source=str(dist),
                 license_expression=meta.get("LicenseExpression") or meta.get("License"),
-                purl=f"pkg:pypi/{norm_pypi_name(meta['Name'])}@{meta['Version']}",
+                purl=f"pkg:pypi/{norm_pypi_name(name)}@{version}",
                 checksums=checksums,
                 is_direct=False,
                 origin="venv" if record_ok else "venv-incomplete",
@@ -604,8 +599,12 @@ def parse_venv_dist_info(site_packages: str | Path) -> Inventory:
 
 def _parse_metadata(text: str) -> dict[str, str | None]:
     """Minimal RFC 822-style METADATA reader (Name, Version, licenses)."""
-    out: dict[str, str | None] = {"Name": None, "Version": None,
-                                  "License": None, "LicenseExpression": None}
+    out: dict[str, str | None] = {
+        "Name": None,
+        "Version": None,
+        "License": None,
+        "LicenseExpression": None,
+    }
     license_classifiers: list[str] = []
     for raw in text.splitlines():
         if not raw or raw.startswith((" ", "\t")):
@@ -668,7 +667,5 @@ def merge_inventories(*inventories: Inventory) -> tuple[list[Package], list[str]
             key = (pkg.ecosystem, pkg.name, pkg.version, pkg.source)
             merged[key] = pkg
         warnings.extend(inv.warnings)
-    packages = sorted(
-        merged.values(), key=lambda p: (p.ecosystem, p.name, p.version, p.source)
-    )
+    packages = sorted(merged.values(), key=lambda p: (p.ecosystem, p.name, p.version, p.source))
     return packages, warnings

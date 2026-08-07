@@ -1,8 +1,19 @@
 import type { ReactNode } from 'react'
-import { cn } from '../../lib/utils'
-import { TableSkeleton } from './skeleton'
+import { cn } from '../../../lib/utils'
+import { TableSkeleton } from '../skeleton'
 
-interface Column<T> {
+/**
+ * Legacy `Table` — the original implementation, preserved verbatim so every
+ * existing call site keeps running the exact code it ran before the v3 frame
+ * landed (TABLE_SYSTEM_V3.md §19.1, step 1: "frame + types with zero visual
+ * change").
+ *
+ * `DataTable` (frame.tsx) is the v3 instrument; the byte-parity tests in
+ * `__tests__/table.test.tsx` verify the frame reproduces this markup exactly
+ * for untyped columns.
+ */
+
+interface LegacyColumn<T> {
   key: string
   header: string
   render?: (item: T) => ReactNode
@@ -11,8 +22,8 @@ interface Column<T> {
   hideOnMobile?: boolean
 }
 
-interface TableProps<T> {
-  columns: Column<T>[]
+export interface TableProps<T> {
+  columns: LegacyColumn<T>[]
   data: T[]
   keyExtractor: (item: T) => string | number
   loading?: boolean
@@ -44,8 +55,18 @@ export function Table<T>({
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
         <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-[var(--color-bg)] mb-4">
-          <svg className="h-6 w-6 text-[var(--color-text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+          <svg
+            className="h-6 w-6 text-[var(--color-text-tertiary)]"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+            />
           </svg>
         </div>
         <p className="text-sm text-[var(--color-text-tertiary)]">{emptyMessage}</p>
@@ -71,8 +92,18 @@ export function Table<T>({
                 <div className="flex items-center gap-1">
                   {col.header}
                   {col.sortable && (
-                    <svg className="h-3 w-3 text-[var(--color-text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                    <svg
+                      className="h-3 w-3 text-[var(--color-text-tertiary)]"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                      />
                     </svg>
                   )}
                 </div>
@@ -92,7 +123,10 @@ export function Table<T>({
                 onRowClick && 'hover:bg-[var(--color-brand-accent-subtle)]',
                 idx % 2 === 1 && 'bg-[var(--color-bg)]/40'
               )}
-              style={{ animationDelay: `${Math.min(idx * 20, 300)}ms`, animationFillMode: 'both' }}
+              style={{
+                animationDelay: `${Math.min(idx * 20, 300)}ms`,
+                animationFillMode: 'both',
+              }}
               onClick={() => onRowClick?.(item)}
             >
               {columns.map((col) => (

@@ -16,8 +16,8 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
   {
     label: 'Global',
     shortcuts: [
-      { keys: ['⌘K'], label: 'Command Palette', description: 'Navigate pages and take actions' },
-      { keys: ['⌘⇧K'], label: 'Global Search', description: 'Search across all entities (students, teachers, fees, etc.)' },
+      { keys: ['⌘K'], label: 'Universal Search', description: 'Search everything — students, invoices, classes, attendance (works offline via the local index)' },
+      { keys: ['⌘⇧K'], label: 'Universal Search', description: 'Same as ⌘K — search across all entities instantly' },
       { keys: ['?'], label: 'Keyboard Shortcuts', description: 'Show this help dialog' },
     ],
   },

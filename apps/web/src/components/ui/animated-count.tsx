@@ -28,6 +28,24 @@ export function AnimatedCount({
   const frameRef = useRef<number | null>(null)
   const startTimeRef = useRef<number | null>(null)
   const startValueRef = useRef(0)
+  // Glint §3.3 counter settle: a one-shot spring pop on the numeral when the
+  // roll finishes. `settleKey` changes per *update* (never the initial mount);
+  // the settle class is gated on `settleKey > 0` so the animation never plays
+  // on first paint — only on genuine value changes.
+  const prevValueRef = useRef<number | null>(null)
+  const [settleKey, setSettleKey] = useState(0)
+
+  // Settle trigger lives on the value change, not inside the roll's rAF
+  // completion — under reduced motion the roll is instant (no rAF runs), so
+  // the pop must still fire (and under the global kill-switch its animation
+  // resolves instantly to the end state, so it costs nothing).
+  useEffect(() => {
+    const previous = prevValueRef.current
+    prevValueRef.current = value
+    if (previous !== null && previous !== value) {
+      setSettleKey((k) => k + 1)
+    }
+  }, [value])
 
   useEffect(() => {
     // Respect reduced motion
@@ -77,7 +95,13 @@ export function AnimatedCount({
       className={cn('tabular-nums', className)}
       aria-label={`${prefix}${value}${suffix}`}
     >
-      {formatted}
+      <span
+        key={settleKey}
+        className={cn('inline-block', settleKey > 0 && 'animate-counter-settle')}
+        aria-hidden="true"
+      >
+        {formatted}
+      </span>
     </span>
   )
 }

@@ -3,9 +3,6 @@
 from __future__ import annotations
 
 import json
-import tomllib
-
-import pytest
 
 from sbom.inventory import (
     Inventory,
@@ -15,20 +12,22 @@ from sbom.inventory import (
     parse_uv_lock,
     parse_venv_dist_info,
 )
-from sbom.models import NPM, PYPI
-
 
 UV_LOCK = """\
 version = 1
 requires-python = ">=3.11"
 
+# NOTE: fixture hashes are abbreviated (any hex string is accepted by the
+# parser) so the TOML inline tables stay single-line, as real uv.lock files
+# require for inline tables.
 [[package]]
 name = "aiosqlite"
 version = "0.22.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://example.invalid/aiosqlite-0.22.1.tar.gz", hash = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }
+sdist.url = "https://example.invalid/aiosqlite-0.22.1.tar.gz"
+sdist.hash = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 wheels = [
-    { url = "https://example.invalid/aiosqlite-0.22.1-py3-none-any.whl", hash = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
+    { url = "https://example.invalid/a.whl", hash = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
 ]
 
 [[package]]
@@ -51,6 +50,7 @@ dependencies = [
 
 
 def _write(path, text):
+    """Write a fixture file and return its path."""
     path.write_text(text, encoding="utf-8")
     return path
 
@@ -80,7 +80,7 @@ def test_parse_uv_lock_corrupt(tmp_path):
 
 
 def test_parse_uv_lock_malformed_entry(tmp_path):
-    p = _write(tmp_path / "uv.lock", UV_LOCK.replace('version = "0.22.1"', 'version = 42'))
+    p = _write(tmp_path / "uv.lock", UV_LOCK.replace('version = "0.22.1"', "version = 42"))
     inv = parse_uv_lock(p)
     assert len(inv.packages) == 2
     assert any("missing name/version" in w for w in inv.warnings)
@@ -113,7 +113,9 @@ NPM_V3 = {
         "node_modules/@scope/thing": {
             "version": "2.0.0",
             "resolved": "https://registry.npmjs.org/@scope/thing/-/thing-2.0.0.tgz",
-            "integrity": "sha512-9aBc2o1gZ2b0cGgZgXJkGjY2qW9FJgGK8lG8z3D/TzF3H2WW5xKfxbE0wKk3k8VvJjE5GJFl1tO3SHNfD9tC3g==",
+            "integrity": (
+                "sha512-9aBc2o1gZ2b0cGgZgXJkGjY2qW9FJgGK8lG8z3D/TzF3H2WW5xKfxbE0wKk3k8VvJjE5GJFl1tO3SHNfD9tC3g=="
+            ),
         },
     },
 }

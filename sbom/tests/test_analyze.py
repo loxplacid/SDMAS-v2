@@ -13,8 +13,7 @@ from sbom.graph import resolve_graph
 from sbom.models import NPM, PYPI, Dependency, Package
 
 
-def _pkg(name, version, ecosystem=PYPI, deps=(), direct=True, origin=None,
-         license_expr=None):
+def _pkg(name, version, ecosystem=PYPI, deps=(), direct=True, origin=None, license_expr=None):
     return Package(
         name=name,
         version=version,
@@ -49,9 +48,7 @@ def test_duplicate_versions_detected():
 
 def test_cross_ecosystem_collision():
     pkgs = [_pkg("progress", "1.0", PYPI), _pkg("progress", "2.0", NPM)]
-    assert cross_ecosystem_collisions(pkgs) == [
-        {"name": "progress", "ecosystems": ["npm", "pypi"]}
-    ]
+    assert cross_ecosystem_collisions(pkgs) == [{"name": "progress", "ecosystems": ["npm", "pypi"]}]
 
 
 def test_cycle_detection():

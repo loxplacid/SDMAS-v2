@@ -36,7 +36,9 @@ file change, weekly, and enforces:
    Sources are canonicalised with `Path.resolve()` so identifiers are
    invariant to path case (`apps/api/uv.lock` vs `APPS/API/uv.lock`) and
    separator style on every OS.
-3. **Risk gate** — high-severity inventory findings (non-registry origins,
+3. **Style gate** — `ruff check sbom/` and `ruff format --check sbom/` must
+   pass (config in `sbom/pyproject.toml`); the unit test suite runs too.
+4. **Risk gate** — high-severity inventory findings (non-registry origins,
    missing versions) fail the build.
 
 ## Consumer interoperability

@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-import json
-
 import pytest
 
 from sbom.emit_cyclonedx import build_cyclonedx
 from sbom.emit_spdx import build_spdx, created_timestamp
 from sbom.graph import resolve_graph
-from sbom.inventory import Inventory, parse_package_lock, parse_uv_lock
+from sbom.inventory import parse_uv_lock
 from sbom.models import PYPI, Package
 from sbom.validate import validate
 
@@ -18,7 +16,9 @@ UV = """\
 name = "aiosqlite"
 version = "0.22.1"
 source = { registry = "https://pypi.org/simple" }
-wheels = [{ url = "https://example.invalid/a.whl", hash = "sha256:abababababababababababababababababababababababababababababababab" }]
+wheels = [
+    { url = "https://example.invalid/a.whl", hash = "sha256:abababababababababababababababab" },
+]
 
 [[package]]
 name = "alembic"
@@ -29,12 +29,14 @@ dependencies = [{ name = "aiosqlite" }]
 
 
 def _packages(tmp_path):
+    """Parse the UV fixture into a package list."""
     p = tmp_path / "uv.lock"
     p.write_text(UV, encoding="utf-8")
     return parse_uv_lock(p).packages
 
 
 def _docs(tmp_path, created="2024-01-01T00:00:00Z"):
+    """Build the SPDX + CycloneDX documents for the UV fixture."""
     packages = _packages(tmp_path)
     graph = resolve_graph(packages)
     spdx = build_spdx(packages, "root", "1.0", graph, created)
@@ -61,9 +63,7 @@ def test_spdx_id_validation_and_uniqueness(tmp_path):
 
 def test_spdx_depends_on_edges(tmp_path):
     spdx, _, packages = _docs(tmp_path)
-    alembic_id = next(
-        p["SPDXID"] for p in spdx["packages"] if p["name"] == "alembic"
-    )
+    alembic_id = next(p["SPDXID"] for p in spdx["packages"] if p["name"] == "alembic")
     aio_id = next(p["SPDXID"] for p in spdx["packages"] if p["name"] == "aiosqlite")
     assert any(
         r["spdxElementId"] == alembic_id
@@ -87,9 +87,7 @@ def test_cyclonedx_required_fields(tmp_path):
     # the root metadata component (wired into the graph since X3)
     known = refs | {cdx["metadata"]["component"]["bom-ref"]}
     assert all(d["ref"] in known for d in cdx["dependencies"])
-    assert cdx["metadata"]["component"]["bom-ref"] in {
-        d["ref"] for d in cdx["dependencies"]
-    }
+    assert cdx["metadata"]["component"]["bom-ref"] in {d["ref"] for d in cdx["dependencies"]}
 
 
 def test_deterministic_namespace_and_serial(tmp_path):
@@ -103,9 +101,7 @@ def test_deterministic_namespace_and_serial(tmp_path):
 def test_determinism_changes_with_content(tmp_path):
     spdx1, _, _ = _docs(tmp_path)
     packages = _packages(tmp_path)
-    packages = packages + [
-        Package(name="extra", version="1.0", ecosystem=PYPI, source="x")
-    ]
+    packages = packages + [Package(name="extra", version="1.0", ecosystem=PYPI, source="x")]
     graph = resolve_graph(packages)
     spdx2 = build_spdx(packages, "root", "1.0", graph, "2024-01-01T00:00:00Z")
     assert spdx1["documentNamespace"] != spdx2["documentNamespace"]

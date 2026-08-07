@@ -17,6 +17,9 @@ dependencies = [
     "passlib[bcrypt]>=1.7.4",
     "reportlab>=5.0.0",
     "python-multipart>=0.0.32",
+    "ortools>=9.13.0",  # CP-SAT solver — imported only by app.optimization (worker process)
+    "networkx>=3.2",  # intelligence layer — entity graph + community/centrality algorithms
+    "scikit-learn>=1.4",  # intelligence layer — deterministic (seeded) DBSCAN / IsolationForest
 ]
 
 [project.optional-dependencies]

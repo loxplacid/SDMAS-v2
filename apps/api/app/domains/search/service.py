@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import time
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -7,19 +8,26 @@ from typing import Any, Optional
 from sqlalchemy import delete, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import NotFoundError
-from app.domains.academic.models import Class, Section, Teacher
+from app.domains.academic.models import Class, Section, Subject, Teacher
+from app.domains.academic_ops.models import GradeRecord
+from app.domains.admission.models import AdmissionApplication
+from app.domains.attendance.models import AttendanceRecord
 from app.domains.auth.models import User
 from app.domains.auth.permissions import (
     ACADEMIC_VIEW,
+    ADMISSIONS_VIEW,
+    ATTENDANCE_VIEW,
     FEES_VIEW,
+    LEAVE_VIEW,
     NOTIFICATIONS_VIEW,
     STUDENTS_VIEW,
     TEACHERS_VIEW,
 )
 from app.domains.documents.models import Document
-from app.domains.fees.models import FeeDue, FeeStructure, FeeType, Payment
+from app.domains.fees.models import FeeType, Payment
+from app.domains.leave.models import LeaveRequest
 from app.domains.notifications.models import Notification
+from app.domains.school_finance.models import Receipt
 from app.domains.search.models import SearchHistory
 from app.domains.search.schemas import (
     GlobalSearchQuery,
@@ -74,6 +82,46 @@ class SearchEntityDef:
     description_expr: str
     route_template: str
     id_field: str = "id"
+
+
+# ---------------------------------------------------------------------------
+# Local index sync (universal search)
+# ---------------------------------------------------------------------------
+
+# Entity types whose rows are mirrored into the browser-side FTS5 index.
+# `permission` gates visibility; `changed_field` drives incremental sync.
+# `route_template` formats the deep link (frontend route).
+INDEX_ENTITY_TYPES: tuple[str, ...] = (
+    "student",
+    "teacher",
+    "class",
+    "section",
+    "subject",
+    "fee",
+    "payment",
+    "receipt",
+    "notification",
+    "document",
+    "attendance",
+    "grade_record",
+    "leave_request",
+    "admission_application",
+)
+
+
+@dataclass
+class IndexEntityDef:
+    entity_type: str
+    model: type
+    permission: str
+    search_fields: list[tuple[str, float]]
+    label_expr: str
+    description_expr: str
+    route_template: str
+    id_field: str = "id"
+    changed_field: str = "updated_at"
+
+
 
 
 SEARCHABLE_ENTITIES: list[SearchEntityDef] = [
@@ -177,6 +225,83 @@ SEARCHABLE_ENTITIES: list[SearchEntityDef] = [
         route_template="/operations",
     ),
 ]
+
+# Reuse the search-field definitions; index definitions add a stable route and
+# a changed-at column for incremental pulls. Attendance/leave/admission are
+# capped by the client to recent rows (see sync protocol).
+INDEXABLE_ENTITIES: dict[str, IndexEntityDef] = {
+    defn.entity_type: IndexEntityDef(
+        entity_type=defn.entity_type,
+        model=defn.model,
+        permission=defn.permission,
+        search_fields=defn.search_fields,
+        label_expr=defn.label_expr,
+        description_expr=defn.description_expr,
+        route_template=defn.route_template,
+        id_field=defn.id_field,
+    )
+    for defn in SEARCHABLE_ENTITIES
+}
+INDEXABLE_ENTITIES.update(
+    {
+        "subject": IndexEntityDef(
+            entity_type="subject",
+            model=Subject,
+            permission=ACADEMIC_VIEW,
+            search_fields=[("name", 1.0), ("code", 1.2)],
+            label_expr="Subject.name",
+            description_expr="Subject.code if Subject.code else 'Subject'",
+            route_template="/subjects",
+        ),
+        "receipt": IndexEntityDef(
+            entity_type="receipt",
+            model=Receipt,
+            permission=FEES_VIEW,
+            search_fields=[("receipt_number", 1.5), ("payment_method_name", 0.4)],
+            label_expr="'Receipt #' + Receipt.receipt_number",
+            description_expr="'Amount: ' + cast(Receipt.amount, String)",
+            route_template="/fees/payments",
+        ),
+        "attendance": IndexEntityDef(
+            entity_type="attendance",
+            model=AttendanceRecord,
+            permission=ATTENDANCE_VIEW,
+            search_fields=[("attendance_date", 1.0), ("status", 0.8), ("notes", 0.4)],
+            label_expr="'Attendance ' + AttendanceRecord.attendance_date",
+            description_expr="'Record #' + cast(AttendanceRecord.id, String) + ' • ' + AttendanceRecord.status",
+            route_template="/attendance/records/{id}",
+        ),
+        "grade_record": IndexEntityDef(
+            entity_type="grade_record",
+            model=GradeRecord,
+            permission=ACADEMIC_VIEW,
+            search_fields=[("marks_obtained", 0.6), ("grade", 0.8), ("remarks", 0.4)],
+            label_expr="'Grade #' + cast(GradeRecord.id, String)",
+            description_expr="'Marks: ' + cast(GradeRecord.marks_obtained, String) + ' • Grade ' + GradeRecord.grade",
+            route_template="/academic/classes",
+        ),
+        "leave_request": IndexEntityDef(
+            entity_type="leave_request",
+            model=LeaveRequest,
+            permission=LEAVE_VIEW,
+            search_fields=[("reason", 0.8), ("leave_type", 0.8)],
+            label_expr="'Leave #' + cast(LeaveRequest.id, String) + ' (' + LeaveRequest.leave_type + ')'",
+            description_expr="LeaveRequest.reason",
+            route_template="/leave",
+        ),
+        "admission_application": IndexEntityDef(
+            entity_type="admission_application",
+            model=AdmissionApplication,
+            permission=ADMISSIONS_VIEW,
+            search_fields=[("applicant_name", 1.0), ("email", 0.8), ("phone", 0.6)],
+            label_expr="AdmissionApplication.applicant_name",
+            description_expr="'Admission • ' + AdmissionApplication.status",
+            route_template="/admissions/{id}",
+        ),
+    }
+)
+
+
 
 
 class SearchService:
@@ -332,10 +457,22 @@ class SearchService:
             return f"{row.first_name} {row.last_name}"
         elif entity_def.entity_type == "payment":
             return f"Payment #{row.receipt_number or row.id}"
+        elif entity_def.entity_type == "receipt":
+            return f"Receipt #{row.receipt_number}"
         elif entity_def.entity_type == "document":
             return row.original_filename
         elif entity_def.entity_type == "notification":
             return row.title
+        elif entity_def.entity_type == "subject":
+            return f"{row.name} ({row.code})"
+        elif entity_def.entity_type == "attendance":
+            return f"Attendance {row.attendance_date}"
+        elif entity_def.entity_type == "grade_record":
+            return f"Grade #{row.id}"
+        elif entity_def.entity_type == "leave_request":
+            return f"Leave #{row.id} ({row.leave_type})"
+        elif entity_def.entity_type == "admission_application":
+            return row.applicant_name
         return str(getattr(row, "name", ""))
 
     def _resolve_description(
@@ -353,10 +490,22 @@ class SearchService:
             return "Fee Type"
         elif entity_def.entity_type == "payment":
             return f"Amount: {row.amount} • {row.payment_method or 'N/A'}"
+        elif entity_def.entity_type == "receipt":
+            return f"Amount: {row.amount} • {row.payment_method_name or 'N/A'}"
         elif entity_def.entity_type == "notification":
             return f"{row.type} • {getattr(row, 'is_read', False) and 'Read' or 'Unread'}"
         elif entity_def.entity_type == "document":
             return row.title or "Document"
+        elif entity_def.entity_type == "subject":
+            return "Subject"
+        elif entity_def.entity_type == "attendance":
+            return f"Record #{row.id} • {row.status}"
+        elif entity_def.entity_type == "grade_record":
+            return f"Marks: {row.marks_obtained} • Grade {row.grade}"
+        elif entity_def.entity_type == "leave_request":
+            return row.reason or "Leave request"
+        elif entity_def.entity_type == "admission_application":
+            return f"Admission • {row.status}"
         return ""
 
     def _find_match_field(
@@ -435,3 +584,113 @@ class SearchService:
         )
         result = await self.session.execute(stmt)
         return [(row[0], row[1]) for row in result.all()]
+
+    # ------------------------------------------------------------------
+    # Local index sync (universal search)
+    # ------------------------------------------------------------------
+    # The browser mirrors a permission-scoped projection of the entity
+    # tables into a local SQLite FTS5 index. The sync protocol:
+    #   1. client requests page 0 of an entity type
+    #   2. server returns up to `size` rows ordered by `changed_field`
+    #   3. client stores `cursor` = max changed_at seen; requests `page+1`
+    #   4. when `has_more` is false, the type is caught up
+    # Subsequent runs pass `since` (the stored cursor) so only rows
+    # modified after the last sync are returned — incremental.
+    # ------------------------------------------------------------------
+
+    async def _allowed_entity_types(self) -> list[str]:
+        user_permissions = await self._get_permissions()
+        return [
+            etype
+            for etype in INDEX_ENTITY_TYPES
+            if etype in INDEXABLE_ENTITIES
+            and INDEXABLE_ENTITIES[etype].permission in user_permissions
+        ]
+
+    async def sync_index(
+        self,
+        entity_type: str,
+        page: int = 0,
+        size: int = 200,
+        since: Optional[str] = None,
+    ) -> dict:
+        """Return index rows for one entity type, permission-scoped.
+
+        The first page (page=0) returns the most recently changed rows
+        (``changed_field`` DESC) so the client gets a useful subset fast;
+        pass ``since`` to restrict to rows modified after a timestamp.
+        """
+        allowed = await self._allowed_entity_types()
+        if entity_type not in allowed or entity_type not in INDEXABLE_ENTITIES:
+            return {"entity_type": entity_type, "items": [], "has_more": False}
+
+        entity_def = INDEXABLE_ENTITIES[entity_type]
+        model = entity_def.model
+        changed_col = getattr(model, entity_def.changed_field, None)
+        if changed_col is None:
+            changed_col = getattr(model, "created_at")
+
+        conditions: list = []
+        if since:
+            try:
+                conditions.append(changed_col > datetime.datetime.fromisoformat(since))
+            except ValueError:
+                pass
+        if self.tenant and self.tenant.campus_id is not None:
+            if hasattr(model, "campus_id"):
+                conditions.append(getattr(model, "campus_id") == self.tenant.campus_id)
+
+        # page 0 = newest first (fast useful subset); deeper pages keep the
+        # same ordering so pagination is stable.
+        stmt = select(model).where(*conditions).order_by(
+            changed_col.desc(), model.id.desc()
+        ).limit(size).offset(page * size)
+
+        result = await self.session.execute(stmt)
+        rows = result.scalars().all()
+
+        items = [self._index_row(entity_type, entity_def, row, changed_col) for row in rows]
+        return {
+            "entity_type": entity_type,
+            "items": items,
+            "has_more": len(rows) == size,
+        }
+
+    def _index_row(
+        self,
+        entity_type: str,
+        entity_def: IndexEntityDef,
+        row: Any,
+        changed_col,
+    ) -> dict:
+        entity_id = int(getattr(row, entity_def.id_field))
+        label = self._resolve_label(entity_def, row)
+        description = self._resolve_description(entity_def, row)
+        changed_at = getattr(row, entity_def.changed_field, None)
+        if changed_at is None:
+            changed_at = getattr(row, "created_at", None)
+
+        search_parts: list[str] = []
+        for field_name, _weight in entity_def.search_fields:
+            value = getattr(row, field_name, None)
+            if value is not None:
+                search_parts.append(str(value))
+
+        route = entity_def.route_template.format(
+            id=entity_id,
+            student_id=entity_id,
+            teacher_id=entity_id,
+        )
+
+        return {
+            "id": f"{entity_type}-{entity_id}",
+            "entity_type": entity_type,
+            "entity_id": entity_id,
+            "label": label,
+            "description": description,
+            "route": route,
+            "search_text": " ".join(search_parts),
+            "changed_at": (
+                changed_at.isoformat() if changed_at is not None else None
+            ),
+        }

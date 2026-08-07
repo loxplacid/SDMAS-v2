@@ -17,7 +17,6 @@ import datetime as _dt
 import hashlib
 import re
 import uuid
-from typing import Iterable
 
 from . import __version__
 from .graph import ResolvedGraph
@@ -46,14 +45,10 @@ def created_timestamp(source_date_epoch: str | None = None) -> str:
                 f"SOURCE_DATE_EPOCH must be an integer Unix timestamp, got {source_date_epoch!r}"
             ) from exc
         try:
-            return _dt.datetime.fromtimestamp(stamp, tz=_dt.timezone.utc).strftime(
-                "%Y-%m-%dT%H:%M:%SZ"
-            )
+            return _dt.datetime.fromtimestamp(stamp, tz=_dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         except (OverflowError, OSError, ValueError) as exc:
-            raise ValueError(
-                f"SOURCE_DATE_EPOCH={source_date_epoch} is out of range"
-            ) from exc
-    return _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            raise ValueError(f"SOURCE_DATE_EPOCH={source_date_epoch} is out of range") from exc
+    return _dt.datetime.now(_dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def spdx_id(pkg: Package, used: set[str]) -> str:
@@ -75,6 +70,7 @@ def spdx_id(pkg: Package, used: set[str]) -> str:
 
 
 def _slug(text: str) -> str:
+    """Sanitise text into the SPDXID alphabet, never starting with a digit."""
     out = re.sub(r"[^A-Za-z0-9.\-]", "-", text)
     # SPDXID cannot start with a digit per the spec grammar
     if out and out[0].isdigit():
@@ -121,8 +117,7 @@ def build_spdx(
             )
         if pkg.checksums:
             entry["checksums"] = [
-                {"algorithm": alg, "checksumValue": digest}
-                for alg, digest in pkg.checksums
+                {"algorithm": alg, "checksumValue": digest} for alg, digest in pkg.checksums
             ]
         comments: list[str] = []
         if pkg.origin and pkg.origin not in {"registry", "unknown", "venv", "venv-incomplete"}:
@@ -132,7 +127,7 @@ def build_spdx(
             and declared == "NOASSERTION"
             and pkg.license_expression not in ("NOASSERTION", "NONE")
         ):
-            # unresolvable licence metadata: keep it, but schema-valid
+            # unresolvable license metadata: keep it, but schema-valid
             comments.append(f"original license metadata: {pkg.license_expression}")
         if comments:
             entry["comment"] = "; ".join(comments)
@@ -191,6 +186,8 @@ def _spdx_license(expr: str | None) -> str:
 
 
 def _canonical_key(packages: list[Package], root_name: str, root_version: str) -> str:
+    """Content hash input: sorted package rows so the document namespace
+    changes exactly when the inventory does."""
     lines = [f"{root_name}@{root_version}"]
     for pkg in packages:
         lines.append(

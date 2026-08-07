@@ -8,21 +8,9 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-
-if [[ -x "$ROOT/apps/api/.venv/Scripts/python.exe" ]]; then
-  PY="$ROOT/apps/api/.venv/Scripts/python.exe"
-elif [[ -x "$ROOT/apps/api/.venv/bin/python" ]]; then
-  PY="$ROOT/apps/api/.venv/bin/python"
-elif [[ -n "${PYTHON:-}" ]]; then
-  PY="$PYTHON"
-else
-  PY="$(command -v python3 || command -v python)"
-fi
-
-if [[ -z "$PY" ]]; then
-  echo "error: no Python interpreter found" >&2
-  exit 1
-fi
+# shellcheck source=scripts/_sbom_common.sh
+source "$ROOT/scripts/_sbom_common.sh"
+resolve_python "$ROOT"
 
 cd "$ROOT"
 "$PY" -m sbom.cli node-inventory \

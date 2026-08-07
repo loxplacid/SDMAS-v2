@@ -1,95 +1,112 @@
-import { useRef, useState, useEffect, useCallback, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { flushSync } from 'react-dom'
-import { useLocation } from 'react-router-dom'
-import { cn } from '../../lib/utils'
+import { useLocation, useNavigationType } from 'react-router-dom'
+import { useMove, type Direction } from '../../lib/motion'
 
 interface RouteTransitionProps {
   children: ReactNode
 }
 
 /**
- * Detects whether the browser supports the View Transitions API.
- * Excludes users who prefer reduced motion.
+ * Route transition (spec §6.3): the arriving page is `Slide E + Fade, D4, I3`
+ * — 500ms, 8px travel, enter curve; the departing page slides W 8px + fades
+ * at 0.7× (≈350ms), exit curve. Back navigation is the exact reverse (W
+ * arrival), never a fresh E enter.
+ *
+ * Prefers the native View Transitions API: the wrapper carries
+ * `view-transition-name: page-content`, and the snapshot pair is animated by
+ * the `::view-transition-*` CSS in index.css (same tokens). When the API is
+ * unavailable — or the active motion tier is below `precise` (the tier system
+ * already folds `prefers-reduced-motion` into `efficient`/`minimal`) — the
+ * exit-before-enter fallback runs on `useMove`'s WAAPI choreography.
  */
-function supportsViewTransition(): boolean {
-  return (
-    !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
-    typeof document !== 'undefined' &&
-    typeof document.startViewTransition === 'function'
-  )
-}
-
 export function RouteTransition({ children }: RouteTransitionProps) {
   const location = useLocation()
+  const navigationType = useNavigationType()
+
   const [displayChildren, setDisplayChildren] = useState(children)
-  const [transitionState, setTransitionState] = useState<'entering' | 'exiting'>('entering')
   const prevLocationKeyRef = useRef(location.key)
-  const cachedChildrenRef = useRef(children)
   const initializedRef = useRef(false)
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const animatingRef = useRef(false)
+  const pendingRef = useRef<{ children: ReactNode; key: string } | null>(null)
 
-  // Track the last animation frame ID for cleanup
-  const animFrameRef = useRef<number | null>(null)
+  // E = forward (PUSH), W = back (POP) — spec §2.2. The spec object is
+  // memoized so the resolved move (and `play`) stays referentially stable.
+  const direction: Direction = navigationType === 'POP' ? 'W' : 'E'
+  const pageSpec = useMemo(
+    () => ({ verb: 'slide', direction, distance: 'D4', importance: 'I3' }) as const,
+    [direction]
+  )
+  const pageMove = useMove(pageSpec)
 
-  // Store the latest location.key to avoid stale closures
-  const latestLocationKeyRef = useRef(location.key)
-  latestLocationKeyRef.current = location.key
-
-  // On every render, keep cachedChildrenRef up to date with the current route's children.
-  useEffect(() => {
-    if (location.key === prevLocationKeyRef.current) {
-      cachedChildrenRef.current = children
+  const commitPending = useCallback(() => {
+    const pending = pendingRef.current
+    if (!pending) return
+    pendingRef.current = null
+    setDisplayChildren(pending.children)
+    prevLocationKeyRef.current = pending.key
+    const el = wrapperRef.current
+    if (el && typeof el.animate !== 'function') {
+      // No WAAPI (jsdom/legacy engines): the module's CSS-fallback play()
+      // parks the element on the target frame and never returns it to rest
+      // — so the enter frame (opacity 0) would leave the new page invisible.
+      // A plain swap after the exit fade is the correct fallback behavior.
+      el.style.transition = 'none'
+      el.style.opacity = '1'
+      el.style.transform = 'none'
+      return
     }
-  })
+    // Enter the new page on the same node: exit left it at the exit frame.
+    pageMove.play(el, 'enter')
+  }, [pageMove.play])
 
-  // ── Route change handler ──
   const handleRouteChange = useCallback(
     (newChildren: ReactNode, newKey: string) => {
-      const prevKey = prevLocationKeyRef.current
-
-      // Attempt native View Transitions API
-      if (supportsViewTransition()) {
+      // Native View Transitions API path (spec §12). Only in the precise
+      // tier: `efficient`/`minimal` fold reduced-motion preferences in, and
+      // the fallback below honours them via `useMove` automatically.
+      if (
+        pageMove.tier === 'precise' &&
+        typeof document !== 'undefined' &&
+        typeof document.startViewTransition === 'function'
+      ) {
         try {
-          // Cast to access startViewTransition (TypeScript might not know it yet)
           const vt = (document as any).startViewTransition(() => {
-            // flushSync forces React's concurrent rendering to complete synchronously
-            // so the DOM update happens inside the view transition snapshot.
+            // flushSync forces React's concurrent render to complete
+            // synchronously so the DOM update happens inside the snapshot.
             flushSync(() => {
               setDisplayChildren(newChildren)
-              cachedChildrenRef.current = newChildren
-              setTransitionState('entering')
               prevLocationKeyRef.current = newKey
             })
           })
-
           // Cleanup if the transition is abandoned
           vt.finished.catch(() => {})
           return
         } catch {
-          // View transition failed — fall through to fallback
+          // View transition failed — fall through to the fallback
         }
       }
 
-      // ── Fallback: exit-before-enter animation ──
-      setTransitionState('exiting')
-
-      animFrameRef.current = window.setTimeout(() => {
-        setDisplayChildren(newChildren)
-        cachedChildrenRef.current = newChildren
-        setTransitionState('entering')
-        prevLocationKeyRef.current = newKey
-      }, 200)
+      // Fallback: exit-before-enter on the same node (spec §4.1).
+      pendingRef.current = { children: newChildren, key: newKey }
+      if (animatingRef.current) return // in-flight exit commits the latest pending
+      animatingRef.current = true
+      pageMove.play(wrapperRef.current, 'exit', {
+        onfinish: () => {
+          animatingRef.current = false
+          commitPending()
+        },
+      })
     },
-    []
+    [pageMove.tier, pageMove.play, commitPending]
   )
 
-  // ── Effect: react to route changes ──
   useEffect(() => {
     // First mount
     if (!initializedRef.current) {
       initializedRef.current = true
       setDisplayChildren(children)
-      cachedChildrenRef.current = children
-      setTransitionState('entering')
       prevLocationKeyRef.current = location.key
       return
     }
@@ -98,24 +115,12 @@ export function RouteTransition({ children }: RouteTransitionProps) {
     if (location.key !== prevLocationKeyRef.current) {
       handleRouteChange(children, location.key)
     }
-
-    return () => {
-      if (animFrameRef.current !== null) {
-        clearTimeout(animFrameRef.current)
-        animFrameRef.current = null
-      }
-    }
   }, [location.key, children, handleRouteChange])
 
   return (
     <div
-      className={cn(
-        transitionState === 'entering' ? 'animate-fade-in-up' : 'animate-fade-out-down'
-      )}
-      style={{
-        // Assign a unique view-transition-name to the page content area
-        viewTransitionName: 'page-content',
-      }}
+      ref={wrapperRef}
+      style={{ ...pageMove.style, viewTransitionName: 'page-content' }}
     >
       {displayChildren}
     </div>

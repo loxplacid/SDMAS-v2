@@ -3,6 +3,46 @@ import { useNavigate } from 'react-router-dom'
 import { notificationApi } from '../../api/notifications'
 import { getNotificationRoute } from '../../api/notifications/deep-link'
 import { cn } from '../../lib/utils'
+import { useMove, MOTION_EASINGS } from '../../lib/motion'
+
+/**
+ * Unread-count dot (spec §6.9): scales in with `spring` (300ms settle — a
+ * small object, legal §3.4), then one arrival `Pulse`, then stillness.
+ * Remounted per count change (`key={unreadCount}`) so a new arrival replays
+ * its choreography. The scale-in is a spatial move — gated to the precise
+ * tier (§8); reduced tiers show the count plainly.
+ */
+function BellDot({ count }: { count: number }) {
+  const { pulse, tier } = useMove({ verb: 'scale', distance: 'D1', importance: 'I1' })
+  const dotRef = useRef<HTMLSpanElement>(null)
+
+  useEffect(() => {
+    if (tier !== 'precise') return
+    const el = dotRef.current
+    if (!el) return
+    if (typeof el.animate === 'function') {
+      el.animate(
+        [
+          { transform: 'scale(0)' },
+          { transform: 'scale(1.12)', offset: 0.6 },
+          { transform: 'scale(1)' },
+        ],
+        { duration: 300, easing: MOTION_EASINGS.spring, fill: 'both' }
+      )
+    }
+    const t = window.setTimeout(() => pulse(el), 340)
+    return () => window.clearTimeout(t)
+  }, [tier, pulse])
+
+  return (
+    <span
+      ref={dotRef}
+      className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center h-4 min-w-[1rem] px-1 rounded-full bg-red-500 text-[10px] font-bold text-white leading-none"
+    >
+      {count > 99 ? '99+' : count}
+    </span>
+  )
+}
 
 export function NotificationBell() {
   const navigate = useNavigate()
@@ -166,15 +206,7 @@ export function NotificationBell() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
         {unreadCount > 0 && (
-          <span
-            key={unreadCount}
-            className={cn(
-              'absolute -top-0.5 -right-0.5 inline-flex items-center justify-center h-4 min-w-[1rem] px-1 rounded-full bg-red-500 text-[10px] font-bold text-white leading-none',
-              'animate-badge-pop'
-            )}
-          >
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
+          <BellDot key={unreadCount} count={unreadCount} />
         )}
       </button>
 

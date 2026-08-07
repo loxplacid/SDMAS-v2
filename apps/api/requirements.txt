@@ -19,3 +19,13 @@ httpx>=0.28.0
 aiosqlite>=0.20.0
 ruff>=0.8.0
 mypy>=1.13.0
+
+# Optimization engine (app.optimization) — heavy native dependency; only the
+# worker job process imports it, never the web API request path.
+ortools>=9.13.0
+
+# Relationship intelligence layer (app.intelligence) — entity graph algorithms
+# and deterministic (seeded) anomaly/cluster detection. Worker/periodic-job
+# scope; the request path never imports these.
+networkx>=3.2
+scikit-learn>=1.4

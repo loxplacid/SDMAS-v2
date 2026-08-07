@@ -12,6 +12,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@sqlite.org/sqlite-wasm": "^3.53.0-build1",
     "fuse.js": "^7.5.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",

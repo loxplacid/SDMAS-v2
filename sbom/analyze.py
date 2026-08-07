@@ -16,18 +16,19 @@ All outputs are deterministic (sorted, stable keys).
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from typing import Iterable
+from collections.abc import Iterable
 
 from .graph import ResolvedGraph
+from .licenses import COMMON_SPDX_IDS
 from .models import Package
 
-
 # ---------------------------------------------------------------------------
-# licence summary
+# license summary
 # ---------------------------------------------------------------------------
 
 
 def license_summary(packages: Iterable[Package]) -> dict:
+    """Distribution of declared licenses plus the unknown-license count."""
     packages = list(packages)
     counts: Counter[str] = Counter()
     unknown = 0
@@ -103,6 +104,7 @@ def cross_ecosystem_collisions(packages: Iterable[Package]) -> list[dict]:
 
 
 def dependency_metrics(packages: list[Package], graph: ResolvedGraph) -> dict:
+    """Graph statistics: sizes, edges, orphans, cycles and bounded depth."""
     direct = [p for p in packages if p.is_direct]
     direct_keys = {graph.node_key(p) for p in direct}
 
@@ -143,9 +145,7 @@ def dependency_metrics(packages: list[Package], graph: ResolvedGraph) -> dict:
         "cycles": cycles,
         "max_depth": depth,
         "empty_version_packages": [
-            {"ecosystem": p.ecosystem, "name": p.name}
-            for p in packages
-            if not p.version
+            {"ecosystem": p.ecosystem, "name": p.name} for p in packages if not p.version
         ],
     }
 
@@ -234,14 +234,13 @@ def _max_depth(
 # risk report
 # ---------------------------------------------------------------------------
 
-from .licenses import COMMON_SPDX_IDS
-
 
 def dependency_risk_report(
     packages: list[Package],
     graph: ResolvedGraph,
     warnings: list[str],
 ) -> dict:
+    """Severity-tagged supply-chain findings for the inventory and graph."""
     findings: list[dict] = []
     for pkg in packages:
         if pkg.origin in {"git", "editable", "path", "workspace"}:
@@ -277,8 +276,7 @@ def dependency_risk_report(
                     "severity": "low",
                     "category": "custom_license",
                     "package": f"{pkg.ecosystem}/{pkg.name}@{pkg.version}",
-                    "message": f"license '{pkg.license_expression}' is not a "
-                    "standard SPDX id",
+                    "message": f"license '{pkg.license_expression}' is not a standard SPDX id",
                 }
             )
     for src, dep_name in graph.dangling:

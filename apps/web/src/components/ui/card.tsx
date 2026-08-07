@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { cn } from '../../lib/utils'
+import { Magnetic } from '../../lib/motion/magnetic'
 
 interface CardProps {
   title?: string
@@ -64,26 +65,28 @@ export function Card({
           : undefined
       }
     >
-      {(title || subtitle || actions) && (
-        <div className={cn(
-          'flex items-start justify-between gap-4',
-          paddings[padding],
-          'pb-0'
-        )}>
-          <div className="min-w-0 flex-1">
-            {title && (
-              <h3 className="text-base font-semibold text-[var(--color-text-primary)] truncate">
-                {title}
-              </h3>
-            )}
-            {subtitle && (
-              <p className="text-sm text-[var(--color-text-tertiary)] mt-0.5">{subtitle}</p>
-            )}
+      <Magnetic disabled={!onClick}>
+        {(title || subtitle || actions) && (
+          <div className={cn(
+            'flex items-start justify-between gap-4',
+            paddings[padding],
+            'pb-0'
+          )}>
+            <div className="min-w-0 flex-1">
+              {title && (
+                <h3 className="text-base font-semibold text-[var(--color-text-primary)] truncate">
+                  {title}
+                </h3>
+              )}
+              {subtitle && (
+                <p className="text-sm text-[var(--color-text-tertiary)] mt-0.5">{subtitle}</p>
+              )}
+            </div>
+            {actions && <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>}
           </div>
-          {actions && <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>}
-        </div>
-      )}
-      <div className={cn(paddings[padding])}>{children}</div>
+        )}
+        <div className={cn(paddings[padding])}>{children}</div>
+      </Magnetic>
     </div>
   )
 }

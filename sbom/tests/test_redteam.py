@@ -22,6 +22,7 @@ from sbom.models import NPM, PYPI, Dependency, Package
 
 
 def _pkg(name, version, source, deps=(), direct=False):
+    """Build an npm Package for graph/emitter tests."""
     return Package(
         name=name,
         version=version,
@@ -46,24 +47,21 @@ def test_identity_collision_preserves_relationships():
     ids = {p["SPDXID"]: p for p in spdx["packages"]}
     assert len(ids) == 3  # three distinct SPDXIDs
 
-    describes = [
-        r for r in spdx["relationships"] if r["relationshipType"] == "DESCRIBES"
-    ]
+    describes = [r for r in spdx["relationships"] if r["relationshipType"] == "DESCRIBES"]
     described = {r["relatedSpdxElement"] for r in describes}
     assert described == set(ids), "every SPDXID must be DESCRIBEd exactly once"
 
     d_edges = [
         r
         for r in spdx["relationships"]
-        if r["relationshipType"] == "DEPENDS_ON"
-        and "dep-x" in r["relatedSpdxElement"]
+        if r["relationshipType"] == "DEPENDS_ON" and "dep-x" in r["relatedSpdxElement"]
     ]
     assert len(d_edges) == 1, "exactly one DEPENDS_ON edge to dep-x"
-    # the edge must originate from the instance that declares it (web)
+    # the edge must originate from the instance that declares it (web), not
+    # from the mobile instance that merely shares the name/version.  The web
+    # instance is the first package, so it owns the un-suffixed SPDXID.
     web_sid = next(s for s, p in ids.items() if p["name"] == "shared")
-    # both instances' SPDXIDs derive from the same slug; the declaring one
-    # must be the relationship source
-    assert d_edges[0]["spdxElementId"] in ids
+    assert d_edges[0]["spdxElementId"] == web_sid
 
     cdx = build_cyclonedx(packages, "root", "1", graph, "2024-01-01T00:00:00Z")
     refs = {c["bom-ref"] for c in cdx["components"]}
@@ -87,15 +85,11 @@ def test_venv_augment_requires_version_match(tmp_path):
     site = tmp_path / "site"
     dist = site / "foo-2.0.0.dist-info"
     dist.mkdir(parents=True)
-    (dist / "METADATA").write_text(
-        "Name: foo\nVersion: 2.0.0\nLicense: MIT\n", encoding="utf-8"
-    )
+    (dist / "METADATA").write_text("Name: foo\nVersion: 2.0.0\nLicense: MIT\n", encoding="utf-8")
     (dist / "RECORD").write_text("foo/__init__.py,sha256=abcd,10\n", encoding="utf-8")
     venv_inv = parse_venv_dist_info(site)
 
-    lock_pkgs = [
-        Package(name="foo", version="1.0.0", ecosystem=PYPI, source="uv.lock")
-    ]
+    lock_pkgs = [Package(name="foo", version="1.0.0", ecosystem=PYPI, source="uv.lock")]
     merged, warnings = cli._augment_from_venv(lock_pkgs, venv_inv)
     # the venv's 2.0.0 metadata must NOT be attached to the lock's 1.0.0
     assert merged[0].license_expression is None

@@ -53,19 +53,16 @@ def build_cyclonedx(
         if licenses:
             comp["licenses"] = licenses
         elif pkg.license_expression:
-            # unresolvable licence: omit from schema-valid field, keep verbatim
+            # unresolvable license: omit from schema-valid field, keep verbatim
             comp["properties"] = [
                 {"name": "sdmas:license:original", "value": pkg.license_expression}
             ]
         if pkg.checksums:
             comp["hashes"] = [
-                {"alg": _cdx_alg(alg), "content": digest}
-                for alg, digest in pkg.checksums
+                {"alg": _cdx_alg(alg), "content": digest} for alg, digest in pkg.checksums
             ]
         if pkg.download_url:
-            comp["externalReferences"] = [
-                {"type": "distribution", "url": pkg.download_url}
-            ]
+            comp["externalReferences"] = [{"type": "distribution", "url": pkg.download_url}]
         components.append(comp)
 
     dependencies: list[dict] = []
@@ -85,9 +82,7 @@ def build_cyclonedx(
     # see the tree instead of a disconnected root.  The root depends on
     # every direct install; without this entry the root ref appears in
     # metadata.component but nowhere in dependencies.
-    root_direct = [
-        bom_refs[pkg.identity] for pkg in packages if pkg.is_direct
-    ]
+    root_direct = [bom_refs[pkg.identity] for pkg in packages if pkg.is_direct]
     dependencies.append(
         {"ref": _root_ref(root_name, root_version), "dependsOn": sorted(root_direct)}
     )
@@ -116,15 +111,20 @@ def build_cyclonedx(
 
 
 def _bom_ref(pkg: Package) -> str:
-    # identity alone is NOT unique: the same (ecosystem, name, version) can
-    # legitimately appear once per lock file (e.g. one package version
-    # installed in both apps/web and apps/mobile).  CycloneDX requires every
-    # component bom-ref to be unique, so the ref must include the source.
-    # ``identity|source`` is unique per merged Package by construction.
+    """Deterministic, collision-free bom-ref for a package.
+
+    ``identity|source`` is unique per merged Package by construction:
+    identity alone is NOT unique, because the same (ecosystem, name,
+    version) can legitimately appear once per lock file (e.g. one package
+    version installed in both apps/web and apps/mobile).  CycloneDX
+    requires every component bom-ref to be unique, so the ref must embed
+    the source.
+    """
     return str(uuid.uuid5(_CDX_NS, f"{pkg.identity}|{pkg.source}"))
 
 
 def _root_ref(root_name: str, root_version: str) -> str:
+    """Deterministic bom-ref for the root metadata component."""
     return str(uuid.uuid5(_CDX_NS, f"root:{root_name}:{root_version}"))
 
 
@@ -140,12 +140,14 @@ def _license_entry(expr: str | None) -> list[dict] | None:
 
 
 def _cdx_alg(algorithm: str) -> str:
+    """Map SPDX hash names to their CycloneDX 1.5 algorithm names."""
     return {"SHA1": "SHA-1", "SHA256": "SHA-256", "SHA384": "SHA-384", "SHA512": "SHA-512"}.get(
         algorithm.upper(), algorithm.upper()
     )
 
 
 def _canonical_key(packages: list[Package], root_name: str, root_version: str) -> str:
+    """Content hash input for the serialNumber (see ``_bom_ref``)."""
     lines = [f"{root_name}@{root_version}"]
     for pkg in packages:
         lines.append(

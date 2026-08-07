@@ -10,10 +10,10 @@ superset of the true install graph.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Iterable
 
-from .models import NPM, PYPI, Package, norm_npm_name, norm_pypi_name
+from .models import PYPI, Package, norm_npm_name, norm_pypi_name
 
 
 @dataclass
@@ -30,11 +30,16 @@ class ResolvedGraph:
     ambiguous: list[tuple[Package, str, int]] = field(default_factory=list)
 
     def node_key(self, pkg: Package) -> tuple[str, str]:
+        """Normalised (ecosystem, name) key used for name-level graph ops."""
         norm = norm_pypi_name if pkg.ecosystem == PYPI else norm_npm_name
         return (pkg.ecosystem, norm(pkg.name))
 
 
 def resolve_graph(packages: Iterable[Package]) -> ResolvedGraph:
+    """Resolve name-level dependency edges against the package index.
+
+    Returns the name-keyed graph plus dangling/ambiguous edge metadata.
+    """
     graph = ResolvedGraph()
     pkgs = list(packages)
     for pkg in pkgs:
@@ -53,11 +58,10 @@ def resolve_graph(packages: Iterable[Package]) -> ResolvedGraph:
                 graph.ambiguous.append((pkg, dep.name, len(candidates)))
         # stable, deterministic ordering (index insertion order is already
         # sorted because merge_inventories sorts packages)
-        graph.edges[pkg.identity] = sorted(
-            targets, key=lambda t: (t.ecosystem, t.name, t.version)
-        )
+        graph.edges[pkg.identity] = sorted(targets, key=lambda t: (t.ecosystem, t.name, t.version))
     return graph
 
 
 def _norm(name: str, ecosystem: str) -> str:
+    """Normalise a dependency name for the ecosystem's dedupe rule."""
     return norm_pypi_name(name) if ecosystem == PYPI else norm_npm_name(name)

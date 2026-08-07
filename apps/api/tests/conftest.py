@@ -33,6 +33,9 @@ from app.domains.audit.models import (  # noqa: F401
 from app.domains.events.outbox import (  # noqa: F401
     OutboxEvent,
 )
+from app.temporal.models import (  # noqa: F401
+    TxnLog,
+)
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 

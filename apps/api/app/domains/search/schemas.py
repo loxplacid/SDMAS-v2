@@ -77,4 +77,29 @@ class FrequentSearchResponse(BaseModel):
     count: int
 
 
+class IndexSyncItem(BaseModel):
+    """One row of the local FTS5 index projection."""
+
+    id: str = Field(description="Composite ID: {entity_type}-{entity_id}")
+    entity_type: str
+    entity_id: int
+    label: str
+    description: Optional[str] = None
+    route: str
+    search_text: str = Field(
+        description="Concatenated searchable fields for the FTS5 index"
+    )
+    changed_at: Optional[str] = Field(
+        default=None, description="ISO timestamp of last change (sync cursor)"
+    )
+
+
+class IndexSyncResponse(BaseModel):
+    entity_type: str
+    items: list[IndexSyncItem]
+    has_more: bool = Field(
+        default=False, description="True if another page should be fetched"
+    )
+
+
 SearchHistoryPage = Page[SearchHistoryResponse]
