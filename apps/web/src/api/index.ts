@@ -11,6 +11,35 @@ export type {
   QuickAction,
 } from './command-center/command-center-api'
 export { riskApi } from './risk/risk-api'
+export { casesApi } from './cases/cases-api'
+export type {
+  CaseItem,
+  CaseDetail,
+  CaseEventItem,
+  CaseCommentItem,
+  CaseEvidenceItem,
+  CasePage,
+  CaseOverview,
+  CaseMetrics,
+  WorkloadItem,
+  AssignableUser,
+  BulkResult,
+  EscalationResult,
+  CaseListParams,
+  CaseCreateParams,
+  CasePriority,
+  CaseStatus,
+  CaseType,
+  CaseSourceType,
+} from './cases/cases-api'
+export { dataQualityApi } from './data-quality/data-quality-api'
+export type {
+  DataQualityFinding,
+  DataQualityFindingPage,
+  DataQualityOverview,
+  DataQualityRunResult,
+  DataQualityFindingParams,
+} from './data-quality/data-quality-api'
 export { timelineApi } from './timeline/timeline-api'
 export type {
   TimelineItem,

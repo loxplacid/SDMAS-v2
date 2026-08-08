@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { student360Api, type Student360Response, type LifecycleState } from '../../api/student-360/student-360-api'
 import {
-  Card, TabGroup, Badge, Button, Breadcrumbs, PageHeader, ErrorState,
+  Card, TabGroup, Badge, Button, BreadcrumbBar, PageHeader, ErrorState,
 } from '../../components/ui'
 import { Timeline } from '../../components/timeline/timeline'
 import { Can } from '../../components/auth/can'
@@ -753,7 +753,7 @@ export function Student360Page() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <Breadcrumbs items={[
+      <BreadcrumbBar items={[
         { label: 'Students', href: '/students' },
         { label: `${s.first_name} ${s.last_name}`, href: `/students/${s.id}` },
         { label: '360 View' },

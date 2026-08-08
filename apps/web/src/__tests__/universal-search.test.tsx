@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { useState } from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import {
   tokenize,
@@ -315,5 +316,37 @@ describe('UniversalSearchModal', () => {
       />,
     )
     expect(screen.getByText('Syncing…')).toBeInTheDocument()
+  })
+
+  it('closes on Escape and returns focus to the summoning element (P7 §10)', () => {
+    const onClose = vi.fn()
+    function Harness() {
+      const [open, setOpen] = useState(false)
+      return (
+        <>
+          <button onClick={() => setOpen(true)}>Open search</button>
+          <UniversalSearchModal
+            open={open}
+            onClose={() => {
+              setOpen(false)
+              onClose()
+            }}
+            search={mockSearch}
+            status={{ ready: true, inProgress: false, error: null, lastSyncedAt: Date.now() }}
+            onNavigate={vi.fn()}
+          />
+        </>
+      )
+    }
+    render(<Harness />)
+
+    const trigger = screen.getByRole('button', { name: 'Open search' })
+    trigger.focus()
+    fireEvent.click(trigger)
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' })
+    expect(document.activeElement).toBe(trigger)
+    expect(onClose).toHaveBeenCalledTimes(1)
   })
 })

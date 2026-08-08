@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
+import { useState } from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { CommandPalette } from '../components/ui/command-palette'
@@ -97,5 +98,38 @@ describe('CommandPalette choreography', () => {
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'beta' } })
     expect(screen.queryByText('Alpha')).not.toBeInTheDocument()
     expect(screen.getByText('Beta')).toBeInTheDocument()
+  })
+
+  it('returns focus to the summoning element after closing (P8 §18)', () => {
+    const onClose = vi.fn()
+    function Harness() {
+      const [open, setOpen] = useState(false)
+      return (
+        <>
+          <button onClick={() => setOpen(true)}>Open palette</button>
+          <CommandPalette
+            open={open}
+            groups={groups}
+            onClose={() => {
+              setOpen(false)
+              onClose()
+            }}
+          />
+        </>
+      )
+    }
+    render(
+      <MemoryRouter>
+        <Harness />
+      </MemoryRouter>
+    )
+
+    const trigger = screen.getByRole('button', { name: 'Open palette' })
+    trigger.focus()
+    fireEvent.click(trigger)
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Escape' })
+    expect(document.activeElement).toBe(trigger)
   })
 })

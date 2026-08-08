@@ -1,7 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { paymentApi, type PaymentListParams } from '../../api/fees/payment-api'
+import { exportApi } from '../../api/reports/export-api'
 import type { PaymentResponse, PaymentCreate, PaymentResult } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, ErrorState, useToast } from '../../components/ui'
+import { Button, Modal, Form, Input, Select, Alert, Badge, useToast } from '../../components/ui'
+import type { Column } from '../../components/ui/table'
+import { useDelight } from '../../components/delight/delight-provider'
+import { DataWorkspace, useWorkspace } from '../../components/data-workspace'
 import { PAYMENT_METHODS, capitalize, formatCurrency, formatDateTime } from '../../lib/utils'
 
 const methodBadge: Record<string, 'info' | 'success' | 'warning' | 'neutral'> = {
@@ -12,33 +16,60 @@ const methodBadge: Record<string, 'info' | 'success' | 'warning' | 'neutral'> = 
   mobile_money: 'info',
 }
 
+const PAYMENT_COLUMNS: Column<PaymentResponse>[] = [
+  { key: 'id', header: 'ID', type: 'numeric', render: (p) => `#${p.id}` },
+  { key: 'student_id', header: 'Student ID', type: 'numeric' },
+  { key: 'fee_due_id', header: 'Fee Due', type: 'numeric' },
+  {
+    key: 'amount',
+    header: 'Amount',
+    type: 'amount',
+    render: (p) => formatCurrency(p.amount),
+    currency: 'NGN',
+  },
+  {
+    key: 'payment_method',
+    header: 'Method',
+    render: (p) =>
+      p.payment_method ? (
+        <Badge variant={methodBadge[p.payment_method] || 'neutral'}>
+          {capitalize(p.payment_method.replace('_', ' '))}
+        </Badge>
+      ) : (
+        '-'
+      ),
+  },
+  { key: 'receipt_number', header: 'Receipt', type: 'text', render: (p) => p.receipt_number || '-', hideOnMobile: true },
+  { key: 'payment_date', header: 'Date', type: 'date', render: (p) => p.payment_date || '-' },
+  { key: 'created_at', header: 'Recorded', type: 'date', render: (p) => formatDateTime(p.created_at), hideOnMobile: true },
+]
+
 export function PaymentListPage() {
   const { showToast } = useToast()
+  const { celebrate } = useDelight()
+
+  const workspace = useWorkspace<PaymentResponse>({
+    viewKey: 'payments',
+    columns: PAYMENT_COLUMNS,
+    defaultPageSize: 20,
+  })
 
   const [data, setData] = useState<PaymentResponse[]>([])
   const [total, setTotal] = useState(0)
   const [pages, setPages] = useState(0)
-  const [page, setPage] = useState(1)
-  const [size, setSize] = useState(20)
-  const [studentFilter, setStudentFilter] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [modalOpen, setModalOpen] = useState(false)
-  const [formData, setFormData] = useState<PaymentCreate>({ student_id: 0, fee_due_id: 0, amount: 0, payment_date: new Date().toISOString().split('T')[0], payment_method: 'cash', receipt_number: null })
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
-  const [saving, setSaving] = useState(false)
-  const [apiError, setApiError] = useState<string | null>(null)
-
   const fetchIdRef = useRef(0)
 
-  const fetch = useCallback(async (params: PaymentListParams) => {
+  const fetch = useCallback(async (params: PaymentListParams, showLoading: boolean) => {
     const fetchId = ++fetchIdRef.current
-    setLoading(true); setError(null)
+    if (showLoading) setLoading(true)
+    setError(null)
     try {
       const result = await paymentApi.list(params)
       if (fetchId === fetchIdRef.current) {
-        setData(result.items); setTotal(result.total); setPages(result.pages); setPage(result.page)
+        setData(result.items); setTotal(result.total); setPages(result.pages)
       }
     } catch (err: any) {
       if (fetchId === fetchIdRef.current) setError(err?.detail || 'Failed to load payments')
@@ -47,11 +78,20 @@ export function PaymentListPage() {
     }
   }, [])
 
+  // Server round-trip: page/size, plus the numeric search → student_id.
   useEffect(() => {
-    const params: PaymentListParams = { page, size }
-    if (studentFilter) params.student_id = Number(studentFilter)
-    fetch(params)
-  }, [page, size, studentFilter, fetch])
+    const params: PaymentListParams = { page: workspace.page, size: workspace.size }
+    const q = workspace.filters.query.trim()
+    const studentId = Number(q)
+    if (q && Number.isFinite(studentId)) params.student_id = studentId
+    fetch(params, true)
+  }, [workspace.page, workspace.size, workspace.filters, fetch])
+
+  const [modalOpen, setModalOpen] = useState(false)
+  const [formData, setFormData] = useState<PaymentCreate>({ student_id: 0, fee_due_id: 0, amount: 0, payment_date: new Date().toISOString().split('T')[0], payment_method: 'cash', receipt_number: null })
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [saving, setSaving] = useState(false)
+  const [apiError, setApiError] = useState<string | null>(null)
 
   const openCreateModal = () => {
     setFormData({ student_id: 0, fee_due_id: 0, amount: 0, payment_date: new Date().toISOString().split('T')[0], payment_method: 'cash', receipt_number: null })
@@ -74,49 +114,68 @@ export function PaymentListPage() {
     try {
       const result: PaymentResult = await paymentApi.record(formData)
       showToast(`Payment recorded. Receipt: ${result.payment.receipt_number || 'N/A'}`, 'success')
+      // Glint §5.1 — first-of-kind milestone (registry-gated, once per campus).
+      celebrate('first-payment')
       setModalOpen(false)
-      fetch({ page, size })
-    } catch (err: any) { setApiError(err?.detail || 'Failed to record payment') }
-    finally { setSaving(false) }
+      fetch({ page: workspace.page, size: workspace.size }, true)
+    } catch (err: any) {
+      setApiError(err?.detail || 'Failed to record payment')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // ── export the current workspace state (P8 §22) ──
+  const [exporting, setExporting] = useState(false)
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const blob = await exportApi.payments({})
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'payments.csv'
+      a.click()
+      window.URL.revokeObjectURL(url)
+      // The export endpoint has no student-id filter, so it exports the full
+      // ledger — say so honestly rather than claiming the filtered count.
+      showToast('Exporting all payments', 'success')
+    } catch (err: any) {
+      showToast(err?.detail || 'Export failed', 'error')
+    } finally {
+      setExporting(false)
+    }
   }
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Fees</div>
-          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Payments</h1>
-          <p className="text-[var(--color-text-tertiary)] text-sm mt-1">{total} payment{total !== 1 ? 's' : ''}</p>
-        </div>
-        <Button onClick={openCreateModal}>Record Payment</Button>
-      </div>
-
-      <div className="flex items-center gap-4">
-        <Input type="number" placeholder="Student ID" value={studentFilter} onChange={(e) => { setStudentFilter(e.target.value); setPage(1) }} className="w-32" />
-      </div>
-
-      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
-        {loading ? <Table columns={[]} data={[]} loading={true} keyExtractor={() => ''} emptyMessage="" /> : error ? <ErrorState message={error} onRetry={() => fetch({ page, size })} /> : (
-          <>
-            <Table
-              columns={[
-                { key: 'id', header: 'ID', render: (p: PaymentResponse) => `#${p.id}` },
-                { key: 'student_id', header: 'Student' },
-                { key: 'fee_due_id', header: 'Fee Due' },
-                { key: 'amount', header: 'Amount', render: (p: PaymentResponse) => formatCurrency(p.amount) },
-                { key: 'payment_method', header: 'Method', render: (p: PaymentResponse) => p.payment_method ? <Badge variant={methodBadge[p.payment_method] || 'neutral'}>{capitalize(p.payment_method.replace('_', ' '))}</Badge> : '-' },
-                { key: 'receipt_number', header: 'Receipt', render: (p: PaymentResponse) => p.receipt_number || '-' },
-                { key: 'payment_date', header: 'Date', render: (p: PaymentResponse) => p.payment_date || '-' },
-                { key: 'created_at', header: 'Recorded', render: (p: PaymentResponse) => formatDateTime(p.created_at) },
-              ]}
-              data={data}
-              keyExtractor={(p) => p.id}
-              emptyMessage="No payments found."
-            />
-            <Pagination page={page} size={size} total={total} pages={pages} onPageChange={setPage} onSizeChange={(s) => { setSize(s); setPage(1) }} />
-          </>
-        )}
-      </Card>
+    <div className="space-y-4">
+      <DataWorkspace
+        workspace={workspace}
+        title="Payments"
+        description={`${total} payment${total !== 1 ? 's' : ''}`}
+        columns={PAYMENT_COLUMNS}
+        keyExtractor={(p) => p.id}
+        data={data}
+        total={total}
+        pages={pages}
+        loading={loading}
+        error={error}
+        onRetry={() => fetch({ page: workspace.page, size: workspace.size }, true)}
+        onRefresh={() => fetch({ page: workspace.page, size: workspace.size }, false)}
+        mode="server"
+        filterPlaceholder="Search by student ID…"
+        primaryAction={
+          <Button onClick={openCreateModal}>Record Payment</Button>
+        }
+        toolbarActions={
+          <Button variant="secondary" onClick={handleExport} loading={exporting}>
+            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Export
+          </Button>
+        }
+      />
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}
         title="Record Payment"

@@ -69,6 +69,8 @@ from app.domains.migration.router import router as migration_router
 from app.domains.student_portal.router import router as student_portal_router
 from app.domains.command_center.router import router as command_center_router
 from app.domains.risk.router import router as risk_router
+from app.domains.data_quality.router import router as data_quality_router
+from app.domains.cases.router import router as cases_router
 from app.domains.timeline.router import router as timeline_router
 from app.infrastructure.database import close_db
 from app.domains.audit.router import router as audit_router
@@ -302,6 +304,8 @@ app.include_router(search_router)
 app.include_router(student_portal_router)
 app.include_router(command_center_router)
 app.include_router(risk_router)
+app.include_router(data_quality_router)
+app.include_router(cases_router)
 app.include_router(timeline_router)
 app.include_router(jobs_router)
 app.include_router(migration_router)

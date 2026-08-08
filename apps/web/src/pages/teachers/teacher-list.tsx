@@ -1,93 +1,189 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { teacherApi, type TeacherListParams } from '../../api/academic/teacher-api'
-import type { TeacherResponse, TeacherCreate, TeacherUpdate } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast } from '../../components/ui'
+import { teacherApi } from '../../api/academic/teacher-api'
+import type { TeacherResponse } from '../../api/generated/types'
+import { Button, Modal, Form, Input, Select, Alert, Badge, useToast } from '../../components/ui'
+import type { Column } from '../../components/ui/table'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
-import { TEACHER_STATUSES, capitalize, debounce } from '../../lib/utils'
+import { useDelight } from '../../components/delight/delight-provider'
+import { DataWorkspace, useWorkspace } from '../../components/data-workspace'
+import { TEACHER_STATUSES, capitalize } from '../../lib/utils'
 
-const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = { active: 'success', inactive: 'danger' }
-
-const columns = [
-  { key: 'employee_number', header: 'Employee #' },
-  { key: 'first_name', header: 'First Name' },
-  { key: 'last_name', header: 'Last Name' },
-  { key: 'email', header: 'Email', render: (t: TeacherResponse) => t.email || '-' },
-  { key: 'status', header: 'Status', render: (t: TeacherResponse) => <Badge variant={statusBadge[t.status] || 'default'}>{capitalize(t.status)}</Badge> },
-]
+const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
+  active: 'success',
+  inactive: 'danger',
+}
 
 export function TeacherListPage() {
   const navigate = useNavigate()
   const { showToast } = useToast()
+  const { celebrate } = useDelight()
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
-  useKeyboardShortcut({ 'n': () => openCreateModal() }, [])
+  // ── data (local mode: the staff directory is fetched once) ──
   const [data, setData] = useState<TeacherResponse[]>([])
-  const [total, setTotal] = useState(0); const [pages, setPages] = useState(0)
-  const [page, setPage] = useState(1); const [size, setSize] = useState(20)
-  const [statusFilter, setStatusFilter] = useState('')
-  const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const fetchIdRef = useRef(0)
 
+  const fetchTeachers = useCallback(async (showLoading: boolean) => {
+    const fetchId = ++fetchIdRef.current
+    if (showLoading) setLoading(true)
+    setError(null)
+    try {
+      // Staff is a bounded directory: one fetch, all filtering/sorting local.
+      const result = await teacherApi.list({ page: 1, size: 10000 })
+      if (fetchId === fetchIdRef.current) setData(result.items)
+    } catch (err: any) {
+      if (fetchId === fetchIdRef.current) setError(err?.detail || 'Failed to load teachers')
+    } finally {
+      if (fetchId === fetchIdRef.current) setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchTeachers(true)
+  }, [fetchTeachers])
+
+  // ── create / edit modal ──
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<TeacherResponse | null>(null)
   const [formData, setFormData] = useState<{ first_name: string; last_name: string; employee_number: string; email: string | null; status?: string | null }>({ first_name: '', last_name: '', employee_number: '', email: null })
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
-  const [saving, setSaving] = useState(false); const [apiError, setApiError] = useState<string | null>(null)
-  const fetchIdRef = useRef(0)
+  const [saving, setSaving] = useState(false)
+  const [apiError, setApiError] = useState<string | null>(null)
 
-  const fetch = useCallback(async (params: TeacherListParams) => {
-    const fetchId = ++fetchIdRef.current; setLoading(true); setError(null)
-    try {
-      const result = await teacherApi.list(params)
-      if (fetchId === fetchIdRef.current) { setData(result.items); setTotal(result.total); setPages(result.pages); setPage(result.page) }
-    } catch (err: any) { if (fetchId === fetchIdRef.current) setError(err?.detail || 'Failed to load teachers')
-    } finally { if (fetchId === fetchIdRef.current) setLoading(false) }
+  const openCreateModal = () => {
+    setEditing(null)
+    setFormData({ first_name: '', last_name: '', employee_number: '', email: null })
+    setFormErrors({}); setApiError(null); setModalOpen(true)
+  }
+
+  const openEditModal = (t: TeacherResponse) => {
+    setEditing(t)
+    setFormData({ first_name: t.first_name, last_name: t.last_name, employee_number: t.employee_number, email: t.email, status: t.status })
+    setFormErrors({}); setApiError(null); setModalOpen(true)
+  }
+
+  // Columns live inside the component: the actions column binds `navigate`
+  // and the modal handlers.
+  const columns = useMemo<Column<TeacherResponse>[]>(
+    () => [
+      { key: 'employee_number', header: 'Employee #', type: 'text', sortable: true },
+      { key: 'first_name', header: 'First Name', type: 'text', sortable: true },
+      { key: 'last_name', header: 'Last Name', type: 'text', sortable: true },
+      { key: 'email', header: 'Email', type: 'text', render: (t) => t.email || '-', hideOnMobile: true },
+      {
+        key: 'status',
+        header: 'Status',
+        type: 'status',
+        sortable: true,
+        render: (t) => <Badge variant={statusBadge[t.status] || 'neutral'}>{capitalize(t.status)}</Badge>,
+      },
+      {
+        key: 'actions',
+        header: '',
+        type: 'actions',
+        render: (t) => (
+          <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+            <Button variant="ghost" size="sm" onClick={() => navigate(`/teachers/${t.id}/360`)} title="Open Teacher 360 view">
+              360
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => openEditModal(t)}>
+              Edit
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [navigate]
+  )
+
+  const workspace = useWorkspace<TeacherResponse>({
+    viewKey: 'teachers',
+    columns,
+    defaultPageSize: 20,
+  })
+
+  // ── keyboard: `/` focuses the filter rail search, `n` creates ──
+  useKeyboardShortcut({
+    '/': (e) => {
+      e.preventDefault()
+      searchInputRef.current?.focus()
+    },
+    n: () => openCreateModal(),
   }, [])
 
-  useEffect(() => { fetch({ page, size, status: statusFilter || undefined }) }, [page, size, statusFilter, fetch])
-
-  const openCreateModal = () => { setEditing(null); setFormData({ first_name: '', last_name: '', employee_number: '', email: null }); setFormErrors({}); setApiError(null); setModalOpen(true) }
-  const openEditModal = (t: TeacherResponse) => { setEditing(t); setFormData({ first_name: t.first_name, last_name: t.last_name, employee_number: t.employee_number, email: t.email, status: t.status }); setFormErrors({}); setApiError(null); setModalOpen(true) }
-  const validate = (): boolean => { const e: Record<string, string> = {}; if (!formData.first_name.trim()) e.first_name = 'First name is required'; if (!formData.last_name.trim()) e.last_name = 'Last name is required'; if (!editing && !formData.employee_number.trim()) e.employee_number = 'Employee number is required'; setFormErrors(e); return Object.keys(e).length === 0 }
+  const validate = (): boolean => {
+    const e: Record<string, string> = {}
+    if (!formData.first_name.trim()) e.first_name = 'First name is required'
+    if (!formData.last_name.trim()) e.last_name = 'Last name is required'
+    if (!editing && !formData.employee_number.trim()) e.employee_number = 'Employee number is required'
+    setFormErrors(e)
+    return Object.keys(e).length === 0
+  }
 
   const handleSubmit = async (ev: React.FormEvent) => {
-    ev.preventDefault(); if (!validate()) return; setSaving(true); setApiError(null)
+    ev.preventDefault()
+    if (!validate()) return
+    setSaving(true); setApiError(null)
     try {
       if (editing) {
         const updated = await teacherApi.update(editing.id, { first_name: formData.first_name || null, last_name: formData.last_name || null, email: formData.email, status: formData.status || null })
-        setData((prev) => prev.map((t) => (t.id === updated.id ? updated : t))); showToast('Teacher updated', 'success')
+        setData((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+        showToast('Teacher updated', 'success')
       } else {
         const created = await teacherApi.create({ first_name: formData.first_name, last_name: formData.last_name, employee_number: formData.employee_number, email: formData.email })
-        setData((prev) => [created, ...prev]); setTotal((t) => t + 1); showToast('Teacher created', 'success')
+        setData((prev) => [created, ...prev])
+        showToast('Teacher created', 'success')
+        // Glint §5.1 — first-of-kind milestone (registry-gated, once per campus).
+        celebrate('first-teacher')
       }
       setModalOpen(false)
-    } catch (err: any) { setApiError(err?.detail || 'Failed to save')
-    } finally { setSaving(false) }
+    } catch (err: any) {
+      setApiError(err?.detail || 'Failed to save')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide mb-1">People</p>
-          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Teachers</h1>
-          <p className="text-sm text-[var(--color-text-tertiary)] mt-1">{total} teacher{total !== 1 ? 's' : ''}</p>
-        </div>
-        <Button onClick={openCreateModal}>
-          Add Teacher
-          <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
-        </Button>
-      </div>
-      <div className="flex items-center gap-4">
-        <Select options={TEACHER_STATUSES.map((s) => ({ value: s, label: capitalize(s) }))} placeholder="All statuses" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }} />
-      </div>
-      <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
-        {error ? <ErrorState message={error} onRetry={() => fetch({ page, size, status: statusFilter || undefined })} /> : (
-          <>
-            <Table columns={[...columns, { key: 'actions', header: 'Actions', render: (t: TeacherResponse) => (<div className="flex gap-2" onClick={(e) => e.stopPropagation()}><Button variant="ghost" size="sm" onClick={() => navigate(`/teachers/${t.id}/360`)} title="Open Teacher 360 view">360</Button><Button variant="ghost" size="sm" onClick={() => openEditModal(t)}>Edit</Button></div>) }]} data={data} keyExtractor={(t) => t.id} emptyMessage="No teachers found." onRowClick={(t) => navigate(`/teachers/${t.id}`)} loading={loading} />
-            <Pagination page={page} size={size} total={total} pages={pages} onPageChange={setPage} onSizeChange={(s) => { setSize(s); setPage(1) }} />
-          </>
-        )}
-      </Card>
+    <div className="space-y-4">
+      <DataWorkspace
+        workspace={workspace}
+        title="Teachers"
+        description={
+          data.length > 0
+            ? `${data.length} teacher${data.length !== 1 ? 's' : ''} on staff. Manage records, employment status and contact details.`
+            : 'Build your staff directory by adding teacher records.'
+        }
+        columns={columns}
+        keyExtractor={(t) => t.id}
+        data={data}
+        total={data.length}
+        pages={Math.ceil(data.length / workspace.size)}
+        loading={loading}
+        error={error}
+        onRetry={() => fetchTeachers(true)}
+        onRefresh={() => fetchTeachers(false)}
+        mode="local"
+        filterPlaceholder="Search by name, employee # or email…"
+        onRowClick={(t) => navigate(`/teachers/${t.id}`)}
+        primaryAction={
+          <Button onClick={openCreateModal}>
+            Add Teacher
+            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+          </Button>
+        }
+        empty={{
+          title: 'No teachers yet',
+          description: 'Build your staff directory by adding teacher records.',
+          actionLabel: 'Add Teacher',
+          onAction: openCreateModal,
+        }}
+        searchInputRef={searchInputRef}
+      />
+
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Teacher' : 'Add Teacher'}
         footer={<><Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button><Button onClick={handleSubmit} loading={saving}>{editing ? 'Save Changes' : 'Create'}</Button></>}
       >

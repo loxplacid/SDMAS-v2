@@ -18,26 +18,23 @@ import logging
 from datetime import timezone
 from typing import Optional
 
-from sqlalchemy import and_, case, func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domains.analytics.service import AnalyticsService
+from app.domains.academic.models import AcademicYear, Teacher, TeacherAssignment
+from app.domains.academic_ops.models import GradeRecord
 from app.domains.admission.models import (
     ADMISSION_STATUS_FLOW,
     AdmissionApplication,
     AdmissionDocument,
 )
+from app.domains.analytics.service import AnalyticsService
 from app.domains.attendance.models import AttendanceRecord
-from app.domains.communications.models import CommunicationMessage
-from app.domains.fees.models import FeeDue, Payment
-from app.domains.jobs.models import Job
-from app.domains.leave.models import LeaveRequest
-from app.domains.academic.models import AcademicYear, Teacher, TeacherAssignment
-from app.domains.workflow.models import ApprovalHistory, WorkflowInstance
-from app.domains.risk.models import RiskFinding
 from app.domains.command_center.schemas import (
     Alert,
     CommandCenterOverview,
+    HealthDimension,
+    HealthScore,
     Metric,
     NeedsAttention,
     QuickAction,
@@ -45,7 +42,17 @@ from app.domains.command_center.schemas import (
     TodayEvent,
     TodaySection,
     TrendPoint,
+    WorkflowCaseMetric,
+    WorkflowSection,
+    WorkloadEntry,
 )
+from app.domains.communications.models import CommunicationMessage
+from app.domains.data_quality.models import DataQualityFinding
+from app.domains.fees.models import FeeDue, Payment
+from app.domains.jobs.models import Job
+from app.domains.leave.models import LeaveRequest
+from app.domains.risk.models import RiskFinding
+from app.domains.workflow.models import ApprovalHistory, WorkflowInstance
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +69,21 @@ ATTENDANCE_ROLES = {"admin", "principal", "staff", "teacher"}
 # Days before the active year ends to warn leadership that the next
 # academic year has not been planned yet (proactive rollover health).
 ROLLOVER_WINDOW_DAYS = 60
+
+# ---------------------------------------------------------------------------
+# School Health Score — deterministic weighted composite
+# ---------------------------------------------------------------------------
+
+#: Transparent, fixed dimension weights.  The composite re-normalises
+#: across whichever dimensions are actually computable, so a school with
+#: no academic records yet still gets an honest score from the rest.
+HEALTH_WEIGHTS = {
+    "attendance": 0.30,
+    "fees": 0.25,
+    "academics": 0.15,
+    "retention": 0.15,
+    "data_quality": 0.15,
+}
 
 # ---------------------------------------------------------------------------
 # Quick actions (role-filtered)
@@ -160,6 +182,7 @@ class CommandCenterService:
             "needs_attention": True,
             "today": True,
             "quick_actions": True,
+            "workflow": True,
         }
 
         school_health = await self._build_health(
@@ -185,6 +208,9 @@ class CommandCenterService:
 
         quick_actions = self._build_quick_actions(role)
 
+        workflow = await self._build_workflow(campus_id)
+        sections["workflow"] = workflow.available
+
         year_name = await self._active_year_name(campus_id)
 
         return CommandCenterOverview(
@@ -199,6 +225,7 @@ class CommandCenterService:
             quick_actions=[
                 QuickAction(**a) for a in quick_actions
             ],
+            workflow=workflow,
         )
 
     # ------------------------------------------------------------------
@@ -367,10 +394,210 @@ class CommandCenterService:
                 except Exception as exc:  # noqa: BLE001
                     logger.warning("Command center: approvals metric unavailable: %s", exc)
 
-            return SchoolHealth(available=True, metrics=metrics, trends=trends)
+            # Composite School Health Score (deterministic, explainable).
+            try:
+                score = await self._build_health_score(
+                    campus_id, can_finance, metrics
+                )
+            except Exception as exc:  # noqa: BLE001 — score degrades to unavailable
+                logger.warning("Command center: health score unavailable: %s", exc)
+                score = HealthScore(available=False)
+
+            return SchoolHealth(
+                available=True, metrics=metrics, trends=trends, score=score
+            )
         except Exception as exc:  # noqa: BLE001 — whole section degrades gracefully
             logger.error("Command center: school health section failed: %s", exc)
             return SchoolHealth(available=False)
+
+    async def _build_health_score(
+        self,
+        campus_id: Optional[int],
+        can_finance: bool,
+        metrics: list[Metric],
+    ) -> HealthScore:
+        """Composite School Health Score from real, computable dimensions.
+
+        Each dimension is a deterministic 0–100 score derived from actual
+        persisted records; the composite is the weighted average of the
+        dimensions that could be computed, re-normalised across their
+        weights.  ``weights`` are returned verbatim so the score is always
+        explainable in the UI (overall = Σ scoreᵢ·wᵢ / Σ wᵢ).
+        """
+        dims: list[HealthDimension] = []
+        by_key = {m.key: m for m in metrics}
+
+        def _add_dim(
+            key: str,
+            label: str,
+            score: float,
+            *,
+            weight: float,
+            drill_down: Optional[str] = None,
+            metric_keys: list[str] | None = None,
+        ) -> None:
+            status = (
+                "good"
+                if score >= 85
+                else ("warn" if score >= 70 else "critical")
+            )
+            sub_metrics = [by_key[k] for k in (metric_keys or []) if k in by_key]
+            dims.append(
+                HealthDimension(
+                    key=key,
+                    label=label,
+                    score=round(score, 1),
+                    weight=weight,
+                    status=status,
+                    metrics=sub_metrics,
+                    drill_down=drill_down,
+                )
+            )
+
+        # Attendance dimension ← the attendance_rate metric above.
+        if "attendance_rate" in by_key:
+            _add_dim(
+                "attendance",
+                "Attendance",
+                by_key["attendance_rate"].value,
+                weight=HEALTH_WEIGHTS["attendance"],
+                drill_down="/attendance-intelligence/dashboard",
+                metric_keys=["attendance_rate"],
+            )
+
+        # Fees dimension ← fee collection rate (finance roles only).
+        if can_finance and "fee_collection_rate" in by_key:
+            _add_dim(
+                "fees",
+                "Fees",
+                by_key["fee_collection_rate"].value,
+                weight=HEALTH_WEIGHTS["fees"],
+                drill_down="/school-finance/dashboard",
+                metric_keys=["fee_collection_rate", "outstanding_amount"],
+            )
+
+        # Academics dimension ← average grade percentage across grade records.
+        try:
+            acad = await self._average_grade_pct(campus_id)
+            if acad is not None:
+                _add_dim(
+                    "academics",
+                    "Academics",
+                    acad,
+                    weight=HEALTH_WEIGHTS["academics"],
+                    drill_down="/academic/exams",
+                )
+        except Exception as exc:  # noqa: BLE001 — dimension degrades individually
+            logger.warning("Command center: academics dimension unavailable: %s", exc)
+
+        # Retention dimension ← active students / total students.
+        try:
+            retention = await self._retention_rate(campus_id)
+            if retention is not None:
+                _add_dim(
+                    "retention",
+                    "Retention",
+                    retention,
+                    weight=HEALTH_WEIGHTS["retention"],
+                    drill_down="/students",
+                    metric_keys=["total_students"],
+                )
+        except Exception as exc:  # noqa: BLE001 — dimension degrades individually
+            logger.warning("Command center: retention dimension unavailable: %s", exc)
+
+        # Data-quality dimension ← persisted DQ findings (score is 100 −
+        # severity-weighted penalty).  Skipped when no scan has ever run, so
+        # an unscanned school never shows a fake 100.
+        try:
+            dq = await self._data_quality_score(campus_id)
+            if dq is not None:
+                _add_dim(
+                    "data_quality",
+                    "Data Quality",
+                    dq,
+                    weight=HEALTH_WEIGHTS["data_quality"],
+                    drill_down="/data-quality",
+                )
+        except Exception as exc:  # noqa: BLE001 — dimension degrades individually
+            logger.warning("Command center: data quality dimension unavailable: %s", exc)
+
+        # Fewer than two dimensions ⇒ no honest composite — degrade.
+        if len(dims) < 2:
+            return HealthScore(available=False, dimensions=dims)
+
+        total_weight = sum(d.weight for d in dims)
+        overall = (
+            sum(d.score * d.weight for d in dims) / total_weight
+            if total_weight > 0
+            else 0.0
+        )
+        return HealthScore(
+            available=True,
+            overall=round(overall, 1),
+            dimensions=dims,
+            weights=dict(HEALTH_WEIGHTS),
+        )
+
+    async def _average_grade_pct(
+        self, campus_id: Optional[int]
+    ) -> Optional[float]:
+        """Mean ``marks_obtained / max_marks`` across grade records (%)."""
+        q = select(
+            func.avg(
+                100.0 * GradeRecord.marks_obtained / GradeRecord.max_marks
+            )
+        ).where(
+            GradeRecord.marks_obtained.isnot(None),
+            GradeRecord.max_marks > 0,
+        )
+        if campus_id is not None:
+            q = q.where(GradeRecord.campus_id == campus_id)
+        value = (await self.session.execute(q)).scalar()
+        return round(value, 1) if value is not None else None
+
+    async def _retention_rate(self, campus_id: Optional[int]) -> Optional[float]:
+        """Share of students in an active lifecycle state (%)."""
+        from app.domains.student.models import Student
+
+        q = select(func.count(Student.id))
+        if campus_id is not None:
+            q = q.where(Student.campus_id == campus_id)
+        total = (await self.session.execute(q)).scalar() or 0
+        if total == 0:
+            return None
+        active_q = select(func.count(Student.id)).where(
+            Student.status.in_(["active", "enrolled", "admitted"])
+        )
+        if campus_id is not None:
+            active_q = active_q.where(Student.campus_id == campus_id)
+        active = (await self.session.execute(active_q)).scalar() or 0
+        return round(active / total * 100.0, 1)
+
+    async def _data_quality_score(
+        self, campus_id: Optional[int]
+    ) -> Optional[float]:
+        """100 − severity-weighted penalty from open DQ findings.
+
+        Returns ``None`` when no DQ scan has ever run for this campus
+        (no persisted findings at all), so the UI never shows a fake 100.
+        """
+        from app.domains.data_quality.service import DataQualityService
+
+        svc = DataQualityService(self.session)
+        overview = await svc.get_overview(campus_id, role="admin")
+        # A scan with zero findings still writes audit rows but no finding
+        # rows; an untouched table has no rows either — distinguish via the
+        # audit trail being impractical here, so require any finding row.
+        ever_scanned = (
+            await self.session.execute(
+                select(func.count(DataQualityFinding.id)).where(
+                    DataQualityFinding.campus_id == campus_id
+                )
+            )
+        ).scalar() or 0
+        if ever_scanned == 0:
+            return None
+        return overview["overall_quality"]
 
     async def _build_teacher_health(
         self,
@@ -854,7 +1081,92 @@ class CommandCenterService:
             return TodaySection(available=False)
 
     # ------------------------------------------------------------------
-    # D. Quick actions
+    # D. Operational workflow (case engine)
+    # ------------------------------------------------------------------
+
+    async def _build_workflow(
+        self, campus_id: Optional[int]
+    ) -> WorkflowSection:
+        """Case-engine figures: what needs action + who is overloaded."""
+        try:
+            from app.domains.cases.service import CaseService
+
+            svc = CaseService(self.session)
+            metrics = await svc.get_metrics(campus_id)
+            workload = await svc.get_workload(campus_id)
+
+            open_total = metrics.get("open", 0)
+            critical = metrics.get("critical", 0)
+            overdue = metrics.get("overdue", 0)
+            due_today = metrics.get("due_today", 0)
+
+            items: list[WorkflowCaseMetric] = []
+            if open_total > 0:
+                items.append(
+                    WorkflowCaseMetric(
+                        label="Open Cases",
+                        value=open_total,
+                        display=f"{open_total}",
+                        severity="info",
+                        drill_down="/work",
+                    )
+                )
+            if critical > 0:
+                items.append(
+                    WorkflowCaseMetric(
+                        label="Critical",
+                        value=critical,
+                        display=f"{critical}",
+                        severity="critical",
+                        drill_down="/work?priority=critical",
+                    )
+                )
+            if overdue > 0:
+                items.append(
+                    WorkflowCaseMetric(
+                        label="Overdue",
+                        value=overdue,
+                        display=f"{overdue}",
+                        severity="critical" if overdue > 0 else "good",
+                        drill_down="/work?view=overdue",
+                    )
+                )
+            if due_today > 0:
+                items.append(
+                    WorkflowCaseMetric(
+                        label="Due Today",
+                        value=due_today,
+                        display=f"{due_today}",
+                        severity="warn",
+                        drill_down="/work?view=due_soon",
+                    )
+                )
+
+            return WorkflowSection(
+                available=True,
+                open_cases=open_total,
+                critical_cases=critical,
+                overdue_cases=overdue,
+                due_today=due_today,
+                metrics=items,
+                by_type=metrics.get("by_type", {}),
+                workload=[
+                    WorkloadEntry(
+                        assignee_id=w["assignee_id"],
+                        assignee_name=w["assignee_name"],
+                        open_cases=w["open_cases"],
+                        critical_cases=w["critical_cases"],
+                        overdue_cases=w["overdue_cases"],
+                    )
+                    for w in workload[:5]
+                ],
+            )
+        except Exception as exc:  # noqa: BLE001 — section degrades gracefully
+            logger.error("Command center: workflow section failed: %s", exc)
+            return WorkflowSection(available=False)
+
+    # ------------------------------------------------------------------
+    # E. Quick actions
     # ------------------------------------------------------------------
 
     def _build_quick_actions(self, role: str) -> list[dict]:

@@ -110,6 +110,9 @@ export function CommandPalette({
   const listRef = useRef<HTMLDivElement>(null)
   const accentRef = useRef<HTMLDivElement>(null)
   const closingRef = useRef(false)
+  // Element that had focus when the palette opened — restored on close so
+  // keyboard users land back where they left (P8 §18).
+  const previousFocusRef = useRef<HTMLElement | null>(null)
 
   // Choreography (spec §6.10): backdrop `Fade` (base, 180ms) + panel
   // `Scale Z + Fade, D4, I3` (380ms) from center. Specs are memoized so the
@@ -153,6 +156,8 @@ export function CommandPalette({
     if (open) {
       setQuery('')
       setSelectedIndex(0)
+      previousFocusRef.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null
       setTimeout(() => inputRef.current?.focus(), 50)
       document.body.style.overflow = 'hidden'
     } else {
@@ -168,6 +173,12 @@ export function CommandPalette({
     const done = () => {
       closingRef.current = false
       setClosing(false)
+      // Return focus to the summoning surface (P8 §18). The element may
+      // have left the DOM while the palette was open — guard both.
+      const previous = previousFocusRef.current
+      if (previous && previous.isConnected && typeof previous.focus === 'function') {
+        previous.focus()
+      }
       onClose()
     }
     // Exit is the reverse of entry at 0.7× (spec §11.3.5): panel scales to
@@ -234,15 +245,15 @@ export function CommandPalette({
     block.style.height = `${item.offsetHeight}px`
   }, [selectedIndex, displayGroups, accentTransition])
 
-  // Global keyboard shortcut
+  // Global keyboard shortcut. This surface owns the *close* half of the
+  // ⌘K toggle (AppLayout owns the open half): pressing ⌘K while open closes
+  // the palette. Shift-modified ⌘K (⌘⇧K = universal search) is ignored so
+  // the two bindings never fight (P8 §9).
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key === 'k') {
         e.preventDefault()
         if (open) handleClose()
-        else {
-          // We need a way to open - parent controls this
-        }
       }
     }
     document.addEventListener('keydown', handler)
@@ -253,7 +264,7 @@ export function CommandPalette({
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-start justify-center pt-[12vh]"
+      className="fixed inset-0 z-[var(--z-command)] flex items-start justify-center pt-[12vh]"
       onClick={(e) => { if (e.target === e.currentTarget) handleClose() }}
       role="dialog"
       aria-modal="true"

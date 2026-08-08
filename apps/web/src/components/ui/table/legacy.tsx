@@ -78,7 +78,7 @@ export function Table<T>({
     <div className="overflow-x-auto">
       <table className="min-w-full">
         <thead>
-          <tr className={cn(stickyHeader && 'sticky top-0 z-10')}>
+          <tr className={cn(stickyHeader && 'sticky top-0 z-[var(--z-sticky)]')}>
             {columns.map((col) => (
               <th
                 key={col.key}

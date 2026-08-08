@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { teacher360Api, type Teacher360Response } from '../../api/teacher-360/teacher-360-api'
 import {
-  Card, TabGroup, Badge, Button, Breadcrumbs, PageHeader, ErrorState,
+  Card, TabGroup, Badge, Button, BreadcrumbBar, PageHeader, ErrorState,
 } from '../../components/ui'
 import { Timeline } from '../../components/timeline/timeline'
 import { usePermission } from '../../hooks/use-permission'
@@ -280,7 +280,7 @@ export function Teacher360Page() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <Breadcrumbs items={[
+      <BreadcrumbBar items={[
         { label: 'Teachers', href: '/teachers' },
         { label: `${t.first_name} ${t.last_name}`, href: `/teachers/${t.id}` },
         { label: '360 View' },

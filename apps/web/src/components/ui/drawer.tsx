@@ -190,7 +190,7 @@ export function Drawer({
     <div
       ref={overlayRef}
       className={cn(
-        'fixed inset-0 z-50 flex',
+        'fixed inset-0 z-[var(--z-dialog)] flex',
         side === 'right' ? 'justify-end' : 'justify-start'
       )}
       onClick={handleOverlayClick}

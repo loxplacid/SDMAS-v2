@@ -190,7 +190,7 @@ export function DropdownMenu({
           ref={menuRef}
           role="menu"
           className={cn(
-            'absolute z-50 min-w-[180px] overflow-hidden',
+            'absolute z-[var(--z-dropdown)] min-w-[180px] overflow-hidden',
             'bg-[var(--color-surface)] rounded-xl shadow-xl',
             'border border-[var(--color-border)]',
             'py-1',

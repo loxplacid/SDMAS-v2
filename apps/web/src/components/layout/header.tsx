@@ -8,6 +8,8 @@ import { DropdownMenu } from '../ui/dropdown-menu'
 import type { DropdownItem } from '../ui/dropdown-menu'
 import { Skeleton } from '../ui/skeleton'
 import { cn, capitalize } from '../../lib/utils'
+import { BreadcrumbBar } from '../ui/breadcrumb-bar'
+import { ContextualPageActions } from './contextual-actions'
 
 import { ROLE_BADGE_COLORS } from '../../types/roles'
 
@@ -51,6 +53,17 @@ export function Header({ onOpenCommandPalette, onOpenSearch, onOpenShortcuts }: 
     },
     { id: 'divider-1', label: '', divider: true },
     {
+      id: 'shortcuts',
+      label: 'Keyboard shortcuts',
+      icon: (
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 6h12a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2zm1 4h.01M9.5 10h.01M12 10h.01M14.5 10h.01M17 10h.01M8 14h8" />
+        </svg>
+      ),
+      onClick: () => onOpenShortcuts?.(),
+    },
+    { id: 'divider-2', label: '', divider: true },
+    {
       id: 'signout',
       label: 'Sign out',
       icon: (
@@ -65,13 +78,19 @@ export function Header({ onOpenCommandPalette, onOpenSearch, onOpenShortcuts }: 
 
   return (
     <header className="h-[var(--header-height)] bg-[var(--color-surface)] border-b border-[var(--color-border)] flex items-center justify-between px-4 lg:px-6 flex-shrink-0 animate-fade-in-down">
-      {/* Left */}
-      <div className="flex items-center gap-2">
-        {/* Mobile nav toggle is handled by the sidebar's FAB */}
+      {/* Left — contextual page hierarchy (P8 §7), via the shared BreadcrumbBar.
+          Hidden below sm: pages carry their own context and the controls would crowd. */}
+      <div className="hidden sm:flex items-center gap-1.5 min-w-0">
+        <BreadcrumbBar variant="header" />
       </div>
 
       {/* Center / Right */}
       <div className="flex items-center gap-1">
+        {/* Contextual page actions (P8 §8) — desktop only; pages keep their own */}
+        <div className="hidden lg:flex items-center mr-1">
+          <ContextualPageActions />
+        </div>
+
         {/* Command Palette Trigger */}
         <button
           onClick={onOpenCommandPalette}

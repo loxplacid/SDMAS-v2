@@ -12,6 +12,20 @@ interface CardProps {
   onClick?: () => void
   padding?: 'none' | 'sm' | 'md' | 'lg'
   variant?: 'default' | 'elevated' | 'bordered' | 'flat'
+  /**
+   * Hover depth ladder (Glint §2.2). Applies only to clickable cards.
+   * `d1` = subtle: shadow-sm + 1px rise + border tint (secondary surfaces).
+   * `d2` = the primary path: shadow-lg + 2px rise + border tint (main CTAs).
+   * Default: d1 — the quiet treatment; opt into d2 deliberately.
+   */
+  depth?: 'd1' | 'd2'
+}
+
+const hoverDepths = {
+  // Glint §2.2 — d1: secondary surfaces (shadow-sm + 1px rise + border tint).
+  d1: 'cursor-pointer motion-safe:hover:-translate-y-px motion-safe:hover:shadow-sm hover:border-[var(--color-brand-accent)]/25',
+  // d2: the primary path (shadow-md + 2px rise + border tint).
+  d2: 'cursor-pointer motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-md hover:border-[var(--color-brand-accent)]/30',
 }
 
 const paddings = {
@@ -38,6 +52,7 @@ export function Card({
   onClick,
   padding = 'md',
   variant = 'default',
+  depth = 'd1',
 }: CardProps) {
   return (
     <div
@@ -46,9 +61,7 @@ export function Card({
         'rounded-2xl overflow-hidden',
         'motion-safe:transition-all motion-safe:duration-[var(--motion-base)] motion-safe:ease-[var(--ease-standard)]',
         variants[variant],
-        onClick
-          ? 'cursor-pointer motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-lg hover:border-[var(--color-brand-accent)]/30'
-          : '',
+        onClick ? hoverDepths[depth] : '',
         className
       )}
       onClick={onClick}

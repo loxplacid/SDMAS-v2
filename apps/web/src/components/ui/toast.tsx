@@ -171,7 +171,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={{ showToast }}>
       {children}
       <div
-        className="fixed bottom-5 right-5 z-[100] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none"
+        className="fixed bottom-5 right-5 z-[var(--z-toast)] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none"
         aria-live="polite"
         aria-label="Notifications"
       >

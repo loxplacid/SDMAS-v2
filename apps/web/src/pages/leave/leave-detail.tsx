@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { leaveApi, type LeaveRequestDetailResponse } from '../../api/leave/leave-api'
-import { Card, Button, ErrorState, Breadcrumbs, PageHeader, StatusBadge, Loading } from '../../components/ui'
+import { Card, Button, ErrorState, BreadcrumbBar, PageHeader, StatusBadge, Loading } from '../../components/ui'
 import { formatDateTime } from '../../lib/utils'
 import { capitalize } from '../../lib/utils'
 
@@ -44,10 +44,7 @@ export function LeaveDetailPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <Breadcrumbs items={[
-        { label: 'Leave', href: '/leave' },
-        { label: `Leave #${leave.id}` },
-      ]} />
+      <BreadcrumbBar pageLabel={`Leave #${leave.id}`} />
 
       <PageHeader
         title={`${capitalize(leave.leave_type)} Leave`}

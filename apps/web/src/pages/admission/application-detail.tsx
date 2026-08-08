@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { admissionApi, ADMISSION_STATUSES, type AdmissionApplicationResponse, type AdmissionDocumentResponse, type AdmissionInterviewResponse, type AdmissionSeatAllocationResponse, type AdmissionStatus } from '../../api/admission/admission-api'
-import { Card, Button, ErrorState, Breadcrumbs, PageHeader, StatusBadge, Badge, Modal, Input, Select, Alert, useToast, Loading } from '../../components/ui'
+import { Card, Button, ErrorState, BreadcrumbBar, PageHeader, StatusBadge, Badge, Modal, Input, Select, Alert, useToast, Loading } from '../../components/ui'
 import { capitalize, formatDateTime } from '../../lib/utils'
 
 // ---------------------------------------------------------------------------
@@ -181,11 +181,13 @@ export function ApplicationDetailPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <Breadcrumbs items={[
-        { label: 'Admissions', href: '/admissions' },
-        { label: 'Applications', href: '/admissions/applications' },
-        { label: application.applicant_name },
-      ]} />
+      <BreadcrumbBar
+        items={[
+          { label: 'Admissions', href: '/admissions' },
+          { label: 'Applications', href: '/admissions/applications' },
+          { label: application.applicant_name },
+        ]}
+      />
 
       <PageHeader
         title={application.applicant_name}

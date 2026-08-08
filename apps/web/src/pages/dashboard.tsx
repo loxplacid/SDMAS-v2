@@ -3,16 +3,42 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../api/auth/auth-context'
 import { analyticsApi } from '../api/analytics/analytics-api'
 import { attendanceAnalyticsApi } from '../api/analytics/attendance-analytics-api'
+import { commandCenterApi } from '../api/command-center/command-center-api'
 import type { AnalyticsOverview, AttendanceOverview } from '../api/analytics/types'
-import { Loading, ErrorState, AnimatedCount } from '../components/ui'
+import type { AttentionAlert, CommandCenterOverview } from '../api/command-center/command-center-api'
+import { Loading, ErrorState, AnimatedCount, Badge } from '../components/ui'
 import { AttendanceStatusChart } from '../components/analytics/attendance-status-chart'
+import { cn } from '../lib/utils'
 import { formatCurrency } from '../lib/utils'
+
+const alertSeverityStyles: Record<string, string> = {
+  critical: 'border-[var(--color-danger)]/25 bg-[var(--color-danger)]/5',
+  warning: 'border-[var(--color-warning)]/25 bg-[var(--color-warning)]/5',
+  info: 'border-[var(--color-info)]/25 bg-[var(--color-info)]/5',
+}
+
+const alertSeverityDot: Record<string, string> = {
+  critical: 'bg-[var(--color-danger)]',
+  warning: 'bg-[var(--color-warning)]',
+  info: 'bg-[var(--color-info)]',
+}
+
+const alertSeverityLabel: Record<string, string> = {
+  critical: 'Critical',
+  warning: 'Warning',
+  info: 'Info',
+}
+
+const severityRank: Record<string, number> = { critical: 0, warning: 1, info: 2 }
 
 export function DashboardPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [overview, setOverview] = useState<AnalyticsOverview | null>(null)
   const [attendanceOverview, setAttendanceOverview] = useState<AttendanceOverview | null>(null)
+  const [attentionAlerts, setAttentionAlerts] = useState<AttentionAlert[]>([])
+  const [attentionFeedState, setAttentionFeedState] = useState<'ok' | 'unavailable'>('ok')
+  const [commandCenter, setCommandCenter] = useState<CommandCenterOverview | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const fetchIdRef = useRef(0)
@@ -25,11 +51,25 @@ export function DashboardPage() {
     Promise.all([
       analyticsApi.getOverview(),
       attendanceAnalyticsApi.getOverview().catch(() => null),
+      // Real operational attention feed (non-fatal — the analytics surface
+      // is the primary dashboard; if the command center is down we fall
+      // back to the analytics-derived cards below).
+      commandCenterApi.getOverview().catch(() => null),
     ])
-      .then(([ov, att]) => {
+      .then(([ov, att, cmd]) => {
         if (fetchId === fetchIdRef.current) {
           setOverview(ov)
           setAttendanceOverview(att)
+          setCommandCenter(cmd)
+          if (cmd && cmd.needs_attention.available) {
+            setAttentionAlerts(cmd.needs_attention.alerts)
+            setAttentionFeedState('ok')
+          } else {
+            // Either the feed failed to load or its section is off — never
+            // claim "all clear" on a feed we couldn't read.
+            setAttentionAlerts([])
+            setAttentionFeedState('unavailable')
+          }
         }
       })
       .catch((err: any) => {
@@ -129,6 +169,170 @@ export function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* School Health Score — deterministic composite, explainable dimensions */}
+      {commandCenter?.school_health?.score?.available && commandCenter.school_health.score.overall != null && (
+        <section aria-label="School health score">
+          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+              {/* Composite score */}
+              <div className="flex items-center gap-4 flex-shrink-0">
+                <div
+                  className={cn(
+                    'flex items-center justify-center h-20 w-20 rounded-2xl border text-2xl font-extrabold tabular-nums',
+                    (commandCenter.school_health.score.overall ?? 0) >= 85
+                      ? 'border-[var(--color-success)]/30 bg-[var(--color-success)]/10 text-[var(--color-success)]'
+                      : (commandCenter.school_health.score.overall ?? 0) >= 70
+                        ? 'border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10 text-[var(--color-warning)]'
+                        : 'border-[var(--color-danger)]/30 bg-[var(--color-danger)]/10 text-[var(--color-danger)]'
+                  )}
+                >
+                  {Math.round(commandCenter.school_health.score.overall)}
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-[var(--color-text-primary)]">School Health Score</h2>
+                  <p className="text-sm text-[var(--color-text-tertiary)] mt-0.5">
+                    Deterministic weighted composite · what changed
+                  </p>
+                  <button
+                    onClick={() => navigate('/command-center')}
+                    className="mt-1.5 text-xs font-medium text-[var(--color-brand-accent)] hover:text-[var(--color-brand-accent-hover)] motion-safe:transition-colors"
+                  >
+                    Open Command Center
+                    <svg className="h-3 w-3 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Dimension scores with trend deltas */}
+              <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                {commandCenter.school_health.score.dimensions.map((d) => (
+                  <button
+                    key={d.key}
+                    onClick={() => d.drill_down && navigate(d.drill_down)}
+                    disabled={!d.drill_down}
+                    className={cn(
+                      'rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3 text-left',
+                      'motion-safe:transition-all motion-safe:duration-[var(--motion-fast)]',
+                      d.drill_down && 'hover:border-[var(--color-brand-accent)]/30 hover:shadow-sm cursor-pointer'
+                    )}
+                  >
+                    <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
+                      {d.label}
+                    </p>
+                    <p className="mt-1 text-lg font-bold tabular-nums text-[var(--color-text-primary)]">
+                      {Math.round(d.score)}
+                    </p>
+                    {(() => {
+                      const metric = d.metrics?.[0]
+                      const trend = metric?.trend
+                      if (trend == null) return <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">current</p>
+                      const up = trend >= 0
+                      return (
+                        <p className={cn('text-[11px] font-medium mt-0.5 tabular-nums', up ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]')}>
+                          {up ? '↑' : '↓'} {Math.abs(trend).toFixed(1)}{typeof metric?.display === 'string' && metric.display.includes('%') ? '%' : ''} vs last period
+                        </p>
+                      )
+                    })()}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Attention Required — real operational feed from the command center */}
+      <section aria-label="Attention required">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-base font-semibold text-[var(--color-text-primary)]">Attention Required</h2>
+            <p className="text-sm text-[var(--color-text-tertiary)] mt-0.5">
+              {attentionFeedState === 'unavailable'
+                ? 'Live alert feed could not be loaded'
+                : attentionAlerts.length > 0
+                  ? 'Highest-priority items from live school data'
+                  : 'The most important things you should look at'}
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/action-center')}
+            className="inline-flex items-center gap-1 text-sm font-medium text-[var(--color-brand-accent)] hover:text-[var(--color-brand-accent-hover)] motion-safe:transition-colors"
+          >
+            View all
+            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        {attentionFeedState === 'unavailable' ? (
+          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 flex items-center gap-3">
+            <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-[var(--color-surface-hover)] flex-shrink-0">
+              <svg className="h-4.5 w-4.5 text-[var(--color-text-tertiary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[var(--color-text-primary)]">Attention feed unavailable</p>
+              <p className="text-xs text-[var(--color-text-tertiary)]">Couldn't load live alerts — the rest of your dashboard is up to date.</p>
+            </div>
+          </div>
+        ) : attentionAlerts.length === 0 ? (
+          <div className="rounded-2xl border border-[var(--color-success)]/20 bg-[var(--color-success)]/5 p-6 flex items-center gap-3">
+            <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-[var(--color-success)]/10 flex-shrink-0">
+              <svg className="h-4.5 w-4.5 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[var(--color-success-dark)]">All clear</p>
+              <p className="text-xs text-[var(--color-success)]/70">No operational alerts right now.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
+            {[...attentionAlerts]
+              .sort((a, b) => (severityRank[a.severity] ?? 9) - (severityRank[b.severity] ?? 9))
+              .slice(0, 5)
+              .map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => a.drill_down && navigate(a.drill_down)}
+                  disabled={!a.drill_down}
+                  className={cn(
+                    'group flex items-start gap-3 rounded-xl border p-4 text-left',
+                    'motion-safe:transition-all motion-safe:duration-[var(--motion-fast)]',
+                    'hover:shadow-sm hover:-translate-y-0.5 motion-reduce:hover:translate-y-0',
+                    alertSeverityStyles[a.severity],
+                    a.drill_down ? 'cursor-pointer' : 'cursor-default'
+                  )}
+                >
+                  <span className={cn('mt-1.5 inline-block h-2 w-2 rounded-full flex-shrink-0', alertSeverityDot[a.severity])} aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-semibold text-[var(--color-text-primary)]">{a.title}</p>
+                      <Badge
+                        variant={a.severity === 'critical' ? 'danger' : a.severity === 'warning' ? 'warning' : 'info'}
+                        size="sm"
+                      >
+                        {alertSeverityLabel[a.severity]}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">{a.message}</p>
+                  </div>
+                  {a.drill_down && (
+                    <svg className="h-3.5 w-3.5 text-[var(--color-text-muted)] flex-shrink-0 opacity-0 group-hover:opacity-100 motion-safe:transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  )}
+                </button>
+              ))}
+          </div>
+        )}
+      </section>
 
       {/* Pulse Areas */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

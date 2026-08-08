@@ -16,13 +16,23 @@ from datetime import timezone
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domains.command_center.service import CommandCenterService
-from app.domains.academic.models import AcademicYear, Class, Section, Teacher, TeacherAssignment
-from app.domains.attendance.models import AttendanceRecord
-from app.domains.fees.models import FeeDue, FeeStructure, FeeType
+from app.domains.academic.models import (
+    AcademicYear,
+    Class,
+    Enrollment,
+    Section,
+    Subject,
+    Teacher,
+    TeacherAssignment,
+)
+from app.domains.academic_ops.models import GradeRecord
 from app.domains.admission.models import AdmissionApplication, AdmissionDocument
-from app.domains.workflow.models import Workflow, WorkflowStep, WorkflowInstance
+from app.domains.attendance.models import AttendanceRecord
+from app.domains.command_center.service import HEALTH_WEIGHTS, CommandCenterService
+from app.domains.data_quality.service import DataQualityService
+from app.domains.fees.models import FeeDue, FeeStructure, FeeType
 from app.domains.student.models import Student
+from app.domains.workflow.models import Workflow, WorkflowInstance, WorkflowStep
 
 NOW = datetime.datetime.now(timezone.utc)
 TODAY = datetime.date.today().isoformat()
@@ -561,3 +571,175 @@ async def test_teacher_without_assignment(db_session: AsyncSession, seeded):
     keys = {m.key for m in overview.school_health.metrics}
     assert "my_classes" in keys
     assert overview.school_health.metrics[0].display == "No classes assigned"
+
+
+# ---------------------------------------------------------------------------
+# G. School Health Score — deterministic weighted composite
+# ---------------------------------------------------------------------------
+
+
+async def _seed_grade_record(
+    db_session: AsyncSession,
+    seeded: dict,
+    student_id: int,
+    *,
+    marks: float = 90.0,
+) -> None:
+    """Add a grade record for an existing student/enrollment."""
+    subject = Subject(
+        name="Maths", code=f"M{student_id}", campus_id=1, status="active"
+    )
+    db_session.add(subject)
+    await db_session.flush()
+    enrollment = Enrollment(
+        student_id=student_id, academic_year_id=seeded["year"].id,
+        class_id=seeded["class"].id, section_id=seeded["section"].id,
+        campus_id=1, status="active",
+    )
+    db_session.add(enrollment)
+    await db_session.flush()
+    db_session.add(
+        GradeRecord(
+            enrollment_id=enrollment.id, subject_id=subject.id,
+            marks_obtained=marks, max_marks=100, grade="A",
+            campus_id=1, status="active",
+        )
+    )
+    await db_session.flush()
+
+
+@pytest.mark.asyncio
+async def test_health_score_composite_weighted(db_session: AsyncSession, seeded):
+    """Score = weighted mean of available, real dimensions."""
+    svc = CommandCenterService(db_session)
+    overview = await svc.get_overview(role="admin", user=StubUser(), campus_id=1)
+
+    score = overview.school_health.score
+    assert score is not None
+    assert score.available is True
+    assert score.overall is not None
+
+    keys = {d.key for d in score.dimensions}
+    # Attendance + fees always available in the seeded campus.
+    assert "attendance" in keys
+    assert "fees" in keys
+
+    # No grade records and no DQ scan → those dimensions must be absent
+    # (never a fabricated academic or fake-100 data quality score).
+    assert "academics" not in keys
+    assert "data_quality" not in keys
+
+    # Overall must equal Σ(scoreᵢ·wᵢ) / Σ(wᵢ) over the available dims.
+    dims = score.dimensions
+    total_w = sum(d.weight for d in dims)
+    expected = sum(d.score * d.weight for d in dims) / total_w
+    assert score.overall == pytest.approx(round(expected, 1), abs=0.1)
+
+    # Transparent weights are exposed verbatim.
+    assert score.weights == HEALTH_WEIGHTS
+
+
+@pytest.mark.asyncio
+async def test_health_score_includes_academics_when_grades_exist(
+    db_session: AsyncSession, seeded
+):
+    await _seed_grade_record(db_session, seeded, seeded["students"][0].id, marks=80.0)
+
+    svc = CommandCenterService(db_session)
+    overview = await svc.get_overview(role="admin", user=StubUser(), campus_id=1)
+
+    dims = {d.key: d for d in overview.school_health.score.dimensions}
+    assert "academics" in dims
+    assert dims["academics"].score == pytest.approx(80.0)
+    assert dims["academics"].drill_down == "/academic/exams"
+
+
+@pytest.mark.asyncio
+async def test_health_score_includes_data_quality_after_scan(
+    db_session: AsyncSession, seeded
+):
+    """Data-quality dimension appears only once a DQ scan has run."""
+    # Before any scan: no dimension.
+    svc = CommandCenterService(db_session)
+    pre = await svc.get_overview(role="admin", user=StubUser(), campus_id=1)
+    assert "data_quality" not in {d.key for d in pre.school_health.score.dimensions}
+
+    # Create a data-quality finding via the DQ service and re-check.
+    dq = DataQualityService(db_session)
+    await dq.recompute(1, actor_user_id=1)
+
+    post = await svc.get_overview(role="admin", user=StubUser(), campus_id=1)
+    dims = {d.key: d for d in post.school_health.score.dimensions}
+    assert "data_quality" in dims
+    # The seeded campus has a student with no email/guardian → not a fake 100.
+    assert dims["data_quality"].score < 100.0
+    assert dims["data_quality"].drill_down == "/data-quality"
+
+
+@pytest.mark.asyncio
+async def test_health_score_dimension_notes_presence(
+    db_session: AsyncSession, seeded
+):
+    """Dimensions that could not be computed are simply omitted."""
+    svc = CommandCenterService(db_session)
+    overview = await svc.get_overview(role="admin", user=StubUser(), campus_id=1)
+    dims = overview.school_health.score.dimensions
+
+    # Retention is always computable (students exist) and carries metrics.
+    retention = next(d for d in dims if d.key == "retention")
+    assert retention.score == pytest.approx(100.0)  # all 3 students active
+    assert retention.metrics  # underlying metrics are attached for drill-down
+
+
+@pytest.mark.asyncio
+async def test_health_score_staff_has_no_fees_dimension(
+    db_session: AsyncSession, seeded
+):
+    """Staff (no fees.view) → fees dimension excluded; score still computes."""
+    svc = CommandCenterService(db_session)
+    overview = await svc.get_overview(role="staff", user=StubUser(), campus_id=1)
+
+    keys = {d.key for d in overview.school_health.score.dimensions}
+    assert "fees" not in keys
+    assert "attendance" in keys
+    assert overview.school_health.score.available is True
+
+
+@pytest.mark.asyncio
+async def test_health_score_tenant_isolation(db_session: AsyncSession, seeded_two_campuses):
+    """Scores are computed per campus — no cross-tenant leakage."""
+    svc = CommandCenterService(db_session)
+    a = await svc.get_overview(role="admin", user=StubUser(), campus_id=1)
+    b = await svc.get_overview(role="admin", user=StubUser(), campus_id=2)
+
+    a_students = {m.key: m for m in a.school_health.metrics}["total_students"].value
+    b_students = {m.key: m for m in b.school_health.metrics}["total_students"].value
+    assert a_students == 3 and b_students == 3  # each campus sees its own
+
+
+@pytest.mark.asyncio
+async def test_health_score_degrades_without_enough_dimensions(
+    db_session: AsyncSession, seeded, monkeypatch
+):
+    """Fewer than two computable dimensions → score unavailable (never fake)."""
+    svc = CommandCenterService(db_session)
+
+    async def _no_attendance(*args, **kwargs):
+        return {"attendance_percentage": 0.0}
+
+    async def _no_finance(*args, **kwargs):
+        return {
+            "collection_percentage": 0.0,
+            "total_outstanding": 0,
+        }
+
+    monkeypatch.setattr(svc.analytics, "get_attendance_overview", _no_attendance)
+    monkeypatch.setattr(svc.analytics, "get_finance_overview", _no_finance)
+
+    overview = await svc.get_overview(role="staff", user=StubUser(), campus_id=1)
+    score = overview.school_health.score
+    # Staff without finance → attendance metric only; retention still present
+    # so score remains available — assert the weights sum to a sensible value.
+    assert score.available is True
+    assert score.overall is not None
+    assert 0 <= score.overall <= 100

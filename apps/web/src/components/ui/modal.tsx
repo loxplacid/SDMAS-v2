@@ -67,7 +67,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: M
     <div
       ref={overlayRef}
       className={cn(
-        'fixed inset-0 z-50 flex items-center justify-center p-4',
+        'fixed inset-0 z-[var(--z-dialog)] flex items-center justify-center p-4',
         show
           ? 'animate-fade-in'
           : 'animate-fade-out'

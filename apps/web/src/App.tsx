@@ -2,6 +2,8 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './api/auth/auth-context'
 import { ToastProvider } from './components/ui/toast'
+import { DelightProvider } from './components/delight/delight-provider'
+import { MotionProvider } from './lib/motion/motion-config'
 import { ProtectedRoute } from './components/protected-route'
 import { RoleGuard } from './components/auth/role-guard'
 import { AppLayout } from './components/layout'
@@ -19,6 +21,16 @@ const CommandCenterPage = lazy(() => import('./pages/command-center/command-cent
 
 // Risk & Attention Engine
 const RiskCenterPage = lazy(() => import('./pages/risk/risk-center').then((m) => ({ default: m.RiskCenterPage })))
+
+// Action Center
+const ActionCenterPage = lazy(() => import('./pages/action-center/action-center').then((m) => ({ default: m.ActionCenterPage })))
+
+// Data Quality Center
+const DataQualityCenterPage = lazy(() => import('./pages/data-quality/data-quality').then((m) => ({ default: m.DataQualityCenterPage })))
+
+// Operational Work Queue + Case Detail (P8)
+const WorkQueuePage = lazy(() => import('./pages/work/work-queue').then((m) => ({ default: m.WorkQueuePage })))
+const CaseDetailPage = lazy(() => import('./pages/cases/case-detail').then((m) => ({ default: m.CaseDetailPage })))
 
 // Unified Operational Timeline
 const TimelinePage = lazy(() => import('./pages/timeline/timeline-page').then((m) => ({ default: m.TimelinePage })))
@@ -184,10 +196,12 @@ function PageFallback() {
 
 export default function App() {
   return (
+    <MotionProvider>
     <BrowserRouter>
       <AuthProvider>
         <ToastProvider>
-          <Routes>
+          <DelightProvider>
+            <Routes>
             <Route
               path="/login"
               element={
@@ -212,6 +226,26 @@ export default function App() {
               <Route path="/risk" element={
                 <RoleGuard roles={['admin', 'principal', 'staff']}>
                   <Suspense fallback={<PageFallback />}><RiskCenterPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/action-center" element={
+                <RoleGuard roles={['admin', 'principal', 'staff', 'accountant']}>
+                  <Suspense fallback={<PageFallback />}><ActionCenterPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/data-quality" element={
+                <RoleGuard roles={['admin', 'principal', 'staff']}>
+                  <Suspense fallback={<PageFallback />}><DataQualityCenterPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/work" element={
+                <RoleGuard roles={['admin', 'principal', 'staff']}>
+                  <Suspense fallback={<PageFallback />}><WorkQueuePage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/cases/:id" element={
+                <RoleGuard roles={['admin', 'principal', 'staff']}>
+                  <Suspense fallback={<PageFallback />}><CaseDetailPage /></Suspense>
                 </RoleGuard>
               } />
               <Route path="/timeline" element={
@@ -439,9 +473,11 @@ export default function App() {
               <Route path="/communications/sent" element={<Suspense fallback={null}><SentMessagesPage /></Suspense>} />
             </Route>
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
+            </Routes>
+          </DelightProvider>
         </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
+    </MotionProvider>
   )
 }

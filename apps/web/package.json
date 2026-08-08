@@ -13,9 +13,11 @@
   },
   "dependencies": {
     "@sqlite.org/sqlite-wasm": "^3.53.0-build1",
+    "animejs": "^4.5.0",
     "fuse.js": "^7.5.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
+    "motion": "^13.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.0.0",

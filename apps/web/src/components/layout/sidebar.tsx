@@ -1,7 +1,7 @@
 import { useState, useCallback, type ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
 import { cn, capitalize } from '../../lib/utils'
-import { useMove } from '../../lib/motion'
+import { useMove, SharedElement } from '../../lib/motion'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { useAuth } from '../../api/auth/auth-context'
 import { useCampus } from '../../hooks/use-campus'
@@ -9,6 +9,15 @@ import { getNavSectionsForRole, ROLE_BADGE_COLORS } from '../../types/roles'
 import type { NavItem, NavSection } from '../../types/roles'
 import { Drawer } from '../ui/drawer'
 import { Skeleton } from '../ui/skeleton'
+import { Tooltip } from '../ui/tooltip'
+
+/**
+ * Shared identity for the active-route indicator (P8 §4, §12). One
+ * indicator renders inside whichever item is active; Motion's shared-layout
+ * projection morphs it between positions when the route changes — the
+ * indicator *travels* rather than appearing/disappearing.
+ */
+const ACTIVE_INDICATOR_ID = 'sidebar-active-indicator'
 
 function SidebarRoleBadge({ role }: { role?: string }) {
   if (!role) return null
@@ -109,7 +118,10 @@ export function Sidebar({ collapsed: controlledCollapsed, onToggle }: SidebarPro
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         className={cn(
-          'hidden lg:flex flex-col h-screen flex-shrink-0 z-30 overflow-hidden',
+          // overflow visible: collapsed-rail tooltips must escape the rail.
+          // Labels unmount on collapse (they are not rendered), so nothing
+          // needs clipping here — the nav region scrolls on its own.
+          'hidden lg:flex flex-col h-screen flex-shrink-0 z-[var(--z-nav)] overflow-visible',
           'bg-[var(--nav-bg)]',
           // Collapse/expand is an E/W rail move at `slow` (260ms, spec §6.2):
           // enter curve on expand, mirrored (accelerate) on collapse. Width
@@ -130,14 +142,38 @@ export function Sidebar({ collapsed: controlledCollapsed, onToggle }: SidebarPro
           collapsed ? 'justify-center px-0' : 'px-5'
         )}>
           <div className="flex items-center gap-3 min-w-0">
-            <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-[var(--color-brand-accent)] text-white font-bold text-sm flex-shrink-0 shadow-sm">
-              S
-            </div>
-            {!collapsed && (
-              <RailLabel className="min-w-0">
-                <p className="text-sm font-bold text-white leading-tight">SDMAS</p>
-                <p className="text-[10px] text-[var(--nav-text)] leading-tight">v2.0</p>
-              </RailLabel>
+            {collapsed ? (
+              // P8 §6: a persisted collapse must stay reversible from the UI.
+              // The brand mark becomes the expand control; the portaled
+              // tooltip escapes the rail (same pattern as the nav icons).
+              // Rendered as a plain mark when no toggle handler exists so the
+              // control is never inert.
+              onToggle ? (
+                <Tooltip content="Expand sidebar" position="right" delay={300} portal>
+                  <button
+                    type="button"
+                    onClick={onToggle}
+                    aria-label="Expand sidebar"
+                    className="flex items-center justify-center h-8 w-8 rounded-xl bg-[var(--color-brand-accent)] text-white font-bold text-sm flex-shrink-0 shadow-sm hover:bg-[var(--color-brand-accent-hover)] motion-safe:transition-colors motion-safe:duration-[var(--motion-fast)] focus:outline-none focus:ring-1 focus:ring-[var(--color-brand-accent)]"
+                  >
+                    S
+                  </button>
+                </Tooltip>
+              ) : (
+                <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-[var(--color-brand-accent)] text-white font-bold text-sm flex-shrink-0 shadow-sm">
+                  S
+                </div>
+              )
+            ) : (
+              <>
+                <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-[var(--color-brand-accent)] text-white font-bold text-sm flex-shrink-0 shadow-sm">
+                  S
+                </div>
+                <RailLabel className="min-w-0">
+                  <p className="text-sm font-bold text-white leading-tight">SDMAS</p>
+                  <p className="text-[10px] text-[var(--nav-text)] leading-tight">v2.0</p>
+                </RailLabel>
+              </>
             )}
           </div>
         </div>
@@ -173,6 +209,9 @@ export function Sidebar({ collapsed: controlledCollapsed, onToggle }: SidebarPro
                       className={({ isActive }) =>
                         cn(
                           'group relative flex items-center gap-3 px-2.5 py-2.5 rounded-xl text-sm font-medium',
+                          // Press (P7 §3.3): immediate tactile response on the
+                          // fast clock (120ms), gated by motion-safe.
+                          'motion-safe:active:scale-[0.98]',
                           'transition-all motion-reduce:transition-none duration-[var(--motion-fast)] ease-[var(--ease-standard)]',
                           'focus:outline-none focus:ring-1 focus:ring-[var(--color-brand-accent)]',
                           isActive
@@ -182,29 +221,55 @@ export function Sidebar({ collapsed: controlledCollapsed, onToggle }: SidebarPro
                         )
                       }
                       aria-label={item.label}
-                      title={collapsed ? item.label : undefined}
                     >
                       {({ isActive }: { isActive: boolean }) => (
                         <>
                           {isActive && (
-                            <span
-                              className={cn(
-                                'absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-full bg-[var(--color-brand-accent)]',
-                                'animate-active-indicator',
-                                collapsed && 'left-0'
-                              )}
+                            // Shared layout indicator: travels to the next
+                            // active item on navigation (P8 §4). Centered via
+                            // margin so Motion's layout projection owns
+                            // transform — no translate utility to fight it.
+                            <SharedElement
+                              layoutId={ACTIVE_INDICATOR_ID}
+                              aria-hidden="true"
+                              data-sidebar-indicator=""
+                              className="absolute left-0 top-1/2 -mt-2.5 h-5 w-0.5 rounded-full bg-[var(--color-brand-accent)]"
                             />
                           )}
-                          <svg
-                            className={cn(
-                              'flex-shrink-0 transition-transform motion-reduce:transition-none duration-[var(--motion-fast)]',
-                              'group-hover:scale-110 motion-reduce:group-hover:scale-100'
-                            )}
-                            style={{ width: collapsed ? 20 : 18, height: collapsed ? 20 : 18 }}
-                            fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={item.icon} />
-                          </svg>
+                          {collapsed ? (
+                            // portal: the nav scrolls (overflow-y-auto), which
+                            // would clip an absolutely positioned tooltip — the
+                            // portaled variant escapes it (P8 §3/§18).
+                            <Tooltip
+                              content={item.label}
+                              position="right"
+                              delay={300}
+                              portal
+                              className="flex-shrink-0"
+                            >
+                              <svg
+                                className={cn(
+                                  'flex-shrink-0 transition-transform motion-reduce:transition-none duration-[var(--motion-fast)]',
+                                  'group-hover:scale-110 motion-reduce:group-hover:scale-100'
+                                )}
+                                style={{ width: 20, height: 20 }}
+                                fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={item.icon} />
+                              </svg>
+                            </Tooltip>
+                          ) : (
+                            <svg
+                              className={cn(
+                                'flex-shrink-0 transition-transform motion-reduce:transition-none duration-[var(--motion-fast)]',
+                                'group-hover:scale-110 motion-reduce:group-hover:scale-100'
+                              )}
+                              style={{ width: 18, height: 18 }}
+                              fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={item.icon} />
+                            </svg>
+                          )}
                           {!collapsed && (
                             <RailLabel className="flex-1 min-w-0 flex items-center gap-3">
                               <span className="truncate min-w-0">{item.label}</span>
@@ -302,7 +367,10 @@ export function Sidebar({ collapsed: controlledCollapsed, onToggle }: SidebarPro
                 end={item.to === '/dashboard'}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all animate-fade-in-left',
+                    // The entrance animation (fill both) holds the final
+                    // transform on the link, so the press scale lives on the
+                    // inner row instead (P7 §3.3 — never overridden).
+                    'flex items-center px-4 py-2.5 rounded-xl text-sm font-medium transition-all animate-fade-in-left',
                     isActive
                       ? 'bg-[var(--nav-bg-active)] text-[var(--nav-text-active)]'
                       : 'text-[var(--nav-text)] hover:bg-[var(--nav-bg-hover)] hover:text-white'
@@ -311,10 +379,12 @@ export function Sidebar({ collapsed: controlledCollapsed, onToggle }: SidebarPro
                 onClick={closeMobile}
                 style={{ animationDelay: `${idx * 40}ms` }}
               >
-                <svg className="h-5 w-5 flex-shrink-0 text-[var(--nav-icon)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={item.icon} />
-                </svg>
-                {item.label}
+                <span className="flex items-center gap-3 min-w-0 flex-1 motion-safe:active:scale-[0.98]">
+                  <svg className="h-5 w-5 flex-shrink-0 text-[var(--nav-icon)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={item.icon} />
+                  </svg>
+                  {item.label}
+                </span>
               </NavLink>
             ))
           )}
@@ -357,7 +427,7 @@ export function Sidebar({ collapsed: controlledCollapsed, onToggle }: SidebarPro
       {/* Mobile hamburger */}
       <button
         className={cn(
-          'lg:hidden fixed bottom-6 right-6 z-30 flex items-center justify-center h-12 w-12 rounded-full bg-[var(--color-brand-accent)] text-white shadow-lg hover:bg-[var(--color-brand-accent-hover)] transition-all',
+          'lg:hidden fixed bottom-6 right-6 z-[var(--z-nav)] flex items-center justify-center h-12 w-12 rounded-full bg-[var(--color-brand-accent)] text-white shadow-lg hover:bg-[var(--color-brand-accent-hover)] transition-all',
           'hover:scale-105 active:scale-95 motion-reduce:hover:scale-100 motion-reduce:active:scale-100',
           'animate-fade-in-scale'
         )}

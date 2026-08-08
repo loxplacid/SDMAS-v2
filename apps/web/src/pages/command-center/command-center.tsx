@@ -97,6 +97,63 @@ function HealthSection({ data }: { data: CommandCenterOverview['school_health'] 
         <Badge variant="neutral" size="sm">Live</Badge>
       </div>
 
+      {/* Composite School Health Score — deterministic & explainable */}
+      {data.score?.available && data.score.overall != null && (
+        <div
+          className={cn(
+            'mb-4 rounded-2xl border p-4 flex items-center gap-4 animate-fade-in-up',
+            data.score.overall >= 85
+              ? 'border-[var(--color-success)]/25 bg-[var(--color-success)]/5'
+              : data.score.overall >= 70
+                ? 'border-[var(--color-warning)]/25 bg-[var(--color-warning)]/5'
+                : 'border-[var(--color-danger)]/25 bg-[var(--color-danger)]/5'
+          )}
+        >
+          <div
+            className={cn(
+              'flex items-center justify-center h-16 w-16 rounded-2xl border text-xl font-extrabold tabular-nums flex-shrink-0',
+              data.score.overall >= 85
+                ? 'border-[var(--color-success)]/30 bg-[var(--color-success)]/10 text-[var(--color-success)]'
+                : data.score.overall >= 70
+                  ? 'border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10 text-[var(--color-warning)]'
+                  : 'border-[var(--color-danger)]/30 bg-[var(--color-danger)]/10 text-[var(--color-danger)]'
+            )}
+          >
+            {Math.round(data.score.overall)}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+              School Health Score
+              <span className="text-xs font-normal text-[var(--color-text-tertiary)] ml-2">out of 100</span>
+            </p>
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
+              {data.score.dimensions.map((d) => (
+                <button
+                  key={d.key}
+                  onClick={() => d.drill_down && navigate(d.drill_down)}
+                  disabled={!d.drill_down}
+                  title={`${d.label}: ${d.score} (weight ${Math.round(d.weight * 100)}%)`}
+                  className={cn(
+                    'inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-0.5 text-[11px] font-medium',
+                    'motion-safe:transition-colors motion-safe:duration-[var(--motion-fast)]',
+                    d.drill_down && 'hover:border-[var(--color-brand-accent)]/40 hover:text-[var(--color-brand-accent)] cursor-pointer'
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'inline-block h-1.5 w-1.5 rounded-full',
+                      d.score >= 85 ? 'bg-[var(--color-success)]' : d.score >= 70 ? 'bg-[var(--color-warning)]' : 'bg-[var(--color-danger)]'
+                    )}
+                    aria-hidden="true"
+                  />
+                  {d.label} {Math.round(d.score)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {data.metrics.length === 0 ? (
         <p className="text-sm text-[var(--color-text-tertiary)] py-8 text-center">No metrics available yet.</p>
       ) : (
@@ -361,6 +418,141 @@ function QuickActionsSection({ actions }: { actions: CommandCenterOverview['quic
   )
 }
 
+// ── D2. Operational Workflow (case engine) ───────────────────────────
+
+function WorkflowSection({ data }: { data: CommandCenterOverview['workflow'] | null }) {
+  const navigate = useNavigate()
+  if (!data || !data.available) return null
+
+  const heroMetrics = [
+    {
+      key: 'open',
+      label: 'Open cases',
+      value: data.open_cases,
+      accent: 'text-[var(--color-text-primary)]',
+      route: '/work?status=open',
+    },
+    {
+      key: 'critical',
+      label: 'Critical',
+      value: data.critical_cases,
+      accent: 'text-[var(--color-danger)]',
+      route: '/work?priority=critical',
+    },
+    {
+      key: 'overdue',
+      label: 'Overdue',
+      value: data.overdue_cases,
+      accent: data.overdue_cases > 0 ? 'text-[var(--color-warning)]' : 'text-[var(--color-text-primary)]',
+      route: '/work?view=overdue',
+    },
+    {
+      key: 'due_today',
+      label: 'Due today',
+      value: data.due_today,
+      accent: 'text-[var(--color-text-primary)]',
+      route: '/work?view=due',
+    },
+  ]
+
+  return (
+    <section className="animate-fade-in-up" style={{ animationFillMode: 'both' }}>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-base font-semibold text-[var(--color-text-primary)]">Operational Work</h2>
+          <p className="text-sm text-[var(--color-text-tertiary)] mt-0.5">Cases that need action and who holds them</p>
+        </div>
+        <button
+          onClick={() => navigate('/work')}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] hover:border-[var(--color-brand-accent)]/40 hover:text-[var(--color-brand-accent)] motion-safe:transition-colors"
+        >
+          Open work queue
+          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {heroMetrics.map((m, i) => (
+          <button
+            key={m.key}
+            onClick={() => navigate(m.route)}
+            className={cn(
+              'rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left',
+              'motion-safe:transition-all motion-safe:duration-[var(--motion-fast)]',
+              'hover:-translate-y-0.5 hover:shadow-md hover:border-[var(--color-brand-accent)]/30 motion-reduce:hover:translate-y-0',
+              'animate-fade-in-up'
+            )}
+            style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}
+          >
+            <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)] truncate">
+              {m.label}
+            </p>
+            <p className={cn('mt-1.5 text-2xl font-bold tabular-nums leading-none', m.accent)}>{m.value}</p>
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">
+        {data.workload.length > 0 && (
+          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <p className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-tertiary)] mb-3">
+              Workload by assignee
+            </p>
+            <div className="space-y-2.5">
+              {data.workload.map((w) => (
+                <button
+                  key={w.assignee_id}
+                  onClick={() => navigate(`/work?assignee=${w.assignee_id}`)}
+                  className="w-full flex items-center justify-between gap-3 text-left group"
+                >
+                  <span className="text-sm font-medium text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] motion-safe:transition-colors truncate">
+                    {w.assignee_name || `User #${w.assignee_id}`}
+                  </span>
+                  <span className="flex items-center gap-2 flex-shrink-0 text-xs tabular-nums">
+                    {w.critical_cases > 0 && (
+                      <span className="text-[var(--color-danger)] font-semibold">{w.critical_cases} crit</span>
+                    )}
+                    {w.overdue_cases > 0 && (
+                      <span className="text-[var(--color-warning)] font-semibold">{w.overdue_cases} overdue</span>
+                    )}
+                    <span className="text-[var(--color-text-primary)] font-semibold">{w.open_cases} open</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {Object.keys(data.by_type).length > 0 && (
+          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <p className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-tertiary)] mb-3">
+              Cases by type
+            </p>
+            <div className="space-y-2.5">
+              {Object.entries(data.by_type)
+                .sort((a, b) => b[1] - a[1])
+                .map(([type, count]) => (
+                  <button
+                    key={type}
+                    onClick={() => navigate(`/work?case_type=${type}`)}
+                    className="w-full flex items-center justify-between gap-3 text-left group"
+                  >
+                    <span className="text-sm font-medium text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] motion-safe:transition-colors capitalize truncate">
+                      {type.replace(/_/g, ' ')}
+                    </span>
+                    <span className="text-xs tabular-nums text-[var(--color-text-primary)] font-semibold">{count}</span>
+                  </button>
+                ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
 // ── E. Recent Activity (unified operational timeline) ────────────────
 
 function ActivitySection() {
@@ -540,6 +732,7 @@ export function CommandCenterPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-8">
               <HealthSection data={data.school_health} />
+              <WorkflowSection data={data.workflow} />
               <TodaySection data={data.today} />
             </div>
             <div className="space-y-8">

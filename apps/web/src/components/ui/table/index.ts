@@ -1,4 +1,4 @@
-export { DataTable, type DataTableProps, type TableClass } from './frame'
+export { DataTable, type DataTableProps, type TableClass, type SortRule } from './frame'
 export { Table, type TableProps } from './legacy'
 export { FilterRail, type FilterRailProps } from './filter-rail'
 export {

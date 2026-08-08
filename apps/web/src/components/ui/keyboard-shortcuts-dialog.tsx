@@ -16,8 +16,8 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
   {
     label: 'Global',
     shortcuts: [
-      { keys: ['⌘K'], label: 'Universal Search', description: 'Search everything — students, invoices, classes, attendance (works offline via the local index)' },
-      { keys: ['⌘⇧K'], label: 'Universal Search', description: 'Same as ⌘K — search across all entities instantly' },
+      { keys: ['⌘K'], label: 'Command Palette', description: 'Search pages, actions and recent items — jump anywhere' },
+      { keys: ['⌘⇧K'], label: 'Universal Search', description: 'Instant offline search across students, invoices, classes, attendance (local index)' },
       { keys: ['?'], label: 'Keyboard Shortcuts', description: 'Show this help dialog' },
     ],
   },
@@ -106,7 +106,7 @@ export function KeyboardShortcutsDialog({ open, onClose }: KeyboardShortcutsDial
   return (
     <div
       className={cn(
-        'fixed inset-0 z-[200] flex items-center justify-center p-4',
+        'fixed inset-0 z-[var(--z-command)] flex items-center justify-center p-4',
         show ? 'animate-fade-in' : 'animate-fade-out'
       )}
       onClick={(e) => { if (e.target === e.currentTarget) handleClose() }}

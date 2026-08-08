@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { class360Api, type Class360Response } from '../../api/class-360/class-360-api'
 import {
-  Card, TabGroup, Badge, Button, Breadcrumbs, PageHeader, ErrorState,
+  Card, TabGroup, Badge, Button, BreadcrumbBar, PageHeader, ErrorState,
 } from '../../components/ui'
 import { Timeline } from '../../components/timeline/timeline'
 import { Can } from '../../components/auth/can'
@@ -327,7 +327,7 @@ export function Class360Page() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <Breadcrumbs items={[
+      <BreadcrumbBar items={[
         { label: 'Academic', href: '/academic' },
         { label: 'Classes', href: '/academic/classes' },
         { label: `${c.name}`, href: `/academic/classes/${c.id}` },

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { admissionApi, type AdmissionApplicationCreate } from '../../api/admission/admission-api'
-import { Card, Input, Select, Button, Alert, Breadcrumbs, PageHeader, Form } from '../../components/ui'
+import { Card, Input, Select, Button, Alert, BreadcrumbBar, PageHeader, Form } from '../../components/ui'
 import { useToast } from '../../components/ui/toast'
 
 export function NewInquiryPage() {
@@ -57,11 +57,13 @@ export function NewInquiryPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in-up">
-      <Breadcrumbs items={[
-        { label: 'Admissions', href: '/admissions' },
-        { label: 'Applications', href: '/admissions/applications' },
-        { label: 'New Inquiry' },
-      ]} />
+      <BreadcrumbBar
+        items={[
+          { label: 'Admissions', href: '/admissions' },
+          { label: 'Applications', href: '/admissions/applications' },
+          { label: 'New Inquiry' },
+        ]}
+      />
 
       <PageHeader
         title="New Admission Inquiry"

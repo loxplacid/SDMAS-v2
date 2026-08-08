@@ -62,6 +62,8 @@ export interface FilterRailProps<T> {
   viewKey?: string
   /** Search-box hint (T26) — the table's own, never a bare "Search". */
   placeholder?: string
+  /** P8 — forwarded to the search input (the `/` shortcut focuses it). */
+  searchRef?: React.Ref<HTMLInputElement>
   className?: string
 }
 
@@ -162,7 +164,7 @@ function RailPopover({
       {open && (
         <div
           className={cn(
-            'absolute z-50 mt-1.5 animate-fade-in-scale rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xl',
+            'absolute z-[var(--z-dropdown)] mt-1.5 animate-fade-in-scale rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xl',
             align === 'right' ? 'right-0' : 'left-0',
             className
           )}
@@ -675,6 +677,7 @@ export function FilterRail<T>({
   onStateChange,
   viewKey,
   placeholder = 'Search…',
+  searchRef,
   className,
 }: FilterRailProps<T>) {
   const [input, setInput] = useState(state.query)
@@ -728,6 +731,7 @@ export function FilterRail<T>({
       <div className="flex items-center gap-2">
         <div className="relative w-80 max-w-full motion-safe:transition-[width] motion-safe:duration-[var(--motion-fast)] focus-within:w-[30rem]">
           <SearchInput
+            ref={searchRef}
             value={input}
             onChange={(e) => {
               setInput(e.target.value)
@@ -745,7 +749,7 @@ export function FilterRail<T>({
           {suggestions.length > 0 && (
             <div
               role="listbox"
-              className="absolute left-0 right-0 top-full z-50 mt-1.5 animate-fade-in-scale overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] py-1 shadow-xl"
+              className="absolute left-0 right-0 top-full z-[var(--z-dropdown)] mt-1.5 animate-fade-in-scale overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] py-1 shadow-xl"
             >
               <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">
                 Completions

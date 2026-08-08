@@ -35,8 +35,8 @@ from typing import Any, Callable
 from app.domains.jobs.models import Job
 from app.domains.jobs.schemas import JobCreate
 from app.domains.jobs.service import JobService
-from app.multi_tenant.models import platform_context
 from app.infrastructure.database import async_session_factory
+from app.multi_tenant.models import platform_context
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +72,7 @@ PeriodicJobSpec = tuple[str, Callable[[datetime.datetime], str], int, int]
 _PERIODIC_JOBS: tuple[PeriodicJobSpec, ...] = (
     ("billing.period_end", lambda now: _daily_key("billing.period_end", now), 2, 10),
     ("billing.expire_past_due", lambda now: _daily_key("billing.expire_past_due", now), 2, 10),
+    ("cases.escalation", lambda now: _five_min_bucket_key("cases.escalation", now), 2, 20),
     (
         "communications.scheduled",
         lambda now: _five_min_bucket_key("communications.scheduled", now),

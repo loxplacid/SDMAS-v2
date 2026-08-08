@@ -70,7 +70,7 @@ export function InstallPWA() {
   return (
     <div
       className={cn(
-        'fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 sm:left-24 sm:translate-x-0 z-40',
+        'fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 sm:left-24 sm:translate-x-0 z-[var(--z-overlay)]',
         show ? 'animate-fade-in-up' : 'animate-fade-out-down'
       )}
       style={{ animationDuration: 'var(--motion-fast)' }}

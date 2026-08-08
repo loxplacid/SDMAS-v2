@@ -48,6 +48,10 @@ from app.domains.communications.models import (  # noqa: F401
     MessageRecipient, MessageSchedule, MessageTemplate, MessageThread,
 )
 from app.domains.parent.models import Guardian  # noqa: F401
+from app.domains.data_quality.models import DataQualityFinding  # noqa: F401
+from app.domains.cases.models import (  # noqa: F401
+    Case, CaseComment, CaseEvidence, CaseEvent, CaseSLAConfig,
+)
 from app.domains.search.models import SearchHistory  # noqa: F401
 from app.domains.student_portal.models import Assignment, AssignmentSubmission  # noqa: F401
 from app.infrastructure.database import Base

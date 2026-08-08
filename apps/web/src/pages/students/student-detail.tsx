@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { studentApi } from '../../api/student/student-api'
 import type { StudentResponse } from '../../api/generated/types'
-import { Card, Button, ErrorState, Breadcrumbs, PageHeader, StatusBadge } from '../../components/ui'
+import { Card, Button, ErrorState, BreadcrumbBar, PageHeader, StatusBadge } from '../../components/ui'
 import { formatDate, formatDateTime } from '../../lib/utils'
 
 export function StudentDetailPage() {
@@ -37,10 +37,7 @@ export function StudentDetailPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <Breadcrumbs items={[
-        { label: 'Students', href: '/students' },
-        { label: `${student.first_name} ${student.last_name}` },
-      ]} />
+      <BreadcrumbBar pageLabel={`${student.first_name} ${student.last_name}`} />
 
       <PageHeader
         title={`${student.first_name} ${student.last_name}`}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../api/auth/auth-context'
+import type { CasePriority } from '../../api/cases/cases-api'
 import {
   riskApi,
   type RiskFinding,
@@ -9,6 +10,7 @@ import {
   type RuleConfig,
   type RecomputeResult,
 } from '../../api/risk/risk-api'
+import { casesApi } from '../../api/cases/cases-api'
 import { Badge, Button, Card, Modal, Skeleton } from '../../components/ui'
 import { useToast } from '../../components/ui/toast'
 import { cn, formatDateTime } from '../../lib/utils'
@@ -99,6 +101,7 @@ function FindingCard({
   canAcknowledge,
   onResolve,
   onAcknowledge,
+  onCreateCase,
   index,
 }: {
   finding: RiskFinding
@@ -106,6 +109,7 @@ function FindingCard({
   canAcknowledge: boolean
   onResolve: (f: RiskFinding) => void
   onAcknowledge: (f: RiskFinding) => void
+  onCreateCase: (f: RiskFinding) => void
   index: number
 }) {
   const navigate = useNavigate()
@@ -161,6 +165,14 @@ function FindingCard({
               className="rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] hover:border-[var(--color-brand-accent)]/40 hover:text-[var(--color-brand-accent)] motion-safe:transition-colors"
             >
               Acknowledge
+            </button>
+          )}
+          {isActive && (
+            <button
+              onClick={() => onCreateCase(finding)}
+              className="rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] hover:border-[var(--color-brand-accent)]/50 hover:text-[var(--color-brand-accent)] motion-safe:transition-colors"
+            >
+              Create case
             </button>
           )}
           {isActive && canResolve && (
@@ -352,6 +364,7 @@ function RiskCenterSkeleton() {
 export function RiskCenterPage() {
   const { user } = useAuth()
   const { showToast } = useToast()
+  const navigate = useNavigate()
   const role = (user?.role as string) || 'staff'
   const canResolve = ['admin', 'principal'].includes(role)
   const canAcknowledge = ['admin', 'principal', 'staff'].includes(role)
@@ -375,6 +388,7 @@ export function RiskCenterPage() {
   const [resolveTarget, setResolveTarget] = useState<RiskFinding | null>(null)
   const [resolveReason, setResolveReason] = useState('')
   const [busyId, setBusyId] = useState<number | null>(null)
+  const [caseCreatingId, setCaseCreatingId] = useState<number | null>(null)
   const fetchIdRef = useRef(0)
 
   const loadFindings = useCallback(async () => {
@@ -493,6 +507,35 @@ export function RiskCenterPage() {
       showToast(err?.detail || 'Resolve failed', 'error')
     } finally {
       setBusyId(null)
+    }
+  }
+
+  // P8 §13 — promote an open risk finding into an operational case. The case
+  // references the finding via source_type/source_id; the finding itself is
+  // not mutated, keeping the risk audit trail intact.
+  const handleCreateCase = async (f: RiskFinding) => {
+    setCaseCreatingId(f.id)
+    try {
+      const c = await casesApi.create({
+        title: f.reason || `Risk finding #${f.id}`,
+        description: `Risk finding #${f.id} (${f.category}) — ${f.recommended_action || 'requires attention'}`,
+        case_type: f.category === 'finance' ? 'finance'
+          : f.category === 'attendance' ? 'attendance'
+          : f.category === 'academic' ? 'academic'
+          : f.category === 'documents' ? 'documents'
+          : f.category === 'admissions' ? 'admissions'
+          : 'operational',
+        priority: f.severity as CasePriority,
+        source_type: 'risk_finding',
+        source_id: f.id,
+        student_id: f.student_id,
+      })
+      showToast(`Case ${c.case_number} created from finding #${f.id}`, 'success')
+      navigate(`/cases/${c.id}`)
+    } catch (err: any) {
+      showToast(err?.detail || 'Could not create case', 'error')
+    } finally {
+      setCaseCreatingId(null)
     }
   }
 
@@ -679,6 +722,7 @@ export function RiskCenterPage() {
                     canAcknowledge={canAcknowledge}
                     onResolve={setResolveTarget}
                     onAcknowledge={handleAcknowledge}
+                    onCreateCase={handleCreateCase}
                   />
                 ))}
               </div>

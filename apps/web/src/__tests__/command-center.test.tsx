@@ -193,6 +193,59 @@ describe('Command Center page', () => {
     expect(await screen.findByText('Daily Attendance Page')).toBeInTheDocument()
   })
 
+  it('renders the deterministic composite School Health Score with explainable dimensions', async () => {
+    getOverviewMock.mockResolvedValueOnce(
+      makeOverview({
+        school_health: {
+          available: true,
+          metrics: [],
+          trends: {},
+          score: {
+            available: true,
+            overall: 87.2,
+            weights: { attendance: 0.3, fees: 0.25, academic: 0.2, retention: 0.15, data_quality: 0.1 },
+            dimensions: [
+              { key: 'attendance', label: 'Attendance', score: 91, weight: 0.3, status: 'good', available: true, metrics: [], drill_down: '/attendance' },
+              { key: 'fees', label: 'Fees', score: 82, weight: 0.25, status: 'warn', available: true, metrics: [], drill_down: '/fees' },
+              { key: 'academic', label: 'Academics', score: 89, weight: 0.2, status: 'good', available: true, metrics: [], drill_down: '/academic' },
+              { key: 'retention', label: 'Retention', score: 94, weight: 0.15, status: 'good', available: true, metrics: [], drill_down: '/students' },
+              { key: 'data_quality', label: 'Data Quality', score: 88, weight: 0.1, status: 'good', available: true, metrics: [], drill_down: '/data-quality' },
+            ],
+          },
+        },
+      })
+    )
+
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByText('School Health Score')).toBeInTheDocument()
+      // Composite rounds to 87
+      expect(screen.getByText('87')).toBeInTheDocument()
+    })
+    // Every dimension is visible with its explainable score
+    expect(screen.getByText('Attendance 91')).toBeInTheDocument()
+    expect(screen.getByText('Fees 82')).toBeInTheDocument()
+    expect(screen.getByText('Academics 89')).toBeInTheDocument()
+    expect(screen.getByText('Retention 94')).toBeInTheDocument()
+    expect(screen.getByText('Data Quality 88')).toBeInTheDocument()
+  })
+
+  it('hides the composite score when it is unavailable (graceful degradation)', async () => {
+    getOverviewMock.mockResolvedValueOnce(
+      makeOverview({
+        school_health: { available: true, metrics: [], trends: {}, score: null },
+      })
+    )
+
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByText('School Health')).toBeInTheDocument()
+    })
+    expect(screen.queryByText('School Health Score')).not.toBeInTheDocument()
+  })
+
   it('renders role-specific quick actions without financial data leakage for staff', async () => {
     getOverviewMock.mockResolvedValueOnce(
       makeOverview({

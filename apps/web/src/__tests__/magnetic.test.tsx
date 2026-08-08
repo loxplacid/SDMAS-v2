@@ -4,6 +4,7 @@ import { Button } from '../components/ui/button'
 import { Card } from '../components/ui/card'
 import { MAGNET_MAX_PX } from '../lib/motion/magnetic'
 
+
 /**
  * Magnetic hover-pull (Glint §2.1). The setup.ts matchMedia polyfill forces
  * reduced motion → tier `efficient`, which must make the pull inert; the
@@ -109,6 +110,45 @@ describe('Card magnetic pull (Glint §2.1)', () => {
 
     fireEvent(content, pointerEvent('pointermove', 40, 40))
     expect(content.style.transform).toBe(`translate(${MAGNET_MAX_PX}px, ${MAGNET_MAX_PX}px)`)
+  })
+
+  it('lifts to d2 depth on clickable primary cards (Glint §2.2)', () => {
+    stubMotionPrefs(false, false) // precise tier
+    render(
+      <Card title="Primary" onClick={() => {}} depth="d2">
+        <p>Content</p>
+      </Card>
+    )
+
+    const card = screen.getByText('Primary').closest('.rounded-2xl') as HTMLElement
+    expect(card.className).toContain('hover:shadow-md')
+    expect(card.className).toContain('hover:-translate-y-0.5')
+  })
+
+  it('defaults to the quiet d1 treatment for clickable cards', () => {
+    stubMotionPrefs(false, false) // precise tier
+    render(
+      <Card title="Default" onClick={() => {}}>
+        <p>Content</p>
+      </Card>
+    )
+
+    const card = screen.getByText('Default').closest('.rounded-2xl') as HTMLElement
+    expect(card.className).toContain('hover:shadow-sm')
+    expect(card.className).toContain('hover:-translate-y-px')
+  })
+
+  it('keeps d1 depth (shadow-sm + 1px) for secondary clickable cards', () => {
+    stubMotionPrefs(false, false) // precise tier
+    render(
+      <Card title="Secondary" onClick={() => {}}>
+        <p>Content</p>
+      </Card>
+    )
+
+    const card = screen.getByText('Secondary').closest('.rounded-2xl') as HTMLElement
+    expect(card.className).toContain('hover:shadow-sm')
+    expect(card.className).toContain('hover:-translate-y-px')
   })
 
   it('does not pull on non-clickable cards', () => {

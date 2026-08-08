@@ -1,10 +1,10 @@
-import { Breadcrumbs, PageHeader } from '../../components/ui'
+import { BreadcrumbBar, PageHeader } from '../../components/ui'
 import { Timeline } from '../../components/timeline/timeline'
 
 export function TimelinePage() {
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <Breadcrumbs items={[{ label: 'Timeline' }]} />
+      <BreadcrumbBar />
 
       <div className="flex items-center justify-between gap-4">
         <PageHeader

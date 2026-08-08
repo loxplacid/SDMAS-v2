@@ -107,7 +107,10 @@ const NAV_ICON_COMMUNICATIONS = 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 
 
 const adminNav: NavItem[] = [
   { to: '/command-center', label: 'Command Center', icon: NAV_ICONS.dashboard, matchPaths: ['/command-center'] },
+  { to: '/action-center', label: 'Action Center', icon: NAV_ICONS.approvals, matchPaths: ['/action-center'] },
   { to: '/risk', label: 'Risk Center', icon: NAV_ICONS.analytics, matchPaths: ['/risk'] },
+  { to: '/data-quality', label: 'Data Quality', icon: NAV_ICONS.reports, matchPaths: ['/data-quality'] },
+  { to: '/work', label: 'Work Queue', icon: NAV_ICONS.approvals, matchPaths: ['/work', '/cases'] },
   { to: '/timeline', label: 'Timeline', icon: NAV_ICONS.operations, matchPaths: ['/timeline'] },
   { to: '/leave', label: 'Leave', icon: NAV_ICONS.leave, matchPaths: ['/leave'] },
   { to: '/admissions', label: 'Admissions', icon: NAV_ICONS.admissions, matchPaths: ['/admissions'] },
@@ -171,7 +174,10 @@ const parentNav: NavItem[] = [
 /** Nav items visible to Principal role (leadership overview) */
 const principalNav: NavItem[] = [
   { to: '/command-center', label: 'Command Center', icon: NAV_ICONS.dashboard, matchPaths: ['/command-center'] },
+  { to: '/action-center', label: 'Action Center', icon: NAV_ICONS.approvals, matchPaths: ['/action-center'] },
   { to: '/risk', label: 'Risk Center', icon: NAV_ICONS.analytics, matchPaths: ['/risk'] },
+  { to: '/data-quality', label: 'Data Quality', icon: NAV_ICONS.reports, matchPaths: ['/data-quality'] },
+  { to: '/work', label: 'Work Queue', icon: NAV_ICONS.approvals, matchPaths: ['/work', '/cases'] },
   { to: '/timeline', label: 'Timeline', icon: NAV_ICONS.operations, matchPaths: ['/timeline'] },
   { to: '/students', label: 'Students', icon: NAV_ICONS.students },
   { to: '/teachers', label: 'Teachers', icon: NAV_ICONS.teachers },
@@ -188,6 +194,7 @@ const principalNav: NavItem[] = [
 /** Nav items visible to Accountant role (financial management) */
 const accountantNav: NavItem[] = [
   { to: '/command-center', label: 'Command Center', icon: NAV_ICONS.dashboard, matchPaths: ['/command-center'] },
+  { to: '/action-center', label: 'Action Center', icon: NAV_ICONS.approvals, matchPaths: ['/action-center'] },
   { to: '/fees/structures', label: 'Fee Structures', icon: NAV_ICONS.fees, matchPaths: ['/fees/structures'] },
   { to: '/fees/dues', label: 'Fee Dues', icon: NAV_ICONS['my-fees'], matchPaths: ['/fees/dues'] },
   { to: '/fees/payments', label: 'Payments', icon: NAV_ICONS.fees, matchPaths: ['/fees/payments'] },
@@ -200,7 +207,10 @@ const accountantNav: NavItem[] = [
 /** Nav items visible to Staff role (general operations) */
 const staffNav: NavItem[] = [
   { to: '/command-center', label: 'Command Center', icon: NAV_ICONS.dashboard, matchPaths: ['/command-center'] },
+  { to: '/action-center', label: 'Action Center', icon: NAV_ICONS.approvals, matchPaths: ['/action-center'] },
   { to: '/risk', label: 'Risk Center', icon: NAV_ICONS.analytics, matchPaths: ['/risk'] },
+  { to: '/data-quality', label: 'Data Quality', icon: NAV_ICONS.reports, matchPaths: ['/data-quality'] },
+  { to: '/work', label: 'Work Queue', icon: NAV_ICONS.approvals, matchPaths: ['/work', '/cases'] },
   { to: '/timeline', label: 'Timeline', icon: NAV_ICONS.operations, matchPaths: ['/timeline'] },
   { to: '/attendance', label: 'Attendance', icon: NAV_ICONS.attendance, matchPaths: ['/attendance'] },
   { to: '/leave', label: 'Leave', icon: NAV_ICONS.leave, matchPaths: ['/leave'] },
@@ -217,7 +227,7 @@ export function getNavSectionsForRole(role: string): NavSection[] {
     return [
       {
         label: 'Overview',
-        items: items.filter((i) => ['/command-center', '/risk', '/timeline', '/leave', '/admissions', '/notifications'].includes(i.to)),
+        items: items.filter((i) => ['/command-center', '/action-center', '/risk', '/data-quality', '/work', '/timeline', '/leave', '/admissions', '/notifications'].includes(i.to)),
       },
       {
         label: 'Records',
@@ -301,7 +311,7 @@ export function getNavSectionsForRole(role: string): NavSection[] {
     return [
       {
         label: 'Overview',
-        items: items.filter((i) => ['/command-center', '/risk', '/timeline'].includes(i.to)),
+        items: items.filter((i) => ['/command-center', '/action-center', '/risk', '/data-quality', '/work', '/timeline'].includes(i.to)),
       },
       {
         label: 'Records',
@@ -322,7 +332,7 @@ export function getNavSectionsForRole(role: string): NavSection[] {
     return [
       {
         label: 'Overview',
-        items: items.filter((i) => ['/command-center'].includes(i.to)),
+        items: items.filter((i) => ['/command-center', '/action-center'].includes(i.to)),
       },
       {
         label: 'Finance',
@@ -343,7 +353,7 @@ export function getNavSectionsForRole(role: string): NavSection[] {
     return [
       {
         label: 'Overview',
-        items: items.filter((i) => ['/command-center', '/risk', '/timeline'].includes(i.to)),
+        items: items.filter((i) => ['/command-center', '/action-center', '/risk', '/data-quality', '/work', '/timeline'].includes(i.to)),
       },
       {
         label: 'Operations',
@@ -415,6 +425,9 @@ export function hasRouteAccess(role: string, path: string): boolean {
   if (['principal', 'accountant', 'staff'].includes(role)) {
     if (path.startsWith(`/${role}`)) return true
     if (path === '/command-center' || path.startsWith('/command-center')) return true
+    if (path === '/action-center' || path.startsWith('/action-center')) return true
+    if (role !== 'accountant' && (path === '/data-quality' || path.startsWith('/data-quality'))) return true
+    if (role !== 'accountant' && (path === '/work' || path.startsWith('/work') || path.startsWith('/cases/'))) return true
     if (path === '/timeline' || path.startsWith('/timeline')) return true
     if (role !== 'accountant' && (path === '/risk' || path.startsWith('/risk'))) return true
     if (path === '/notifications' || path.startsWith('/notifications')) return true

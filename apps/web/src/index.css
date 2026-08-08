@@ -169,6 +169,21 @@
   --nav-collapsed-width: 68px;
   --header-height: 60px;
 
+  /* ---- Z-Index Layers ----
+     One scale for every stacking layer in the shell. Consumed as Tailwind
+     arbitrary values (z-[var(--z-dropdown)]) so a layer's intent — not a
+     magic number — is visible at the call site. Values match the previous
+     hardcoded numbers so existing stacking behavior is preserved exactly. */
+  --z-sticky: 10;   /* sticky table headers within scroll contexts */
+  --z-nav: 30;      /* persistent sidebar + mobile FABs */
+  --z-overlay: 40;  /* transient inline overlays (PWA prompt); reserved for a fixed header */
+  --z-dropdown: 50; /* menus, popovers, the notification bell */
+  --z-dialog: 50;   /* modal / drawer / full-screen dialogs */
+  --z-tooltip: 60;  /* absolute tooltips */
+  --z-portal: 80;   /* portaled tooltips */
+  --z-toast: 100;   /* toast stack */
+  --z-command: 200; /* command palette + universal search */
+
   /* ---- Sidebar (Deep Navy) ---- */
   --nav-bg: var(--color-brand-navy);
   --nav-bg-hover: rgba(255, 255, 255, 0.06);
@@ -369,6 +384,7 @@ a:hover { color: var(--color-brand-accent-hover); }
 @keyframes scale-in { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
 @keyframes scale-in-spring { 0% { opacity: 0; transform: scale(0.92); } 70% { transform: scale(1.03); } 100% { opacity: 1; transform: scale(1); } }
 @keyframes drawer-in { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+@keyframes fade-in-left { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes fade-in-left-stagger { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes count-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -403,6 +419,14 @@ a:hover { color: var(--color-brand-accent-hover); }
   55% { transform: scale(1.06); }
   100% { transform: scale(1); }
 }
+/* Glint §5.2 — the L4 soft burst: a radial glow that expands from the
+   checkmark and fades. Transform/opacity only, 400ms, one shot, no
+   particles — the milestone's warmth, not its volume. */
+@keyframes milestone-burst {
+  0% { opacity: 0; transform: scale(0.4); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: scale(2.4); }
+}
 @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 @keyframes shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-4px); } 40% { transform: translateX(4px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
 @keyframes slide-down { from { max-height: 0; opacity: 0; transform: translateY(-4px); } to { max-height: 200px; opacity: 1; transform: translateY(0); } }
@@ -427,6 +451,11 @@ a:hover { color: var(--color-brand-accent-hover); }
 .animate-scale-in { animation: scale-in var(--motion-base) var(--ease-spring-gentle) both; }
 .animate-scale-in-spring { animation: scale-in-spring var(--motion-slower) var(--ease-spring) both; }
 .animate-drawer-in { animation: drawer-in var(--motion-slow) var(--ease-decelerate) both; }
+/* `animate-fade-in-left` was referenced by the mobile nav (and the command
+   center timeline events) but never defined — the class existed only as
+   `fade-in-left-stagger`. Defining it restores the intended 12px stagger
+   entrance on those surfaces (P7 §3.5). */
+.animate-fade-in-left { animation: fade-in-left var(--motion-slow) var(--ease-decelerate) both; }
 .animate-fade-in-left-stagger { animation: fade-in-left-stagger var(--motion-slow) var(--ease-decelerate) both; }
 .animate-count-up { animation: count-up var(--motion-slow) var(--ease-decelerate) both; }
 
@@ -448,6 +477,7 @@ a:hover { color: var(--color-brand-accent-hover); }
 .animate-draw-check { animation: draw-check 180ms var(--ease-emphasized-decelerate) both; }
 .animate-check-settle { animation: check-settle 220ms var(--ease-spring) both; animation-delay: 40ms; }
 .animate-counter-settle { animation: counter-settle 220ms var(--ease-spring) both; }
+.animate-milestone-burst { animation: milestone-burst 400ms var(--ease-emphasized-decelerate) both; animation-delay: 150ms; }
 .animate-badge-pop { animation: badge-pop var(--motion-fast) var(--ease-spring) both; }
 .animate-notification-pulse { animation: notification-pulse 2s var(--ease-standard) infinite; }
 .animate-attention-ring { animation: attention-ring 2s var(--ease-standard) infinite; }

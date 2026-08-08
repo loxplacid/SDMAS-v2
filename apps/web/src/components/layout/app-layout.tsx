@@ -2,9 +2,6 @@ import { useState, useCallback, useEffect, useMemo } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { Sidebar } from './sidebar'
 import { Header } from './header'
-import { QuickCreate } from './quick-create'
-import { OrganizationSwitcher } from './organization-switcher'
-import { ContextualPageActions } from './contextual-actions'
 import { CommandPalette } from '../ui/command-palette'
 import { UniversalSearchModal } from '../ui/universal-search-modal'
 import { KeyboardShortcutsDialog } from '../ui/keyboard-shortcuts-dialog'
@@ -13,6 +10,11 @@ import { SystemThemeToast } from '../ui/system-theme-toast'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { useUniversalSearch } from '../../hooks/use-universal-search'
 import { useNavPersistence } from '../../hooks/use-nav-persistence'
+import {
+  buildContextualCommands,
+  buildRecentCommands,
+  type ContextCommand,
+} from '../../lib/nav/contextual-commands'
 import { RouteTransition } from '../ui/route-transition'
 
 const navIcons: Record<string, string> = {
@@ -33,7 +35,9 @@ const navIcons: Record<string, string> = {
 const locationToNavLabel: Record<string, string> = {
   dashboard: 'Dashboard',
   'command-center': 'Command Center',
+  'action-center': 'Action Center',
   risk: 'Risk Center',
+  'data-quality': 'Data Quality',
   timeline: 'Timeline',
   students: 'Students',
   teachers: 'Teachers',
@@ -54,7 +58,10 @@ function buildCommandGroups(navigate: (path: string) => void) {
       label: 'Pages',
       items: [
         { id: 'nav-command-center', label: 'Command Center', description: 'School health, alerts & today', icon: navIcons.dashboard, action: () => navigate('/command-center'), keywords: ['home', 'overview', 'leadership', 'health', 'alerts'] },
+        { id: 'nav-action-center', label: 'Action Center', description: 'What needs your attention right now', icon: navIcons.operations, action: () => navigate('/action-center'), keywords: ['attention', 'actions', 'resolve', 'todo', 'alerts'] },
         { id: 'nav-risk', label: 'Risk Center', description: 'Deterministic risk findings & attention', icon: navIcons.analytics, action: () => navigate('/risk'), keywords: ['risk', 'attention', 'findings', 'alerts', 'rules'] },
+        { id: 'nav-data-quality', label: 'Data Quality', description: 'Duplicates, missing fields & invalid records', icon: navIcons.reports, action: () => navigate('/data-quality'), keywords: ['quality', 'duplicates', 'data', 'integrity', 'cleanliness'] },
+        { id: 'nav-work', label: 'Work Queue', description: 'Operational cases assigned to you or open for action', icon: navIcons.operations, action: () => navigate('/work'), keywords: ['cases', 'queue', 'assignments', 'sla', 'overdue', 'todo'] },
         { id: 'nav-timeline', label: 'Timeline', description: 'Unified operational activity feed', icon: navIcons.operations, action: () => navigate('/timeline'), keywords: ['activity', 'feed', 'audit', 'events', 'history'] },
         { id: 'nav-dashboard', label: 'Dashboard', description: 'Executive overview', icon: navIcons.dashboard, action: () => navigate('/dashboard'), keywords: ['home', 'overview', 'classic'] },
         { id: 'nav-students', label: 'Students', description: 'Manage student records', icon: navIcons.students, action: () => navigate('/students'), keywords: ['people', 'enrollment'] },
@@ -99,16 +106,34 @@ export function AppLayout() {
   // Universal search: instant local FTS5 index, synced in the background.
   const universalSearch = useUniversalSearch()
 
-  // Command palette groups (memoized to avoid re-creation)
-  const commandGroups = useMemo(() => buildCommandGroups(navigate), [navigate])
+  // Command palette groups: route-aware contextual commands first (P8 §10),
+  // then the visited-page "Recent" group (P8 §9), then the static
+  // page/action groups. Rebuilt on route or history change only.
+  const commandGroups = useMemo(() => {
+    const contextual = buildContextualCommands(location.pathname, navigate)
+    const recent = buildRecentCommands(navPersistence.recentItems, location.pathname, navigate)
+    const groups = buildCommandGroups(navigate)
+    // `ContextCommand` is the palette's item contract; the static groups'
+    // strictly-typed description is a subtype, so this union is safe.
+    const ordered: Array<{ label: string; items: ContextCommand[] }> = []
+    if (contextual.length > 0) ordered.push({ label: 'On this page', items: contextual })
+    if (recent.length > 0) ordered.push({ label: 'Recent', items: recent })
+    ordered.push(...groups)
+    return ordered
+  }, [navigate, location.pathname, navPersistence.recentItems])
 
   // `?` opens the keyboard shortcuts dialog
   useKeyboardShortcut({ '?': () => setShortcutsOpen(true) }, [])
 
-  // `Cmd+K` and `Cmd+Shift+K` open the universal search modal
+  // `Cmd+K` opens the command palette (P8 §9) — the header's ⌘K hint points
+  // at the same surface. The palette's own handler owns the close half of
+  // the toggle, so this only opens when closed. `Cmd+Shift+K` opens the
+  // universal search modal.
   useKeyboardShortcut(
     {
-      'mod+k': () => setSearchOpen(true),
+      'mod+k': () => {
+        if (!commandOpen) setCommandOpen(true)
+      },
       'mod+shift+k': () => setSearchOpen(true),
     },
     [],
@@ -119,7 +144,10 @@ export function AppLayout() {
     const pageLabels: Record<string, string> = {
       '/dashboard': 'Dashboard',
       '/command-center': 'Command Center',
+      '/action-center': 'Action Center',
       '/risk': 'Risk Center',
+      '/data-quality': 'Data Quality',
+      '/work': 'Work Queue',
       '/timeline': 'Timeline',
       '/students': 'Students',
       '/teachers': 'Teachers',
@@ -197,7 +225,7 @@ export function AppLayout() {
       {/* Mobile ? shortcut button (visible below sm breakpoint) */}
       <button
         onClick={() => setShortcutsOpen(true)}
-        className="sm:hidden fixed bottom-6 left-6 z-30 flex items-center justify-center h-10 w-10 rounded-full bg-[var(--color-surface)] text-[var(--color-text-secondary)] shadow-lg border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] transition-all active:scale-95 motion-reduce:active:scale-100 text-base font-bold animate-fade-in-scale"
+        className="sm:hidden fixed bottom-6 left-6 z-[var(--z-nav)] flex items-center justify-center h-10 w-10 rounded-full bg-[var(--color-surface)] text-[var(--color-text-secondary)] shadow-lg border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] transition-all active:scale-95 motion-reduce:active:scale-100 text-base font-bold animate-fade-in-scale"
         style={{ animationDelay: '600ms' }}
         aria-label="Keyboard shortcuts"
       >

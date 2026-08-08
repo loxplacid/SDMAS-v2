@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { cn } from '../../lib/utils'
 import { recordOpen } from '../../lib/search/ranking'
+import { useMove } from '../../lib/motion'
 import type {
   UniversalSearchResult,
   UniversalSearchStatus,
@@ -51,6 +52,26 @@ export function UniversalSearchModal({
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const seqRef = useRef(0)
+  const closingRef = useRef(false)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const backdropRef = useRef<HTMLDivElement>(null)
+  // Element that had focus when the modal opened — restored on close so
+  // keyboard users land back where they left (P7 §10).
+  const previousFocusRef = useRef<HTMLElement | null>(null)
+
+  // Entrance/exit choreography (P7 §5 — spatially integrated surfaces): the
+  // same `Scale Z + Fade, D4, I3` panel + independent `Fade` backdrop the
+  // command palette uses, so both global surfaces share one language.
+  const panelSpec = useMemo(
+    () => ({ verb: 'scale', direction: 'Z', distance: 'D4', importance: 'I3' }) as const,
+    []
+  )
+  const backdropSpec = useMemo(
+    () => ({ verb: 'fade', distance: 'D2', importance: 'I2' }) as const,
+    []
+  )
+  const panelMove = useMove(panelSpec, { animateOnMount: true })
+  const backdropMove = useMove(backdropSpec, { animateOnMount: true })
 
   const hasQuery = query.trim().length > 0
   const flatResults = result?.results ?? []
@@ -80,6 +101,8 @@ export function UniversalSearchModal({
     setResult(null)
     setActiveTab('__all__')
     setSelectedIndex(0)
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null
     const t = setTimeout(() => inputRef.current?.focus(), 50)
     document.body.style.overflow = 'hidden'
     return () => {
@@ -93,12 +116,25 @@ export function UniversalSearchModal({
   }, [query, runSearch, open])
 
   const handleClose = useCallback(() => {
+    if (closingRef.current) return
+    closingRef.current = true
     setClosing(true)
-    setTimeout(() => {
+    const done = () => {
+      closingRef.current = false
       setClosing(false)
+      // Return focus to the summoning surface (P7 §10).
+      const previous = previousFocusRef.current
+      if (previous && previous.isConnected && typeof previous.focus === 'function') {
+        previous.focus()
+      }
       onClose()
-    }, 120)
-  }, [onClose])
+    }
+    // Exit is the reverse of entry at 0.7× (panel 0.98-scale + fade, backdrop
+    // fade); `onfinish` unmounts the modal. Under reduced tiers `play`
+    // applies instantly and completes synchronously.
+    panelMove.play(panelRef.current, 'exit', { onfinish: done })
+    backdropMove.play(backdropRef.current, 'exit')
+  }, [onClose, panelMove.play, backdropMove.play])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -148,14 +184,10 @@ export function UniversalSearchModal({
   }, [selectedIndex])
 
   if (!open && !closing) return null
-  const show = open && !closing
 
   return (
     <div
-      className={cn(
-        'fixed inset-0 z-[200] flex items-start justify-center pt-[8vh]',
-        show ? 'animate-fade-in' : 'animate-fade-out',
-      )}
+      className="fixed inset-0 z-[var(--z-command)] flex items-start justify-center pt-[8vh]"
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose()
       }}
@@ -163,13 +195,17 @@ export function UniversalSearchModal({
       aria-modal="true"
       aria-label="Universal search"
     >
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
+      <div
+        ref={backdropRef}
+        style={backdropMove.style}
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+        aria-hidden="true"
+      />
 
       <div
-        className={cn(
-          'relative w-full max-w-2xl bg-[var(--color-surface)] rounded-2xl shadow-2xl border border-[var(--color-border)] overflow-hidden',
-          show ? 'animate-fade-in-scale' : 'animate-fade-out-scale',
-        )}
+        ref={panelRef}
+        style={panelMove.style}
+        className="relative w-full max-w-2xl bg-[var(--color-surface)] rounded-2xl shadow-2xl border border-[var(--color-border)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input */}

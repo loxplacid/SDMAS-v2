@@ -30,10 +30,40 @@ class TrendPoint(BaseModel):
     value: float
 
 
+class HealthDimension(BaseModel):
+    """One explainable dimension of the composite School Health Score.
+
+    ``score`` is 0–100 and ``weight`` is the transparent weight used in
+    the weighted average.  When a dimension cannot be computed (no data
+    source), ``available=False`` and the composite re-normalises across
+    the remaining dimensions.
+    """
+
+    key: str
+    label: str
+    score: float = 0.0
+    weight: float = 0.0
+    status: str = "neutral"  # good | warn | critical | neutral
+    available: bool = True
+    metrics: list[Metric] = []
+    drill_down: Optional[str] = None
+
+
+class HealthScore(BaseModel):
+    """Deterministic, weighted composite score with explainable dimensions."""
+
+    available: bool = True
+    overall: Optional[float] = None
+    dimensions: list[HealthDimension] = []
+    weights: dict[str, float] = {}  # configured weights (pre-normalisation)
+
+
 class SchoolHealth(BaseModel):
     available: bool = True
     metrics: list[Metric] = []
     trends: dict[str, list[TrendPoint]] = {}  # e.g. {"attendance": [...], "collection": [...]}
+    score: Optional[HealthScore] = None  # composite School Health Score
+
 
 
 class Alert(BaseModel):
@@ -78,6 +108,35 @@ class QuickAction(BaseModel):
     icon: str  # icon key the frontend maps to an SVG path
 
 
+class WorkflowCaseMetric(BaseModel):
+    """One operational workflow figure from the case engine."""
+
+    label: str
+    value: int
+    display: str
+    severity: str = "neutral"  # good | warn | critical | neutral | info
+    drill_down: Optional[str] = None
+
+
+class WorkloadEntry(BaseModel):
+    assignee_id: int
+    assignee_name: Optional[str] = None
+    open_cases: int = 0
+    critical_cases: int = 0
+    overdue_cases: int = 0
+
+
+class WorkflowSection(BaseModel):
+    available: bool = False
+    open_cases: int = 0
+    critical_cases: int = 0
+    overdue_cases: int = 0
+    due_today: int = 0
+    metrics: list[WorkflowCaseMetric] = []
+    by_type: dict[str, int] = {}
+    workload: list[WorkloadEntry] = []
+
+
 class CommandCenterOverview(BaseModel):
     generated_at: datetime.datetime
     role: str
@@ -88,3 +147,4 @@ class CommandCenterOverview(BaseModel):
     needs_attention: NeedsAttention = NeedsAttention()
     today: TodaySection = TodaySection()
     quick_actions: list[QuickAction] = []
+    workflow: Optional[WorkflowSection] = None

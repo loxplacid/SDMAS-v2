@@ -5,6 +5,7 @@ import { academicYearApi } from '../../api/academic/academic-year-api'
 import type { TermResponse, TermCreate, TermUpdate, AcademicYearResponse } from '../../api/generated/types'
 import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast } from '../../components/ui'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
+import { useDelight } from '../../components/delight/delight-provider'
 import { TERM_STATUSES, capitalize } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = { active: 'success', inactive: 'danger' }
@@ -21,6 +22,7 @@ type TermFormData = { name: string; start_date: string; end_date: string; status
 export function TermListPage() {
   const navigate = useNavigate()
   const { showToast } = useToast()
+  const { celebrate } = useDelight()
 
   useKeyboardShortcut({ 'n': () => openCreateModal() }, [])
   const [data, setData] = useState<TermResponse[]>([])
@@ -77,6 +79,8 @@ export function TermListPage() {
       } else {
         const created = await termApi.create(Number(yearFilter), { name: formData.name, start_date: formData.start_date, end_date: formData.end_date })
         setData((prev) => [created, ...prev]); setTotal((t) => t + 1); showToast('Term created', 'success')
+        // Glint §5.1 — first-of-kind milestone (registry-gated, once per campus).
+        celebrate('first-term')
       }
       setModalOpen(false)
     } catch (err: any) { setApiError(err?.detail || 'Failed to save')

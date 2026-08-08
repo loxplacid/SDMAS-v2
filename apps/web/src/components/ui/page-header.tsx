@@ -1,5 +1,16 @@
 import type { ReactNode } from 'react'
 import { cn } from '../../lib/utils'
+import { MotionReveal } from '../../lib/motion'
+import type { MoveSpec } from '../../lib/motion'
+
+/**
+ * PageHeader entrance (P7 §7): the page title area settles with a short,
+ * grounded 8px rise + fade at `fast` (120ms, I1). Rendered by ~every page,
+ * this is the shared "page frame" choreography — transform/opacity only,
+ * no layout shift, and the tier system folds it to opacity-only (≤75ms) or
+ * instant under reduced motion.
+ */
+const PAGE_HEADER_SPEC: MoveSpec = { verb: 'slide', direction: 'S', distance: 'D4', importance: 'I1' }
 
 interface PageHeaderProps {
   title: string
@@ -11,7 +22,8 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, subtitle, actions, className, compact = false }: PageHeaderProps) {
   return (
-    <div
+    <MotionReveal
+      spec={PAGE_HEADER_SPEC}
       className={cn(
         'flex flex-col sm:flex-row sm:items-center justify-between gap-3',
         compact ? 'mb-5' : 'mb-8',
@@ -27,6 +39,6 @@ export function PageHeader({ title, subtitle, actions, className, compact = fals
         )}
       </div>
       {actions && <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>}
-    </div>
+    </MotionReveal>
   )
 }

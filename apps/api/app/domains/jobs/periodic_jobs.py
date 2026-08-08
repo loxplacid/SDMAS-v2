@@ -76,3 +76,28 @@ class CommunicationsScheduledJob(BaseJob):
         summary = await svc.dispatch_due_schedules()
         logger.info("communications.scheduled: %s", summary)
         return summary
+
+
+@register_job
+class CasesEscalationJob(BaseJob):
+    """Escalate open cases past their configured escalation deadline.
+
+    Deterministic rule from the case engine: an open, non-terminal case
+    whose ``now - due_at`` exceeds its priority/type escalation window is
+    escalated with an immutable event + leadership notification.  The
+    underlying ``run_escalation`` is idempotent (already-escalated cases
+    are never re-notified), so a duplicated execution is safe.
+    """
+
+    job_type = "cases.escalation"
+
+    async def run(self, job: Job, session: AsyncSession) -> dict[str, Any]:
+        from app.domains.cases.service import CaseService
+
+        svc = CaseService(session)
+        result = await svc.run_escalation(None, actor_name="System")
+        logger.info(
+            "cases.escalation: %d case(s) escalated",
+            result.get("count", 0),
+        )
+        return result

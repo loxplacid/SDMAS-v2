@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domains.auth.dependencies import get_current_user, require_role
+from app.domains.auth.dependencies import require_role
 from app.domains.auth.models import User
 from app.domains.command_center.schemas import CommandCenterOverview
 from app.domains.command_center.service import CommandCenterService

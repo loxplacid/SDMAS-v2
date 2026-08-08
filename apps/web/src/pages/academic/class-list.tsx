@@ -6,10 +6,12 @@ import type { ClassResponse, AcademicYearResponse } from '../../api/generated/ty
 import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, Loading, ErrorState, useToast, PageHeader, StatusBadge, SearchInput } from '../../components/ui'
 import { ACADEMIC_STATUSES, capitalize } from '../../lib/utils'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
+import { useDelight } from '../../components/delight/delight-provider'
 
 export function ClassListPage() {
   const navigate = useNavigate()
   const { showToast } = useToast()
+  const { celebrate } = useDelight()
   useKeyboardShortcut({ 'n': () => openCreateModal() }, [])
 
   const [data, setData] = useState<ClassResponse[]>([])
@@ -92,6 +94,8 @@ export function ClassListPage() {
         const created = await classApi.create({ name: formData.name, academic_year_id: formData.academic_year_id! })
         setData((prev) => [created, ...prev]); setTotal((t) => t + 1)
         showToast('Class created', 'success')
+        // Glint §5.1 — first-of-kind milestone (registry-gated, once per campus).
+        celebrate('first-class')
       }
       setModalOpen(false)
     } catch (err: any) {

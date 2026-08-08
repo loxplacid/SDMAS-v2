@@ -213,7 +213,7 @@ export function NotificationBell() {
       {showMenu && (
         <div
           className={cn(
-            'absolute right-0 mt-2 w-80 bg-[var(--color-surface)] rounded-2xl shadow-xl border border-[var(--color-border)] z-50 origin-top-right',
+            'absolute right-0 mt-2 w-80 bg-[var(--color-surface)] rounded-2xl shadow-xl border border-[var(--color-border)] z-[var(--z-dropdown)] origin-top-right',
             closing ? 'animate-fade-out-scale' : 'animate-fade-in-scale'
           )}
           role="menu"

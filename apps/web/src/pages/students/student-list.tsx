@@ -1,55 +1,45 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { studentApi, type StudentListParams } from '../../api/student/student-api'
+import { studentApi } from '../../api/student/student-api'
+import { exportApi } from '../../api/reports/export-api'
 import type { StudentResponse } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Modal, Form, Alert, ErrorState, useToast, StatusBadge, SearchInput, ConfirmDialog, EmptyState, getEmptyState } from '../../components/ui'
+import { Button, Modal, Form, Input, Select, Alert, StatusBadge, ConfirmDialog, useToast } from '../../components/ui'
+import type { Column } from '../../components/ui/table'
+import { applyFilters } from '../../components/ui/table/filter-model'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
-import { STUDENT_STATUSES, capitalize, debounce } from '../../lib/utils'
+import { useAuth } from '../../api/auth/auth-context'
+import { useDelight } from '../../components/delight/delight-provider'
+import { DataWorkspace, useWorkspace } from '../../components/data-workspace'
+import { STUDENT_STATUSES, capitalize } from '../../lib/utils'
+
+/** Roles that may delete student records. */
+const BULK_DELETE_ROLES = new Set(['admin', 'principal'])
 
 export function StudentListPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { showToast } = useToast()
-  const searchRef = useRef<HTMLInputElement>(null)
+  const { celebrate } = useDelight()
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
-  useKeyboardShortcut({
-    '/': (e) => { e.preventDefault(); searchRef.current?.focus(); },
-    'n': () => openCreateModal(),
-  }, [])
+  const canBulkDelete = user?.role ? BULK_DELETE_ROLES.has(user.role) : false
 
+  // ── data (local mode: the full directory is fetched once) ──
   const [data, setData] = useState<StudentResponse[]>([])
-  const [total, setTotal] = useState(0)
-  const [pages, setPages] = useState(0)
-  const [page, setPage] = useState(1)
-  const [size, setSize] = useState(20)
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editingStudent, setEditingStudent] = useState<StudentResponse | null>(null)
-  const [formData, setFormData] = useState<{ first_name: string; last_name: string; student_number: string; email: string | null; date_of_birth: string | null; status?: string | null }>({ first_name: '', last_name: '', student_number: '', email: null, date_of_birth: null })
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
-  const [saving, setSaving] = useState(false)
-  const [apiError, setApiError] = useState<string | null>(null)
-
-  const [deleteConfirm, setDeleteConfirm] = useState<StudentResponse | null>(null)
-  const [deleting, setDeleting] = useState(false)
-
   const fetchIdRef = useRef(0)
 
-  const fetchStudents = useCallback(async (params: StudentListParams) => {
+  const fetchStudents = useCallback(async (showLoading: boolean) => {
     const fetchId = ++fetchIdRef.current
-    setLoading(true)
+    if (showLoading) setLoading(true)
     setError(null)
     try {
-      const result = await studentApi.list(params)
-      if (fetchId === fetchIdRef.current) {
-        setData(result.items)
-        setTotal(result.total)
-        setPages(result.pages)
-        setPage(result.page)
-      }
+      // Directory-scale dataset: one fetch, all filtering/sorting local.
+      // NOTE: capped at 10,000 rows — a larger school would need paged
+      // loading or server-side sort support (see P8 known limitations).
+      const result = await studentApi.list({ page: 1, size: 10000 })
+      if (fetchId === fetchIdRef.current) setData(result.items)
     } catch (err: any) {
       if (fetchId === fetchIdRef.current) setError(err?.detail || 'Failed to load students')
     } finally {
@@ -58,16 +48,18 @@ export function StudentListPage() {
   }, [])
 
   useEffect(() => {
-    fetchStudents({ page, size, search: search || undefined, status: statusFilter || undefined })
-  }, [page, size, statusFilter, fetchStudents])
+    fetchStudents(true)
+  }, [fetchStudents])
 
-  const debouncedSearch = useCallback(
-    debounce((value: string) => { setSearch(value); setPage(1) }, 300), []
-  )
+  // ── create / edit modal ──
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editingStudent, setEditingStudent] = useState<StudentResponse | null>(null)
+  const [formData, setFormData] = useState<{ first_name: string; last_name: string; student_number: string; email: string | null; date_of_birth: string | null; status?: string | null }>({ first_name: '', last_name: '', student_number: '', email: null, date_of_birth: null })
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [saving, setSaving] = useState(false)
+  const [apiError, setApiError] = useState<string | null>(null)
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    debouncedSearch(e.target.value)
-  }
+  const [deleteConfirm, setDeleteConfirm] = useState<StudentResponse | null>(null)
 
   const openCreateModal = () => {
     setEditingStudent(null)
@@ -80,6 +72,61 @@ export function StudentListPage() {
     setFormData({ first_name: student.first_name, last_name: student.last_name, student_number: student.student_number, email: student.email, date_of_birth: student.date_of_birth })
     setFormErrors({}); setApiError(null); setModalOpen(true)
   }
+
+  // Columns live inside the component: the actions column binds the modal
+  // handlers, so it cannot be a module-level constant.
+  const columns = useMemo<Column<StudentResponse>[]>(
+    () => [
+      { key: 'student_number', header: 'Student #', type: 'text', sortable: true },
+      { key: 'first_name', header: 'First Name', type: 'text', sortable: true },
+      { key: 'last_name', header: 'Last Name', type: 'text', sortable: true },
+      {
+        key: 'email',
+        header: 'Email',
+        type: 'text',
+        render: (s) => s.email || '-',
+        hideOnMobile: true,
+      },
+      {
+        key: 'status',
+        header: 'Status',
+        type: 'status',
+        sortable: true,
+        render: (s) => <StatusBadge status={s.status} />,
+      },
+      {
+        key: 'actions',
+        header: '',
+        type: 'actions',
+        render: (s) => (
+          <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+            <Button variant="outline" size="sm" onClick={() => openEditModal(s)}>
+              Edit
+            </Button>
+            <Button variant="ghost" size="sm" className="text-[var(--color-danger)]" onClick={() => setDeleteConfirm(s)}>
+              Delete
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    []
+  )
+
+  const workspace = useWorkspace<StudentResponse>({
+    viewKey: 'students',
+    columns,
+    defaultPageSize: 20,
+  })
+
+  // ── keyboard: `/` focuses the filter rail search, `n` creates ──
+  useKeyboardShortcut({
+    '/': (e) => {
+      e.preventDefault()
+      searchInputRef.current?.focus()
+    },
+    n: () => openCreateModal(),
+  }, [])
 
   const validate = (): boolean => {
     const errors: Record<string, string> = {}
@@ -103,13 +150,21 @@ export function StudentListPage() {
         showToast('Student updated', 'success')
       } else {
         const created = await studentApi.create({ first_name: formData.first_name, last_name: formData.last_name, student_number: formData.student_number, email: formData.email, date_of_birth: formData.date_of_birth })
-        setData((prev) => [created, ...prev]); setTotal((t) => t + 1)
+        setData((prev) => [created, ...prev])
         showToast('Student created', 'success')
+        // Glint §5.1 — first-of-kind milestone (registry-gated, once per campus).
+        celebrate('first-student')
       }
       setModalOpen(false)
-    } catch (err: any) { setApiError(err?.detail || 'Failed to save student')
-    } finally { setSaving(false) }
+    } catch (err: any) {
+      setApiError(err?.detail || 'Failed to save student')
+    } finally {
+      setSaving(false)
+    }
   }
+
+  // ── single delete ──
+  const [deleting, setDeleting] = useState(false)
 
   const handleDelete = async () => {
     if (!deleteConfirm) return
@@ -117,96 +172,127 @@ export function StudentListPage() {
     try {
       await studentApi.delete(deleteConfirm.id)
       setData((prev) => prev.filter((s) => s.id !== deleteConfirm.id))
-      setTotal((t) => t - 1)
       showToast('Student deleted', 'success')
       setDeleteConfirm(null)
-    } catch (err: any) { showToast(err?.detail || 'Failed to delete student', 'error')
-    } finally { setDeleting(false) }
+    } catch (err: any) {
+      showToast(err?.detail || 'Failed to delete student', 'error')
+    } finally {
+      setDeleting(false)
+    }
   }
 
-  const emptyState = getEmptyState('students')
+  // ── bulk delete (role-gated, confirmation-gated) ──
+  const [bulkConfirm, setBulkConfirm] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
+
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true)
+    try {
+      // allSettled: a single failure must not report the whole batch as
+      // failed — only the rows that actually deleted leave the table.
+      const entries = Array.from(workspace.selection)
+      const results = await Promise.allSettled(entries.map((id) => studentApi.delete(Number(id))))
+      const deleted = new Set(entries.filter((_, i) => results[i].status === 'fulfilled'))
+      const failed = entries.length - deleted.size
+      setData((prev) => prev.filter((s) => !deleted.has(s.id)))
+      workspace.clearSelection()
+      setBulkConfirm(false)
+      if (failed > 0) {
+        showToast(`${deleted.size} deleted, ${failed} failed`, 'error')
+      } else {
+        showToast(`${deleted.size} student${deleted.size === 1 ? '' : 's'} deleted`, 'success')
+      }
+    } catch (err: any) {
+      showToast(err?.detail || 'Failed to delete students', 'error')
+    } finally {
+      setBulkDeleting(false)
+    }
+  }
+
+  // ── export the current filtered dataset (P8 §22) ──
+  const [exporting, setExporting] = useState(false)
+  const filteredCount = useMemo(
+    () => applyFilters(data, workspace.filters, columns).length,
+    [data, workspace.filters, columns]
+  )
+
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const blob = await exportApi.students({
+        search: workspace.filters.query || undefined,
+        status: workspace.filters.facets.status?.[0] || undefined,
+      })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'students.csv'
+      a.click()
+      window.URL.revokeObjectURL(url)
+      showToast(`Exporting ${filteredCount} student${filteredCount === 1 ? '' : 's'}`, 'success')
+    } catch (err: any) {
+      showToast(err?.detail || 'Export failed', 'error')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   return (
-    <div className="space-y-8 animate-fade-in-up">
-      {/* Narrative header */}
-      <div>
-        <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide mb-1">People</p>
-        <h1 className="text-3xl lg:text-4xl font-extrabold text-[var(--color-text-primary)] tracking-tight leading-tight">
-          Students
-        </h1>
-        <p className="text-base text-[var(--color-text-tertiary)] mt-2 max-w-xl">
-          {total > 0
-            ? `${total} student${total !== 1 ? 's' : ''} across your school. Manage records, track enrollment, and maintain student information.`
-            : 'Build your student directory. Start by adding student records to your school.'}
-        </p>
-      </div>
-
-      {/* Search & filters bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3 flex-1 max-w-lg">
-          <div className="flex-1 min-w-[200px]">
-            <SearchInput
-              ref={searchRef}
-              placeholder="Search by name or student #..."
-              onChange={handleSearchChange}
-              showKbdHint
-            />
-          </div>
-          <Select
-            options={STUDENT_STATUSES.map((s) => ({ value: s, label: capitalize(s) }))}
-            placeholder="All statuses"
-            value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
-          />
-        </div>
-        <Button onClick={openCreateModal} className="relative">
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Add Student
-          <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
-        </Button>
-      </div>
-
-      {/* Data table area */}
-      <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] overflow-hidden">
-        {loading ? (
-          <Table columns={[]} data={[]} loading={true} keyExtractor={() => ''} emptyMessage="" />
-        ) : error ? (
-          <ErrorState message={error} onRetry={() => fetchStudents({ page, size, search: search || undefined, status: statusFilter || undefined })} />
-        ) : data.length === 0 ? (
-          <div className="p-8">
-            <EmptyState
-              title={emptyState.title}
-              description={emptyState.description}
-              action={{ label: 'Add Student', onClick: openCreateModal }}
-            />
-          </div>
-        ) : (
-          <>
-            <Table
-              columns={[
-                { key: 'student_number', header: 'Student #' },
-                { key: 'first_name', header: 'First Name' },
-                { key: 'last_name', header: 'Last Name' },
-                { key: 'email', header: 'Email', render: (s: StudentResponse) => s.email || '-' },
-                { key: 'status', header: 'Status', render: (s: StudentResponse) => <StatusBadge status={s.status} /> },
-                { key: 'actions', header: 'Actions', render: (s: StudentResponse) => (
-                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                    <Button variant="outline" size="sm" onClick={() => openEditModal(s)}>Edit</Button>
-                    <Button variant="danger" size="sm" onClick={() => setDeleteConfirm(s)}>Delete</Button>
-                  </div>
-                )},
-              ]}
-              data={data}
-              keyExtractor={(s) => s.id}
-              emptyMessage={emptyState.title}
-              onRowClick={(s) => navigate(`/students/${s.id}`)}
-            />
-            <Pagination page={page} size={size} total={total} pages={pages} onPageChange={setPage} onSizeChange={(s) => { setSize(s); setPage(1) }} />
-          </>
-        )}
-      </div>
+    <div className="space-y-4">
+      <DataWorkspace
+        workspace={workspace}
+        title="Students"
+        description={
+          data.length > 0
+            ? `${data.length} student${data.length !== 1 ? 's' : ''} across your school. Manage records, track enrollment, and maintain student information.`
+            : 'Build your student directory by adding student records to your school.'
+        }
+        columns={columns}
+        keyExtractor={(s) => s.id}
+        data={data}
+        total={data.length}
+        pages={Math.ceil(data.length / workspace.size)}
+        loading={loading}
+        error={error}
+        onRetry={() => fetchStudents(true)}
+        onRefresh={() => fetchStudents(false)}
+        mode="local"
+        filterPlaceholder="Search by name, number or email…"
+        onRowClick={(s) => navigate(`/students/${s.id}`)}
+        primaryAction={
+          <Button onClick={openCreateModal} className="relative">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add Student
+            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+          </Button>
+        }
+        toolbarActions={
+          <Button variant="secondary" onClick={handleExport} loading={exporting}>
+            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Export
+          </Button>
+        }
+        bulkActions={
+          canBulkDelete
+            ? (_selected, _clear) => (
+                <Button variant="danger" size="sm" onClick={() => setBulkConfirm(true)}>
+                  Delete selected
+                </Button>
+              )
+            : undefined
+        }
+        empty={{
+          title: 'No students yet',
+          description: 'Build your student directory by adding student records to your school.',
+          actionLabel: 'Add Student',
+          onAction: openCreateModal,
+        }}
+        searchInputRef={searchInputRef}
+      />
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}
         title={editingStudent ? 'Edit Student' : 'Add Student'}
@@ -219,7 +305,7 @@ export function StudentListPage() {
           <Input label="Email" type="email" value={formData.email ?? ''} onChange={(e) => setFormData({ ...formData, email: e.target.value || null })} />
           <Input label="Date of Birth" type="date" value={formData.date_of_birth ?? ''} onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value || null })} />
           {editingStudent && (
-            <Select label="Status" value={formData.status ?? editingStudent.status} onChange={(e) => setFormData(s => ({ ...s, status: e.target.value }))} options={STUDENT_STATUSES.map((s) => ({ value: s, label: capitalize(s) }))} />
+            <Select label="Status" value={formData.status ?? editingStudent.status} onChange={(e) => setFormData((s) => ({ ...s, status: e.target.value }))} options={STUDENT_STATUSES.map((s) => ({ value: s, label: capitalize(s) }))} />
           )}
         </Form>
       </Modal>
@@ -227,6 +313,10 @@ export function StudentListPage() {
       <ConfirmDialog open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} onConfirm={handleDelete}
         title="Delete Student" message={`Are you sure you want to delete ${deleteConfirm?.first_name} ${deleteConfirm?.last_name}? This action cannot be undone.`}
         confirmLabel="Delete" variant="danger" loading={deleting} />
+
+      <ConfirmDialog open={bulkConfirm} onClose={() => setBulkConfirm(false)} onConfirm={handleBulkDelete}
+        title="Delete selected students" message={`Delete ${workspace.selection.size} selected student${workspace.selection.size === 1 ? '' : 's'}? This action cannot be undone.`}
+        confirmLabel="Delete" variant="danger" loading={bulkDeleting} />
     </div>
   )
 }

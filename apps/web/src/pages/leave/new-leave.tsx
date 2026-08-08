@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { leaveApi, LEAVE_TYPES } from '../../api/leave/leave-api'
-import { Card, Input, Select, Button, Alert, Breadcrumbs, PageHeader, Form } from '../../components/ui'
+import { Card, Input, Select, Button, Alert, BreadcrumbBar, PageHeader, Form } from '../../components/ui'
 import { useToast } from '../../components/ui/toast'
 import { capitalize } from '../../lib/utils'
 
@@ -44,10 +44,7 @@ export function NewLeavePage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in-up">
-      <Breadcrumbs items={[
-        { label: 'Leave', href: '/leave' },
-        { label: 'New Leave Request' },
-      ]} />
+      <BreadcrumbBar pageLabel="New Leave Request" />
 
       <PageHeader title="New Leave Request" subtitle="Submit a leave request through the approval workflow" />
 

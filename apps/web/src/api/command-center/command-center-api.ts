@@ -17,10 +17,29 @@ export interface TrendPoint {
   value: number
 }
 
+export interface HealthDimension {
+  key: string
+  label: string
+  score: number
+  weight: number
+  status: 'good' | 'warn' | 'critical' | 'neutral' | 'info'
+  available: boolean
+  metrics: Metric[]
+  drill_down?: string | null
+}
+
+export interface HealthScore {
+  available: boolean
+  overall?: number | null
+  dimensions: HealthDimension[]
+  weights: Record<string, number>
+}
+
 export interface SchoolHealth {
   available: boolean
   metrics: Metric[]
   trends: Record<string, TrendPoint[]>
+  score?: HealthScore | null
 }
 
 export interface AttentionAlert {
@@ -61,6 +80,33 @@ export interface QuickAction {
   icon: string
 }
 
+export interface WorkflowCaseMetric {
+  label: string
+  value: number
+  display: string
+  severity: 'good' | 'warn' | 'critical' | 'neutral' | 'info'
+  drill_down?: string | null
+}
+
+export interface WorkloadEntry {
+  assignee_id: number
+  assignee_name?: string | null
+  open_cases: number
+  critical_cases: number
+  overdue_cases: number
+}
+
+export interface WorkflowSection {
+  available: boolean
+  open_cases: number
+  critical_cases: number
+  overdue_cases: number
+  due_today: number
+  metrics: WorkflowCaseMetric[]
+  by_type: Record<string, number>
+  workload: WorkloadEntry[]
+}
+
 export interface CommandCenterOverview {
   generated_at: string
   role: string
@@ -71,6 +117,7 @@ export interface CommandCenterOverview {
   needs_attention: NeedsAttention
   today: TodaySection
   quick_actions: QuickAction[]
+  workflow?: WorkflowSection | null
 }
 
 // ── API client ────────────────────────────────────────────────────────
