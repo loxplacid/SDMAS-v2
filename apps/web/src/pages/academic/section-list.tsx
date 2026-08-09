@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { sectionApi, type SectionListParams } from '../../api/academic/section-api'
 import { classApi } from '../../api/academic/class-api'
 import type { SectionResponse, SectionCreate, SectionUpdate, ClassResponse } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast, PageHeader } from '../../components/ui'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { ACADEMIC_STATUSES, capitalize } from '../../lib/utils'
 
@@ -71,17 +71,18 @@ export function SectionListPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide mb-1">Academics</p>
-          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Sections</h1>
-          <p className="text-sm text-[var(--color-text-tertiary)] mt-1">{total} section{total !== 1 ? 's' : ''}</p>
-        </div>
-        <Button onClick={openCreateModal}>
-          Add Section
-          <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Academics"
+        title="Sections"
+        subtitle={`${total} section${total !== 1 ? 's' : ''}`}
+        compact
+        actions={
+          <Button onClick={openCreateModal}>
+            Add Section
+            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+          </Button>
+        }
+      />
       <div className="flex items-center gap-4">
         <Select options={classes.map((c) => ({ value: String(c.id), label: c.name }))} placeholder="All classes" value={classFilter}
           onChange={(e) => { setClassFilter(e.target.value); setPage(1) }} />

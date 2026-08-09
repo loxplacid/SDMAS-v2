@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { attendanceApi } from '../../api/attendance/attendance-api'
 import type { AttendanceRecordResponse } from '../../api/generated/types'
-import { Card, Badge, Button, ErrorState } from '../../components/ui'
+import { Card, Badge, Button, ErrorState, PageHeader } from '../../components/ui'
 import { formatDateTime, capitalize } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
@@ -43,11 +43,10 @@ export function AttendanceRecordDetailPage() {
   return (
     <div className="space-y-6 animate-fade-in-up">
       <div>
-        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Attendance</div>
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Attendance Record #{record.id}</h1>
-        <button onClick={() => navigate('/attendance/records')} className="text-sm text-[var(--color-brand-accent)] hover:text-[var(--color-brand-accent-hover)] transition-colors mt-1">
+        <button onClick={() => navigate('/attendance/records')} className="text-sm text-[var(--color-brand-accent)] hover:text-[var(--color-brand-accent-hover)] transition-colors mb-1">
           &larr; Back to Records
         </button>
+        <PageHeader eyebrow="Attendance" title={`Attendance Record #${record.id}`} compact />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

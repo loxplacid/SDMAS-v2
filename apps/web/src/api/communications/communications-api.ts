@@ -43,6 +43,9 @@ export interface Message {
   sent_at: string | null
   campus_id: number | null
   sender_id: number
+  /** P15 — operational context the message was composed from. */
+  context_type: string | null
+  context_id: number | null
   created_at: string
   updated_at: string
   recipients: MessageRecipient[]
@@ -98,6 +101,29 @@ export interface SendMessagePayload {
   timezone?: string
   recurrence?: string
   recurrence_end?: string
+  /** P15 — the operational context the message is composed from. */
+  context_type?: string
+  context_id?: number
+  /** P15 — explicit template-variable overrides. */
+  variables?: Record<string, unknown>
+}
+
+/** P15 — operational context summary + template variables. */
+export interface CommunicationContext {
+  context_type: string
+  context_id: number
+  label: string
+  detail: string
+  variables: Record<string, unknown>
+  guardian_ids: number[]
+}
+
+export interface ContextPreviewResult {
+  subject: string
+  body: string
+  context_type: string
+  context_id: number
+  variables: Record<string, unknown>
 }
 
 export interface Page<T> {
@@ -118,11 +144,18 @@ export const templateApi = {
   delete: (id: number) => api.delete(`${BASE}/templates/${id}`),
   render: (template_id: number, variables: Record<string, string>) =>
     api.post<{ subject: string; body: string }>(`${BASE}/templates/render`, { template_id, variables }),
+  renderWithContext: (template_id: number, context_type: string, context_id: number) =>
+    api.post<ContextPreviewResult>(`${BASE}/templates/render-context`, { template_id, context_type, context_id }),
+}
+
+export const contextApi = {
+  get: (context_type: string, context_id: number) =>
+    api.get<CommunicationContext>(`${BASE}/context/${context_type}/${context_id}`),
 }
 
 export const messageApi = {
   send: (data: SendMessagePayload) => api.post<Message>(`${BASE}/send`, data),
-  list: (params?: { page?: number; size?: number; message_type?: string; status?: string }) =>
+  list: (params?: { page?: number; size?: number; message_type?: string; status?: string; context_type?: string; context_id?: number }) =>
     api.get<Page<Message>>(`${BASE}/messages`, params as Record<string, string | number | boolean | undefined | null>),
   get: (id: number) => api.get<Message>(`${BASE}/messages/${id}`),
   update: (id: number, data: { subject?: string; body?: string; priority?: string; status?: string }) =>

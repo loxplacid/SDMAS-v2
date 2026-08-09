@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +12,8 @@ from app.domains.communications.constants import MESSAGE_TYPES, ALL_CHANNELS
 from app.domains.communications.schemas import (
     CommunicationPreferenceResponse,
     CommunicationPreferenceUpdate,
+    ContextInfoResponse,
+    ContextPreviewRequest,
     DeliveryRetryRequest,
     InboxItemResponse,
     InboxMessageInfo,
@@ -35,6 +37,8 @@ from app.domains.communications.service import (
     RecipientResolver,
 )
 from app.infrastructure.database import get_session
+from app.multi_tenant.dependencies import require_tenant_context
+from app.multi_tenant.models import TenantContext
 
 router = APIRouter(prefix="/api/communications", tags=["communications"])
 
@@ -112,6 +116,51 @@ async def render_template(
     return await svc.render(data.template_id, data.variables)
 
 
+@router.post("/templates/render-context", response_model=dict)
+async def render_template_with_context(
+    data: ContextPreviewRequest,
+    _user: User = Depends(require_role("admin", "staff", "teacher", "principal")),
+    tenant: TenantContext = Depends(require_tenant_context),
+    svc: MessageTemplateService = Depends(get_template_svc),
+    comm_svc: CommunicationService = Depends(get_comm_svc),
+) -> dict:
+    """P15 — render a template against a live operational context (student,
+    case, fee due, admission) so the composer can show exactly what the
+    recipient would read. ``variables`` may override entity values. The
+    tenant guard rejects context entities from other campuses."""
+    from app.domains.communications.context import load_context_variables
+
+    context_vars = await load_context_variables(
+        comm_svc.session, data.context_type, data.context_id, tenant=tenant
+    )
+    merged: dict[str, Any] = {}
+    for scope in (context_vars, data.variables):
+        for key, value in scope.items():
+            merged[key] = value
+    rendered = await svc.render(data.template_id, merged)
+    return {
+        **rendered,
+        "context_type": data.context_type,
+        "context_id": data.context_id,
+        "variables": merged,
+    }
+
+
+@router.get("/context/{context_type}/{context_id}", response_model=ContextInfoResponse)
+async def get_context(
+    context_type: str,
+    context_id: int,
+    _user: User = Depends(require_role("admin", "staff", "teacher", "principal")),
+    tenant: TenantContext = Depends(require_tenant_context),
+    svc: CommunicationService = Depends(get_comm_svc),
+) -> ContextInfoResponse:
+    """P15 — summary + template variables for an operational context. The
+    composer badge, the variable preview and the guardian pre-fill all read
+    from this single endpoint. The tenant guard closes the cross-campus
+    IDOR — a context entity from another campus is a 403."""
+    return await svc.load_context(context_type, context_id, tenant=tenant)
+
+
 # ── Recipient Resolution ──
 
 
@@ -138,9 +187,10 @@ async def send_message(
     data: MessageSend,
     request: Request = None,
     current_user: User = Depends(require_role("admin", "staff", "teacher", "principal")),
+    tenant: TenantContext = Depends(require_tenant_context),
     svc: CommunicationService = Depends(get_comm_svc),
 ) -> MessageResponse:
-    msg = await svc.send_message(data, current_user, request=request)
+    msg = await svc.send_message(data, current_user, request=request, tenant=tenant)
     return _build_message_response(msg)
 
 
@@ -149,13 +199,23 @@ async def list_messages(
     pagination: PaginationParams = Depends(),
     message_type: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
+    context_type: Optional[str] = Query(None),
+    context_id: Optional[int] = Query(None),
     current_user: User = Depends(require_role("admin", "staff", "teacher", "principal")),
     svc: CommunicationService = Depends(get_comm_svc),
 ) -> MessagePage:
+    """
+    List sent messages, optionally filtered by message type / status and
+    by the operational context they were composed from (P15) — e.g.
+    ``?context_type=student&context_id=101`` returns the communication
+    history for that student.
+    """
     items, total = await svc.list_messages(
         user=current_user,
         message_type=message_type,
         status=status,
+        context_type=context_type,
+        context_id=context_id,
         skip=pagination.offset,
         limit=pagination.limit,
     )

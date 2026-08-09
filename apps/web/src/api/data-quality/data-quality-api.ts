@@ -76,6 +76,9 @@ export const dataQualityApi = {
       size: params.size,
     }),
 
+  /** P11 — single finding for deep-linking from a case back to its source. */
+  getFinding: (findingId: number) => api.get<DataQualityFinding>(`/api/data-quality/findings/${findingId}`),
+
   runChecks: () => api.post<DataQualityRunResult>('/api/data-quality/run'),
 
   resolveFinding: (findingId: number, reason: string) =>

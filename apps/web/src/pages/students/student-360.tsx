@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { student360Api, type Student360Response, type LifecycleState } from '../../api/student-360/student-360-api'
+import { messageApi } from '../../api/communications/communications-api'
 import {
   Card, TabGroup, Badge, Button, BreadcrumbBar, PageHeader, ErrorState,
 } from '../../components/ui'
@@ -9,18 +10,11 @@ import { Can } from '../../components/auth/can'
 import { usePermission } from '../../hooks/use-permission'
 import { FEES_VIEW, STUDENTS_UPDATE } from '../../types/permissions'
 import { cn, formatDate } from '../../lib/utils'
-
-const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
-  prospective: 'info',
-  admitted: 'info',
-  enrolled: 'info',
-  active: 'success',
-  transferred: 'warning',
-  withdrawn: 'danger',
-  graduated: 'info',
-  alumni: 'info',
-  inactive: 'danger',
-}
+import {
+  OperationalSummary,
+  statusBadgeVariant as statusBadge,
+  statusLabel as lifecycleStatusLabel,
+} from './operational-summary'
 
 const attendanceStatusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
   present: 'success',
@@ -58,18 +52,6 @@ function InfoRow({ label, value }: { label: string; value: string | number | nul
 // ── Tab: Overview ──────────────────────────────────────────────────────
 
 // ── Lifecycle card with quick transition action ───────────────────────
-
-const lifecycleStatusLabel: Record<string, string> = {
-  prospective: 'Prospective',
-  admitted: 'Admitted',
-  enrolled: 'Enrolled',
-  active: 'Active',
-  transferred: 'Transferred',
-  withdrawn: 'Withdrawn',
-  graduated: 'Graduated',
-  alumni: 'Alumni',
-  inactive: 'Inactive',
-}
 
 function LifecycleCard({ data, onTransitioned }: { data: Student360Response; onTransitioned?: () => void }) {
   const { can } = usePermission()
@@ -176,6 +158,7 @@ function LifecycleCard({ data, onTransitioned }: { data: Student360Response; onT
 }
 
 function OverviewTab({ data, onTransitioned }: { data: Student360Response; onTransitioned?: () => void }) {
+  const { can } = usePermission()
   const { identity: s, current_enrollment: ce, financial: fin, attendance: att, guardians, contacts, health } = data
   return (
     <div className="space-y-6">
@@ -208,9 +191,21 @@ function OverviewTab({ data, onTransitioned }: { data: Student360Response; onTra
                 </span>
               </div>
             )}
-            <div className="flex gap-2 mt-4">
+            <div className="flex gap-2 mt-4 flex-wrap">
               <Button size="sm" onClick={() => window.open(`/students/${s.id}`, '_self')}>Full Profile</Button>
-              <Button size="sm" variant="outline" onClick={() => window.open(`/fees/student-fees?studentId=${s.id}`, '_self')}>Manage Fees</Button>
+              {can(FEES_VIEW) && (
+                <Button size="sm" variant="outline" onClick={() => window.open(`/fees/student-fees?studentId=${s.id}`, '_self')}>Manage Fees</Button>
+              )}
+              {/* P15 — contextual communication: the composer opens
+                  pre-linked to this student (context badge + template
+                  variables + guardian audience pre-filled). */}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => window.open(`/communications/compose?context_type=student&context_id=${s.id}`, '_self')}
+              >
+                Contact Guardian
+              </Button>
             </div>
           </div>
         </div>
@@ -393,8 +388,34 @@ function AttendanceTab({ data }: { data: Student360Response }) {
 
 function FinanceTab({ data }: { data: Student360Response }) {
   const { financial: fin, fee_dues: dues, payments } = data
+  const student = data.identity
   return (
     <div className="space-y-6">
+      {/* P13 — ledger deep-link: the full transaction workspace pre-filtered
+          to this student, preserving workspace state on return. */}
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-[var(--color-text-primary)]">Ledger</p>
+          <p className="text-xs text-[var(--color-text-tertiary)]">
+            Every payment, refund and adjustment recorded for this student.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            // Full URL navigation so the deep-link (and browser back/forward)
+            // work from anywhere, including the standard-route profile.
+            window.location.href = `/school-finance/transactions?student_id=${student.id}`
+          }}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-brand-accent)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-brand-accent-hover)] motion-safe:transition-colors"
+        >
+          Open ledger
+          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <MetricCard label="Total Fees" value={`$${fin.total_fees_assigned.toLocaleString()}`} />
         <MetricCard label="Paid" value={`$${fin.total_paid.toLocaleString()}`} color="text-green-600" />
@@ -507,8 +528,27 @@ function DocumentsTab({ data }: { data: Student360Response }) {
 
 // ── Tab: Communication ─────────────────────────────────────────────────
 
+/** P15 — real context-linked communication history for this student.
+    The 360 aggregate does not carry message rows; the sent-messages
+    surface filters by ``context_type=student`` instead, so this tab
+    fetches exactly the messages composed from this student's context. */
 function CommunicationTab({ data }: { data: Student360Response }) {
-  const { communications, guardians } = data
+  const { guardians } = data
+  const [messages, setMessages] = useState<any[] | null>(null)
+  const [messagesError, setMessagesError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    messageApi.list({
+      context_type: 'student',
+      context_id: data.identity.id,
+      size: 50,
+    })
+      .then((res) => { if (!cancelled) setMessages(res.items) })
+      .catch((err: any) => { if (!cancelled) setMessagesError(err?.detail || 'Could not load communications') })
+    return () => { cancelled = true }
+  }, [data.identity.id])
+
   return (
     <div className="space-y-6">
       <Card title="Contact Information">
@@ -549,28 +589,65 @@ function CommunicationTab({ data }: { data: Student360Response }) {
         </div>
       </Card>
 
-      <Card title="Recent Communications">
-        {communications.length === 0 ? (
+      <Card
+        title="My Communications"
+        subtitle="Messages you composed from this student's context"
+        actions={
+          <button
+            type="button"
+            onClick={() => window.open(`/communications/sent?context_type=student&context_id=${data.identity.id}`, '_self')}
+            className="text-xs font-medium text-[var(--color-brand-accent)] hover:underline"
+          >
+            View all →
+          </button>
+        }
+      >
+        {messagesError ? (
+          <p className="text-sm text-[var(--color-text-tertiary)] py-4">
+            {messagesError}
+          </p>
+        ) : messages === null ? (
+          <div className="space-y-2 py-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-10 rounded-lg bg-[var(--color-surface-hover)] motion-safe:animate-pulse" />
+            ))}
+          </div>
+        ) : messages.length === 0 ? (
           <div className="py-8 text-center">
             <div className="flex items-center justify-center h-12 w-12 rounded-full bg-[var(--color-surface-hover)] mx-auto mb-3">
               <svg className="h-6 w-6 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
             </div>
-            <p className="text-sm text-[var(--color-text-tertiary)]">No communications recorded</p>
-            <p className="text-xs text-[var(--color-text-tertiary)] mt-1">Communication history will appear here once messages are sent.</p>
+            <p className="text-sm text-[var(--color-text-tertiary)]">No communications recorded by you</p>
+            <p className="text-xs text-[var(--color-text-tertiary)] mt-1">Messages you compose from this student's context (e.g. via Contact Guardian) will appear here.</p>
           </div>
         ) : (
           <div className="space-y-0 divide-y divide-[var(--color-border)]">
-            {communications.map((c, i) => (
-              <div key={i} className="py-3 flex items-start gap-3">
+            {messages.map((m) => (
+              <div key={m.id} className="py-3 flex items-start gap-3">
                 <div className="h-8 w-8 rounded-full bg-[var(--color-surface-hover)] flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-xs font-medium text-[var(--color-text-muted)]">{(c as any).type?.[0] || 'N'}</span>
+                  <span className="text-xs font-medium text-[var(--color-text-muted)]">{(m.message_type || 'M')[0].toUpperCase()}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[var(--color-text-primary)]">{(c as any).subject || 'Message'}</p>
-                  <p className="text-xs text-[var(--color-text-tertiary)] truncate">{(c as any).body || ''}</p>
-                  <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">{(c as any).created_at || ''}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-medium text-[var(--color-text-primary)]">{m.subject || 'Message'}</p>
+                    <Badge
+                      variant={
+                        m.status === 'failed' ? 'danger' :
+                        m.status === 'partial' ? 'warning' :
+                        m.status === 'scheduled' ? 'info' : 'success'
+                      }
+                      size="sm"
+                    >
+                      {m.status}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-[var(--color-text-tertiary)] truncate">{m.body || ''}</p>
+                  <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">
+                    {m.created_at ? formatDate(m.created_at) : ''}
+                    {m.recipient_count ? ` · ${m.recipient_count} recipient${m.recipient_count !== 1 ? 's' : ''}` : ''}
+                  </p>
                 </div>
               </div>
             ))}
@@ -774,6 +851,10 @@ export function Student360Page() {
           </Button>
         </div>
       </div>
+
+      {/* P10 — Unified Student Object: persistent operational summary that
+          answers "what is the state of this student" on every tab. */}
+      <OperationalSummary data={data} onOpenTab={setActiveTab} />
 
       <TabGroup
         tabs={tabs.map(({ id, label }) => ({ id, label }))}

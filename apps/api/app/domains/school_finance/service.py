@@ -280,6 +280,9 @@ class TransactionLogService:
         campus_id: Optional[int] = None,
         from_date: Optional[str] = None,
         to_date: Optional[str] = None,
+        min_amount: Optional[int] = None,
+        max_amount: Optional[int] = None,
+        q: Optional[str] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[TransactionLog], int]:
@@ -296,6 +299,33 @@ class TransactionLogService:
             conditions.append(TransactionLog.created_at >= from_date)
         if to_date is not None:
             conditions.append(TransactionLog.created_at <= to_date)
+        if min_amount is not None:
+            conditions.append(TransactionLog.amount >= min_amount)
+        if max_amount is not None:
+            conditions.append(TransactionLog.amount <= max_amount)
+        # P13 — free-text search over the ledger (reference number, description,
+        # idempotency key) plus a direct student-id lookup for `#123` queries.
+        if q:
+            needle = q.strip()
+            if needle:
+                numeric_student = None
+                if needle.isdigit():
+                    try:
+                        numeric_student = int(needle)
+                    except ValueError:
+                        # absurdly long all-digit input — treat as text only
+                        numeric_student = None
+                like_terms = [
+                    TransactionLog.reference_number.ilike(f"%{needle}%"),
+                    TransactionLog.description.ilike(f"%{needle}%"),
+                    TransactionLog.idempotency_key.ilike(f"%{needle}%"),
+                ]
+                if numeric_student is not None:
+                    conditions.append(
+                        or_(TransactionLog.student_id == numeric_student, *like_terms)
+                    )
+                else:
+                    conditions.append(or_(*like_terms))
 
         cnt = select(func.count(TransactionLog.id))
         if conditions:
@@ -421,6 +451,7 @@ class ReconciliationService:
         campus_id: Optional[int] = None,
         from_date: Optional[str] = None,
         to_date: Optional[str] = None,
+        q: Optional[str] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[Sequence[PaymentReconciliation], int]:
@@ -433,6 +464,20 @@ class ReconciliationService:
             conditions.append(PaymentReconciliation.reconciliation_date >= from_date)
         if to_date is not None:
             conditions.append(PaymentReconciliation.reconciliation_date <= to_date)
+        # P13 — free-text search over the reconciliation notes (and a direct
+        # id lookup for `#123` queries), mirroring the transactions `q`.
+        if q is not None and q.strip():
+            like = f"%{q.strip()}%"
+            try:
+                num = int(q.strip())
+            except ValueError:
+                num = 0
+            conditions.append(
+                or_(
+                    PaymentReconciliation.notes.ilike(like),
+                    PaymentReconciliation.id == num,
+                )
+            )
 
         cnt = select(func.count(PaymentReconciliation.id))
         if conditions:
@@ -444,7 +489,10 @@ class ReconciliationService:
             q = q.where(and_(*conditions))
         q = q.offset(skip).limit(limit).order_by(PaymentReconciliation.reconciliation_date.desc())
         result = await self.session.execute(q)
-        items = list({r.id: r for r in result.scalars().all()}.values())
+        # .unique(): the query joinedloads the items collection, so a result
+        # spanning several parent rows needs row-identity dedup before
+        # iteration — without it scalars() raises on the second row.
+        items = list({r.id: r for r in result.scalars().unique().all()}.values())
         return items[:limit], total
 
     async def verify(
@@ -523,6 +571,346 @@ class ReconciliationService:
                 f"Payment {payment_id} does not belong to campus {campus_id}"
             )
         return payment
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Financial Exception Service (P13)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class FinancialExceptionService:
+    """P13 — deterministic financial anomaly detection (read-only).
+
+    Findings are computed from real records on every read — nothing is
+    stored, so there is no drift between the ledger and what operators see.
+    Each finding carries a stable ``key`` (category + entity id); promoting
+    it into a P8/P11 operational case references the underlying entity via
+    ``source_type=financial_exception`` / ``source_id`` (the case service
+    validates the reference).
+
+    Detection rules (each grounded in existing record state):
+
+    * ``reconciliation-discrepancy`` — reconciliation items left unmatched
+      or with a non-zero difference (the reconciliation workflow's own
+      state);
+    * ``payment-no-receipt`` — payments with no generated receipt (receipts
+      are generated per payment, so a missing one is actionable);
+    * ``payment-no-transaction`` — payments with no transaction-log entry
+      (money recorded without a ledger entry is a data-integrity signal);
+    * ``duplicate-payment`` — the same student + amount + date more than
+      once (a review heuristic, never an accusation).
+
+    Per-category scans are bounded (top 500 rows each); the summary counts
+    come from the same bounded result, which is appropriate for an
+    operational surface that always sorts by severity first.
+    """
+
+    SEVERITY_RANK = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+    PER_CATEGORY_LIMIT = 500
+
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def list_exceptions(
+        self,
+        campus_id: Optional[int] = None,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> dict:
+        findings = await self._detect_all(campus_id)
+
+        by_category: dict[str, int] = {}
+        by_severity: dict[str, int] = {}
+        for f in findings:
+            by_category[f["category"]] = by_category.get(f["category"], 0) + 1
+            by_severity[f["severity"]] = by_severity.get(f["severity"], 0) + 1
+
+        # Operational ordering: highest severity first, then most recent.
+        epoch_zero = datetime.datetime.min.replace(tzinfo=timezone.utc)
+        findings.sort(
+            key=lambda f: (
+                self.SEVERITY_RANK.get(f["severity"], 9),
+                -((f["created_at"] or epoch_zero).timestamp()),
+            )
+        )
+
+        return {
+            "total": len(findings),
+            "by_category": by_category,
+            "by_severity": by_severity,
+            "items": findings[skip : skip + limit],
+        }
+
+    async def _detect_all(self, campus_id: Optional[int]) -> list[dict]:
+        from app.domains.fees.models import Payment
+        from app.domains.student.models import Student
+
+        findings: list[dict] = []
+        # Legacy NULL-campus payments remain in scope, matching the existing
+        # receipt/reconciliation semantics.
+        payment_scope = None
+        if campus_id is not None:
+            payment_scope = or_(
+                Payment.campus_id == campus_id, Payment.campus_id.is_(None)
+            )
+
+        # 1. reconciliation discrepancies / unmatched items
+        rec_conds = [ReconciliationItem.status.in_(["unmatched", "discrepancy"])]
+        if campus_id is not None:
+            rec_conds.append(PaymentReconciliation.campus_id == campus_id)
+        rec_rows = (
+            await self.session.execute(
+                select(
+                    ReconciliationItem.id,
+                    ReconciliationItem.payment_id,
+                    ReconciliationItem.expected_amount,
+                    ReconciliationItem.actual_amount,
+                    ReconciliationItem.difference,
+                    ReconciliationItem.status.label("item_status"),
+                    ReconciliationItem.created_at,
+                    PaymentReconciliation.id.label("rec_id"),
+                    PaymentReconciliation.status.label("rec_status"),
+                    Payment.student_id,
+                    Payment.amount.label("payment_amount"),
+                )
+                .join(
+                    PaymentReconciliation,
+                    PaymentReconciliation.id == ReconciliationItem.reconciliation_id,
+                )
+                .join(Payment, Payment.id == ReconciliationItem.payment_id)
+                .where(and_(*rec_conds))
+                .order_by(ReconciliationItem.created_at.desc())
+                .limit(self.PER_CATEGORY_LIMIT)
+            )
+        ).all()
+        for r in rec_rows:
+            findings.append(
+                {
+                    "key": f"reconciliation-discrepancy:{r.id}",
+                    "category": "reconciliation",
+                    "severity": "high",
+                    "title": "Reconciliation discrepancy",
+                    "description": (
+                        f"Payment #{r.payment_id} in reconciliation #{r.rec_id} "
+                        f"({r.rec_status}): expected {r.expected_amount}, actual "
+                        f"{r.actual_amount}, difference {r.difference}."
+                    ),
+                    "student_id": r.student_id,
+                    "payment_id": r.payment_id,
+                    "amount": r.payment_amount,
+                    "reconciliation_item_id": r.id,
+                    "reconciliation_status": r.rec_status,
+                    "evidence": {
+                        "expected_amount": r.expected_amount,
+                        "actual_amount": r.actual_amount,
+                        "difference": r.difference,
+                        "item_status": r.item_status,
+                    },
+                    "created_at": r.created_at,
+                }
+            )
+
+        # 2. payments without a generated receipt
+        rec_exists = (
+            select(Receipt.id).where(Receipt.payment_id == Payment.id).exists()
+        )
+        nr_conds = [~rec_exists]
+        if payment_scope is not None:
+            nr_conds.append(payment_scope)
+        no_receipt_rows = (
+            await self.session.execute(
+                select(
+                    Payment.id,
+                    Payment.student_id,
+                    Payment.amount,
+                    Payment.payment_date,
+                    Payment.payment_method,
+                    Payment.created_at,
+                )
+                .where(and_(*nr_conds))
+                .order_by(Payment.created_at.desc())
+                .limit(self.PER_CATEGORY_LIMIT)
+            )
+        ).all()
+        for r in no_receipt_rows:
+            findings.append(
+                {
+                    "key": f"payment-no-receipt:{r.id}",
+                    "category": "receipts",
+                    "severity": "medium",
+                    "title": "Payment without receipt",
+                    "description": (
+                        f"Payment #{r.id} ({r.payment_method or 'unknown'}, "
+                        f"{r.payment_date or 'no date'}) has no generated receipt."
+                    ),
+                    "student_id": r.student_id,
+                    "payment_id": r.id,
+                    "amount": r.amount,
+                    "evidence": {
+                        "payment_method": r.payment_method,
+                        "payment_date": r.payment_date,
+                    },
+                    "created_at": r.created_at,
+                }
+            )
+
+        # 3. payments with no transaction-log entry
+        tx_exists = (
+            select(TransactionLog.id)
+            .where(TransactionLog.payment_id == Payment.id)
+            .exists()
+        )
+        nt_conds = [~tx_exists]
+        if payment_scope is not None:
+            nt_conds.append(payment_scope)
+        no_tx_rows = (
+            await self.session.execute(
+                select(
+                    Payment.id,
+                    Payment.student_id,
+                    Payment.amount,
+                    Payment.payment_date,
+                    Payment.payment_method,
+                    Payment.created_at,
+                )
+                .where(and_(*nt_conds))
+                .order_by(Payment.created_at.desc())
+                .limit(self.PER_CATEGORY_LIMIT)
+            )
+        ).all()
+        for r in no_tx_rows:
+            findings.append(
+                {
+                    "key": f"payment-no-transaction:{r.id}",
+                    "category": "ledger",
+                    "severity": "high",
+                    "title": "Payment missing from ledger",
+                    "description": (
+                        f"Payment #{r.id} ({r.payment_method or 'unknown'}) has "
+                        "no corresponding transaction-log entry."
+                    ),
+                    "student_id": r.student_id,
+                    "payment_id": r.id,
+                    "amount": r.amount,
+                    "evidence": {
+                        "payment_method": r.payment_method,
+                        "payment_date": r.payment_date,
+                    },
+                    "created_at": r.created_at,
+                }
+            )
+
+        # 4. duplicate-looking payments (same student + amount + date)
+        dup_base = select(
+            Payment.id,
+            Payment.student_id,
+            Payment.amount,
+            Payment.payment_date,
+            Payment.receipt_number,
+            Payment.created_at,
+            func.count(Payment.id)
+            .over(
+                partition_by=[
+                    Payment.student_id,
+                    Payment.amount,
+                    Payment.payment_date,
+                ]
+            )
+            .label("grp"),
+        )
+        if payment_scope is not None:
+            dup_base = dup_base.where(payment_scope)
+        dup_sub = dup_base.subquery()
+        dup_rows = (
+            await self.session.execute(
+                select(dup_sub)
+                .where(dup_sub.c.grp > 1)
+                .order_by(dup_sub.c.student_id, dup_sub.c.amount, dup_sub.c.payment_date)
+                .limit(self.PER_CATEGORY_LIMIT)
+            )
+        ).all()
+        peer_groups: dict[tuple, list[int]] = defaultdict(list)
+        for r in dup_rows:
+            peer_groups[(r.student_id, r.amount, r.payment_date)].append(r.id)
+        for r in dup_rows:
+            peers = [
+                p for p in peer_groups[(r.student_id, r.amount, r.payment_date)] if p != r.id
+            ]
+            peer_text = ", #".join(str(p) for p in peers[:5])
+            findings.append(
+                {
+                    "key": f"duplicate-payment:{r.id}",
+                    "category": "duplicates",
+                    "severity": "medium",
+                    "title": "Duplicate-looking payment",
+                    "description": (
+                        f"Payment #{r.id} matches another payment for the same "
+                        f"student, amount and date (#{peer_text}"
+                        f"{'…' if len(peers) > 5 else ''}). Review for double booking."
+                    ),
+                    "student_id": r.student_id,
+                    "payment_id": r.id,
+                    "amount": r.amount,
+                    "evidence": {
+                        "payment_date": r.payment_date,
+                        "receipt_number": r.receipt_number,
+                        "peer_payment_ids": peers,
+                    },
+                    "created_at": r.created_at,
+                }
+            )
+
+        # one batched lookup each: student names + linked operational cases
+        student_ids = {f["student_id"] for f in findings if f["student_id"]}
+        student_names: dict[int, str] = {}
+        if student_ids:
+            srows = (
+                await self.session.execute(
+                    select(Student.id, Student.first_name, Student.last_name).where(
+                        Student.id.in_(student_ids)
+                    )
+                )
+            ).all()
+            student_names = {
+                r.id: f"{r.first_name} {r.last_name}".strip() for r in srows
+            }
+
+        entity_ids = {
+            f["reconciliation_item_id"]
+            if f["category"] == "reconciliation"
+            else f["payment_id"]
+            for f in findings
+        }
+        entity_ids.discard(None)
+        linked_cases: dict[int, dict] = {}
+        if entity_ids:
+            from app.domains.cases.models import CASE_SOURCE_FINANCIAL, Case
+
+            cq = select(Case.id, Case.case_number, Case.status, Case.source_id).where(
+                Case.source_type == CASE_SOURCE_FINANCIAL,
+                Case.source_id.in_(entity_ids),
+            )
+            if campus_id is not None:
+                cq = cq.where(Case.campus_id == campus_id)
+            for r in (await self.session.execute(cq)).all():
+                linked_cases[r.source_id] = {
+                    "id": r.id,
+                    "case_number": r.case_number,
+                    "status": r.status,
+                }
+
+        for f in findings:
+            if f["student_id"] in student_names:
+                f["student_name"] = student_names[f["student_id"]]
+            entity_id = (
+                f["reconciliation_item_id"]
+                if f["category"] == "reconciliation"
+                else f["payment_id"]
+            )
+            if entity_id in linked_cases:
+                f["linked_case"] = linked_cases[entity_id]
+
+        return findings
 
 
 # ═══════════════════════════════════════════════════════════════════════

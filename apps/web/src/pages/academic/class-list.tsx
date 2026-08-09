@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { classApi, type ClassListParams } from '../../api/academic/class-api'
 import { academicYearApi } from '../../api/academic/academic-year-api'
 import type { ClassResponse, AcademicYearResponse } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, Loading, ErrorState, useToast, PageHeader, StatusBadge, SearchInput } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, ErrorState, useToast, PageHeader, StatusBadge, SearchInput } from '../../components/ui'
 import { ACADEMIC_STATUSES, capitalize } from '../../lib/utils'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { useDelight } from '../../components/delight/delight-provider'
@@ -105,7 +105,7 @@ export function ClassListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Classes" subtitle={`${total} class${total !== 1 ? 'es' : ''}`}
+      <PageHeader title="Classes" subtitle={`${total} class${total !== 1 ? 'es' : ''}`} compact
         actions={
           <Button onClick={openCreateModal}>
             Add Class
@@ -119,7 +119,7 @@ export function ClassListPage() {
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }} />
       </div>
       <Card padding="none">
-        {loading ? <Loading text="Loading classes..." /> : error ? <ErrorState message={error} onRetry={() => fetch({ page, size, academic_year_id: yearFilter ? Number(yearFilter) : undefined, status: statusFilter || undefined })} /> : (
+        {error ? <ErrorState message={error} onRetry={() => fetch({ page, size, academic_year_id: yearFilter ? Number(yearFilter) : undefined, status: statusFilter || undefined })} /> : (
           <>
             <Table columns={[
               { key: 'name', header: 'Name' },
@@ -131,7 +131,7 @@ export function ClassListPage() {
                   <Button variant="outline" size="sm" onClick={() => openEditModal(c)}>Edit</Button>
                 </div>
               )},
-            ]} data={data} keyExtractor={(c) => c.id} emptyMessage="No classes found." onRowClick={(c) => navigate(`/academic/classes/${c.id}`)} />
+            ]} data={data} keyExtractor={(c) => c.id} emptyMessage="No classes found." loading={loading} onRowClick={(c) => navigate(`/academic/classes/${c.id}`)} />
             <Pagination page={page} size={size} total={total} pages={pages} onPageChange={setPage} onSizeChange={(s) => { setSize(s); setPage(1) }} />
           </>
         )}

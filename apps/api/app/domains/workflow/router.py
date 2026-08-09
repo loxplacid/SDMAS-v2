@@ -394,9 +394,12 @@ async def get_instance_by_entity(
 async def get_available_transitions(
     instance_id: int,
     service: WorkflowExecutionService = Depends(get_execution_service),
-    _current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ) -> list[AvailableTransition]:
-    return await service.get_available_transitions(instance_id)
+    return await service.get_available_transitions(
+        instance_id,
+        actor_roles=current_user.role_codes,
+    )
 
 
 @router.post(
@@ -415,5 +418,6 @@ async def perform_action(
         actor_id=current_user.id,
         comment=data.comment,
         to_step_id=data.to_step_id,
+        actor_roles=current_user.role_codes,
     )
     return WorkflowInstanceResponse.model_validate(instance)

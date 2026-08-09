@@ -22,7 +22,7 @@ export type CaseType =
   | 'operational'
   | 'administrative'
 
-export type CaseSourceType = 'manual' | 'risk_finding' | 'data_quality_finding'
+export type CaseSourceType = 'manual' | 'risk_finding' | 'data_quality_finding' | 'financial_exception'
 
 export interface CaseItem {
   id: number
@@ -156,6 +156,7 @@ export interface CaseListParams {
   case_type?: CaseType | null
   assignee_id?: number | null
   source_type?: CaseSourceType | null
+  student_id?: number | null
   search?: string | null
   sort?: 'priority' | 'due' | 'created' | 'updated'
   page?: number
@@ -185,6 +186,7 @@ export const casesApi = {
       case_type: params.case_type,
       assignee_id: params.assignee_id,
       source_type: params.source_type,
+      student_id: params.student_id,
       search: params.search,
       sort: params.sort,
       page: params.page,

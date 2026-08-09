@@ -16,13 +16,29 @@
  */
 
 import type { FilterState } from './filter-model'
+import type { SortRule } from './frame'
+
+/**
+ * P12 — the non-filter workspace state a saved view can capture: the
+ * multi-column sort rules and the visible column keys (in display order, so
+ * applying a view also restores column order). Optional — a view authored
+ * before P12 simply carries none, and applying it leaves those untouched.
+ */
+export interface SavedViewSnapshot {
+  sort?: SortRule[]
+  columns?: string[]
+}
 
 export interface SavedTableView {
   id: string
   name: string
   filters: FilterState
+  /** P12 — multi-column sort rules, when the host supplies them. */
+  sort?: SortRule[]
+  /** P12 — visible column keys in display order, when the host supplies them. */
+  columns?: string[]
   /** Extension point: density arrives with the header migration. */
-  density?: 'comfortable' | 'compact'
+  density?: 'comfortable' | 'compact' | 'dense'
   createdAt: string
   updatedAt: string
 }

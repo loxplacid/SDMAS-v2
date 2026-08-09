@@ -95,11 +95,14 @@ export function isSearchableColumn<T>(col: Column<T>): boolean {
 
 /** §3.1 `status` columns are facet-filtered (you filter them, not search them). */
 export function isFacetColumn<T>(col: Column<T>): boolean {
-  return col.type === 'status'
+  // P13 — `filterable: false` opts a column out of the rail (server pages
+  // must not offer filters the backend cannot honor).
+  return col.filterable !== false && col.type === 'status'
 }
 
 /** §3.1 numeric/amount/date/progress columns take range filters. */
 export function isRangeColumn<T>(col: Column<T>): boolean {
+  if (col.filterable === false) return false
   return (
     col.type === 'numeric' ||
     col.type === 'amount' ||

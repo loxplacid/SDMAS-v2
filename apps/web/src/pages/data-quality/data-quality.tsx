@@ -294,6 +294,44 @@ export function DataQualityCenterPage() {
   const query = searchParams.get('q') || ''
   const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
 
+  // P11 — deep-link: a case's "View underlying records" arrives here as
+  // ?finding=<id>. The banner renders the exact finding regardless of the
+  // list's status filter/pagination, so a finding that was resolved by its
+  // case (and thus hidden from the default open view) is never lost.
+  const findingParam = searchParams.get('finding')
+  const [contextFinding, setContextFinding] = useState<DataQualityFinding | null>(null)
+  const [contextError, setContextError] = useState(false)
+
+  useEffect(() => {
+    if (!findingParam) {
+      setContextFinding(null)
+      setContextError(false)
+      return
+    }
+    const parsed = Number(findingParam)
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      // Malformed deep-link (?finding=abc) — render a neutral invalid-link
+      // state instead of issuing a request for /findings/NaN.
+      setContextFinding(null)
+      setContextError(false)
+      return
+    }
+    let active = true
+    setContextFinding(null)
+    setContextError(false)
+    dataQualityApi
+      .getFinding(parsed)
+      .then((f) => {
+        if (active) setContextFinding(f)
+      })
+      .catch(() => {
+        if (active) setContextError(true)
+      })
+    return () => {
+      active = false
+    }
+  }, [findingParam])
+
   const [overview, setOverview] = useState<DataQualityOverview | null>(null)
   const [findings, setFindings] = useState<DataQualityFinding[]>([])
   const [total, setTotal] = useState(0)
@@ -428,11 +466,15 @@ export function DataQualityCenterPage() {
     setBusy(true)
     try {
       if (actionTarget.mode === 'resolve') {
-        await dataQualityApi.resolveFinding(actionTarget.finding.id, reason.trim() || 'Resolved from Data Quality Center')
+        const updated = await dataQualityApi.resolveFinding(actionTarget.finding.id, reason.trim() || 'Resolved from Data Quality Center')
         showToast('Finding resolved (audited)', 'success')
+        // Keep the deep-linked banner in step from the mutation response
+        // (no fire-and-forget refetch that could race unmount).
+        setContextFinding((prev) => (prev && prev.id === updated.id ? updated : prev))
       } else {
-        await dataQualityApi.ignoreFinding(actionTarget.finding.id, reason.trim() || 'Ignored from Data Quality Center')
+        const updated = await dataQualityApi.ignoreFinding(actionTarget.finding.id, reason.trim() || 'Ignored from Data Quality Center')
         showToast('Finding ignored (audited)', 'success')
+        setContextFinding((prev) => (prev && prev.id === updated.id ? updated : prev))
       }
       setActionTarget(null)
       setReason('')
@@ -603,6 +645,72 @@ export function DataQualityCenterPage() {
 
           {/* Findings */}
           <section>
+            {findingParam && (
+              <div
+                aria-label={`Deep-linked finding ${findingParam}`}
+                className="mb-4 rounded-xl border border-[var(--color-brand-accent)]/25 bg-[var(--color-brand-accent)]/5 p-4 animate-fade-in"
+              >
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <p className="text-xs font-semibold text-[var(--color-brand-accent)]">
+                    Finding #{findingParam} — opened from a case
+                  </p>
+                  <button
+                    onClick={() =>
+                      setSearchParams((prev) => {
+                        const next = new URLSearchParams(prev)
+                        next.delete('finding')
+                        return next
+                      })
+                    }
+                    className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)] hover:border-[var(--color-brand-accent)]/40 hover:text-[var(--color-brand-accent)] motion-safe:transition-colors"
+                  >
+                    Show in list
+                  </button>
+                </div>
+                {(() => {
+                  const invalidLink = !!findingParam && (!Number.isInteger(Number(findingParam)) || Number(findingParam) <= 0)
+                  if (invalidLink) {
+                    return (
+                      <p className="text-xs text-[var(--color-text-tertiary)] py-2">
+                        This link is malformed — no finding reference was provided.
+                      </p>
+                    )
+                  }
+                  if (contextError) {
+                    return (
+                      <p className="text-xs text-[var(--color-danger)] py-2">
+                        Couldn't load finding #{findingParam}. It may have been removed, belong to another campus, or your role cannot view it.
+                      </p>
+                    )
+                  }
+                  if (!contextFinding) {
+                    return <Skeleton className="h-20 rounded-xl" />
+                  }
+                  return (
+                    <div role="list">
+                      <FindingRow
+                        finding={contextFinding}
+                        index={0}
+                        active={false}
+                        canResolve={canResolve}
+                        busy={busy || caseCreating === contextFinding.id}
+                        onNavigate={(f) => f.student_id && navigate(`/students/${f.student_id}`)}
+                        onResolve={(f) => {
+                          setActionTarget({ finding: f, mode: 'resolve' })
+                          setReason('')
+                        }}
+                        onIgnore={(f) => {
+                          setActionTarget({ finding: f, mode: 'ignore' })
+                          setReason('')
+                        }}
+                        onCreateCase={handleCreateCase}
+                      />
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h2 className="text-base font-semibold text-[var(--color-text-primary)]">Findings</h2>

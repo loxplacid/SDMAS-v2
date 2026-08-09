@@ -733,6 +733,79 @@ async def test_list_cases_views_and_search(db_session: AsyncSession):
 
 
 @pytest.mark.asyncio
+async def test_list_cases_filters_by_student(db_session: AsyncSession):
+    """Student-scoped work-queue query (Student 360 operational summary):
+    only cases linked to the requested student are returned, and the
+    filter composes with the campus tenancy scope."""
+    svc = CaseService(db_session)
+    # Cases may only be created with a student_id via the service; create
+    # them then attach the student reference directly (schema allows it).
+    a = await _create_case(db_session, title="Attendance anomaly", case_type="attendance")
+    b = await _create_case(db_session, title="Fee escalation", case_type="finance")
+    a.student_id = 1001
+    b.student_id = 2002
+    other = await _create_case(db_session, title="Unlinked case")
+    other.student_id = None
+    await db_session.flush()
+
+    rows, total = await svc.list_cases(1, student_id=1001)
+    assert total == 1
+    assert rows[0].id == a.id
+    assert rows[0].title == "Attendance anomaly"
+
+    rows, total = await svc.list_cases(1, student_id=2002)
+    assert total == 1
+    assert rows[0].id == b.id
+
+    rows, total = await svc.list_cases(1, student_id=9999)
+    assert total == 0
+
+    # Composes with the work-queue "open" view and status filters.
+    rows, total = await svc.list_cases(1, view="open", student_id=1001)
+    assert total == 1 and rows[0].id == a.id
+
+    # Campus isolation still applies: another campus never sees this student.
+    rows, total = await svc.list_cases(2, student_id=1001)
+    assert total == 0
+
+
+@pytest.mark.asyncio
+async def test_create_case_rejects_student_outside_campus(db_session: AsyncSession):
+    """P10 — a case may only be created for a student of the caller's
+    own campus (mirrors the source/assignee validation elsewhere)."""
+    from app.domains.student.models import Student
+
+    student = Student(
+        first_name="Ravi", last_name="Kumar", student_number="P10-001",
+        campus_id=2, status="active",
+    )
+    db_session.add(student)
+    await db_session.flush()
+
+    svc = CaseService(db_session)
+    # Same-campus student — allowed.
+    case = await svc.create_case(
+        campus_id=2, actor_user_id=1, actor_name="Ada Admin",
+        title="Local student case", student_id=student.id,
+    )
+    assert case.student_id == student.id
+
+    # Foreign-campus student — rejected.
+    with pytest.raises(ValidationError):
+        await svc.create_case(
+            campus_id=1, actor_user_id=1, actor_name="Ada Admin",
+            title="Foreign student case", student_id=student.id,
+        )
+
+    # Unknown student id — rejected.
+    with pytest.raises(ValidationError):
+        await svc.create_case(
+            campus_id=1, actor_user_id=1, actor_name="Ada Admin",
+            title="Ghost student case", student_id=999999,
+        )
+
+
+@pytest.mark.asyncio
 async def test_overview_counts(db_session: AsyncSession):
     await _seed_user(db_session, uid=42, name="Stacy Staff")
     await _create_case(db_session, priority="critical", assigned_to=42)
@@ -746,3 +819,151 @@ async def test_overview_counts(db_session: AsyncSession):
     assert overview["critical"] == 1
     assert overview["overdue"] == 1
     assert overview["my_open"] == 1
+
+
+# ---------------------------------------------------------------------------
+# L. P11 — closed loop: case ↔ originating finding
+# ---------------------------------------------------------------------------
+
+
+async def _case_from_finding(db_session: AsyncSession, *, title: str = "Loop case") -> Case:
+    finding = await _seed_risk_finding(db_session, severity="high")
+    svc = CaseService(db_session)
+    case = await svc.create_case(
+        campus_id=1,
+        actor_user_id=1,
+        actor_name="Ada Admin",
+        title=title,
+        case_type="attendance",
+        source_type="risk_finding",
+        source_id=finding.id,
+    )
+    return case, finding
+
+
+@pytest.mark.asyncio
+async def test_resolve_case_resolves_linked_risk_finding(db_session: AsyncSession):
+    """Resolving a case closes the loop: the referenced finding is resolved
+    with the case number recorded, and the finding resolution is audited."""
+    case, finding = await _case_from_finding(db_session)
+    assert finding.status == "open"
+
+    svc = CaseService(db_session)
+    await svc.transition_status(
+        case.id, 1, 1, "Ada Admin", CASE_STATUS_RESOLVED, reason="Attendance reviewed"
+    )
+
+    await db_session.refresh(finding)
+    assert finding.status == "resolved"
+    assert finding.resolved_by == 1
+    assert case.case_number in (finding.resolved_reason or "")
+
+    from app.domains.audit.models import AuditLog
+
+    audit = (
+        await db_session.execute(
+            select(AuditLog).where(
+                AuditLog.resource_type == "risk_finding",
+                AuditLog.resource_id == str(finding.id),
+            )
+        )
+    ).scalars().all()
+    assert audit and audit[0].action == "RESOLVE"
+    assert case.case_number in (audit[0].details or "")
+
+
+@pytest.mark.asyncio
+async def test_reopen_case_reopens_finding_it_resolved(db_session: AsyncSession):
+    """Reopening a case reopens the finding that the case had resolved."""
+    case, finding = await _case_from_finding(db_session)
+    svc = CaseService(db_session)
+    await svc.transition_status(case.id, 1, 1, "Ada Admin", CASE_STATUS_RESOLVED)
+    await db_session.refresh(finding)
+    assert finding.status == "resolved"
+
+    await svc.transition_status(
+        case.id, 1, 1, "Ada Admin", CASE_STATUS_OPEN, reason="Recurring issue"
+    )
+    await db_session.refresh(finding)
+    assert finding.status == "open"
+    assert finding.resolved_at is None
+    assert finding.resolved_reason is None
+
+    from app.domains.audit.models import AuditLog
+
+    audit = (
+        await db_session.execute(
+            select(AuditLog).where(
+                AuditLog.resource_type == "risk_finding",
+                AuditLog.resource_id == str(finding.id),
+                AuditLog.action == "REOPEN",
+            )
+        )
+    ).scalars().all()
+    assert audit
+
+
+@pytest.mark.asyncio
+async def test_reopen_case_leaves_externally_resolved_finding_alone(db_session: AsyncSession):
+    """A finding resolved outside the case (Risk Center / recompute) is never
+    reopened just because the case is reopened."""
+    case, finding = await _case_from_finding(db_session)
+    svc = CaseService(db_session)
+    await svc.transition_status(case.id, 1, 1, "Ada Admin", CASE_STATUS_RESOLVED)
+    await db_session.refresh(finding)
+    assert finding.status == "resolved"
+
+    # Resolve the finding independently (e.g. admin resolved it directly).
+    finding.resolved_reason = "Resolved directly in the Risk Center"
+    await db_session.flush()
+
+    await svc.transition_status(case.id, 1, 1, "Ada Admin", CASE_STATUS_OPEN)
+    await db_session.refresh(finding)
+    assert finding.status == "resolved"  # untouched
+    assert finding.resolved_reason == "Resolved directly in the Risk Center"
+
+
+@pytest.mark.asyncio
+async def test_resolve_case_is_idempotent_for_already_resolved_finding(db_session: AsyncSession):
+    """Resolving a case whose finding is already resolved must not error or
+    overwrite the existing resolution reason."""
+    case, finding = await _case_from_finding(db_session)
+    from app.domains.risk.service import RiskService
+
+    await RiskService(db_session).resolve_finding(
+        finding.id, 1, actor_user_id=7, reason="Paid in cash"
+    )
+
+    svc = CaseService(db_session)
+    await svc.transition_status(
+        case.id, 1, 1, "Ada Admin", CASE_STATUS_RESOLVED, reason="Case closed"
+    )
+    await db_session.refresh(finding)
+    assert finding.status == "resolved"
+    assert finding.resolved_reason == "Paid in cash"  # never overwritten
+
+
+@pytest.mark.asyncio
+async def test_resolve_case_resolves_linked_data_quality_finding(db_session: AsyncSession):
+    """The closed loop also covers data-quality findings."""
+    dq = DataQualityFinding(
+        campus_id=1, check_code="duplicate_students", category="duplicates",
+        severity="medium", entity_type="student", entity_id=3, field="email",
+        description="Duplicate email", status="open",
+    )
+    db_session.add(dq)
+    await db_session.flush()
+
+    svc = CaseService(db_session)
+    case = await svc.create_case(
+        campus_id=1, actor_user_id=1, actor_name="Ada Admin",
+        title="Merge duplicate records",
+        case_type="data_quality",
+        source_type="data_quality_finding", source_id=dq.id,
+    )
+    await svc.transition_status(
+        case.id, 1, 1, "Ada Admin", CASE_STATUS_RESOLVED, reason="Merged"
+    )
+    await db_session.refresh(dq)
+    assert dq.status == "resolved"
+    assert case.case_number in (dq.resolved_reason or "")

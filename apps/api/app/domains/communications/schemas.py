@@ -76,6 +76,25 @@ class MessageSend(BaseModel):
     timezone: str = Field(default="UTC")
     recurrence: str = Field(default="none")
     recurrence_end: Optional[datetime.datetime] = None
+    # P15 — the operational context the message is composed from. When set,
+    # template variables are resolved against the linked entity and the
+    # message stays associated with it.
+    context_type: Optional[str] = None
+    context_id: Optional[int] = None
+    variables: Optional[dict[str, Any]] = None
+
+
+class ContextPreviewRequest(BaseModel):
+    """Render a template against a live operational context (P15).
+
+    ``variables`` may override or extend the entity-derived values — an
+    operator can tweak a reminder amount without editing the template.
+    """
+
+    template_id: int
+    context_type: str
+    context_id: int
+    variables: dict[str, Any] = {}
 
 
 class MessageUpdate(BaseModel):
@@ -133,6 +152,9 @@ class MessageResponse(BaseModel):
     sent_at: Optional[datetime.datetime]
     campus_id: Optional[int]
     sender_id: int
+    # P15 — context the message was composed from.
+    context_type: Optional[str]
+    context_id: Optional[int]
     created_at: datetime.datetime
     updated_at: datetime.datetime
     recipients: list[MessageRecipientResponse] = []
@@ -195,6 +217,25 @@ class RecipientResolveRequest(BaseModel):
 class RecipientResolveResponse(BaseModel):
     recipients: list[dict[str, Any]]
     total: int
+
+
+class ContextInfoResponse(BaseModel):
+    """Summary of an operational context plus the template variables it
+    makes available (P15) — drives the composer's context badge and the
+    variable preview panel."""
+
+    context_type: str
+    context_id: int
+    label: str
+    detail: str
+    variables: dict[str, Any]
+    guardian_ids: list[int] = []
+
+
+class ContextVariableListResponse(BaseModel):
+    context_type: str
+    context_id: int
+    variables: dict[str, Any]
 
 
 class InboxMessageInfo(BaseModel):

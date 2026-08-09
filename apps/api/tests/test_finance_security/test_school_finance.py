@@ -150,3 +150,96 @@ async def test_dashboard_is_campus_scoped(db_session: AsyncSession):
     dash_all = await svc.get_dashboard(campus_id=None)
     assert dash_all["total_collected"] == 50000
     assert dash_all["payment_count"] == 2
+
+
+# ---------------------------------------------------------------------------
+# Transaction log — free-text search (P13)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_transaction_list_q_search(db_session: AsyncSession):
+    """The ledger's `q` filter matches reference numbers / descriptions /
+    idempotency keys and resolves numeric queries against the student id."""
+    from app.domains.school_finance.service import TransactionLogService
+
+    p1 = await _seed_payment(db_session, 1, 5000, "q-src-1")
+    p2 = await _seed_payment(db_session, 1, 8000, "q-src-2")
+    svc = TransactionLogService(db_session)
+
+    # reference-number search (the ledger's own reference_number column)
+    row1 = (await db_session.execute(select(TransactionLog).where(TransactionLog.payment_id == p1))).scalar_one()
+    row1.reference_number = "RCP-TEST-1001"
+    row2 = (await db_session.execute(select(TransactionLog).where(TransactionLog.payment_id == p2))).scalar_one()
+    row2.reference_number = "RCP-TEST-2002"
+    await db_session.flush()
+
+    rows, total = await svc.list(q="RCP-TEST-1001")
+    assert total == 1
+    assert rows[0].payment_id == p1
+
+    rows, total = await svc.list(q="2002")
+    assert total == 1
+    assert rows[0].payment_id == p2
+
+    # numeric query → student-id resolution
+    rows, total = await svc.list(q=str(row1.student_id))
+    assert total >= 1
+
+    # no match
+    rows, total = await svc.list(q="no-such-ledger-entry")
+    assert total == 0
+
+    # combines with existing filters (amount range + campus scope)
+    rows, total = await svc.list(q="RCP-TEST", min_amount=6000, campus_id=1)
+    assert total == 1
+    assert rows[0].payment_id == p2
+
+
+@pytest.mark.asyncio
+async def test_reconciliation_list_q_search_and_status_filter(db_session: AsyncSession):
+    """The reconciliation `q` filter (P13) matches notes and resolves numeric
+    queries against the reconciliation id, composing with the status facet."""
+    p1 = await _seed_payment(db_session, 1, 5000, "rec-q-1")
+    p2 = await _seed_payment(db_session, 1, 8000, "rec-q-2")
+    svc = ReconciliationService(db_session)
+
+    rec1 = await svc.create(
+        ReconciliationCreate(
+            reconciliation_date="2026-08-01", total_amount=5000, total_count=1,
+            notes="Term 1 close — cash drawer",
+            items=[ReconciliationItemCreate(
+                payment_id=p1, expected_amount=5000, actual_amount=5000,
+            )],
+        ),
+        reconciled_by=1, campus_id=1,
+    )
+    rec2 = await svc.create(
+        ReconciliationCreate(
+            reconciliation_date="2026-08-02", total_amount=8000, total_count=1,
+            notes="Term 1 close — bank statement",
+            items=[ReconciliationItemCreate(
+                payment_id=p2, expected_amount=8000, actual_amount=8000,
+            )],
+        ),
+        reconciled_by=1, campus_id=1,
+    )
+
+    # notes search
+    rows, total = await svc.list(q="cash drawer")
+    assert total == 1
+    assert rows[0].id == rec1.id
+
+    # numeric query → reconciliation-id resolution
+    rows, total = await svc.list(q=str(rec2.id))
+    assert total == 1
+    assert rows[0].id == rec2.id
+
+    # composes with the status facet
+    rows, total = await svc.list(status_filter="draft", q="Term 1 close")
+    assert total == 2
+    assert {r.id for r in rows} == {rec1.id, rec2.id}
+
+    # no match
+    rows, total = await svc.list(q="no-such-note")
+    assert total == 0

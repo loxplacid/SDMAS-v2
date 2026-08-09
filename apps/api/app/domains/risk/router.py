@@ -4,6 +4,7 @@ Endpoints
 ---------
 - GET  /api/risk/overview         — counts by severity / category (open)
 - GET  /api/risk/findings         — paginated, filterable, RBAC-filtered
+- GET  /api/risk/findings/{id}     — single finding (deep-link, RBAC-filtered)
 - POST /api/risk/recompute        — run rules and persist snapshot
 - GET  /api/risk/config           — rule configuration (admin/principal)
 - PUT  /api/risk/config/{code}    — update a rule config (admin only)
@@ -50,9 +51,23 @@ async def get_risk_service(
     return RiskService(session)
 
 
-def _page(items, total: int, pagination: PaginationParams) -> RiskFindingPage:
+def _page(
+    items,
+    total: int,
+    pagination: PaginationParams,
+    linked: Optional[dict[int, dict]] = None,
+) -> RiskFindingPage:
+    data = []
+    for i in items:
+        out = RiskFindingOut.model_validate(i)
+        if linked:
+            info = linked.get(i.id, {})
+            out.case_id = info.get("case_id")
+            out.case_number = info.get("case_number")
+            out.case_status = info.get("case_status")
+        data.append(out)
     return Page.create(
-        items=[RiskFindingOut.model_validate(i) for i in items],
+        items=data,
         total=total,
         page=pagination.page,
         size=pagination.size,
@@ -119,7 +134,39 @@ async def list_findings(
         skip=pagination.offset,
         limit=pagination.limit,
     )
-    return _page(items, total, pagination)
+    # P11 — attach the linked case (if any) so the Risk Center can open it.
+    linked = {}
+    if items:
+        linked = await service.linked_cases_for_findings(
+            tenant.campus_id, [i.id for i in items]
+        )
+    return _page(items, total, pagination, linked)
+
+
+@router.get("/findings/{finding_id}", response_model=RiskFindingOut)
+async def get_finding(
+    finding_id: int,
+    tenant: TenantContext = Depends(get_school_context),
+    service: RiskService = Depends(get_risk_service),
+    user=Depends(require_role("admin", "principal", "staff")),
+) -> RiskFindingOut:
+    """Single finding, campus-scoped and RBAC-filtered — used for
+    deep-linking from a case back to its originating finding so the
+    Risk Center → finding → case → finding loop never loses context.
+    """
+    try:
+        f = await service.get_finding(finding_id, tenant.campus_id, role=user.role)
+    except NotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Finding not found"
+        )
+    out = RiskFindingOut.model_validate(f)
+    linked = await service.linked_cases_for_findings(tenant.campus_id, [f.id])
+    info = linked.get(f.id, {})
+    out.case_id = info.get("case_id")
+    out.case_number = info.get("case_number")
+    out.case_status = info.get("case_status")
+    return out
 
 
 @router.post("/recompute", response_model=RecomputeResult)

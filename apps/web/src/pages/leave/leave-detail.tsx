@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { leaveApi, type LeaveRequestDetailResponse } from '../../api/leave/leave-api'
+import { workflowApi, type WorkflowInstanceDetail } from '../../api/workflow/workflow-api'
 import { Card, Button, ErrorState, BreadcrumbBar, PageHeader, StatusBadge, Loading } from '../../components/ui'
+import { WorkflowStatus } from '../../components/workflow/workflow-status'
 import { formatDateTime } from '../../lib/utils'
 import { capitalize } from '../../lib/utils'
 
@@ -9,6 +11,9 @@ export function LeaveDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [leave, setLeave] = useState<LeaveRequestDetailResponse | null>(null)
+  const [workflow, setWorkflow] = useState<WorkflowInstanceDetail | null>(null)
+  const [workflowLoading, setWorkflowLoading] = useState(false)
+  const [workflowError, setWorkflowError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -19,6 +24,24 @@ export function LeaveDetailPage() {
     try {
       const data = await leaveApi.getById(Number(id))
       setLeave(data)
+
+      // Fetch the *real* workflow instance (P14 §6) — the leave detail only
+      // carries its instance id; the full steps/current-step/history live on
+      // the workflow engine.  Render nothing fake when there is no instance.
+      if (data.workflow_instance_id) {
+        setWorkflowLoading(true)
+        setWorkflowError(null)
+        try {
+          const instance = await workflowApi.getInstance(data.workflow_instance_id)
+          setWorkflow(instance)
+        } catch (wfErr: any) {
+          setWorkflowError(wfErr?.detail || 'Could not load approval progress')
+        } finally {
+          setWorkflowLoading(false)
+        }
+      } else {
+        setWorkflow(null)
+      }
     } catch (err: any) {
       setError(err?.detail || 'Failed to load leave request')
     } finally {
@@ -93,39 +116,31 @@ export function LeaveDetailPage() {
         </Card>
       </div>
 
-      {/* Workflow Timeline */}
-      {leave.workflow_status && (
+      {/* Workflow progress — the real workflow definition, not a hardcoded pipeline */}
+      {leave.workflow_instance_id ? (
         <Card title="Approval Pipeline">
-          <div className="flex flex-wrap items-center gap-1.5 mt-2">
-            {[
-              { label: 'Submitted', active: leave.workflow_status === 'active' || leave.workflow_status === 'completed' },
-              { label: 'Manager Approval', active: leave.workflow_status === 'active' || leave.workflow_status === 'completed' },
-              { label: 'HR Approval', active: leave.workflow_status === 'active' || leave.workflow_status === 'completed' },
-              { label: 'Approved', active: leave.workflow_status === 'completed' },
-            ].map((step, i) => (
-              <div key={step.label} className="flex items-center gap-1.5">
-                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                  step.active
-                    ? 'bg-[var(--color-brand-accent)] text-white'
-                    : 'bg-[var(--color-surface-hover)] text-[var(--color-text-muted)]'
-                }`}>
-                  {step.active && (
-                    <svg className="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                  {step.label}
-                </span>
-                {i < 3 && (
-                  <svg className="h-3.5 w-3.5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                )}
-              </div>
-            ))}
-          </div>
+          {workflowLoading ? (
+            <div className="space-y-3 py-2">
+              <div className="h-4 w-2/3 rounded bg-[var(--color-surface-hover)] motion-safe:animate-pulse" />
+              <div className="h-4 w-1/2 rounded bg-[var(--color-surface-hover)] motion-safe:animate-pulse" />
+              <div className="h-4 w-3/4 rounded bg-[var(--color-surface-hover)] motion-safe:animate-pulse" />
+            </div>
+          ) : workflowError ? (
+            <p className="text-sm text-[var(--color-text-tertiary)] py-2">
+              {workflowError}
+            </p>
+          ) : workflow ? (
+            <WorkflowStatus instance={workflow} />
+          ) : null}
         </Card>
-      )}
+      ) : leave.workflow_status ? (
+        <Card title="Approval Pipeline">
+          <p className="text-sm text-[var(--color-text-tertiary)] py-2">
+            This request has workflow status “{capitalize(leave.workflow_status)}” but no
+            workflow instance is attached. Contact an administrator if this looks wrong.
+          </p>
+        </Card>
+      ) : null}
 
       <div className="flex gap-3">
         <Button variant="outline" onClick={() => navigate('/leave')}>Back to List</Button>

@@ -4,7 +4,7 @@ import { classApi } from '../../api/academic/class-api'
 import { sectionApi } from '../../api/academic/section-api'
 import { attendanceReportApi } from '../../api/reports/attendance-reports'
 import type { ClassAttendanceSummaryReport, SectionAttendanceSummaryReport } from '../../api/reports/types'
-import { Card, Select, Button, ErrorState, Badge, Table, AnimatedCount, Input } from '../../components/ui'
+import { Card, Select, Button, ErrorState, Badge, Table, AnimatedCount, Input, PageHeader } from '../../components/ui'
 import { useExport } from '../../hooks/use-export'
 
 export function AttendanceReportPage() {
@@ -77,11 +77,12 @@ export function AttendanceReportPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div>
-        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Reports</div>
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Attendance Report</h1>
-        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">View attendance summary for a class or section</p>
-      </div>
+      <PageHeader
+        eyebrow="Reports"
+        title="Attendance Report"
+        subtitle="View attendance summary for a class or section"
+        compact
+      />
 
       <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

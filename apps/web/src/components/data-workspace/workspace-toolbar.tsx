@@ -3,6 +3,7 @@ import { cn } from '../../lib/utils'
 import { DropdownMenu, type DropdownItem } from '../ui/dropdown-menu'
 import type { Column } from '../ui/table/columns'
 import type { SortRule } from '../ui/table'
+import { RailPopover } from '../ui/table/filter-rail'
 import { cycleSort } from '../../lib/workspace/sort'
 import type { WorkspaceDensity } from './use-workspace'
 
@@ -12,8 +13,8 @@ import type { WorkspaceDensity } from './use-workspace'
  * Everything here is a small opt-in control over the shared `DropdownMenu`:
  *  - Sort — lists sortable columns with their active direction/rank; a click
  *    cycles the primary rule; Shift-click on a header adds secondaries.
- *  - Columns — show/hide columns with reset-to-defaults.
- *  - Density — comfortable / compact, persisted per module.
+ *  - Columns — show/hide with one-position reorder handles + reset (P12).
+ *  - Density — comfortable / compact / dense, persisted per module (P12).
  *  - Refresh — silent refetch with a brief spin.
  *
  * The search box, filter builder and saved views live in the table's filter
@@ -83,7 +84,10 @@ export interface WorkspaceToolbarProps<T> {
   density: WorkspaceDensity
   onDensityChange: (next: WorkspaceDensity) => void
   visibleKeys: ReadonlySet<string>
+  /** Visible column keys in display order (P12 — reorder). */
+  visibleOrder: readonly string[]
   onToggleColumn: (key: string) => void
+  onMoveColumn: (key: string, dir: -1 | 1) => void
   onResetColumns: () => void
   onRefresh?: () => void
   /** Secondary actions (e.g. Export) rendered before the menus. */
@@ -101,7 +105,9 @@ export function WorkspaceToolbar<T>({
   density,
   onDensityChange,
   visibleKeys,
+  visibleOrder,
   onToggleColumn,
+  onMoveColumn,
   onResetColumns,
   onRefresh,
   toolbarActions,
@@ -129,17 +135,6 @@ export function WorkspaceToolbar<T>({
       : []),
   ]
 
-  const columnItems: DropdownItem[] = [
-    ...toggleable.map((col) => ({
-      id: `col-${col.key}`,
-      label: col.header,
-      icon: visibleKeys.has(col.key) ? <CheckIcon /> : undefined,
-      onClick: () => onToggleColumn(col.key),
-    })),
-    { id: 'col-divider', label: '', divider: true },
-    { id: 'col-reset', label: 'Reset to defaults', onClick: onResetColumns },
-  ]
-
   const densityItems: DropdownItem[] = [
     {
       id: 'density-comfortable',
@@ -152,6 +147,12 @@ export function WorkspaceToolbar<T>({
       label: 'Compact',
       icon: density === 'compact' ? <CheckIcon /> : undefined,
       onClick: () => onDensityChange('compact'),
+    },
+    {
+      id: 'density-dense',
+      label: 'Dense',
+      icon: density === 'dense' ? <CheckIcon /> : undefined,
+      onClick: () => onDensityChange('dense'),
     },
   ]
 
@@ -183,9 +184,7 @@ export function WorkspaceToolbar<T>({
             }
           />
         )}
-        <DropdownMenu
-          items={columnItems}
-          position="bottom-right"
+        <RailPopover
           trigger={
             <ToolbarButton label="Manage columns">
               <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -194,7 +193,21 @@ export function WorkspaceToolbar<T>({
               Columns
             </ToolbarButton>
           }
-        />
+        >
+          {(close) => (
+            <ColumnMenu
+              columns={toggleable}
+              visibleKeys={visibleKeys}
+              visibleOrder={visibleOrder}
+              onToggleColumn={onToggleColumn}
+              onMoveColumn={onMoveColumn}
+              onResetColumns={() => {
+                onResetColumns()
+                close()
+              }}
+            />
+          )}
+        </RailPopover>
         <DropdownMenu
           items={densityItems}
           position="bottom-right"
@@ -211,6 +224,142 @@ export function WorkspaceToolbar<T>({
         )}
         {primaryAction}
       </div>
+    </div>
+  )
+}
+
+/** P12 §5 — one-position reorder handle inside the columns menu. */
+function MoveButton({
+  label,
+  dir,
+  disabled,
+  onClick,
+}: {
+  label: string
+  dir: 'left' | 'right'
+  disabled?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={(e) => {
+        // never let the handle toggle the column — the row click owns that
+        e.stopPropagation()
+        onClick()
+      }}
+      className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text-primary)] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--color-text-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-accent-ring)]"
+    >
+      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        {dir === 'left' ? (
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        ) : (
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        )}
+      </svg>
+    </button>
+  )
+}
+
+/**
+ * P12 §5 — the columns menu: show/hide (click a row), reorder (←/→ handles
+ * on visible rows) and reset-to-defaults. Visible rows render in the current
+ * display order so the handles are unambiguous.
+ */
+function ColumnMenu<T>({
+  columns,
+  visibleKeys,
+  visibleOrder,
+  onToggleColumn,
+  onMoveColumn,
+  onResetColumns,
+}: {
+  columns: Column<T>[]
+  visibleKeys: ReadonlySet<string>
+  visibleOrder: readonly string[]
+  onToggleColumn: (key: string) => void
+  onMoveColumn: (key: string, dir: -1 | 1) => void
+  onResetColumns: () => void
+}) {
+  const byKey = new Map(columns.map((c) => [c.key, c] as const))
+  const visible = visibleOrder
+    .map((key) => byKey.get(key))
+    .filter((c): c is Column<T> => c !== undefined)
+  const hidden = columns.filter((c) => !visibleKeys.has(c.key))
+
+  return (
+    // A labelled group of real toggle buttons (aria-pressed), not a menu:
+    // each row carries two reorder buttons plus a visibility toggle, which a
+    // `role=menuitem` cannot legally contain. Every control is a real,
+    // natively-activatable button — no nested-handler keydown traps.
+    <div role="group" aria-label="Column options" className="w-64 p-1.5">
+      <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">
+        Visible
+      </p>
+      {visible.map((col, idx) => (
+        <div
+          key={col.key}
+          className="group flex items-center gap-0.5 rounded-md px-1 hover:bg-[var(--color-surface-hover)]"
+        >
+          <MoveButton
+            label={`Move ${col.header} left`}
+            dir="left"
+            disabled={idx === 0}
+            onClick={() => onMoveColumn(col.key, -1)}
+          />
+          <MoveButton
+            label={`Move ${col.header} right`}
+            dir="right"
+            disabled={idx === visible.length - 1}
+            onClick={() => onMoveColumn(col.key, 1)}
+          />
+          <button
+            type="button"
+            aria-pressed="true"
+            onClick={() => onToggleColumn(col.key)}
+            className="flex min-w-0 flex-1 items-center gap-2 rounded px-1 py-1.5 text-left text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-accent-ring)]"
+          >
+            <CheckIcon />
+            <span className="truncate">{col.header}</span>
+          </button>
+        </div>
+      ))}
+      {visible.length === 0 && (
+        <p className="px-2 py-1.5 text-xs text-[var(--color-text-muted)]">All columns hidden.</p>
+      )}
+
+      {hidden.length > 0 && (
+        <>
+          <p className="px-2 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">
+            Hidden
+          </p>
+          {hidden.map((col) => (
+            <button
+              key={col.key}
+              type="button"
+              aria-pressed="false"
+              onClick={() => onToggleColumn(col.key)}
+              className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-accent-ring)]"
+            >
+              <svg className="h-3.5 w-3.5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              <span className="truncate">{col.header}</span>
+            </button>
+          ))}
+        </>
+      )}
+
+      <div className="my-1 mx-2 border-t border-[var(--color-divider)]" aria-hidden="true" />
+      <button
+        type="button"
+        onClick={onResetColumns}
+        className="w-full rounded-md px-2 py-1.5 text-left text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-accent-ring)]"
+      >
+        Reset to defaults
+      </button>
     </div>
   )
 }

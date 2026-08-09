@@ -26,7 +26,7 @@ import { sortFromQueryString, sortToQueryString } from '../../lib/workspace/sort
  * detail page (P8 — detail continuity) and makes views shareable.
  */
 
-export type WorkspaceDensity = 'comfortable' | 'compact'
+export type WorkspaceDensity = 'comfortable' | 'compact' | 'dense'
 
 export interface WorkspaceOptions<T> {
   /** Per-module (and per-role) scope for localStorage + URL params. */
@@ -73,7 +73,13 @@ export interface UseWorkspaceResult<T> {
   /** Column visibility. */
   visibleColumns: Column<T>[]
   visibleKeys: ReadonlySet<string>
+  /** The visible keys in display order (P12 — column reorder). */
+  visibleOrder: readonly string[]
   toggleColumn: (key: string) => void
+  /** Move a visible column one position left (-1) or right (+1). */
+  moveColumn: (key: string, dir: -1 | 1) => void
+  /** Replace the visible set wholesale (saved-view restore). */
+  setVisibleColumns: (keys: string[]) => void
   resetColumns: () => void
   /** Pagination. */
   page: number
@@ -108,11 +114,14 @@ export function useWorkspace<T>(options: WorkspaceOptions<T>): UseWorkspaceResul
   const [density, setDensity] = useState<WorkspaceDensity>(() =>
     readStored<WorkspaceDensity>(`${DENSITY_KEY}${viewKey}`, 'comfortable')
   )
-  const [visibleKeys, setVisibleKeys] = useState<ReadonlySet<string>>(() => {
+  // Ordered visible keys: the array IS the display order (P12 — reorder),
+  // the set is derived. Stored arrays from earlier versions load unchanged.
+  const [visibleOrder, setVisibleOrder] = useState<string[]>(() => {
     const stored = readStored<string[]>(`${COLUMNS_KEY}${viewKey}`, [])
     const all = columns.map((c) => c.key)
-    return stored.length > 0 ? new Set(stored.filter((k) => all.includes(k))) : new Set(all)
+    return stored.length > 0 ? stored.filter((k) => all.includes(k)) : [...all]
   })
+  const visibleKeys = useMemo(() => new Set(visibleOrder), [visibleOrder])
   const [selection, setSelection] = useState<Set<string | number>>(new Set())
 
   // ── URL write-back (debounced; page/params coexist with other params) ──
@@ -142,26 +151,53 @@ export function useWorkspace<T>(options: WorkspaceOptions<T>): UseWorkspaceResul
 
   useEffect(() => {
     try {
-      localStorage.setItem(`${COLUMNS_KEY}${viewKey}`, JSON.stringify([...visibleKeys]))
+      localStorage.setItem(`${COLUMNS_KEY}${viewKey}`, JSON.stringify(visibleOrder))
     } catch { /* noop */ }
-  }, [visibleKeys, viewKey])
+  }, [visibleOrder, viewKey])
 
-  const visibleColumns = useMemo(
-    () => columns.filter((c) => visibleKeys.has(c.key) || c.key.startsWith('__')),
-    [columns, visibleKeys]
-  ) as Column<T>[]
+  const visibleColumns = useMemo(() => {
+    const byKey = new Map(columns.map((c) => [c.key, c] as const))
+    const ordered: Column<T>[] = []
+    for (const key of visibleOrder) {
+      const col = byKey.get(key)
+      if (col) ordered.push(col)
+    }
+    // internal columns (checkbox/expander) always render, trailing the
+    // user-visible set (no host currently declares one mid-table)
+    for (const col of columns) {
+      if (col.key.startsWith('__')) ordered.push(col)
+    }
+    return ordered
+  }, [columns, visibleOrder])
 
   const toggleColumn = useCallback((key: string) => {
-    setVisibleKeys((prev) => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
+    setVisibleOrder((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    )
+  }, [])
+
+  const moveColumn = useCallback((key: string, dir: -1 | 1) => {
+    setVisibleOrder((prev) => {
+      const idx = prev.indexOf(key)
+      const target = idx + dir
+      if (idx === -1 || target < 0 || target >= prev.length) return prev
+      const next = [...prev]
+      const [moved] = next.splice(idx, 1)
+      next.splice(target, 0, moved)
       return next
     })
   }, [])
 
+  const setVisibleColumns = useCallback(
+    (keys: string[]) => {
+      const all = new Set(columns.map((c) => c.key))
+      setVisibleOrder(Array.from(new Set(keys)).filter((k) => all.has(k)))
+    },
+    [columns]
+  )
+
   const resetColumns = useCallback(() => {
-    setVisibleKeys(new Set(columns.map((c) => c.key)))
+    setVisibleOrder(columns.map((c) => c.key))
   }, [columns])
 
   const setPage = useCallback((next: number) => setPageState(Math.max(1, next)), [])
@@ -199,7 +235,10 @@ export function useWorkspace<T>(options: WorkspaceOptions<T>): UseWorkspaceResul
     isCompact: density === 'compact',
     visibleColumns,
     visibleKeys,
+    visibleOrder,
     toggleColumn,
+    moveColumn,
+    setVisibleColumns,
     resetColumns,
     page,
     setPage,

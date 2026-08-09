@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { studentApi } from '../../api/student/student-api'
 import { exportApi } from '../../api/reports/export-api'
 import type { StudentResponse } from '../../api/generated/types'
@@ -9,14 +8,14 @@ import { applyFilters } from '../../components/ui/table/filter-model'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { useAuth } from '../../api/auth/auth-context'
 import { useDelight } from '../../components/delight/delight-provider'
-import { DataWorkspace, useWorkspace } from '../../components/data-workspace'
+import { DataWorkspace, useWorkspace, useWorkspaceSelection } from '../../components/data-workspace'
+import { StudentInspector } from './student-inspector'
 import { STUDENT_STATUSES, capitalize } from '../../lib/utils'
 
 /** Roles that may delete student records. */
 const BULK_DELETE_ROLES = new Set(['admin', 'principal'])
 
 export function StudentListPage() {
-  const navigate = useNavigate()
   const { user } = useAuth()
   const { showToast } = useToast()
   const { celebrate } = useDelight()
@@ -119,6 +118,10 @@ export function StudentListPage() {
     defaultPageSize: 20,
   })
 
+  // P9 — the inspector preview selection, deep-linked as `?student=<id>`. Back
+  // /forward navigate between selections; Escape (or the close button) clears.
+  const selection = useWorkspaceSelection('student')
+
   // ── keyboard: `/` focuses the filter rail search, `n` creates ──
   useKeyboardShortcut({
     '/': (e) => {
@@ -174,6 +177,8 @@ export function StudentListPage() {
       setData((prev) => prev.filter((s) => s.id !== deleteConfirm.id))
       showToast('Student deleted', 'success')
       setDeleteConfirm(null)
+      // The inspector must not preview a deleted record.
+      if (selection.selectedId === String(deleteConfirm.id)) selection.close()
     } catch (err: any) {
       showToast(err?.detail || 'Failed to delete student', 'error')
     } finally {
@@ -196,6 +201,8 @@ export function StudentListPage() {
       const failed = entries.length - deleted.size
       setData((prev) => prev.filter((s) => !deleted.has(s.id)))
       workspace.clearSelection()
+      // The inspector must not preview a deleted record.
+      if (selection.selectedId && deleted.has(Number(selection.selectedId))) selection.close()
       setBulkConfirm(false)
       if (failed > 0) {
         showToast(`${deleted.size} deleted, ${failed} failed`, 'error')
@@ -258,7 +265,9 @@ export function StudentListPage() {
         onRefresh={() => fetchStudents(false)}
         mode="local"
         filterPlaceholder="Search by name, number or email…"
-        onRowClick={(s) => navigate(`/students/${s.id}`)}
+        onRowClick={(s) => selection.open(s.id)}
+        currentKey={selection.selectedId ?? undefined}
+        onActiveRowChange={(s) => selection.open(s.id)}
         primaryAction={
           <Button onClick={openCreateModal} className="relative">
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -292,6 +301,16 @@ export function StudentListPage() {
           onAction: openCreateModal,
         }}
         searchInputRef={searchInputRef}
+      />
+
+      <StudentInspector
+        open={selection.isOpen}
+        studentId={selection.selectedId}
+        onClose={selection.close}
+        onEdit={() => {
+          const s = data.find((x) => String(x.id) === selection.selectedId)
+          if (s) openEditModal(s)
+        }}
       />
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}

@@ -32,6 +32,11 @@ from app.domains.academic_ops.models import GradeRecord
 from app.domains.admission.models import AdmissionApplication
 from app.domains.attendance.models import AttendanceRecord
 from app.domains.audit.models import AuditLog
+from app.domains.cases.models import (  # noqa: F401 — registers cases tables for create_all
+    Case,
+    CaseSLAConfig,
+)
+from app.domains.cases.service import CaseService
 from app.domains.documents.models import Document, DocumentCategory
 from app.domains.fees.models import FeeDue, FeeStructure, FeeType
 from app.domains.notifications.models import Notification
@@ -1092,6 +1097,61 @@ async def test_teacher_findings_tenant_isolation(db_session: AsyncSession):
 
 
 # ---------------------------------------------------------------------------
+# L. P11 — closed loop: findings expose their linked operational case
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_linked_cases_for_findings(db_session: AsyncSession, seeded):
+    """A finding promoted into a case exposes the case (id/number/status)
+    back to the Risk Center, scoped to the campus."""
+    s = seeded["students"][0]
+    await _seed_attendance(db_session, 1, seeded["structure"], s, present_ratio=0.4)
+    await _recompute(db_session)
+
+    f = (
+        await db_session.execute(
+            select(RiskFinding).where(
+                RiskFinding.rule_code == "attendance_below_threshold",
+                RiskFinding.student_id == s.id,
+            )
+        )
+    ).scalar_one()
+
+    case_svc = CaseService(db_session)
+    case = await case_svc.create_case(
+        campus_id=1, actor_user_id=1, actor_name="Ada Admin",
+        title="Attendance follow-up", case_type="attendance",
+        source_type="risk_finding", source_id=f.id,
+    )
+
+    risk_svc = RiskService(db_session)
+    linked = await risk_svc.linked_cases_for_findings(1, [f.id])
+    assert linked[f.id]["case_id"] == case.id
+    assert linked[f.id]["case_number"] == case.case_number
+    assert linked[f.id]["case_status"] == "open"
+
+    # A case in another campus referencing the same finding is never
+    # surfaced to campus 1 (constructed directly to bypass create-time
+    # source validation, which is itself campus-scoped).
+    other = Case(
+        case_number="DMAS-CAMPUS2", campus_id=2, title="Cross campus",
+        case_type="operational", priority="low", original_priority="low",
+        status="open", source_type="risk_finding", source_id=f.id,
+    )
+    db_session.add(other)
+    await db_session.flush()
+
+    linked_a = await risk_svc.linked_cases_for_findings(1, [f.id])
+    assert linked_a[f.id]["case_id"] == case.id  # campus 1 case only
+    assert linked_a[f.id]["case_number"] != "DMAS-CAMPUS2"
+
+    # Unknown findings and empty lists are safe.
+    assert await risk_svc.linked_cases_for_findings(1, []) == {}
+    assert await risk_svc.linked_cases_for_findings(1, [999999]) == {}
+
+
+# ---------------------------------------------------------------------------
 # L. Notifications
 # ---------------------------------------------------------------------------
 
@@ -1124,3 +1184,52 @@ async def test_recompute_notifies_leadership(db_session: AsyncSession, seeded):
     ).scalars().all()
     assert notifications
     assert any("risk finding" in n.message.lower() for n in notifications)
+
+
+# ---------------------------------------------------------------------------
+# P11 — single-finding deep-link (case → finding context)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_get_finding_rbac_and_campus_scope(db_session: AsyncSession):
+    """P11 — ``get_finding`` (case → Risk Center deep-link) behaves like the
+    list: campus-scoped and RBAC-category-filtered, never leaking."""
+    from app.core.exceptions import NotFoundError
+
+    f_finance = RiskFinding(
+        campus_id=1, entity_type="student", entity_id=1,
+        rule_code="fee_overdue", category="finance", severity="high",
+        score=0.8, reason="Overdue balance", recommended_action="Review",
+        status="open",
+    )
+    f_att = RiskFinding(
+        campus_id=1, entity_type="student", entity_id=2,
+        rule_code="attendance_below_threshold", category="attendance",
+        severity="high", score=0.7, reason="Low attendance",
+        recommended_action="Review", status="open",
+    )
+    f_b = RiskFinding(
+        campus_id=2, entity_type="student", entity_id=3,
+        rule_code="attendance_below_threshold", category="attendance",
+        severity="medium", score=0.5, reason="Other campus",
+        recommended_action="Review", status="open",
+    )
+    db_session.add_all([f_finance, f_att, f_b])
+    await db_session.flush()
+
+    svc = RiskService(db_session)
+
+    # Admin may read finance findings.
+    assert (await svc.get_finding(f_finance.id, 1, role="admin")).id == f_finance.id
+    # Staff cannot see finance-category findings → treated as missing.
+    with pytest.raises(NotFoundError):
+        await svc.get_finding(f_finance.id, 1, role="staff")
+    # Campus isolation: campus 1 cannot read a campus 2 finding.
+    with pytest.raises(NotFoundError):
+        await svc.get_finding(f_b.id, 1, role="admin")
+    # Staff CAN read attendance findings.
+    assert (await svc.get_finding(f_att.id, 1, role="staff")).id == f_att.id
+    # Unknown id → 404.
+    with pytest.raises(NotFoundError):
+        await svc.get_finding(999999, 1, role="admin")

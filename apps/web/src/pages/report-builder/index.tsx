@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { reportDefinitionApi } from '../../api/report-builder/report-builder-api'
 import { PageHeader, Card, Button, Loading, ErrorState } from '../../components/ui'
@@ -10,25 +10,32 @@ export function ReportBuilderPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    Promise.all([
-      reportDefinitionApi.categories(),
-      reportDefinitionApi.list(),
-    ])
-      .then(([cats, defs]) => {
-        setCategories(cats)
-        const countMap: Record<string, number> = {}
-        for (const d of defs) {
-          countMap[d.category] = (countMap[d.category] || 0) + 1
-        }
-        setDefinitions(countMap)
-      })
-      .catch((err: any) => setError(err?.detail || 'Failed to load report categories'))
-      .finally(() => setLoading(false))
+  // P16 — retry must refetch, not reload the page.
+  const loadPage = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const [cats, defs] = await Promise.all([
+        reportDefinitionApi.categories(),
+        reportDefinitionApi.list(),
+      ])
+      setCategories(cats)
+      const countMap: Record<string, number> = {}
+      for (const d of defs) {
+        countMap[d.category] = (countMap[d.category] || 0) + 1
+      }
+      setDefinitions(countMap)
+    } catch (err: any) {
+      setError(err?.detail || 'Failed to load report categories')
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
+  useEffect(() => { loadPage() }, [loadPage])
+
   if (loading) return <Loading text="Loading report builder..." />
-  if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />
+  if (error) return <ErrorState message={error} onRetry={loadPage} />
 
   const categoryIcons: Record<string, string> = {
     Attendance: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',

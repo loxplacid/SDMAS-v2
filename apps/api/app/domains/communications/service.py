@@ -43,6 +43,11 @@ from app.domains.communications.constants import (
     STATUS_FAILED,
     STATUS_PARTIAL,
 )
+from app.domains.communications.context import (
+    load_context_summary,
+    load_context_variables,
+    render_template_variables,
+)
 from app.domains.communications.models import (
     CommunicationMessage,
     CommunicationPreference,
@@ -115,9 +120,14 @@ class MessageTemplateService:
         await self.session.commit()
 
     async def render(self, template_id: int, variables: dict[str, Any]) -> dict[str, str]:
+        """Render a template with the P15 bounded variable resolver.
+
+        Only ``{name}`` / ``{name.path}`` placeholders are substituted — no
+        Python format specs, no attribute access, no arbitrary code.
+        """
         tpl = await self.get(template_id)
-        subject = tpl.subject.format(**variables) if tpl.subject else None
-        body = tpl.body.format(**variables)
+        subject = render_template_variables(tpl.subject, variables, escape=True) if tpl.subject else None
+        body = render_template_variables(tpl.body, variables, escape=True)
         return {"subject": subject or "", "body": body}
 
 
@@ -231,13 +241,31 @@ class CommunicationService:
         data: Any,
         user: User,
         request: Any = None,
+        tenant: Any = None,
     ) -> CommunicationMessage:
+        """Create and deliver a message.
+
+        ``tenant`` (the router's ``require_tenant_context``) is forwarded
+        into the context loader so a context entity from another campus
+        is rejected before its variables reach the message body.
+        """
         if data.message_type not in MESSAGE_TYPES:
             raise ValidationError(f"Invalid message type: {data.message_type}")
 
         channels = [c for c in data.channels if c in ALL_CHANNELS]
         if not channels:
             channels = [CHANNEL_IN_APP]
+
+        # P15 — context-aware send: load the linked entity's variables and
+        # validate any parent recipients against it (a parent recipient must
+        # be a guardian of the context student).
+        context_vars: dict[str, Any] = {}
+        if data.context_type and data.context_id:
+            context_vars = await load_context_variables(
+                self.session, data.context_type, data.context_id, tenant=tenant
+            )
+            if data.context_type == "student" and data.recipients:
+                await self._validate_parent_recipients(data.context_id, data.recipients)
 
         recipients = await self.recipient_resolver.resolve(
             recipients=[r.model_dump() for r in data.recipients] if data.recipients else None,
@@ -271,11 +299,28 @@ class CommunicationService:
             datetime.timezone.utc
         )
 
+        # P15 — resolve template variables against the linked context and
+        # the caller's explicit overrides; render before storing so the
+        # stored message is exactly what the recipient reads.
+        effective_vars: dict[str, Any] = {}
+        for scope in (context_vars, getattr(data, "variables", None) or {}):
+            for key, value in scope.items():
+                effective_vars[key] = value
+        if data.template_id and effective_vars:
+            rendered = await self.template_service.render(
+                data.template_id, effective_vars
+            )
+            body = rendered["body"] or data.body
+            subject = rendered["subject"] or data.subject
+        else:
+            body = data.body
+            subject = data.subject
+
         msg = CommunicationMessage(
             template_id=data.template_id,
             thread_id=thread_id,
-            subject=data.subject,
-            body=data.body,
+            subject=subject,
+            body=body,
             message_type=data.message_type,
             priority=data.priority,
             channels=channels,
@@ -283,6 +328,8 @@ class CommunicationService:
             scheduled_for=data.schedule_at,
             campus_id=getattr(user, "campus_id", None),
             sender_id=user.id,
+            context_type=data.context_type,
+            context_id=data.context_id,
         )
         self.session.add(msg)
         await self.session.flush()
@@ -321,15 +368,101 @@ class CommunicationService:
         await self._audit("message.send", msg, user, request)
         return msg
 
+    async def _validate_parent_recipients(
+        self, student_id: int, recipients: list[Any]
+    ) -> None:
+        """P15 — a ``parent`` recipient must be a linked guardian of the
+        context student, otherwise the sender could message any guardian
+        record without an operational justification."""
+        from app.domains.communications.context import load_guardian_user_ids
+
+        guardian_ids = set(await load_guardian_user_ids(self.session, student_id))
+        for r in recipients:
+            if getattr(r, "recipient_type", None) == "parent" or (
+                isinstance(r, dict) and r.get("recipient_type") == "parent"
+            ):
+                rid = r.get("recipient_id") if isinstance(r, dict) else getattr(r, "recipient_id")
+                if rid not in guardian_ids:
+                    raise ValidationError(
+                        f"Parent #{rid} is not a guardian of student #{student_id} "
+                        "and cannot be messaged in this context"
+                    )
+
+    async def load_context(
+        self, context_type: str, context_id: int, tenant: Any = None
+    ) -> dict[str, Any]:
+        """P15 — summary + template variables for the composer's context
+        badge and variable preview. ``tenant`` is forwarded to the loader
+        for the cross-campus IDOR guard."""
+        return await load_context_summary(self.session, context_type, context_id, tenant=tenant)
+
+    def _in_app_provider(self):
+        """P15 — the ``in_app`` channel has no vendor to call; delivery is a
+        Notification row for user recipients (reusing the notification
+        domain — never a second notification system). Registering a provider
+        keeps the ProviderFactory abstraction and fixes the pre-existing
+        behaviour where every in-app message was marked ``failed``.
+        """
+        from app.domains.communications.providers import (
+            BaseProvider,
+            DeliveryResult,
+            ProviderFactory,
+        )
+        from app.domains.notifications.service import NotificationService
+
+        session = self.session
+
+        class InAppProvider(BaseProvider):
+            async def send(self, message: ProviderMessage) -> DeliveryResult:
+                data = message.metadata or {}
+                user_id = data.get("user_id")
+                if user_id is None:
+                    return DeliveryResult(
+                        success=False, provider="in_app",
+                        error_message="No user for in-app delivery",
+                    )
+                try:
+                    await NotificationService(session).create_notification(
+                        user_id=int(user_id),
+                        type=data.get("type", "message"),
+                        title=data.get("title", message.subject or "Message"),
+                        message=message.body or "",
+                        data={"message_id": data.get("message_id")},
+                    )
+                    return DeliveryResult(success=True, provider="in_app")
+                except Exception as exc:  # pragma: no cover — diagnostic path
+                    logger = __import__("logging").getLogger(__name__)
+                    logger.warning("in_app delivery failed: %s", exc, exc_info=True)
+                    return DeliveryResult(
+                        success=False, provider="in_app",
+                        error_message=f"Notification creation failed: {exc}",
+                    )
+
+            async def health(self) -> bool:
+                return True
+
+        # Always build a fresh provider: it closes over THIS session, and
+        # the factory's channel-level cache could hand an older request's
+        # (stale) session back to this one.
+        return InAppProvider()
+
     async def _deliver(self, msg: CommunicationMessage) -> None:
         from app.domains.communications.providers import ProviderFactory
+        from app.domains.communications.providers import ProviderMessage
+
+        in_app = self._in_app_provider()
 
         for recipient in msg.recipients:
             if recipient.status != RECIPIENT_STATUS_PENDING:
                 continue
 
             try:
-                provider = ProviderFactory.get_provider(recipient.channel)
+                # in-app messages are delivered through the notification
+                # domain (the InAppProvider), not a vendor.
+                if recipient.channel == CHANNEL_IN_APP:
+                    provider = in_app
+                else:
+                    provider = ProviderFactory.get_provider(recipient.channel)
                 target = await self._resolve_contact(recipient)
 
                 if not target:
@@ -342,6 +475,15 @@ class CommunicationService:
                     to=target,
                     subject=msg.subject,
                     body=msg.body,
+                    metadata={
+                        # user and parent recipients map to user accounts
+                        "user_id": recipient.recipient_id
+                        if recipient.recipient_type in (RECIPIENT_TYPE_USER, RECIPIENT_TYPE_PARENT)
+                        else None,
+                        "message_id": msg.id,
+                        "type": msg.message_type,
+                        "title": msg.subject or "New message",
+                    },
                 )
                 result = await provider.send(pm)
 
@@ -386,6 +528,13 @@ class CommunicationService:
                 if recipient.channel == "email":
                     return student.email or ""
                 return f"{student.first_name} {student.last_name}"
+        elif recipient.recipient_type == RECIPIENT_TYPE_PARENT:
+            # A parent recipient references the guardian's *user* account.
+            user = await self.session.get(User, recipient.recipient_id)
+            if user:
+                if recipient.channel == "email":
+                    return user.email or ""
+                return user.display_name
         return None
 
     async def dispatch_due_schedules(self) -> dict[str, int]:
@@ -499,15 +648,27 @@ class CommunicationService:
         user: User,
         message_type: Optional[str] = None,
         status: Optional[str] = None,
+        context_type: Optional[str] = None,
+        context_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 20,
     ) -> tuple[Sequence[CommunicationMessage], int]:
+        """
+        List the current user's sent messages, optionally filtered by
+        message type / status and by the operational context they were
+        composed from (P15).  ``context_type`` + ``context_id`` must be
+        provided together — this powers "communication history for this
+        student / case / fee due" on the sent-messages surface.
+        """
         conditions = [CommunicationMessage.sender_id == user.id]
 
         if message_type:
             conditions.append(CommunicationMessage.message_type == message_type)
         if status:
             conditions.append(CommunicationMessage.status == status)
+        if context_type and context_id:
+            conditions.append(CommunicationMessage.context_type == context_type)
+            conditions.append(CommunicationMessage.context_id == context_id)
 
         query = (
             select(CommunicationMessage)
@@ -691,6 +852,9 @@ class CommunicationService:
             "status": msg.status,
             "channel_count": len(msg.channels),
             "recipient_count": len(msg.recipients) if msg.recipients else 0,
+            "context_type": msg.context_type,
+            "context_id": msg.context_id,
+            "template_id": msg.template_id,
         }
         await AuditService(self.session).record(
             action=action,

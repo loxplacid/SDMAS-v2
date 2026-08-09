@@ -15,12 +15,16 @@ const PAGE_HEADER_SPEC: MoveSpec = { verb: 'slide', direction: 'S', distance: 'D
 interface PageHeaderProps {
   title: string
   subtitle?: string
+  /** P16 — section/context eyebrow above the title (e.g. "Academics", "Fees").
+   *  Consolidates the hand-rolled context labels found across the app onto
+   *  the one shared page header. */
+  eyebrow?: string
   actions?: ReactNode
   className?: string
   compact?: boolean
 }
 
-export function PageHeader({ title, subtitle, actions, className, compact = false }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, eyebrow, actions, className, compact = false }: PageHeaderProps) {
   return (
     <MotionReveal
       spec={PAGE_HEADER_SPEC}
@@ -31,6 +35,11 @@ export function PageHeader({ title, subtitle, actions, className, compact = fals
       )}
     >
       <div className="min-w-0 flex-1">
+        {eyebrow && (
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-brand-accent)] mb-1">
+            {eyebrow}
+          </p>
+        )}
         <h1 className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">
           {title}
         </h1>

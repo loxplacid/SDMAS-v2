@@ -353,6 +353,22 @@ class DataQualityService:
             raise NotFoundError("Data quality finding not found")
         return f
 
+    async def get_finding(
+        self, finding_id: int, campus_id: Optional[int], role: str
+    ) -> DataQualityFinding:
+        """Single finding for deep-linking (case → Data Quality context).
+
+        P11 — lets the case detail "View underlying records" land on the
+        exact finding even when list filters/pagination would hide it.
+        Mirrors ``list_findings`` RBAC: a finding whose entity type the role
+        cannot see is treated as missing (404), never silently leaked.
+        """
+        f = await self._get_finding(finding_id, campus_id)
+        allowed = self._entity_filter_for_role(role)
+        if f.entity_type not in allowed:
+            raise NotFoundError(f"Data quality finding {finding_id} not found")
+        return f
+
     async def resolve_finding(
         self,
         finding_id: int,

@@ -91,4 +91,21 @@ describe('PageHeader (P7 §7 — entrance choreography)', () => {
     // contract (transform/opacity-only, no class-driven layout) holds.
     expect(container.querySelector('div')?.style.opacity).toBeDefined()
   })
+
+  it('P16 — renders the eyebrow context label above the title', () => {
+    render(<PageHeader eyebrow="Academics" title="Terms" subtitle="12 terms" />)
+    expect(screen.getByText('Academics')).toBeInTheDocument()
+    expect(screen.getByText('Terms')).toBeInTheDocument()
+    expect(screen.getByText('12 terms')).toBeInTheDocument()
+    // The eyebrow sits above the title in document order.
+    const eyebrow = screen.getByText('Academics')
+    const title = screen.getByText('Terms')
+    expect(eyebrow.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('P16 — renders without an eyebrow when none is provided (backward compatible)', () => {
+    render(<PageHeader title="Dashboard" />)
+    expect(screen.queryByText(/Academics|Fees|Reports/)).not.toBeInTheDocument()
+    expect(screen.getByText('Dashboard')).toBeInTheDocument()
+  })
 })

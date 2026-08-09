@@ -93,7 +93,7 @@ export interface AvailableTransition {
 }
 
 export interface WorkflowActionRequest {
-  action: 'approve' | 'reject' | 'return' | 'submit'
+  action: 'approve' | 'reject' | 'return' | 'submit' | 'cancel'
   comment?: string | null
   to_step_id?: number | null
 }

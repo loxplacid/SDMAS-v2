@@ -55,6 +55,11 @@ class CommunicationMessage(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft", index=True)
     scheduled_for: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     sent_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    # P15 — the operational context this message was composed from
+    # (student / case / fee_due / admission). Polymorphic by design: no FK,
+    # nullable, indexed so "messages for this entity" stays cheap.
+    context_type: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    context_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     campus_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True
     )

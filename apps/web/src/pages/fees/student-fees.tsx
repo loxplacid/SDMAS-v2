@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { feeDueApi } from '../../api/fees/fee-due-api'
 import type { FeeDueResponse } from '../../api/generated/types'
-import { Card, Input, Button, Badge, ErrorState, Table } from '../../components/ui'
+import { Card, Input, Button, Badge, ErrorState, Table, PageHeader } from '../../components/ui'
 import { formatCurrency, capitalize } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger'> = {
@@ -38,9 +38,7 @@ export function StudentFeesPage() {
         <button onClick={() => navigate('/fees')} className="text-sm text-[var(--color-brand-accent)] hover:text-[var(--color-brand-accent-hover)] transition-colors mb-1">
           &larr; Back to Fees
         </button>
-        <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide mt-2 mb-1">Fees</p>
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Student Fees</h1>
-        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">View fee structures and dues for individual students.</p>
+        <PageHeader eyebrow="Fees" title="Student Fees" subtitle="View fee structures and dues for individual students." compact />
       </div>
 
       <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">

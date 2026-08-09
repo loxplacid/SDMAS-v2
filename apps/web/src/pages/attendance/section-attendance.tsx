@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { attendanceApi } from '../../api/attendance/attendance-api'
 import type { AttendanceRecordResponse, SectionAttendanceSummary } from '../../api/generated/types'
-import { Card, Input, Button, Badge, ErrorState, Table } from '../../components/ui'
+import { Card, Input, Button, Badge, ErrorState, Table, PageHeader } from '../../components/ui'
 import { capitalize, ATTENDANCE_STATUSES } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
@@ -38,8 +38,7 @@ export function SectionAttendancePage() {
         <button onClick={() => navigate('/attendance')} className="text-sm text-[var(--color-brand-accent)] hover:text-[var(--color-brand-accent-hover)] transition-colors mb-1">
           &larr; Back to Attendance
         </button>
-        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider mt-1">Attendance</div>
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Section Attendance</h1>
+        <PageHeader eyebrow="Attendance" title="Section Attendance" compact />
       </div>
 
       <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">

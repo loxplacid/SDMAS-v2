@@ -312,6 +312,24 @@ class WorkflowRejectedEvent(DomainEvent):
     comment: str | None = None
 
 
+@dataclass(kw_only=True)
+class WorkflowCancelledEvent(DomainEvent):
+    """A workflow instance was cancelled (withdrawn before completion)."""
+
+    EVENT_TYPE = "workflow.cancelled"
+    ENTITY_TYPE = "workflow"
+
+    instance_id: int
+    workflow_id: int
+    entity_type: str
+    entity_id: int | None = None
+    step_name: str = ""
+    status: str = ""
+    actor_id: int | None = None
+    created_by: int | None = None
+    comment: str | None = None
+
+
 # ---------------------------------------------------------------------------
 # Academic year rollover
 # ---------------------------------------------------------------------------

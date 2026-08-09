@@ -331,7 +331,15 @@ export function CaseDetailPage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => navigate(c.source_type === 'risk_finding' ? '/risk' : '/data-quality')}
+                  onClick={() =>
+                    navigate(
+                      c.source_type === 'risk_finding'
+                        ? `/risk?finding=${c.source_id}`
+                        : c.source_type === 'data_quality_finding'
+                          ? `/data-quality?finding=${c.source_id}`
+                          : '/data-quality'
+                    )
+                  }
                   className="rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] hover:border-[var(--color-brand-accent)]/40 hover:text-[var(--color-brand-accent)] motion-safe:transition-colors"
                 >
                   View underlying records

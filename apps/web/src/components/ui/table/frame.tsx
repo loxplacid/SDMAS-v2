@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -45,6 +46,23 @@ import { useMotionTier } from '../../../lib/motion/use-motion-tier'
 
 export type TableClass = 'registry' | 'ledger' | 'register'
 
+/** P12 — three-tier density ladder (comfortable → compact → dense). */
+export type TableDensity = 'comfortable' | 'compact' | 'dense'
+
+/** Cell vertical padding per density tier. */
+const CELL_PAD: Record<TableDensity, string> = {
+  comfortable: 'py-3.5',
+  compact: 'py-2.5',
+  dense: 'py-1.5',
+}
+
+/** Header cell classes per density tier (height + type scale). */
+const HEADER_PAD: Record<TableDensity, string> = {
+  comfortable: 'py-3.5',
+  compact: 'py-2.5 text-[10px]',
+  dense: 'py-2 text-[10px]',
+}
+
 /**
  * One multi-column sort rule (P8 — Data Workspace). Columns sort by the
  * order the rules appear; the first rule is primary. Lives here so the
@@ -67,6 +85,8 @@ export interface DataTableProps<T> {
   stickyHeader?: boolean
   /** Explicit density override; defaults follow the instrument class. */
   compact?: boolean
+  /** P12 — three-tier density; wins over the legacy `compact` boolean. */
+  density?: TableDensity
   className?: string
   /** §6 — enables the smart filter rail (local filtering + FLIP). */
   filterable?: boolean
@@ -103,6 +123,17 @@ export interface DataTableProps<T> {
    */
   keyboardNav?: boolean
   /**
+   * P9 — the workspace's single "current" row (the inspector preview).
+   * Highlighted distinctly from checkbox selection and marked `aria-current`.
+   * Hosts keep this in sync with their URL-backed selection.
+   */
+  currentKey?: string | number
+  /**
+   * P9 — reports the row the roving keyboard navigation lands on (↑/↓), so a
+   * workspace can follow keyboard focus with its inspector preview.
+   */
+  onActiveRowChange?: (item: T) => void
+  /**
    * P8 — rows the filter rail computes facet counts from, when they differ
    * from the rendered page (local-mode workspaces paginate client-side and
    * must count against the full filtered set, not the page slice).
@@ -121,6 +152,14 @@ export interface DataTableProps<T> {
   emptyContent?: ReactNode
   /** P8 — forwards a ref to the filter rail's search input (the `/` shortcut). */
   filterInputRef?: React.Ref<HTMLInputElement>
+  /**
+   * P12 — extra workspace state a saved view captures (multi-column sort +
+   * visible column keys in display order). Optional; without it views keep
+   * storing just the filter state. `columns` order is the display order.
+   */
+  viewSnapshot?: { sort?: SortRule[]; columns?: string[] }
+  /** P12 — called when a saved view carrying sort/columns is applied. */
+  onApplyViewSnapshot?: (snapshot: { sort?: SortRule[]; columns?: string[] }) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -130,7 +169,7 @@ export interface DataTableProps<T> {
 /** `fade-out-down` (motion fast 180ms) + buffer for the exit choreography. */
 const EXIT_DURATION_MS = 240
 
-function Cell<T>({ col, item, isCompact }: { col: Column<T>; item: T; isCompact: boolean }) {
+function Cell<T>({ col, item, density }: { col: Column<T>; item: T; density: TableDensity }) {
   const align = resolveColumnAlign(col)
   const hasAlign = hasExplicitAlignment(col)
   return (
@@ -138,7 +177,7 @@ function Cell<T>({ col, item, isCompact }: { col: Column<T>; item: T; isCompact:
       className={cn(
         'px-5 text-sm text-[var(--color-text-primary)] whitespace-nowrap',
         hasAlign ? alignmentClass(align) : undefined,
-        isCompact ? 'py-2.5' : 'py-3.5',
+        CELL_PAD[density],
         col.hideOnMobile && 'hidden lg:table-cell',
         col.className
       )}
@@ -152,18 +191,20 @@ function Rows<T>({
   items,
   columns,
   keyExtractor,
-  isCompact,
+  density,
   onRowClick,
   animateExit,
   selectable,
   selectedKeys,
   onToggleRow,
   keyboardNav,
+  currentKey,
+  onActiveRowChange,
 }: {
   items: T[]
   columns: Column<T>[]
   keyExtractor: (item: T) => string | number
-  isCompact: boolean
+  density: TableDensity
   onRowClick?: (item: T) => void
   /** §6.4 T33 — rows that leave under a filter change fade out before removal. */
   animateExit?: boolean
@@ -171,6 +212,8 @@ function Rows<T>({
   selectedKeys?: ReadonlySet<string | number>
   onToggleRow?: (key: string | number) => void
   keyboardNav?: boolean
+  currentKey?: string | number
+  onActiveRowChange?: (item: T) => void
 }) {
   // FLIP: rows that survive a filter change keep position identity and
   // animate to their new place (tier-gated inside useFlipList).
@@ -230,6 +273,14 @@ function Rows<T>({
     activeKey !== null && items.some((it) => String(keyExtractor(it)) === activeKey)
   const effectiveActive = activeStillPresent ? activeKey : null
 
+  // P9 — item lookup for the keyboard-follow report (the roving nav moves
+  // between DOM rows; the workspace needs the row's data).
+  const keyToItem = useMemo(() => {
+    const map = new Map<string, T>()
+    items.forEach((it) => map.set(String(keyExtractor(it)), it))
+    return map
+  }, [items, keyExtractor])
+
   const handleRowKeyDown = (
     e: React.KeyboardEvent<HTMLTableRowElement>,
     item: T,
@@ -245,7 +296,11 @@ function Rows<T>({
       const next = rows[idx + (e.key === 'ArrowDown' ? 1 : -1)] as HTMLElement | undefined
       if (next) {
         const nextKey = next.getAttribute('data-row-key')
-        if (nextKey !== null) setActiveKey(nextKey)
+        if (nextKey !== null) {
+          setActiveKey(nextKey)
+          const nextItem = keyToItem.get(nextKey)
+          if (nextItem !== undefined) onActiveRowChange?.(nextItem)
+        }
         next.focus()
       }
     } else if (e.key === 'Enter') {
@@ -262,6 +317,10 @@ function Rows<T>({
       {items.map((item, idx) => {
         const key = keyExtractor(item)
         const selected = selectedKeys?.has(key) ?? false
+        // P9 — the workspace's current row (inspector preview): a leading
+        // accent rail + tint, visually distinct from checkbox selection.
+        const isCurrent =
+          currentKey !== undefined && String(currentKey) === String(key)
         return (
           <tr
             key={key}
@@ -279,6 +338,7 @@ function Rows<T>({
                 : undefined
             }
             aria-selected={selectable ? selected : undefined}
+            aria-current={isCurrent ? 'true' : undefined}
             onKeyDown={(e) => handleRowKeyDown(e, item, key)}
             className={cn(
               'motion-safe:transition-colors motion-safe:duration-[var(--motion-fast)]',
@@ -287,17 +347,20 @@ function Rows<T>({
               'bg-[var(--color-surface)]',
               onRowClick && 'hover:bg-[var(--color-brand-accent-subtle)]',
               idx % 2 === 1 && 'bg-[var(--color-bg)]/40',
-              selected && 'bg-[var(--color-brand-accent-subtle)]',
+              (selected || isCurrent) && 'bg-[var(--color-brand-accent-subtle)]',
               keyboardNav && 'focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand-accent)]'
             )}
             style={{
               animationDelay: `${Math.min(idx * 20, 300)}ms`,
               animationFillMode: 'both',
+              ...(isCurrent
+                ? { boxShadow: 'inset 3px 0 0 0 var(--color-brand-accent)' }
+                : {}),
             }}
             onClick={() => onRowClick?.(item)}
           >
             {selectable && (
-              <td className={cn('px-2 text-center', isCompact ? 'py-2.5' : 'py-3.5')}>
+              <td className={cn('px-2 text-center', CELL_PAD[density])}>
                 <input
                   type="checkbox"
                   checked={selected}
@@ -309,7 +372,7 @@ function Rows<T>({
               </td>
             )}
             {columns.map((col) => (
-              <Cell key={col.key} col={col} item={item} isCompact={isCompact} />
+              <Cell key={col.key} col={col} item={item} density={density} />
             ))}
           </tr>
         )
@@ -327,7 +390,7 @@ function Rows<T>({
             style={{ animationDuration: 'var(--motion-fast)', animationFillMode: 'both' }}
           >
             {columns.map((col) => (
-              <Cell key={col.key} col={col} item={item} isCompact={isCompact} />
+              <Cell key={col.key} col={col} item={item} density={density} />
             ))}
           </tr>
         ))}
@@ -388,13 +451,21 @@ export function DataTable<T>({
   selectedKeys,
   onSelectionChange,
   keyboardNav,
+  currentKey,
+  onActiveRowChange,
   facetData,
   footer,
   emptyContent,
   filterInputRef,
+  density,
+  viewSnapshot,
+  onApplyViewSnapshot,
 }: DataTableProps<T>) {
-  // T23: Registry → comfortable; Ledger/Register → compact. Explicit wins.
-  const isCompact = compact ?? (tableClass === 'ledger' || tableClass === 'register')
+  // T23: Registry → comfortable; Ledger/Register → compact. Explicit wins:
+  // the P12 three-tier `density` over the legacy `compact` boolean over the
+  // instrument-class default.
+  const densityLevel: TableDensity =
+    density ?? (compact ? 'compact' : tableClass === 'ledger' || tableClass === 'register' ? 'compact' : 'comfortable')
 
   const controlled = filters !== undefined
   const [internalState, setInternalState] = useState<FilterState>(() =>
@@ -558,10 +629,7 @@ export function DataTable<T>({
             <tr className={cn(stickyHeader && 'sticky top-0 z-[var(--z-sticky)]')}>
               {selectable && (
                 <th
-                  className={cn(
-                    'px-2 text-center bg-[var(--color-bg)]',
-                    isCompact ? 'py-2.5' : 'py-3.5'
-                  )}
+                  className={cn('px-2 text-center bg-[var(--color-bg)]', CELL_PAD[densityLevel])}
                 >
                   <SelectAllCheckbox
                     checked={pageAllSelected}
@@ -586,10 +654,10 @@ export function DataTable<T>({
                     key={col.key}
                     aria-sort={rule ? (rule.direction === 'asc' ? 'ascending' : 'descending') : undefined}
                     className={cn(
-                      'px-5 py-3.5',
+                      'px-5',
+                      HEADER_PAD[densityLevel],
                       headerAlign,
                       'text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider bg-[var(--color-bg)]',
-                      isCompact ? 'py-2.5 text-[10px]' : '',
                       col.hideOnMobile && 'hidden lg:table-cell',
                       col.className
                     )}
@@ -668,13 +736,15 @@ export function DataTable<T>({
             items={displayed}
             columns={columns}
             keyExtractor={keyExtractor}
-            isCompact={isCompact}
+            density={densityLevel}
             onRowClick={onRowClick}
             animateExit={filterable}
             selectable={selectable}
             selectedKeys={selectedKeys}
             onToggleRow={toggleRowSelection}
             keyboardNav={keyboardNav}
+            currentKey={currentKey}
+            onActiveRowChange={onActiveRowChange}
           />
         </table>
       </div>
@@ -695,6 +765,8 @@ export function DataTable<T>({
         viewKey={viewKey}
         placeholder={filterPlaceholder}
         searchRef={filterInputRef}
+        viewSnapshot={viewSnapshot}
+        onApplyViewSnapshot={onApplyViewSnapshot}
       />
       {body}
       {!loading && data.length > 0 &&

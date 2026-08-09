@@ -4,6 +4,7 @@ Endpoints
 ---------
 - GET  /api/data-quality/overview   — severity/category counts + overall quality
 - GET  /api/data-quality/findings   — paginated, filterable, RBAC-filtered
+- GET  /api/data-quality/findings/{id} — single finding (deep-link, RBAC-filtered)
 - POST /api/data-quality/run        — run checks and persist the snapshot
 - POST /api/data-quality/findings/{id}/resolve — resolve with reason (audited)
 - POST /api/data-quality/findings/{id}/ignore  — ignore with reason (audited)
@@ -89,6 +90,26 @@ async def list_findings(
         limit=pagination.limit,
     )
     return _page(items, total, pagination)
+
+
+@router.get("/findings/{finding_id}", response_model=DataQualityFindingOut)
+async def get_finding(
+    finding_id: int,
+    tenant: TenantContext = Depends(get_school_context),
+    service: DataQualityService = Depends(get_data_quality_service),
+    user=Depends(require_role("admin", "principal", "staff")),
+) -> DataQualityFindingOut:
+    """Single finding, campus-scoped and RBAC-filtered — used for
+    deep-linking from a case back to its originating finding so the
+    Data Quality → case → finding loop never loses context.
+    """
+    try:
+        f = await service.get_finding(finding_id, tenant.campus_id, role=user.role)
+    except NotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Finding not found"
+        )
+    return DataQualityFindingOut.model_validate(f)
 
 
 @router.post("/run", response_model=DataQualityRecomputeResult)

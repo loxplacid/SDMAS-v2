@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { statsApi, metaApi } from '../../api/communications/communications-api'
 import { PageHeader, Card, Button, Loading, ErrorState } from '../../components/ui'
@@ -11,23 +11,30 @@ export function CommunicationsHubPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    Promise.all([
-      statsApi.get(),
-      metaApi.messageTypes(),
-      metaApi.channels(),
-    ])
-      .then(([s, t, c]) => {
-        setStats(s)
-        setTypes(t)
-        setChannels(c)
-      })
-      .catch((err: any) => setError(err?.detail || 'Failed to load'))
-      .finally(() => setLoading(false))
+  // P16 — retry must refetch, not reload the page.
+  const loadHub = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const [s, t, c] = await Promise.all([
+        statsApi.get(),
+        metaApi.messageTypes(),
+        metaApi.channels(),
+      ])
+      setStats(s)
+      setTypes(t)
+      setChannels(c)
+    } catch (err: any) {
+      setError(err?.detail || 'Failed to load')
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
+  useEffect(() => { loadHub() }, [loadHub])
+
   if (loading) return <Loading text="Loading Communications Hub..." />
-  if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />
+  if (error) return <ErrorState message={error} onRetry={loadHub} />
 
   const typeIcons: Record<string, string> = {
     announcement: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z',

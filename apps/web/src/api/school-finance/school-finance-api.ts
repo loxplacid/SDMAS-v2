@@ -11,6 +11,9 @@ export type SchoolFinanceListParams = {
   status?: string
   transaction_type?: string
   report_type?: string
+  min_amount?: number
+  max_amount?: number
+  q?: string
 }
 
 export interface PaymentMethodResponse {
@@ -229,6 +232,44 @@ export interface SchoolFinanceDashboard {
   recent_transactions: TransactionLogResponse[]
 }
 
+// ── P13 — financial exceptions (computed, read-only) ────────────────────
+
+export interface LinkedCaseInfo {
+  id: number
+  case_number: string
+  status: string
+}
+
+export interface FinancialException {
+  key: string
+  category: string
+  severity: string
+  title: string
+  description: string
+  student_id: number | null
+  student_name: string | null
+  payment_id: number | null
+  amount: number | null
+  reconciliation_item_id: number | null
+  reconciliation_status: string | null
+  evidence: Record<string, unknown>
+  created_at: string | null
+  linked_case: LinkedCaseInfo | null
+}
+
+export interface FinancialExceptionSummary {
+  total: number
+  by_category: Record<string, number>
+  by_severity: Record<string, number>
+  items: FinancialException[]
+}
+
+export type FinancialExceptionCategory =
+  | 'reconciliation'
+  | 'receipts'
+  | 'ledger'
+  | 'duplicates'
+
 export interface Page<T> {
   items: T[]
   total: number
@@ -346,4 +387,9 @@ export const financeReportApi = {
 export const schoolFinanceDashboardApi = {
   getDashboard: (params: SchoolFinanceListParams = {}) =>
     api.get<SchoolFinanceDashboard>(`${BASE}/dashboard`, params as any),
+}
+
+export const financialExceptionApi = {
+  list: (params: SchoolFinanceListParams = {}) =>
+    api.get<FinancialExceptionSummary>(`${BASE}/exceptions`, params as any),
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { exportApi } from '../../api/reports/export-api'
 import { sectionApi } from '../../api/academic/section-api'
-import { Card, Button, Select, Alert, Input } from '../../components/ui'
+import { Card, Button, Select, Alert, Input, PageHeader } from '../../components/ui'
 
 export function AttendanceExportPage() {
   const [sections, setSections] = useState<{ id: number; name: string }[]>([])
@@ -49,11 +49,12 @@ export function AttendanceExportPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div>
-        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Data Operations</div>
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Export Attendance</h1>
-        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Download attendance records as CSV</p>
-      </div>
+      <PageHeader
+        eyebrow="Data Operations"
+        title="Export Attendance"
+        subtitle="Download attendance records as CSV"
+        compact
+      />
 
       <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

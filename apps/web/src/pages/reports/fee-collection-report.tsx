@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { academicYearApi } from '../../api/academic/academic-year-api'
 import { feeReportApi } from '../../api/reports/fee-reports'
 import type { CollectionReportItem } from '../../api/reports/types'
-import { Card, Select, Button, ErrorState, Table, Badge, Input } from '../../components/ui'
+import { Card, Select, Button, ErrorState, Table, Badge, Input, PageHeader } from '../../components/ui'
 import { formatCurrency } from '../../lib/utils'
 import { useExport } from '../../hooks/use-export'
 
@@ -45,11 +45,12 @@ export function FeeCollectionReportPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div>
-        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Reports</div>
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Fee Collection Report</h1>
-        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Fee collection summary grouped by class</p>
-      </div>
+      <PageHeader
+        eyebrow="Reports"
+        title="Fee Collection Report"
+        subtitle="Fee collection summary grouped by class"
+        compact
+      />
 
       <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

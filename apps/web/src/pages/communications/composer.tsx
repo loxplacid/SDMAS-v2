@@ -5,6 +5,8 @@ import {
   messageApi,
   metaApi,
   recipientApi,
+  contextApi,
+  type CommunicationContext,
 } from '../../api/communications/communications-api'
 import {
   PageHeader, Card, Button, Input, Select, Modal, Loading, ErrorState, useToast,
@@ -15,6 +17,17 @@ export function ComposerPage() {
   const { showToast } = useToast()
   const [searchParams] = useSearchParams()
   const typeParam = searchParams.get('type')
+  const contextType = searchParams.get('context_type')
+  const contextId = searchParams.get('context_id')
+
+  // P15 — contextual compose: when the composer is opened from an
+  // operational surface (Student 360 → Contact Guardian), load the context
+  // summary (label/detail/variables/guardians) and pre-fill the audience.
+  const [context, setContext] = useState<CommunicationContext | null>(null)
+  const [contextError, setContextError] = useState<string | null>(null)
+  const sendContext = contextType && contextId
+    ? { context_type: contextType, context_id: Number(contextId) }
+    : undefined
 
   const [templates, setTemplates] = useState<any[]>([])
   const [types, setTypes] = useState<string[]>([])
@@ -63,6 +76,42 @@ export function ComposerPage() {
       setMessageType(typeParam)
     }
   }, [typeParam, types])
+
+  useEffect(() => {
+    if (contextType && contextId) {
+      contextApi.get(contextType, Number(contextId))
+        .then((c) => {
+          setContext(c)
+          // The context's guardians are the natural audience for a
+          // student-context message (e.g. fee reminder → contact guardian).
+          if (c.guardian_ids.length > 0) {
+            setRecipientType('parent')
+            setRecipientIds(c.guardian_ids.join(', '))
+          }
+        })
+        .catch((err) => setContextError(err?.detail || 'Could not load context'))
+    }
+  }, [contextType, contextId])
+
+  // P15 — preview the selected template against the live context so the
+  // operator sees exactly what the recipient reads (real entity variables).
+  const [previewText, setPreviewText] = useState<{ subject: string; body: string } | null>(null)
+  const [previewing, setPreviewing] = useState(false)
+
+  const handleContextPreview = useCallback(async () => {
+    if (!selectedTemplateId || !contextType || !contextId) return
+    setPreviewing(true)
+    try {
+      const result = await templateApi.renderWithContext(
+        parseInt(selectedTemplateId), contextType, Number(contextId),
+      )
+      setPreviewText({ subject: result.subject, body: result.body })
+    } catch (err: any) {
+      showToast(err?.detail || 'Failed to render template', 'error')
+    } finally {
+      setPreviewing(false)
+    }
+  }, [selectedTemplateId, contextType, contextId, showToast])
 
   useEffect(() => {
     if (selectedTemplateId) {
@@ -115,6 +164,7 @@ export function ComposerPage() {
         channels: selectedChannels,
         template_id: selectedTemplateId ? parseInt(selectedTemplateId) : undefined,
         subject: subject.trim() || undefined,
+        ...sendContext,
       }
 
       if (ids.length > 0) {
@@ -139,7 +189,7 @@ export function ComposerPage() {
     }
   }, [body, messageType, priority, selectedChannels, selectedTemplateId, subject,
       recipientType, recipientIds, classIds, sectionIds, scheduleAt, scheduleTime,
-      recurrence, timezone, navigate, showToast])
+      recurrence, timezone, navigate, showToast, sendContext?.context_type, sendContext?.context_id])
 
   const toggleChannel = (ch: string) => {
     setSelectedChannels((prev) =>
@@ -182,6 +232,41 @@ export function ComposerPage() {
               onChange={(e) => setMessageType(e.target.value)}
             />
           </div>
+
+          {/* P15 — the operational context this message is composed from.
+              The badge keeps the message linked to its source (student, case,
+              fee due…) and drives template variable preview. */}
+          {context && (
+            <div className="rounded-xl border border-[var(--color-brand-accent)]/30 bg-[var(--color-brand-accent)]/5 px-4 py-3 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-brand-accent)]">Context</p>
+                <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{context.label}</p>
+                <p className="text-xs text-[var(--color-text-tertiary)] truncate">{context.detail}</p>
+              </div>
+              {selectedTemplateId && (
+                <button
+                  type="button"
+                  onClick={handleContextPreview}
+                  disabled={previewing}
+                  className="flex-shrink-0 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] hover:border-[var(--color-brand-accent)]/40 hover:text-[var(--color-brand-accent)] motion-safe:transition-colors disabled:opacity-50"
+                >
+                  {previewing ? 'Rendering…' : 'Preview with context'}
+                </button>
+              )}
+            </div>
+          )}
+          {contextError && (
+            <p className="text-xs text-[var(--color-danger)]">Context unavailable: {contextError}</p>
+          )}
+          {previewText && (
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)] mb-2">Rendered preview</p>
+              {previewText.subject && (
+                <p className="text-sm font-medium text-[var(--color-text-primary)]">{previewText.subject}</p>
+              )}
+              <p className="text-sm text-[var(--color-text-secondary)] whitespace-pre-wrap">{previewText.body}</p>
+            </div>
+          )}
 
           <Input
             label="Subject"

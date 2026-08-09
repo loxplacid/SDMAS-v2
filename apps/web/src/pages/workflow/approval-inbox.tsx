@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { workflowApi, type WorkflowInstanceResponse, type WorkflowInstanceDetail, type AvailableTransition, type ApprovalHistoryEntry, type WorkflowResponse } from '../../api/workflow/workflow-api'
 import { cn, capitalize, formatDateTime } from '../../lib/utils'
 import { TabGroup, Button, Pagination, Select, EmptyState, ErrorState, Badge, Alert, ConfirmDialog, useToast, Card, Skeleton } from '../../components/ui'
+import { WorkflowStatus } from '../../components/workflow/workflow-status'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 
 // ── Helpers ──
@@ -18,11 +19,12 @@ const STATUS_BADGE_VARIANT: Record<string, 'info' | 'success' | 'danger' | 'warn
   cancelled: 'danger',
 }
 
-const ACTION_VARIANTS: Record<string, 'success' | 'danger' | 'warning' | 'info'> = {
+const ACTION_VARIANTS: Record<string, 'success' | 'danger' | 'warning' | 'info' | 'neutral'> = {
   submit: 'info',
   approve: 'success',
   reject: 'danger',
   return: 'warning',
+  cancel: 'neutral',
 }
 
 const ENTITY_TYPE_LABELS: Record<string, string> = {
@@ -164,7 +166,7 @@ export function ApprovalInboxPage() {
       })
 
       const result = await workflowApi.performAction(selectedInstance.id, {
-        action: action as 'approve' | 'reject' | 'return' | 'submit',
+        action: action as 'approve' | 'reject' | 'return' | 'submit' | 'cancel',
         comment: actionComment || null,
         to_step_id: transition?.to_step_id || null,
       })
@@ -173,8 +175,9 @@ export function ApprovalInboxPage() {
         action === 'approve' ? 'Approved successfully' :
         action === 'reject' ? 'Rejected' :
         action === 'return' ? 'Returned for revision' :
+        action === 'cancel' ? 'Request cancelled' :
         'Action completed',
-        'success'
+        action === 'cancel' ? 'info' : 'success'
       )
 
       // Refresh list and detail
@@ -431,17 +434,6 @@ export function ApprovalInboxPage() {
                           {formatDateTime(selectedInstance.created_at)}
                         </span>
                       </div>
-                      {selectedInstance.workflow && (
-                        <div className="flex justify-between">
-                          <span className="text-[var(--color-text-tertiary)]">Current Step</span>
-                          <span className="font-medium text-[var(--color-text-primary)]">
-                            {/* Look up current step name from workflow steps */}
-                            {selectedInstance.workflow.steps?.find(
-                              (s) => s.id === selectedInstance.current_step_id
-                            )?.label || `Step #${selectedInstance.current_step_id}`}
-                          </span>
-                        </div>
-                      )}
                       {/* Entity link */}
                       <div className="pt-2">
                         <a
@@ -454,6 +446,15 @@ export function ApprovalInboxPage() {
                         </a>
                       </div>
                     </div>
+                  </Card>
+
+                  {/* Step progress (P14 §6) — real workflow definition, not a hardcoded pipeline */}
+                  <Card className="p-4">
+                    <WorkflowStatus
+                      instance={selectedInstance}
+                      availableTransitions={availableTransitions}
+                      compact
+                    />
                   </Card>
 
                   {/* Action area (only for active instances) */}
@@ -520,6 +521,25 @@ export function ApprovalInboxPage() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                             </svg>
                             Return
+                          </Button>
+                        )}
+
+                        {/* Cancel: withdraw an active request (P14 §3). Only shown
+                            when the actor may act at the current step — the same
+                            role-aware signal that gates Approve/Reject/Return, so
+                            the button never 403s. The server enforces regardless. */}
+                        {availableTransitions.length > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setConfirmAction('cancel')}
+                            loading={actionLoading && confirmAction === 'cancel'}
+                            className="ml-auto text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]"
+                          >
+                            <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Cancel request
                           </Button>
                         )}
                       </div>
@@ -645,6 +665,7 @@ export function ApprovalInboxPage() {
         title={
           confirmAction === 'approve' ? 'Confirm Approval' :
           confirmAction === 'reject' ? 'Confirm Rejection' :
+          confirmAction === 'cancel' ? 'Confirm Cancellation' :
           'Confirm Return'
         }
         message={
@@ -652,15 +673,18 @@ export function ApprovalInboxPage() {
             ? 'Are you sure you want to approve this request? This will advance the workflow to the next step.'
             : confirmAction === 'reject'
             ? 'Are you sure you want to reject this request? This action cannot be undone.'
+            : confirmAction === 'cancel'
+            ? 'Are you sure you want to cancel this request? The workflow will be withdrawn and cannot be resumed.'
             : 'Are you sure you want to return this request for revision? The submitter will need to revise and resubmit.'
         }
         confirmLabel={
           confirmAction === 'approve' ? 'Approve' :
-          confirmAction === 'reject' ? 'Reject' : 'Return'
+          confirmAction === 'reject' ? 'Reject' :
+          confirmAction === 'cancel' ? 'Cancel request' : 'Return'
         }
         variant={
           confirmAction === 'approve' ? 'primary' :
-          confirmAction === 'reject' ? 'danger' : 'warning'
+          confirmAction === 'reject' || confirmAction === 'cancel' ? 'danger' : 'warning'
         }
         loading={actionLoading}
       />

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { academicYearApi } from '../../api/academic/academic-year-api'
 import { batchApi } from '../../api/reports/batch-api'
 import type { BatchFeeDueResult, BatchFeeDueResultItem } from '../../api/reports/types'
-import { Card, Button, Input, Alert, Table, Badge, Select, AnimatedCount } from '../../components/ui'
+import { Card, Button, Input, Alert, Table, Badge, Select, AnimatedCount, PageHeader } from '../../components/ui'
 
 export function BatchFeeDuesPage() {
   const [academicYears, setAcademicYears] = useState<{ id: number; name: string }[]>([])
@@ -49,11 +49,12 @@ export function BatchFeeDuesPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div>
-        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Data Operations</div>
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Batch Fee Dues</h1>
-        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Create fee dues for multiple students at once</p>
-      </div>
+      <PageHeader
+        eyebrow="Data Operations"
+        title="Batch Fee Dues"
+        subtitle="Create fee dues for multiple students at once"
+        compact
+      />
 
       <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="space-y-4">

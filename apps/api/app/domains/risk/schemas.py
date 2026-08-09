@@ -29,6 +29,11 @@ class RiskFindingOut(BaseModel):
     resolved_at: Optional[datetime.datetime] = None
     resolved_by: Optional[int] = None
     resolved_reason: Optional[str] = None
+    # P11 — linked operational case (null when none exists), so the Risk
+    # Center can open the case instead of offering a duplicate create.
+    case_id: Optional[int] = None
+    case_number: Optional[str] = None
+    case_status: Optional[str] = None
 
 
 class RiskFindingPage(BaseModel):

@@ -16,12 +16,15 @@ from __future__ import annotations
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.domains.events import event_bus
+from app.domains.events.events import WorkflowCancelledEvent
+from app.multi_tenant.models import platform_context
 from app.domains.workflow.models import (
+    ApprovalHistory,
     Workflow,
     WorkflowInstance,
     WorkflowStep,
     WorkflowTransition,
-    ApprovalHistory,
 )
 from app.domains.workflow.repository import (
     ApprovalHistoryRepository,
@@ -31,12 +34,11 @@ from app.domains.workflow.repository import (
     WorkflowStepRepository,
     WorkflowTransitionRepository,
 )
+from app.domains.workflow.schemas import AvailableTransition
 from app.domains.workflow.service import (
     WorkflowAdminService,
     WorkflowExecutionService,
 )
-from app.domains.workflow.schemas import AvailableTransition
-from app.multi_tenant.models import platform_context
 
 
 # ---------------------------------------------------------------------------
@@ -44,8 +46,17 @@ from app.multi_tenant.models import platform_context
 # ---------------------------------------------------------------------------
 
 
-async def _create_minimal_workflow(session: AsyncSession) -> dict:
-    """Create a 3-step workflow (submitted → approved | rejected) and return IDs."""
+async def _create_minimal_workflow(
+    session: AsyncSession,
+    *,
+    approve_role: str | None = None,
+    step_role: str | None = None,
+) -> dict:
+    """Create a 3-step workflow (submitted → approved | rejected) and return IDs.
+
+    ``approve_role`` sets the Approve transition's ``required_role``;
+    ``step_role`` sets the submitted step's ``assigned_role``.
+    """
     import datetime
     now = datetime.datetime.now(datetime.timezone.utc)
 
@@ -62,7 +73,8 @@ async def _create_minimal_workflow(session: AsyncSession) -> dict:
     await session.flush()  # assign wf.id
 
     step1 = WorkflowStep(workflow_id=wf.id, name="submitted", label="Submitted",
-                         step_order=1, is_initial=True, is_final=False)
+                         step_order=1, is_initial=True, is_final=False,
+                         assigned_role=step_role)
     step2 = WorkflowStep(workflow_id=wf.id, name="approved", label="Approved",
                          step_order=2, is_initial=False, is_final=True)
     step3 = WorkflowStep(workflow_id=wf.id, name="rejected", label="Rejected",
@@ -71,7 +83,8 @@ async def _create_minimal_workflow(session: AsyncSession) -> dict:
     await session.flush()  # assign step ids
 
     session.add(WorkflowTransition(workflow_id=wf.id, from_step_id=step1.id,
-                                   to_step_id=step2.id, label="Approve"))
+                                   to_step_id=step2.id, label="Approve",
+                                   required_role=approve_role))
     session.add(WorkflowTransition(workflow_id=wf.id, from_step_id=step1.id,
                                    to_step_id=step3.id, label="Reject"))
     await session.flush()  # assign transition ids
@@ -367,6 +380,270 @@ class TestWorkflowExecution:
             await svc.perform_action(
                 instance_id=instance.id, action="return", actor_id=2,
             )
+
+
+# ===========================================================================
+# Role Enforcement (P14 §4) & Cancel Action (P14 §3)
+# ===========================================================================
+
+
+class TestRoleEnforcement:
+    """Server-side role checks — the UI can never bypass authorization."""
+
+    async def test_transition_required_role_blocks_unauthorized(self, db_session):
+        """Approve requires the transition's ``required_role``."""
+        ids = await _create_minimal_workflow(
+            db_session, approve_role="admin"
+        )
+        svc = _exec_service(db_session)
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=810, created_by=1,
+        )
+
+        from app.core.exceptions import AuthorizationError
+
+        # A teacher may not approve an admin-gated transition.
+        with pytest.raises(AuthorizationError, match="admin"):
+            await svc.perform_action(
+                instance_id=instance.id, action="approve",
+                actor_id=2, actor_roles=["teacher"],
+            )
+
+        # The instance is untouched.
+        assert (await svc.get_instance(instance.id)).status == "active"
+
+        # An admin may.
+        instance = await svc.perform_action(
+            instance_id=instance.id, action="approve",
+            actor_id=3, actor_roles=["admin"],
+        )
+        assert instance.status == "completed"
+
+    async def test_step_assigned_role_blocks_unauthorized(self, db_session):
+        """Acting on a step requires the step's ``assigned_role``."""
+        ids = await _create_minimal_workflow(
+            db_session, step_role="hod"
+        )
+        svc = _exec_service(db_session)
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=820, created_by=1,
+        )
+
+        from app.core.exceptions import AuthorizationError
+
+        with pytest.raises(AuthorizationError, match="hod"):
+            await svc.perform_action(
+                instance_id=instance.id, action="reject",
+                actor_id=2, actor_roles=["teacher"],
+            )
+
+        instance = await svc.perform_action(
+            instance_id=instance.id, action="approve",
+            actor_id=3, actor_roles=["hod"],
+        )
+        assert instance.status == "completed"
+
+    async def test_reject_edge_role_enforced(self, db_session):
+        """A role-gated reject edge blocks unauthorized rejections too."""
+        ids = await _create_minimal_workflow(db_session)
+        svc = _exec_service(db_session)
+
+        # Gate the Reject edge with a role on top of the fixture workflow.
+        from app.domains.workflow.repository import WorkflowTransitionRepository
+        from app.multi_tenant.models import platform_context as _pc
+
+        t_repo = WorkflowTransitionRepository(db_session, _pc())
+        edges = await t_repo.get_available_from_step(ids["step_submitted"])
+        reject_edge = next(
+            (e for e in edges if e.to_step_id == ids["step_rejected"]), None
+        )
+        assert reject_edge is not None
+        reject_edge.required_role = "admin"
+        await db_session.flush()
+
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=835, created_by=1,
+        )
+
+        from app.core.exceptions import AuthorizationError
+
+        with pytest.raises(AuthorizationError, match="admin"):
+            await svc.perform_action(
+                instance_id=instance.id, action="reject",
+                actor_id=2, actor_roles=["teacher"],
+                to_step_id=ids["step_rejected"],
+            )
+
+        # With the required role, the rejection succeeds.
+        instance = await svc.perform_action(
+            instance_id=instance.id, action="reject",
+            actor_id=3, actor_roles=["admin"],
+            to_step_id=ids["step_rejected"],
+        )
+        assert instance.status == "cancelled"
+
+    async def test_multi_role_user_can_act(self, db_session):
+        """Users holding multiple roles pass checks against any of them."""
+        ids = await _create_minimal_workflow(
+            db_session, approve_role="admin"
+        )
+        svc = _exec_service(db_session)
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=830, created_by=1,
+        )
+
+        instance = await svc.perform_action(
+            instance_id=instance.id, action="approve",
+            actor_id=2, actor_roles=["teacher", "admin"],
+        )
+        assert instance.status == "completed"
+
+    async def test_available_transitions_filtered_by_role(self, db_session):
+        """Transitions the actor lacks the role for are hidden."""
+        ids = await _create_minimal_workflow(
+            db_session, approve_role="admin"
+        )
+        svc = _exec_service(db_session)
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=840, created_by=1,
+        )
+
+        # Teacher: only the (role-free) reject path is visible.
+        teacher_view = await svc.get_available_transitions(
+            instance.id, actor_roles=["teacher"]
+        )
+        assert len(teacher_view) == 1
+        assert teacher_view[0].to_step_id == ids["step_rejected"]
+
+        # Admin: both paths visible.
+        admin_view = await svc.get_available_transitions(
+            instance.id, actor_roles=["admin"]
+        )
+        assert len(admin_view) == 2
+
+        # No roles passed → legacy behavior (everything visible).
+        full_view = await svc.get_available_transitions(instance.id)
+        assert len(full_view) == 2
+
+    async def test_available_transitions_blocks_step_role_mismatch(self, db_session):
+        """A user lacking the step's assigned_role sees no actions at all."""
+        ids = await _create_minimal_workflow(
+            db_session, step_role="hod"
+        )
+        svc = _exec_service(db_session)
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=845, created_by=1,
+        )
+
+        # Teacher lacks the 'hod' step role → no transitions surface.
+        teacher_view = await svc.get_available_transitions(
+            instance.id, actor_roles=["teacher"]
+        )
+        assert teacher_view == []
+
+        # A hod sees the full action set.
+        hod_view = await svc.get_available_transitions(
+            instance.id, actor_roles=["hod"]
+        )
+        assert len(hod_view) == 2
+
+
+class TestCancelAction:
+    """Cancel withdraws an active request before completion (P14 §3)."""
+
+    @pytest.fixture
+    def captured(self):
+        """Capture workflow-cancelled events on the global bus, then clean up."""
+        captured: list = []
+
+        async def capture(event, **kwargs):
+            captured.append(event)
+
+        event_bus.register(WorkflowCancelledEvent, capture)
+        event_bus.reset_dedup()
+        try:
+            yield captured
+        finally:
+            event_bus.unregister(WorkflowCancelledEvent, capture)
+            event_bus.reset_dedup()
+
+    async def test_cancel_marks_cancelled(self, db_session):
+        ids = await _create_minimal_workflow(db_session)
+        svc = _exec_service(db_session)
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=850, created_by=1,
+        )
+
+        instance = await svc.perform_action(
+            instance_id=instance.id, action="cancel",
+            actor_id=1, actor_roles=["teacher"], comment="Withdrawn",
+        )
+        assert instance.status == "cancelled"
+
+        # History records the withdrawal distinctly from a rejection.
+        reloaded = await svc.get_instance(instance.id)
+        assert [h.action for h in reloaded.history] == ["submit", "cancel"]
+        assert reloaded.history[-1].comment == "Withdrawn"
+
+    async def test_cancel_on_completed_fails(self, db_session):
+        ids = await _create_minimal_workflow(db_session)
+        svc = _exec_service(db_session)
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=860, created_by=1,
+        )
+        await svc.perform_action(
+            instance_id=instance.id, action="approve", actor_id=2,
+        )
+
+        from app.core.exceptions import ValidationError
+        with pytest.raises(ValidationError, match="Cannot perform action"):
+            await svc.perform_action(
+                instance_id=instance.id, action="cancel", actor_id=1,
+            )
+
+    async def test_cancel_respects_step_role(self, db_session):
+        """Cancel is still gated by the current step's assigned role."""
+        ids = await _create_minimal_workflow(
+            db_session, step_role="hod"
+        )
+        svc = _exec_service(db_session)
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=870, created_by=1,
+        )
+
+        from app.core.exceptions import AuthorizationError
+        with pytest.raises(AuthorizationError, match="hod"):
+            await svc.perform_action(
+                instance_id=instance.id, action="cancel",
+                actor_id=2, actor_roles=["teacher"],
+            )
+
+    async def test_cancel_emits_cancelled_event(self, db_session, captured):
+        """A cancelled workflow produces a workflow.cancelled domain event."""
+        ids = await _create_minimal_workflow(db_session)
+        svc = _exec_service(db_session)
+        instance = await svc.start_instance(
+            workflow_id=ids["workflow_id"],
+            entity_type="test_entity", entity_id=880, created_by=1,
+        )
+
+        await svc.perform_action(
+            instance_id=instance.id, action="cancel",
+            actor_id=1, actor_roles=["teacher"],
+        )
+        assert any(isinstance(e, WorkflowCancelledEvent) for e in captured)
+        event = [e for e in captured if isinstance(e, WorkflowCancelledEvent)][0]
+        assert event.instance_id == instance.id
+        assert event.created_by == 1
 
 
 # ===========================================================================

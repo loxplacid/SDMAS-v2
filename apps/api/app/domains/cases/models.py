@@ -108,10 +108,14 @@ CASE_EVENT_ESCALATED = "ESCALATED"
 CASE_SOURCE_MANUAL = "manual"
 CASE_SOURCE_RISK_FINDING = "risk_finding"
 CASE_SOURCE_DATA_QUALITY = "data_quality_finding"
+#: A case promoted from a computed financial exception (P13): the source_id
+#: is the underlying entity's id (payment or reconciliation item).
+CASE_SOURCE_FINANCIAL = "financial_exception"
 CASE_VALID_SOURCES = {
     CASE_SOURCE_MANUAL,
     CASE_SOURCE_RISK_FINDING,
     CASE_SOURCE_DATA_QUALITY,
+    CASE_SOURCE_FINANCIAL,
 }
 
 #: Evidence kinds — references to existing system objects, never raw uploads.

@@ -8,6 +8,8 @@ import {
   filtersEqual,
   filtersFromQueryString,
   filtersToQueryString,
+  isFacetColumn,
+  isRangeColumn,
   parseQuery,
   rangeChipLabel,
   withFacet,
@@ -297,6 +299,20 @@ describe('DataTable filterable — exit choreography (T33)', () => {
     expect(screen.getAllByText('Amina Kante')).toHaveLength(1)
     expect(screen.queryByText('Chidi Okafor')).not.toBeInTheDocument()
     vi.useRealTimers()
+  })
+})
+
+describe('filterable: false — server pages must not offer dead filters (P13)', () => {
+  it('excludes opted-out columns from the facet/range builders', () => {
+    const status = { key: 's', header: 'S', type: 'status' as const, filterable: false }
+    const amount = { key: 'a', header: 'A', type: 'amount' as const, filterable: false }
+    const id = { key: 'id', header: 'ID', type: 'numeric' as const, filterable: false }
+    const date = { key: 'd', header: 'D', type: 'date' as const }
+
+    expect(isRangeColumn(amount)).toBe(false)
+    expect(isRangeColumn(id)).toBe(false)
+    expect(isRangeColumn(date)).toBe(true)
+    expect(isFacetColumn(status)).toBe(false)
   })
 })
 

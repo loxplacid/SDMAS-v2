@@ -55,3 +55,21 @@ RECIPIENT_TYPE_USER = "user"
 RECIPIENT_TYPE_STUDENT = "student"
 RECIPIENT_TYPE_TEACHER = "teacher"
 RECIPIENT_TYPE_PARENT = "parent"
+
+# P15 — operational contexts a communication can be linked to. A message
+# keeps ``context_type`` + ``context_id`` so it remains associated with the
+# entity it was composed from (student → fee issue → contact guardian, a
+# case, an admission), and templates can resolve real entity variables.
+CONTEXT_STUDENT = "student"
+CONTEXT_CASE = "case"
+CONTEXT_FEE_DUE = "fee_due"
+CONTEXT_ADMISSION = "admission"
+CONTEXT_ANNOUNCEMENT = "announcement"
+
+ALL_CONTEXTS = [
+    CONTEXT_STUDENT,
+    CONTEXT_CASE,
+    CONTEXT_FEE_DUE,
+    CONTEXT_ADMISSION,
+    CONTEXT_ANNOUNCEMENT,
+]

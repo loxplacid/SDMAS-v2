@@ -21,6 +21,10 @@ export interface RiskFinding {
   resolved_at: string | null
   resolved_by: number | null
   resolved_reason: string | null
+  /** P11 — linked operational case (null when the finding has no case). */
+  case_id?: number | null
+  case_number?: string | null
+  case_status?: string | null
 }
 
 export interface RiskFindingPage {
@@ -114,6 +118,9 @@ export const riskApi = {
       page: params.page,
       size: params.size,
     }),
+
+  /** P11 — single finding for deep-linking from a case back to its source. */
+  getFinding: (findingId: number) => api.get<RiskFinding>(`/api/risk/findings/${findingId}`),
 
   recompute: () => api.post<RecomputeResult>('/api/risk/recompute'),
 

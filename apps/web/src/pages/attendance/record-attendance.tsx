@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { attendanceApi } from '../../api/attendance/attendance-api'
 import type { AttendanceRecordCreate } from '../../api/generated/types'
-import { Card, Input, Select, Button, Modal, Form, Alert, useToast } from '../../components/ui'
+import { Card, Input, Select, Button, Modal, Form, Alert, useToast, PageHeader } from '../../components/ui'
 import { ATTENDANCE_STATUSES, capitalize } from '../../lib/utils'
 
 export function RecordAttendancePage() {
@@ -55,8 +55,7 @@ export function RecordAttendancePage() {
         <button onClick={() => navigate('/attendance/records')} className="text-sm text-[var(--color-brand-accent)] hover:text-[var(--color-brand-accent-hover)] transition-colors mb-1">
           &larr; Back to Records
         </button>
-        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider mt-1">Attendance</div>
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Record Attendance</h1>
+        <PageHeader eyebrow="Attendance" title="Record Attendance" compact />
       </div>
 
       <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">

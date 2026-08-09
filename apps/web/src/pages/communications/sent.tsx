@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { messageApi } from '../../api/communications/communications-api'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { messageApi, contextApi } from '../../api/communications/communications-api'
 import type { Message } from '../../api/communications/communications-api'
 import {
   PageHeader, Card, Button, Select, Table, Modal, Loading, ErrorState, Badge, Pagination, useToast,
@@ -10,6 +10,18 @@ import { formatDate } from '../../lib/utils'
 export function SentMessagesPage() {
   const navigate = useNavigate()
   const { showToast } = useToast()
+  const [searchParams, setSearchParams] = useSearchParams()
+  // P15 — context-linked history: ?context_type=student&context_id=101
+  // filters the list to messages composed from that operational context
+  // (deep-linkable from Student 360 / case / fee surfaces).
+  const contextType = searchParams.get('context_type')
+  const contextIdRaw = searchParams.get('context_id')
+  // Guard malformed deep links (?context_id=abc) — never send NaN to the API.
+  const contextId = contextIdRaw && !Number.isNaN(Number(contextIdRaw))
+    ? Number(contextIdRaw)
+    : null
+  const [contextLabel, setContextLabel] = useState<string | null>(null)
+  const hasContextFilter = !!(contextType && contextId)
   const [messages, setMessages] = useState<Message[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -26,6 +38,10 @@ export function SentMessagesPage() {
     const params: any = { page, size: pageSize }
     if (typeFilter) params.message_type = typeFilter
     if (statusFilter) params.status = statusFilter
+    if (contextType && contextId) {
+      params.context_type = contextType
+      params.context_id = contextId
+    }
     messageApi.list(params)
       .then((res) => {
         setMessages(res.items)
@@ -33,9 +49,37 @@ export function SentMessagesPage() {
       })
       .catch((err: any) => setError(err?.detail || 'Failed to load messages'))
       .finally(() => setLoading(false))
-  }, [page, pageSize, typeFilter, statusFilter])
+  }, [page, pageSize, typeFilter, statusFilter, contextType, contextId])
 
   useEffect(() => { loadMessages() }, [loadMessages])
+
+  // P15 — resolve the linked context to a human label for the filter chip.
+  useEffect(() => {
+    if (!contextType || !contextId) {
+      setContextLabel(null)
+      return
+    }
+    let cancelled = false
+    contextApi.get(contextType, contextId)
+      .then((c) => { if (!cancelled) setContextLabel(c.label) })
+      .catch(() => { if (!cancelled) setContextLabel(null) })
+    return () => { cancelled = true }
+  }, [contextType, contextId])
+
+  const clearContextFilter = () => {
+    const next = new URLSearchParams(searchParams)
+    next.delete('context_type')
+    next.delete('context_id')
+    setSearchParams(next)
+    setPage(1)
+  }
+
+  // P15 — the entity a context-linked message points back to.
+  const contextHref = (msg: Message): string => {
+    if (msg.context_type === 'student') return `/students/${msg.context_id}`
+    if (msg.context_type === 'case') return `/cases/${msg.context_id}`
+    return '#'
+  }
 
   const handleRetry = useCallback(async (msgId: number) => {
     try {
@@ -115,8 +159,10 @@ export function SentMessagesPage() {
   return (
     <div className="space-y-6 animate-fade-in-up">
       <PageHeader
-        title="Sent Messages"
-        subtitle="Track delivery status of your communications"
+        title={hasContextFilter && contextLabel ? `Communications — ${contextLabel}` : 'Sent Messages'}
+        subtitle={hasContextFilter && contextLabel
+          ? 'Communication history for this operational context'
+          : 'Track delivery status of your communications'}
         actions={
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" onClick={() => navigate('/communications')}>
@@ -130,6 +176,22 @@ export function SentMessagesPage() {
       />
 
       <Card>
+        {/* P15 — context-filter chip (deep-linked from an entity). */}
+        {hasContextFilter && (
+          <div className="flex items-center justify-between gap-3 mb-4 rounded-xl border border-[var(--color-brand-accent)]/30 bg-[var(--color-brand-accent)]/5 px-4 py-2.5">
+            <p className="text-sm text-[var(--color-text-secondary)] min-w-0 truncate">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-brand-accent)] mr-2">Context</span>
+              {contextLabel || `${contextType} #${contextId}`}
+            </p>
+            <button
+              type="button"
+              onClick={clearContextFilter}
+              className="flex-shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] motion-safe:transition-colors"
+            >
+              Clear filter ×
+            </button>
+          </div>
+        )}
         <div className="flex gap-4 mb-4">
           <div className="w-48">
             <Select
@@ -201,6 +263,21 @@ export function SentMessagesPage() {
               <div><span className="text-[var(--color-text-tertiary)]">Sent:</span> {selectedMessage.sent_at ? formatDate(selectedMessage.sent_at) : 'Not yet'}</div>
               <div><span className="text-[var(--color-text-tertiary)]">Recipients:</span> {selectedMessage.recipient_count}</div>
             </div>
+            {/* P15 — the message stays linked to its operational context. */}
+            {selectedMessage.context_type && selectedMessage.context_id && (
+              <div className="rounded-lg border border-[var(--color-brand-accent)]/25 bg-[var(--color-brand-accent)]/5 px-3 py-2 text-sm">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-brand-accent)] mr-2">Context</span>
+                <span className="text-[var(--color-text-secondary)] capitalize">{selectedMessage.context_type.replace(/_/g, ' ')} #{selectedMessage.context_id}</span>
+                {contextHref(selectedMessage) !== '#' && (
+                  <a
+                    href={contextHref(selectedMessage)}
+                    className="ml-2 text-[var(--color-brand-accent)] text-xs font-medium hover:underline"
+                  >
+                    View {selectedMessage.context_type} →
+                  </a>
+                )}
+              </div>
+            )}
             {selectedMessage.subject && (
               <div>
                 <p className="text-sm text-[var(--color-text-tertiary)]">Subject</p>

@@ -2,11 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
+import { ToastProvider } from '../components/ui/toast'
 import type { Student360Response } from '../api/student-360/student-360-api'
 
 // Mock the API client before importing the page
 const getMock = vi.fn()
 const transitionMock = vi.fn()
+const casesListMock = vi.fn()
 
 vi.mock('../api/student-360/student-360-api', () => ({
   student360Api: {
@@ -14,6 +16,17 @@ vi.mock('../api/student-360/student-360-api', () => ({
     getLifecycle: vi.fn(),
     transition: (...args: unknown[]) => transitionMock(...args),
   },
+}))
+
+// The P10 operational summary fetches active cases for the student.
+vi.mock('../api/cases/cases-api', () => ({
+  casesApi: { list: (...args: unknown[]) => casesListMock(...args) },
+}))
+
+// P15 — the Communication tab fetches real context-linked messages.
+const commListMock = vi.fn()
+vi.mock('../api/communications/communications-api', () => ({
+  messageApi: { list: (...args: unknown[]) => commListMock(...args) },
 }))
 
 const { mockUser } = vi.hoisted(() => ({
@@ -89,18 +102,24 @@ function make360(overrides: Partial<Student360Response> = {}): Student360Respons
 
 function renderPage(route = '/students/101/360') {
   return render(
-    <MemoryRouter initialEntries={[route]}>
-      <Routes>
-        <Route path="/students/:id/360" element={<Student360Page />} />
-        <Route path="/students" element={<div>Students List</div>} />
-        <Route path="/students/:id" element={<div>Standard View</div>} />
-      </Routes>
-    </MemoryRouter>
+    <ToastProvider>
+      <MemoryRouter initialEntries={[route]}>
+        <Routes>
+          <Route path="/students/:id/360" element={<Student360Page />} />
+          <Route path="/students" element={<div>Students List</div>} />
+          <Route path="/students/:id" element={<div>Standard View</div>} />
+        </Routes>
+      </MemoryRouter>
+    </ToastProvider>
   )
 }
 
 beforeEach(() => {
   vi.resetAllMocks()
+  // Summary: no active cases for the test student by default.
+  casesListMock.mockResolvedValue({ items: [], total: 0, page: 1, size: 3, pages: 0 })
+  // P15 — no context-linked communications by default.
+  commListMock.mockResolvedValue({ items: [], total: 0, page: 1, size: 50, pages: 0 })
 })
 
 describe('Student 360 page — lifecycle & documents', () => {
@@ -111,7 +130,8 @@ describe('Student 360 page — lifecycle & documents', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Lifecycle')).toBeInTheDocument()
-      expect(screen.getByText('Active')).toBeInTheDocument()
+      // Status appears in the operational summary strip and the lifecycle card.
+      expect(screen.getAllByText('Active').length).toBeGreaterThan(0)
       expect(screen.getByText('Enrolled')).toBeInTheDocument() // allowed transition chip
       expect(screen.getByText(/Term started/)).toBeInTheDocument()
     })
@@ -243,6 +263,73 @@ describe('Student 360 page — lifecycle & documents', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Student 360 unavailable')).toBeInTheDocument()
+    })
+  })
+
+  it('P15 — Contact Guardian opens the composer linked to this student', async () => {
+    getMock.mockResolvedValueOnce(make360())
+
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
+    renderPage()
+
+    await waitFor(() => expect(screen.getByText('Lifecycle')).toBeInTheDocument())
+
+    await userEvent.click(screen.getByRole('button', { name: /Contact Guardian/ }))
+
+    await waitFor(() => {
+      expect(openSpy).toHaveBeenCalledWith(
+        '/communications/compose?context_type=student&context_id=101',
+        '_self'
+      )
+    })
+    openSpy.mockRestore()
+  })
+
+  it('P15 — Communication tab shows real context-linked messages', async () => {
+    getMock.mockResolvedValueOnce(make360())
+    commListMock.mockResolvedValueOnce({
+      items: [
+        {
+          id: 1, subject: 'Fee reminder', body: 'Dear parent, fees are due',
+          message_type: 'targeted', status: 'sent',
+          context_type: 'student', context_id: 101,
+          recipient_count: 1, created_at: '2026-08-01T10:00:00Z',
+        },
+      ],
+      total: 1, page: 1, size: 50, pages: 1,
+    })
+
+    renderPage()
+
+    await waitFor(() => expect(screen.getByText('Lifecycle')).toBeInTheDocument())
+
+    // The tab is mounted lazily — clicking it triggers the real fetch.
+    await userEvent.click(screen.getByRole('tab', { name: /Communication/i }))
+
+    await waitFor(() => {
+      // Fetch is scoped to this student's context.
+      expect(commListMock).toHaveBeenCalledWith({
+        context_type: 'student',
+        context_id: 101,
+        size: 50,
+      })
+      expect(screen.getByText('Fee reminder')).toBeInTheDocument()
+      expect(screen.getByText('sent')).toBeInTheDocument()
+    })
+  })
+
+  it('P15 — Communication tab shows an honest empty state', async () => {
+    getMock.mockResolvedValueOnce(make360())
+    commListMock.mockResolvedValueOnce({ items: [], total: 0, page: 1, size: 50, pages: 0 })
+
+    renderPage()
+
+    await waitFor(() => expect(screen.getByText('Lifecycle')).toBeInTheDocument())
+
+    await userEvent.click(screen.getByRole('tab', { name: /Communication/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText('No communications recorded by you')).toBeInTheDocument()
     })
   })
 })

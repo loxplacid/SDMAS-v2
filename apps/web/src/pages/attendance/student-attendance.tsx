@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { attendanceApi } from '../../api/attendance/attendance-api'
 import type { AttendanceRecordResponse, StudentAttendanceSummary } from '../../api/generated/types'
-import { Card, Table, Pagination, Badge, Button, Input, Select, ErrorState } from '../../components/ui'
+import { Card, Table, Pagination, Badge, Button, Input, Select, ErrorState, PageHeader } from '../../components/ui'
 import { ATTENDANCE_STATUSES, capitalize } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
@@ -60,9 +60,7 @@ export function StudentAttendancePage() {
         <button onClick={() => navigate('/attendance/records')} className="text-sm text-[var(--color-brand-accent)] hover:text-[var(--color-brand-accent-hover)] transition-colors mb-1">
           &larr; Back to Records
         </button>
-        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider mt-1">Attendance</div>
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Student Attendance</h1>
-        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Student ID: {sid}</p>
+        <PageHeader eyebrow="Attendance" title="Student Attendance" subtitle={`Student ID: ${sid}`} compact />
       </div>
 
       <div className="flex flex-wrap gap-4 items-end">

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { feeReportApi } from '../../api/reports/fee-reports'
 import type { DetailedReceipt } from '../../api/reports/types'
-import { Card, Button, ErrorState, Input, Badge } from '../../components/ui'
+import { Card, Button, ErrorState, Input, Badge, PageHeader } from '../../components/ui'
 import { formatCurrency, formatDateTime } from '../../lib/utils'
 import { useExport } from '../../hooks/use-export'
 
@@ -29,11 +29,12 @@ export function ReceiptLookupPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div>
-        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Reports</div>
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Receipt Lookup</h1>
-        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">View payment receipt details</p>
-      </div>
+      <PageHeader
+        eyebrow="Reports"
+        title="Receipt Lookup"
+        subtitle="View payment receipt details"
+        compact
+      />
 
       <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="flex gap-4 items-end">

@@ -13,6 +13,8 @@ const recomputeMock = vi.fn()
 const resolveFindingMock = vi.fn()
 const acknowledgeFindingMock = vi.fn()
 const updateConfigMock = vi.fn()
+const getFindingMock = vi.fn()
+const casesApiCreateMock = vi.fn()
 
 vi.mock('../api/risk/risk-api', () => ({
   riskApi: {
@@ -23,7 +25,14 @@ vi.mock('../api/risk/risk-api', () => ({
     resolveFinding: (...args: unknown[]) => resolveFindingMock(...args),
     acknowledgeFinding: (...args: unknown[]) => acknowledgeFindingMock(...args),
     updateConfig: (...args: unknown[]) => updateConfigMock(...args),
+    getFinding: (...args: unknown[]) => getFindingMock(...args),
   },
+}))
+
+// P11 — the Risk Center promotes findings into cases; linked findings open
+// their case instead.
+vi.mock('../api/cases/cases-api', () => ({
+  casesApi: { create: (...args: unknown[]) => casesApiCreateMock(...args) },
 }))
 
 // Mock auth context (role drives which actions render)
@@ -114,6 +123,7 @@ function renderPage(route = '/risk') {
           <Route path="/risk" element={<RiskCenterPage />} />
           <Route path="/students/:id/360" element={<div>Student 360 Page</div>} />
           <Route path="/admissions/:id" element={<div>Admission Detail Page</div>} />
+          <Route path="/cases/:id" element={<div>Case Detail Page</div>} />
         </Routes>
       </MemoryRouter>
     </ToastProvider>
@@ -248,6 +258,80 @@ describe('Risk Center page', () => {
     await waitFor(() => {
       expect(resolveFindingMock).toHaveBeenCalledWith(1, 'Paid in cash')
       expect(screen.getByText(/Resolved: Paid in cash/)).toBeInTheDocument()
+    })
+  })
+
+  it('shows the linked case on a finding and opens it instead of creating a duplicate', async () => {
+    getOverviewMock.mockResolvedValueOnce(makeOverview())
+    listFindingsMock.mockResolvedValueOnce(makePage([
+      makeFinding({ case_id: 42, case_number: 'DMAS-000042', case_status: 'in_progress' }),
+    ]))
+    getConfigMock.mockResolvedValueOnce([makeConfig()])
+
+    renderPage()
+
+    await waitFor(() => expect(screen.getByText(/Rahul Sharma/)).toBeInTheDocument())
+
+    // The linked case is surfaced on the finding card.
+    expect(screen.getByText(/Case DMAS-000042/)).toBeInTheDocument()
+    expect(screen.getByText(/in progress/)).toBeInTheDocument()
+    // No duplicate create action for a finding that already has a case.
+    expect(screen.queryByRole('button', { name: /Create case/ })).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /Open case/ }))
+    expect(await screen.findByText('Case Detail Page')).toBeInTheDocument()
+    expect(casesApiCreateMock).not.toHaveBeenCalled()
+  })
+
+  it('offers Create case only for findings without a linked case', async () => {
+    getOverviewMock.mockResolvedValueOnce(makeOverview())
+    listFindingsMock.mockResolvedValueOnce(makePage([makeFinding()])) // no case_id
+    getConfigMock.mockResolvedValueOnce([makeConfig()])
+
+    renderPage()
+
+    await waitFor(() => expect(screen.getByText(/Rahul Sharma/)).toBeInTheDocument())
+
+    expect(screen.getByRole('button', { name: /Create case/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Open case/ })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Case DMAS-/)).not.toBeInTheDocument()
+  })
+
+  it('deep-links a case back to its finding via ?finding= and clears it', async () => {
+    getOverviewMock.mockResolvedValueOnce(makeOverview())
+    listFindingsMock.mockResolvedValueOnce(makePage())
+    getConfigMock.mockResolvedValueOnce([makeConfig()])
+    getFindingMock.mockResolvedValueOnce(
+      makeFinding({ id: 7, status: 'resolved', resolved_reason: 'Resolved via case DMAS-000042' })
+    )
+
+    renderPage('/risk?finding=7')
+
+    // The banner fetches the exact finding and renders it with its state —
+    // even a resolved finding hidden from the default 'open' list.
+    const banner = await screen.findByLabelText('Deep-linked finding 7')
+    expect(getFindingMock).toHaveBeenCalledWith(7)
+    expect(within(banner).getByText(/Resolved via case DMAS-000042/)).toBeInTheDocument()
+    // The banner's resolved finding is never offered for re-creation (the
+    // separate list row may still show its own Create case button).
+    expect(within(banner).queryByRole('button', { name: /Create case/ })).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /Show in list/ }))
+    await waitFor(() => {
+      expect(screen.queryByText(/Finding #7 — opened from a case/)).not.toBeInTheDocument()
+    })
+  })
+
+  it('shows an honest error in the deep-link banner when the finding is unavailable', async () => {
+    getOverviewMock.mockResolvedValueOnce(makeOverview())
+    listFindingsMock.mockResolvedValueOnce(makePage())
+    getConfigMock.mockResolvedValueOnce([makeConfig()])
+    getFindingMock.mockRejectedValueOnce({ detail: 'Finding not found' })
+
+    renderPage('/risk?finding=999')
+
+    await waitFor(() => {
+      expect(screen.getByText(/Couldn't load finding #999/)).toBeInTheDocument()
     })
   })
 

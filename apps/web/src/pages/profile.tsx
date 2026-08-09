@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../api/auth/auth-context'
 import { authApi } from '../api/auth/auth-api'
-import { Card, Input, Button, Alert, useToast } from '../components/ui'
+import { Card, Input, Button, Alert, useToast, PageHeader } from '../components/ui'
 
 export function ProfilePage() {
   const { user, updateUser } = useAuth()
@@ -52,11 +52,12 @@ export function ProfilePage() {
 
   return (
     <div className="space-y-6 max-w-lg animate-fade-in-up">
-      <div>
-        <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide mb-1">Account</p>
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Profile</h1>
-        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Manage your personal information and security.</p>
-      </div>
+      <PageHeader
+        eyebrow="Account"
+        title="Profile"
+        subtitle="Manage your personal information and security."
+        compact
+      />
 
       {error && <Alert variant="error" onClose={() => setError(null)}>{error}</Alert>}
 

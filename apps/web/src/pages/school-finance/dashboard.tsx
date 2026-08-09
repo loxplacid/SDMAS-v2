@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { schoolFinanceDashboardApi, type SchoolFinanceDashboard, type TransactionLogResponse } from '../../api/school-finance/school-finance-api'
-import { Card, PageHeader, Loading, ErrorState, Badge, Table } from '../../components/ui'
+import { schoolFinanceDashboardApi, outstandingBalanceApi, financialExceptionApi, type SchoolFinanceDashboard, type TransactionLogResponse } from '../../api/school-finance/school-finance-api'
+import { Card, PageHeader, Loading, ErrorState, Badge, Table, Button } from '../../components/ui'
 import { formatDate } from '../../lib/utils'
 
 function formatCurrency(amount: number) {
@@ -10,6 +10,8 @@ function formatCurrency(amount: number) {
 
 export const SchoolFinanceDashboardPage: React.FC = () => {
   const [dashboard, setDashboard] = useState<SchoolFinanceDashboard | null>(null)
+  const [topOutstanding, setTopOutstanding] = useState<{ student_name: string | null; class_name: string | null; outstanding: number; overdue_count: number }[]>([])
+  const [exceptionCounts, setExceptionCounts] = useState<{ critical: number; high: number }>({ critical: 0, high: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const fetchIdRef = useRef(0)
@@ -19,8 +21,24 @@ export const SchoolFinanceDashboardPage: React.FC = () => {
     setLoading(true)
     setError(null)
     try {
-      const data = await schoolFinanceDashboardApi.getDashboard()
-      if (fetchId === fetchIdRef.current) setDashboard(data)
+      const [dash, outstanding, exceptions] = await Promise.all([
+        schoolFinanceDashboardApi.getDashboard(),
+        outstandingBalanceApi.getOutstanding({ size: 5 }),
+        financialExceptionApi.list({ page: 1, size: 1 }),
+      ])
+      if (fetchId === fetchIdRef.current) {
+        setDashboard(dash)
+        setTopOutstanding(outstanding.items.map((i) => ({
+          student_name: i.student_name,
+          class_name: i.class_name,
+          outstanding: i.outstanding,
+          overdue_count: i.overdue_count,
+        })))
+        setExceptionCounts({
+          critical: exceptions.by_severity.critical ?? 0,
+          high: exceptions.by_severity.high ?? 0,
+        })
+      }
     } catch (err: any) {
       if (fetchId === fetchIdRef.current) setError(err?.detail || 'Failed to load dashboard')
     } finally {
@@ -40,6 +58,12 @@ export const SchoolFinanceDashboardPage: React.FC = () => {
     { label: 'Collection Rate', value: `${dashboard.collection_rate}%`, color: 'from-blue-500 to-blue-600' },
     { label: 'Payment Count', value: dashboard.payment_count.toLocaleString(), color: 'from-indigo-500 to-indigo-600' },
     { label: 'Today Collection', value: formatCurrency(dashboard.today_collection), color: 'from-amber-500 to-amber-600' },
+  ]
+
+  const attentionItems = [
+    ...(exceptionCounts.critical > 0 ? [{ label: `${exceptionCounts.critical} critical financial exceptions`, to: '/school-finance/exceptions', tone: 'danger' as const }] : []),
+    ...(exceptionCounts.high > 0 ? [{ label: `${exceptionCounts.high} high financial exceptions`, to: '/school-finance/exceptions', tone: 'warning' as const }] : []),
+    ...(dashboard.pending_reconciliation > 0 ? [{ label: `${dashboard.pending_reconciliation} pending reconciliations`, to: '/school-finance/reconciliation', tone: 'warning' as const }] : []),
   ]
 
   const recentColumns = [
@@ -63,6 +87,29 @@ export const SchoolFinanceDashboardPage: React.FC = () => {
         }
       />
 
+      {/* P13 — what needs attention, straight from the exceptions engine */}
+      {attentionItems.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">
+            Attention
+          </span>
+          {attentionItems.map((item) => (
+            <Link
+              key={item.label}
+              to={item.to}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium motion-safe:transition-colors ${
+                item.tone === 'danger'
+                  ? 'border-[var(--color-danger)]/30 bg-[var(--color-danger)]/5 text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10'
+                  : 'border-[var(--color-warning)]/30 bg-[var(--color-warning)]/5 text-[var(--color-warning)] hover:bg-[var(--color-warning)]/10'
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${item.tone === 'danger' ? 'bg-[var(--color-danger)]' : 'bg-[var(--color-warning)]'}`} aria-hidden="true" />
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      )}
+
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {kpiCards.map((kpi) => (
           <Card key={kpi.label} className="text-center">
@@ -81,10 +128,44 @@ export const SchoolFinanceDashboardPage: React.FC = () => {
           )}
         </Card>
 
-        <Card title="Outstanding Balances">
-          <div className="flex items-center justify-center py-8">
-            <p className="text-sm text-[var(--color-text-tertiary)]">Coming soon</p>
-          </div>
+        {/* P13 — the real outstanding balances, not a placeholder */}
+        <Card
+          title="Outstanding Balances"
+          actions={
+            <Link to="/school-finance/outstanding-balances" className="text-xs font-medium text-[var(--color-brand-accent)] hover:underline">
+              View all
+            </Link>
+          }
+        >
+          {topOutstanding.length === 0 ? (
+            <div className="py-8 text-center">
+              <p className="text-sm text-[var(--color-success-dark)] font-medium">No outstanding balances</p>
+              <p className="text-xs text-[var(--color-text-tertiary)] mt-1">All assigned fees are paid up.</p>
+            </div>
+          ) : (
+            <div className="space-y-0 divide-y divide-[var(--color-border)]">
+              {topOutstanding.map((row, i) => (
+                <div key={i} className="flex items-center justify-between py-2.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+                      {row.student_name || 'Unknown student'}
+                    </p>
+                    <p className="text-xs text-[var(--color-text-tertiary)]">
+                      {row.class_name || '—'}
+                      {row.overdue_count > 0 && (
+                        <span className="ml-1.5 text-[var(--color-danger)] font-medium">
+                          {row.overdue_count} overdue
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <span className="text-sm font-semibold tabular-nums text-[var(--color-danger)]">
+                    {formatCurrency(row.outstanding)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
       </div>
     </div>

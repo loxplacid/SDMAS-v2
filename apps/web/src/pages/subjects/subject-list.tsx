@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { subjectApi, type SubjectListParams } from '../../api/academic/subject-api'
 import type { SubjectResponse, SubjectCreate, SubjectUpdate } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast, PageHeader } from '../../components/ui'
 import { SUBJECT_STATUSES, capitalize } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = { active: 'success', inactive: 'danger' }
@@ -60,14 +60,13 @@ export function SubjectListPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide mb-1">Academics</p>
-          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Subjects</h1>
-          <p className="text-sm text-[var(--color-text-tertiary)] mt-1">{total} subject{total !== 1 ? 's' : ''}</p>
-        </div>
-        <Button onClick={openCreateModal}>Add Subject</Button>
-      </div>
+      <PageHeader
+        eyebrow="Academics"
+        title="Subjects"
+        subtitle={`${total} subject${total !== 1 ? 's' : ''}`}
+        compact
+        actions={<Button onClick={openCreateModal}>Add Subject</Button>}
+      />
       <div className="flex items-center gap-4">
         <Select options={SUBJECT_STATUSES.map((s) => ({ value: s, label: capitalize(s) }))} placeholder="All statuses" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }} />
       </div>

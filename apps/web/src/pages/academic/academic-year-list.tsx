@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { academicYearApi, type AcademicYearListParams } from '../../api/academic/academic-year-api'
 import type { AcademicYearResponse } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Modal, Form, Alert, Loading, ErrorState, useToast, PageHeader, StatusBadge, ConfirmDialog } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Modal, Form, Alert, ErrorState, useToast, PageHeader, StatusBadge, ConfirmDialog } from '../../components/ui'
 import { ACADEMIC_STATUSES, capitalize } from '../../lib/utils'
 
 export function AcademicYearListPage() {
@@ -97,14 +97,14 @@ export function AcademicYearListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Academic Years" subtitle={`${total} year${total !== 1 ? 's' : ''}`}
+      <PageHeader title="Academic Years" subtitle={`${total} year${total !== 1 ? 's' : ''}`} compact
         actions={<Button onClick={openCreateModal}>Add Academic Year</Button>} />
       <div className="flex flex-wrap items-center gap-3">
         <Select options={ACADEMIC_STATUSES.map((s) => ({ value: s, label: capitalize(s) }))} placeholder="All statuses" value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }} />
       </div>
       <Card padding="none">
-        {loading ? <Loading text="Loading academic years..." /> : error ? <ErrorState message={error} onRetry={() => fetch({ page, size, status: statusFilter || undefined })} /> : (
+        {error ? <ErrorState message={error} onRetry={() => fetch({ page, size, status: statusFilter || undefined })} /> : (
           <>
             <Table columns={[
               { key: 'name', header: 'Name' },
@@ -117,7 +117,7 @@ export function AcademicYearListPage() {
                   <Button variant="danger" size="sm" onClick={() => setDeleteConfirm(y)}>Delete</Button>
                 </div>
               )},
-            ]} data={data} keyExtractor={(y) => y.id} emptyMessage="No academic years found." onRowClick={(y) => navigate(`/academic/years/${y.id}`)} />
+            ]} data={data} keyExtractor={(y) => y.id} emptyMessage="No academic years found." loading={loading} onRowClick={(y) => navigate(`/academic/years/${y.id}`)} />
             <Pagination page={page} size={size} total={total} pages={pages} onPageChange={setPage} onSizeChange={(s) => { setSize(s); setPage(1) }} />
           </>
         )}

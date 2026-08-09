@@ -4,7 +4,7 @@ import { summaryApi } from '../../api/fees/summary-api'
 import { paymentApi } from '../../api/fees/payment-api'
 import { feeDueApi } from '../../api/fees/fee-due-api'
 import type { StudentFinancialSummary, ClassFinancialSummary } from '../../api/generated/types'
-import { Card, Input, Button, Select, Table, ErrorState, Badge, TabGroup } from '../../components/ui'
+import { Card, Input, Button, Select, Table, ErrorState, Badge, TabGroup, PageHeader } from '../../components/ui'
 import { formatCurrency, capitalize, FEE_DUE_STATUSES } from '../../lib/utils'
 
 const statusLabel: Record<string, string> = { paid: 'Paid', partially_paid: 'Partial', unpaid: 'Unpaid' }
@@ -54,22 +54,23 @@ export function FinancialSummaryPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Fees</div>
-          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Financial Summary</h1>
-        </div>
-        <TabGroup
-          tabs={[
-            { id: 'student', label: 'Student' },
-            { id: 'class', label: 'Class' },
-          ]}
-          activeTab={tab}
-          onChange={(id) => setTab(id as 'student' | 'class')}
-          variant="pills"
-          size="sm"
-        />
-      </div>
+      <PageHeader
+        eyebrow="Fees"
+        title="Financial Summary"
+        compact
+        actions={
+          <TabGroup
+            tabs={[
+              { id: 'student', label: 'Student' },
+              { id: 'class', label: 'Class' },
+            ]}
+            activeTab={tab}
+            onChange={(id) => setTab(id as 'student' | 'class')}
+            variant="pills"
+            size="sm"
+          />
+        }
+      />
 
       {tab === 'student' ? (
         <div className="space-y-4">

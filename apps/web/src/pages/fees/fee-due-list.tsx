@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { feeDueApi, type FeeDueListParams } from '../../api/fees/fee-due-api'
 import type { FeeDueResponse } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Alert, ErrorState, useToast } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Alert, ErrorState, useToast, PageHeader } from '../../components/ui'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { FEE_DUE_STATUSES, capitalize, formatCurrency } from '../../lib/utils'
 
@@ -82,17 +82,18 @@ export function FeeDueListPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide mb-1">Fees</p>
-          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Fee Dues</h1>
-          <p className="text-sm text-[var(--color-text-tertiary)] mt-1">{total} due{total !== 1 ? 's' : ''}</p>
-        </div>
-        <Button onClick={() => { setGenModalOpen(true); setGenError(null) }}>
-          Generate Dues
-          <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Fees"
+        title="Fee Dues"
+        subtitle={`${total} due${total !== 1 ? 's' : ''}`}
+        compact
+        actions={
+          <Button onClick={() => { setGenModalOpen(true); setGenError(null) }}>
+            Generate Dues
+            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+          </Button>
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-4">
         <Input ref={firstFilterRef} type="number" placeholder="Student ID" value={studentFilter} onChange={(e) => { setStudentFilter(e.target.value); setPage(1) }} className="w-32" />

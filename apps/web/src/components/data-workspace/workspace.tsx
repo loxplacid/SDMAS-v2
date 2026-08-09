@@ -70,6 +70,13 @@ export interface DataWorkspaceProps<T> {
   keyboardNav?: boolean
   /** Forwarded to the filter rail's search input (the `/` shortcut). */
   searchInputRef?: Ref<HTMLInputElement>
+  /**
+   * P9 — the single "current" row (inspector preview), highlighted and marked
+   * aria-current. Hosts keep this in sync with their URL-backed selection.
+   */
+  currentKey?: string | number
+  /** P9 — row focused by roving keyboard navigation; the inspector follows. */
+  onActiveRowChange?: (item: T) => void
   className?: string
 }
 
@@ -95,6 +102,8 @@ export function DataWorkspace<T>({
   empty,
   keyboardNav = true,
   searchInputRef,
+  currentKey,
+  onActiveRowChange,
   className,
 }: DataWorkspaceProps<T>) {
   const {
@@ -106,10 +115,12 @@ export function DataWorkspace<T>({
     onSortChange,
     density,
     onDensityChange,
-    isCompact,
     visibleColumns,
     visibleKeys,
+    visibleOrder,
     toggleColumn,
+    moveColumn,
+    setVisibleColumns,
     resetColumns,
     page,
     setPage,
@@ -206,7 +217,9 @@ export function DataWorkspace<T>({
         density={density}
         onDensityChange={onDensityChange}
         visibleKeys={visibleKeys}
+        visibleOrder={visibleOrder}
         onToggleColumn={toggleColumn}
+        onMoveColumn={moveColumn}
         onResetColumns={resetColumns}
         onRefresh={onRefresh}
         toolbarActions={toolbarActions}
@@ -237,7 +250,7 @@ export function DataWorkspace<T>({
             selectedKeys={selection}
             onSelectionChange={replaceSelection}
             keyboardNav={keyboardNav && (onRowClick !== undefined || selectable)}
-            compact={isCompact}
+            density={density}
             facetData={sorted}
             footer={footer ?? undefined}
             emptyContent={emptyState}
@@ -248,6 +261,13 @@ export function DataWorkspace<T>({
             filterInputRef={searchInputRef}
             viewKey={viewKey}
             onRowClick={onRowClick}
+            currentKey={currentKey}
+            onActiveRowChange={onActiveRowChange}
+            viewSnapshot={{ sort, columns: [...visibleOrder] }}
+            onApplyViewSnapshot={(snapshot) => {
+              if (snapshot.sort) onSortChange(snapshot.sort)
+              if (snapshot.columns) setVisibleColumns(snapshot.columns)
+            }}
           />
           <Pagination
             page={page}

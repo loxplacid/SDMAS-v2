@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { auditLogApi } from '../../api/audit/audit-api'
 import type { AuditLogEntry } from '../../api/audit/audit-api'
-import { Card, Table, Pagination, Input, Select, Button, Badge, ErrorState, Drawer, Tooltip } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, ErrorState, Drawer, Tooltip, PageHeader } from '../../components/ui'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { formatDateTime, cn } from '../../lib/utils'
 
@@ -125,27 +125,21 @@ export function AuditLogViewerPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide mb-1">
-            Administration
-          </p>
-          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">
-            Audit Logs
-          </h1>
-          <p className="text-sm text-[var(--color-text-tertiary)] mt-1">
-            {total} event{total !== 1 ? 's' : ''} &middot; Immutable record of all mutating operations
-          </p>
-        </div>
-        <Button variant="outline" onClick={() => fetch({ page, size, action: actionFilter || undefined, resource_type: resourceFilter || undefined })}>
-          <svg className="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          Refresh
-          <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-[var(--color-surface-hover)] text-[10px] font-medium text-[var(--color-text-muted)]">R</kbd>
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Administration"
+        title="Audit Logs"
+        subtitle={`${total} event${total !== 1 ? 's' : ''} · Immutable record of all mutating operations`}
+        compact
+        actions={
+          <Button variant="outline" onClick={() => fetch({ page, size, action: actionFilter || undefined, resource_type: resourceFilter || undefined })}>
+            <svg className="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh
+            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-[var(--color-surface-hover)] text-[10px] font-medium text-[var(--color-text-muted)]">R</kbd>
+          </Button>
+        }
+      />
 
       {/* Filters */}
       <Card className="p-4">

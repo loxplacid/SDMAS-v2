@@ -50,6 +50,7 @@ import {
   uid,
   type SavedTableView,
   type SavedViewCollection,
+  type SavedViewSnapshot,
 } from './saved-views'
 
 export interface FilterRailProps<T> {
@@ -64,6 +65,13 @@ export interface FilterRailProps<T> {
   placeholder?: string
   /** P8 — forwarded to the search input (the `/` shortcut focuses it). */
   searchRef?: React.Ref<HTMLInputElement>
+  /**
+   * P12 — current workspace state (sort + visible columns) captured into
+   * saved views. Optional; without it views store filters only.
+   */
+  viewSnapshot?: SavedViewSnapshot
+  /** P12 — applied when a saved view carrying sort/columns is restored. */
+  onApplyViewSnapshot?: (snapshot: SavedViewSnapshot) => void
   className?: string
 }
 
@@ -126,8 +134,9 @@ function Chip({
   )
 }
 
-/** Popover with outside-click + Escape handling (same contract as DropdownMenu). */
-function RailPopover({
+/** Popover with outside-click + Escape handling (same contract as DropdownMenu).
+ * Exported for reuse by the workspace toolbar (the columns menu). */
+export function RailPopover({
   trigger,
   align = 'right',
   className,
@@ -328,15 +337,30 @@ function FilterPanel<T>({
 // the saved-view menu (T35–T37)
 // ---------------------------------------------------------------------------
 
+/**
+ * P12 — whether the applied view's sort/columns match the live workspace
+ * state. Views carry the snapshot only from P12 on; legacy filter-only views
+ * are skipped (their dirty state stays filter-driven).
+ */
+function snapshotEquals(a: SavedViewSnapshot | undefined, b: SavedViewSnapshot | undefined): boolean {
+  const ser = (s: SavedViewSnapshot | undefined) =>
+    JSON.stringify({ sort: s?.sort ?? [], columns: s?.columns ?? [] })
+  return ser(a) === ser(b)
+}
+
 function ViewMenu<T>({
   viewKey,
   state,
   onStateChange,
+  viewSnapshot,
+  onApplyViewSnapshot,
   close,
 }: {
   viewKey: string
   state: FilterState
   onStateChange: (next: FilterState) => void
+  viewSnapshot?: SavedViewSnapshot
+  onApplyViewSnapshot?: (snapshot: SavedViewSnapshot) => void
   close: () => void
 }) {
   // The applied view id lives with the views in storage so the dirty dot
@@ -357,11 +381,20 @@ function ViewMenu<T>({
   )
 
   const appliedView = views.find((v) => v.id === appliedId) ?? null
-  // T37: dirty = current state differs from the applied view's filters.
-  const dirty = appliedView ? !filtersEqual(state, appliedView.filters) : countActiveFilters(state) > 0
+  // T37 + P12: dirty = current state differs from the applied view — filters
+  // always, plus sort/columns when the applied view carries a snapshot.
+  const hasSnapshot = appliedView !== null && (appliedView.sort !== undefined || appliedView.columns !== undefined)
+  const dirty = appliedView
+    ? !filtersEqual(state, appliedView.filters) || (hasSnapshot && !snapshotEquals(viewSnapshot, appliedView))
+    : countActiveFilters(state) > 0
 
   const applyView = (v: SavedTableView) => {
     onStateChange(v.filters)
+    // P12 — restore the captured sort/columns only when the view carries
+    // them; legacy filter-only views leave the current arrangement alone.
+    if ((v.sort !== undefined || v.columns !== undefined) && onApplyViewSnapshot) {
+      onApplyViewSnapshot({ sort: v.sort, columns: v.columns })
+    }
     persist(views, v.id)
     close()
   }
@@ -372,6 +405,9 @@ function ViewMenu<T>({
       id: uid(),
       name: newName.trim() || 'Untitled view',
       filters: state,
+      // P12 — capture whatever extra workspace state the host exposes.
+      sort: viewSnapshot?.sort,
+      columns: viewSnapshot?.columns,
       createdAt: now,
       updatedAt: now,
     }
@@ -385,7 +421,15 @@ function ViewMenu<T>({
     if (!appliedView) return
     persist(
       views.map((v) =>
-        v.id === appliedView.id ? { ...v, filters: state, updatedAt: new Date().toISOString() } : v
+        v.id === appliedView.id
+          ? {
+              ...v,
+              filters: state,
+              sort: viewSnapshot?.sort,
+              columns: viewSnapshot?.columns,
+              updatedAt: new Date().toISOString(),
+            }
+          : v
       ),
       appliedView.id
     )
@@ -678,6 +722,8 @@ export function FilterRail<T>({
   viewKey,
   placeholder = 'Search…',
   searchRef,
+  viewSnapshot,
+  onApplyViewSnapshot,
   className,
 }: FilterRailProps<T>) {
   const [input, setInput] = useState(state.query)
@@ -817,7 +863,14 @@ export function FilterRail<T>({
             }
           >
             {(close) => (
-              <ViewMenu viewKey={viewKey} state={state} onStateChange={onStateChange} close={close} />
+              <ViewMenu
+                viewKey={viewKey}
+                state={state}
+                onStateChange={onStateChange}
+                viewSnapshot={viewSnapshot}
+                onApplyViewSnapshot={onApplyViewSnapshot}
+                close={close}
+              />
             )}
           </RailPopover>
         )}

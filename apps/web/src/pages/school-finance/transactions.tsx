@@ -1,99 +1,181 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { transactionLogApi, type TransactionLogResponse } from '../../api/school-finance/school-finance-api'
-import { Card, Table, PageHeader, Button, Badge, Pagination, Loading, ErrorState, Input, Select } from '../../components/ui'
-import { formatDate } from '../../lib/utils'
+import {
+  transactionLogApi,
+  type SchoolFinanceListParams,
+  type TransactionLogResponse,
+} from '../../api/school-finance/school-finance-api'
+import { Button, Badge, useToast } from '../../components/ui'
+import type { Column } from '../../components/ui/table'
+import { DataWorkspace, useWorkspace } from '../../components/data-workspace'
+import { exportApi } from '../../api/reports/export-api'
+import { formatCurrency } from '../../lib/utils'
 
-function formatCurrency(amount: number) {
-  return (amount / 100).toLocaleString('en-KE', { style: 'currency', currency: 'KES' })
-}
+/**
+ * P13 — Transaction workspace. The ledger's filter rail maps onto the
+ * server params (student id / type / date / amount range / `q` text search),
+ * the workspace state is URL-synced (deep-linkable, refresh-safe), and the
+ * Finance-tab of Student 360 deep-links here with `?student_id=` — which
+ * this page keeps as part of its canonical URL while the filter is active.
+ */
 
 const typeBadge: Record<string, 'info' | 'success' | 'danger' | 'warning' | 'neutral'> = {
-  payment: 'success', refund: 'danger', waiver: 'warning', adjustment: 'info', reversal: 'neutral',
+  payment: 'success', refund: 'danger', waiver: 'warning', adjustment: 'info', reversal: 'neutral', fine: 'danger', discount: 'info',
 }
 
-const columns = [
-  { key: 'id', header: 'ID', render: (r: TransactionLogResponse) => `#${r.id}` },
-  { key: 'transaction_type', header: 'Type', render: (r: TransactionLogResponse) => <Badge variant={typeBadge[r.transaction_type] || 'neutral'}>{r.transaction_type.replace('_', ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}</Badge> },
-  { key: 'amount', header: 'Amount', render: (r: TransactionLogResponse) => <span className={r.amount >= 0 ? 'text-green-500' : 'text-red-500'}>{formatCurrency(r.amount)}</span> },
-  { key: 'balance_before', header: 'Balance Before', render: (r: TransactionLogResponse) => formatCurrency(r.balance_before) },
-  { key: 'balance_after', header: 'Balance After', render: (r: TransactionLogResponse) => formatCurrency(r.balance_after) },
-  { key: 'reference_number', header: 'Reference', render: (r: TransactionLogResponse) => r.reference_number || '-' },
-  { key: 'description', header: 'Description', render: (r: TransactionLogResponse) => r.description || '-' },
-  { key: 'created_at', header: 'Date', render: (r: TransactionLogResponse) => formatDate(r.created_at) },
+// Server mode: the rail only offers filters the backend honors — type facet,
+// created_at/amount ranges and `q` search. The remaining numeric columns keep
+// their display types but opt out of the rail (P13 `filterable: false`).
+const TRANSACTION_COLUMNS: Column<TransactionLogResponse>[] = [
+  { key: 'id', header: 'ID', type: 'numeric', filterable: false, render: (r) => `#${r.id}` },
+  {
+    key: 'transaction_type',
+    header: 'Type',
+    type: 'status',
+    render: (r) => (
+      <Badge variant={typeBadge[r.transaction_type] || 'neutral'}>
+        {r.transaction_type.replace('_', ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
+      </Badge>
+    ),
+  },
+  {
+    key: 'amount',
+    header: 'Amount',
+    type: 'amount',
+    currency: 'KES',
+    render: (r) => (
+      <span className={r.amount >= 0 ? 'text-[var(--color-success-dark)]' : 'text-[var(--color-danger)]'}>
+        {formatCurrency(r.amount)}
+      </span>
+    ),
+  },
+  { key: 'student_id', header: 'Student', type: 'numeric', filterable: false, render: (r) => `#${r.student_id}` },
+  { key: 'balance_before', header: 'Balance Before', type: 'amount', currency: 'KES', filterable: false, render: (r) => formatCurrency(r.balance_before), hideOnMobile: true },
+  { key: 'balance_after', header: 'Balance After', type: 'amount', currency: 'KES', filterable: false, render: (r) => formatCurrency(r.balance_after), hideOnMobile: true },
+  { key: 'reference_number', header: 'Reference', type: 'text', render: (r) => r.reference_number || '-', hideOnMobile: true },
+  { key: 'description', header: 'Description', type: 'text', render: (r) => r.description || '-', hideOnMobile: true },
+  { key: 'created_at', header: 'Date', type: 'date', render: (r) => r.created_at ? new Date(r.created_at).toLocaleDateString('en-KE') : '-' },
 ]
 
 export const TransactionsPage: React.FC = () => {
+  const { showToast } = useToast()
+
+  const workspace = useWorkspace<TransactionLogResponse>({
+    viewKey: 'transactions',
+    columns: TRANSACTION_COLUMNS,
+    defaultPageSize: 20,
+  })
+
   const [data, setData] = useState<TransactionLogResponse[]>([])
   const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
-  const [size] = useState(20)
-  const [studentFilter, setStudentFilter] = useState('')
-  const [typeFilter, setTypeFilter] = useState('')
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
+  const [pages, setPages] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const fetchIdRef = useRef(0)
 
-  const fetch = useCallback(async () => {
+  const fetch = useCallback(async (params: SchoolFinanceListParams, showLoading: boolean) => {
     const fetchId = ++fetchIdRef.current
-    setLoading(true); setError(null)
+    if (showLoading) setLoading(true)
+    setError(null)
     try {
-      const params: any = { page, size }
-      if (studentFilter) params.student_id = Number(studentFilter)
-      if (typeFilter) params.transaction_type = typeFilter
-      if (dateFrom) params.from_date = dateFrom
-      if (dateTo) params.to_date = dateTo
       const result = await transactionLogApi.list(params)
-      if (fetchId === fetchIdRef.current) { setData(result.items); setTotal(result.total); setPage(result.page) }
+      if (fetchId === fetchIdRef.current) {
+        setData(result.items); setTotal(result.total); setPages(result.pages)
+      }
     } catch (err: any) {
       if (fetchId === fetchIdRef.current) setError(err?.detail || 'Failed to load transactions')
-    } finally { if (fetchId === fetchIdRef.current) setLoading(false) }
-  }, [page, size, studentFilter, typeFilter, dateFrom, dateTo])
+    } finally {
+      if (fetchId === fetchIdRef.current) setLoading(false)
+    }
+  }, [])
 
-  useEffect(() => { fetch() }, [fetch])
+  // Server round-trip: map the filter rail onto the backend params.
+  // `q` is the ledger free-text search; a bare numeric query additionally
+  // resolves as a student id on the backend.
+  useEffect(() => {
+    const params: SchoolFinanceListParams = { page: workspace.page, size: workspace.size }
+    const q = workspace.filters.query.trim()
+    if (q) params.q = q
+    const t = workspace.filters.facets.transaction_type
+    if (t && t.length > 0) params.transaction_type = t[t.length - 1]
+    const date = workspace.filters.ranges.created_at
+    if (date?.min) params.from_date = String(date.min)
+    if (date?.max) params.to_date = String(date.max)
+    const amount = workspace.filters.ranges.amount
+    if (amount?.min !== undefined) params.min_amount = Number(amount.min)
+    if (amount?.max !== undefined) params.max_amount = Number(amount.max)
+
+    // `?student_id=` deep-link (from Student 360's ledger link): kept in the
+    // canonical URL while active, dropped when the query no longer matches.
+    const studentParam = new URLSearchParams(window.location.search).get('student_id')
+    const numericQuery = Number(q)
+    if (q && Number.isFinite(numericQuery)) {
+      params.student_id = numericQuery
+      if (studentParam !== q) {
+        const url = new URL(window.location.href)
+        url.searchParams.set('student_id', q)
+        window.history.replaceState(null, '', url)
+      }
+    } else if (studentParam) {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('student_id')
+      window.history.replaceState(null, '', url)
+    }
+
+    fetch(params, true)
+  }, [workspace.page, workspace.size, workspace.filters, fetch])
+
+  const [exporting, setExporting] = useState(false)
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const blob = await exportApi.payments({})
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'transactions.csv'
+      a.click()
+      window.URL.revokeObjectURL(url)
+      showToast('Exporting all payments', 'success')
+    } catch (err: any) {
+      showToast(err?.detail || 'Export failed', 'error')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      <PageHeader
+    <div className="space-y-4">
+      <DataWorkspace
+        workspace={workspace}
         title="Transactions"
-        subtitle="View and filter transaction logs"
-        actions={
-          <div className="flex gap-2">
-            <Link to="/school-finance" className="px-3 py-1.5 text-sm rounded-lg bg-[var(--color-surface-hover)] hover:bg-[var(--color-surface-active)] transition-colors">Hub</Link>
-          </div>
+        description={`${total.toLocaleString('en-KE')} ledger entr${total !== 1 ? 'ies' : 'y'}`}
+        columns={TRANSACTION_COLUMNS}
+        keyExtractor={(r) => r.id}
+        data={data}
+        total={total}
+        pages={pages}
+        loading={loading}
+        error={error}
+        onRetry={() => fetch({ page: workspace.page, size: workspace.size }, true)}
+        onRefresh={() => fetch({ page: workspace.page, size: workspace.size }, false)}
+        mode="server"
+        filterPlaceholder="Search reference, description, or student #…"
+        toolbarActions={
+          <Button variant="secondary" onClick={handleExport} loading={exporting}>
+            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Export
+          </Button>
         }
       />
 
-      <Card>
-        <div className="flex flex-wrap gap-4 mb-4">
-          <Input placeholder="Student ID..." value={studentFilter} onChange={(e: any) => { setStudentFilter(e.target.value); setPage(1) }} className="w-40" />
-          <Select
-            value={typeFilter}
-            onChange={(e: any) => { setTypeFilter(e.target.value); setPage(1) }}
-            options={[
-              { value: '', label: 'All Types' },
-              { value: 'payment', label: 'Payment' },
-              { value: 'refund', label: 'Refund' },
-              { value: 'waiver', label: 'Waiver' },
-              { value: 'adjustment', label: 'Adjustment' },
-              { value: 'reversal', label: 'Reversal' },
-            ]}
-            className="w-40"
-          />
-          <Input type="date" value={dateFrom} onChange={(e: any) => { setDateFrom(e.target.value); setPage(1) }} className="w-44" placeholder="From date" />
-          <Input type="date" value={dateTo} onChange={(e: any) => { setDateTo(e.target.value); setPage(1) }} className="w-44" placeholder="To date" />
-        </div>
-
-        {error && <ErrorState message={error} />}
-        {loading ? <Loading /> : (
-          <>
-            <Table data={data} columns={columns} keyExtractor={(r) => r.id} />
-            <Pagination page={page} size={size} total={total} pages={Math.ceil(total / size)} onPageChange={setPage} onSizeChange={() => {}} />
-          </>
-        )}
-      </Card>
+      <div className="text-xs text-[var(--color-text-tertiary)]">
+        <Link to="/school-finance" className="font-medium text-[var(--color-brand-accent)] hover:underline">
+          Finance hub
+        </Link>
+      </div>
     </div>
   )
 }

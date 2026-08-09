@@ -42,6 +42,7 @@ from app.domains.cases.models import (
     CASE_EVIDENCE_KINDS,
     CASE_PRIORITIES,
     CASE_SOURCE_DATA_QUALITY,
+    CASE_SOURCE_FINANCIAL,
     CASE_SOURCE_MANUAL,
     CASE_SOURCE_RISK_FINDING,
     CASE_STATUS_CLOSED,
@@ -328,6 +329,7 @@ class CaseService:
         case_type: Optional[str] = None,
         assignee_id: Optional[int] = None,
         source_type: Optional[str] = None,
+        student_id: Optional[int] = None,
         overdue_only: bool = False,
         due_soon_only: bool = False,
         search: Optional[str] = None,
@@ -383,6 +385,10 @@ class CaseService:
             if source_type not in CASE_VALID_SOURCES:
                 return [], 0
             base.append(Case.source_type == source_type)
+        if student_id is not None:
+            # Student-scoped queries (Student 360 operational summary). The
+            # ``cases.student_id`` column is indexed for exactly this path.
+            base.append(Case.student_id == student_id)
         if overdue_only:
             base.append(Case.due_at.isnot(None))
             base.append(Case.due_at < datetime.datetime.now(datetime.timezone.utc))
@@ -731,6 +737,21 @@ class CaseService:
                     campus_id, source_type, source_id, priority
                 )
 
+        if student_id is not None and campus_id is not None:
+            # P10 — a case linked to a student must reference a student of
+            # the caller's own campus. Mirrors ``_validate_source`` (P7
+            # findings) and ``assign_case`` (in-campus assignee): without
+            # this, a case could be created against a foreign-campus student
+            # and would never surface on that student's own 360.
+            from app.domains.student.models import Student
+
+            q = select(Student.id).where(
+                Student.id == student_id,
+                Student.campus_id == campus_id,
+            )
+            if (await self.session.execute(q)).scalar_one_or_none() is None:
+                raise ValidationError("Student does not exist in this school")
+
         now = datetime.datetime.now(datetime.timezone.utc)
         due_at = due_at or await self._compute_due_at(
             campus_id, case_type, priority, created_at=now
@@ -818,6 +839,36 @@ class CaseService:
                 raise ValidationError(
                     "Referenced data-quality finding does not exist"
                 )
+        elif source_type == CASE_SOURCE_FINANCIAL:
+            # P13 — a financial-exception case references the underlying
+            # payment (or, for reconciliation items, the item itself). The
+            # referenced entity must exist in the caller's campus.
+            from app.domains.fees.models import Payment
+            from app.domains.school_finance.models import (
+                PaymentReconciliation,
+                ReconciliationItem,
+            )
+
+            q_p = select(Payment.id).where(Payment.id == source_id)
+            if campus_id is not None:
+                q_p = q_p.where(Payment.campus_id == campus_id)
+            if (await self.session.execute(q_p)).scalar_one_or_none() is not None:
+                return
+
+            q_r = (
+                select(ReconciliationItem.id)
+                .join(
+                    PaymentReconciliation,
+                    PaymentReconciliation.id == ReconciliationItem.reconciliation_id,
+                )
+                .where(ReconciliationItem.id == source_id)
+            )
+            if campus_id is not None:
+                q_r = q_r.where(PaymentReconciliation.campus_id == campus_id)
+            if (await self.session.execute(q_r)).scalar_one_or_none() is None:
+                raise ValidationError(
+                    "Referenced financial exception entity does not exist"
+                )
 
     async def _source_priority(
         self,
@@ -849,6 +900,120 @@ class CaseService:
             return severity if severity in CASE_PRIORITIES else fallback
         except Exception:  # noqa: BLE001 — never block creation on enrichment
             return fallback
+
+    async def _sync_source_finding(
+        self,
+        case: Case,
+        *,
+        resolve: bool,
+        actor_user_id: Optional[int],
+        reason: Optional[str] = None,
+    ) -> None:
+        """P11 — keep the originating P7 finding in step with the case.
+
+        When a case referencing a finding is resolved (or closed) the
+        finding is resolved too — audited, with the case number recorded as
+        the resolution reason. When the case is reopened, a finding that
+        was resolved *by this case* is reopened as well.
+
+        Idempotent by design: a finding already resolved elsewhere (Risk
+        Center resolution, recompute ``rule_no_longer_applies``) is never
+        overridden, and a reopened case never touches a finding resolved by
+        another path. A missing source never blocks the case lifecycle.
+        """
+        if case.source_type == CASE_SOURCE_RISK_FINDING:
+            from app.domains.risk.models import (
+                RISK_STATUS_ACKNOWLEDGED,
+                RISK_STATUS_OPEN,
+                RISK_STATUS_RESOLVED,
+                RiskFinding,
+            )
+
+            model = RiskFinding
+            resource_type = "risk_finding"
+            open_statuses = {RISK_STATUS_OPEN, RISK_STATUS_ACKNOWLEDGED}
+        elif case.source_type == CASE_SOURCE_DATA_QUALITY:
+            from app.domains.data_quality.models import (
+                DQ_STATUS_OPEN,
+                DQ_STATUS_RESOLVED,
+                DataQualityFinding,
+            )
+
+            model = DataQualityFinding
+            resource_type = "data_quality_finding"
+            open_statuses = {DQ_STATUS_OPEN}
+        else:
+            return
+        if case.source_id is None:
+            return
+
+        q = select(model).where(model.id == case.source_id)
+        if case.campus_id is not None:
+            q = q.where(model.campus_id == case.campus_id)
+        finding = (await self.session.execute(q)).scalar_one_or_none()
+        if finding is None:
+            return  # source gone — never block the case lifecycle on it
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+        via_case = f"Resolved via case {case.case_number}"
+        resolved_status = (
+            RISK_STATUS_RESOLVED
+            if resource_type == "risk_finding"
+            else DQ_STATUS_RESOLVED
+        )
+
+        if resolve:
+            if finding.status in open_statuses:
+                finding.status = resolved_status
+                finding.resolved_at = now
+                finding.resolved_by = actor_user_id
+                # Record both the user's reason and the case provenance so
+                # the loop stays traceable (reopen keys on via_case).
+                finding.resolved_reason = (
+                    via_case if not reason else f"{reason} ({via_case})"
+                )
+                await self.session.flush()
+                await AuditService(self.session).record(
+                    user_id=actor_user_id,
+                    username=None,
+                    action="RESOLVE",
+                    resource_type=resource_type,
+                    resource_id=str(finding.id),
+                    details={
+                        "finding_id": finding.id,
+                        "via_case": case.case_number,
+                        "reason": finding.resolved_reason,
+                    },
+                    campus_id=case.campus_id,
+                )
+                await self.session.flush()
+        else:
+            # Reopen only when THIS case was the resolver of the finding.
+            if finding.status == resolved_status and (
+                via_case in (finding.resolved_reason or "")
+            ):
+                finding.status = (
+                    RISK_STATUS_OPEN
+                    if resource_type == "risk_finding"
+                    else DQ_STATUS_OPEN
+                )
+                finding.resolved_at = None
+                finding.resolved_by = None
+                finding.resolved_reason = None
+                await self.session.flush()
+                await AuditService(self.session).record(
+                    user_id=actor_user_id,
+                    username=None,
+                    action="REOPEN",
+                    resource_type=resource_type,
+                    resource_id=str(finding.id),
+                    details={
+                        "finding_id": finding.id,
+                        "via_case": case.case_number,
+                    },
+                    campus_id=case.campus_id,
+                )
+                await self.session.flush()
 
     # ------------------------------------------------------------------
     # Lifecycle transitions
@@ -921,6 +1086,18 @@ class CaseService:
             {"action": "status_change", "from": previous, "to": new_status, "reason": reason},
             campus_id,
         )
+
+        # P11 — close the loop with the originating P7 finding: resolution
+        # resolves the finding, reopening a case reopens the finding it had
+        # resolved (both audited; never overrides external resolution).
+        if new_status in (CASE_STATUS_RESOLVED, CASE_STATUS_CLOSED):
+            await self._sync_source_finding(
+                case, resolve=True, actor_user_id=actor_user_id, reason=reason
+            )
+        elif new_status == CASE_STATUS_OPEN and previous in CASE_TERMINAL_STATUSES:
+            await self._sync_source_finding(
+                case, resolve=False, actor_user_id=actor_user_id
+            )
         return case
 
     async def assign_case(

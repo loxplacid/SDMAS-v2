@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { academicYearApi } from '../../api/academic/academic-year-api'
 import { rolloverApi } from '../../api/reports/rollover-api'
 import type { RolloverPreview, RolloverResult } from '../../api/reports/types'
-import { Card, Button, Alert, Table, Input, AnimatedCount, Select } from '../../components/ui'
+import { Card, Button, Alert, Table, Input, AnimatedCount, Select, PageHeader } from '../../components/ui'
 
 export function RolloverPage() {
   const [academicYears, setAcademicYears] = useState<{ id: number; name: string }[]>([])
@@ -66,11 +66,12 @@ export function RolloverPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div>
-        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Data Operations</div>
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Academic Year Rollover</h1>
-        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Roll over to a new academic year with classes, sections, and enrollments</p>
-      </div>
+      <PageHeader
+        eyebrow="Data Operations"
+        title="Academic Year Rollover"
+        subtitle="Roll over to a new academic year with classes, sections, and enrollments"
+        compact
+      />
 
       <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -622,3 +622,48 @@ async def test_resolve_unknown_finding_raises_not_found(db_session: AsyncSession
     svc = DataQualityService(db_session)
     with pytest.raises(NotFoundError):
         await svc.resolve_finding(99999, 1, actor_user_id=1, reason="nope")
+
+
+# ---------------------------------------------------------------------------
+# P11 — single-finding deep-link (case → finding context)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_get_finding_rbac_and_campus_scope(db_session: AsyncSession):
+    """P11 — ``get_finding`` (case → Data Quality deep-link) behaves like the
+    list: campus-scoped and RBAC-entity-filtered, never leaking."""
+    from app.core.exceptions import NotFoundError
+
+    f_payment = DataQualityFinding(
+        campus_id=1, check_code="duplicate_payments", category="duplicates",
+        severity="high", entity_type="payment", entity_id=11, field="amount",
+        description="Duplicate payment", status="open",
+    )
+    f_student = DataQualityFinding(
+        campus_id=1, check_code="student_missing_email", category="missing_fields",
+        severity="low", entity_type="student", entity_id=12, field="email",
+        description="Missing email", status="open",
+    )
+    f_b = DataQualityFinding(
+        campus_id=2, check_code="student_missing_email", category="missing_fields",
+        severity="low", entity_type="student", entity_id=13, field="email",
+        description="Other campus", status="open",
+    )
+    db_session.add_all([f_payment, f_student, f_b])
+    await db_session.flush()
+
+    svc = DataQualityService(db_session)
+    # Admin may read financial (payment) findings.
+    assert (await svc.get_finding(f_payment.id, 1, role="admin")).id == f_payment.id
+    # Staff cannot see financial entity types → treated as missing.
+    with pytest.raises(NotFoundError):
+        await svc.get_finding(f_payment.id, 1, role="staff")
+    # Campus isolation: campus 1 cannot read a campus 2 finding.
+    with pytest.raises(NotFoundError):
+        await svc.get_finding(f_b.id, 1, role="admin")
+    # Staff CAN read student findings.
+    assert (await svc.get_finding(f_student.id, 1, role="staff")).id == f_student.id
+    # Unknown id → 404.
+    with pytest.raises(NotFoundError):
+        await svc.get_finding(999999, 1, role="admin")

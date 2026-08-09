@@ -444,6 +444,53 @@ class RiskService:
         rows = (await self.session.execute(q)).scalars().all()
         return rows, total
 
+    async def get_finding(
+        self, finding_id: int, campus_id: Optional[int], role: str
+    ) -> RiskFinding:
+        """Single finding for deep-linking (case → Risk Center context).
+
+        P11 — lets the case detail "View underlying records" land on the
+        exact finding even when list filters/pagination would hide it.
+        Mirrors ``list_findings`` RBAC: a finding in a category the role
+        cannot see is treated as missing (404), never silently leaked.
+        """
+        f = await self._get_finding(finding_id, campus_id)
+        allowed = self._category_filter_for_role(role)
+        if f.category not in allowed:
+            raise NotFoundError(f"Risk finding {finding_id} not found")
+        return f
+
+    async def linked_cases_for_findings(
+        self, campus_id: Optional[int], finding_ids: list[int]
+    ) -> dict[int, dict[str, Any]]:
+        """finding_id → linked case info (id, number, status), campus-scoped.
+
+        P11 — lets the Risk Center show the open case for a finding and
+        offer "Open case" instead of a duplicate "Create case". The
+        ``uq_cases_source`` unique constraint guarantees at most one case
+        per (campus, source_type, source_id).
+        """
+        if not finding_ids:
+            return {}
+        from app.domains.cases.models import Case
+
+        q = select(Case.source_id, Case.id, Case.case_number, Case.status).where(
+            Case.source_type == "risk_finding",
+            Case.source_id.in_(finding_ids),
+        )
+        if campus_id is not None:
+            q = q.where(Case.campus_id == campus_id)
+        return {
+            source_id: {
+                "case_id": case_id,
+                "case_number": case_number,
+                "case_status": status,
+            }
+            for source_id, case_id, case_number, status in (
+                await self.session.execute(q)
+            ).all()
+        }
+
     async def get_overview(
         self, campus_id: Optional[int], role: str = "admin"
     ) -> dict[str, Any]:

@@ -66,6 +66,15 @@ export interface Column<T> {
   searchable?: boolean
   /** §6.2 T31 — quick range presets shown in the filter panel (e.g. "this term"). */
   rangePresets?: RangePreset[]
+  /**
+   * P13 — opt a column out of the filter rail's facet/range builders. Server
+   * pages must never offer a filter the backend cannot honor — a chip that
+   * silently filters nothing is hidden non-functionality. Leave the column's
+   * `type` intact (alignment/rendering/sort semantics still apply); this only
+   * excludes it from the filter panel, the query language and URL restore.
+   * Search participation is unaffected (see `searchable`).
+   */
+  filterable?: boolean
 }
 
 /** §3.1 type → alignment. */

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { academicYearApi } from '../../api/academic/academic-year-api'
 import { batchApi } from '../../api/reports/batch-api'
 import type { BatchEnrollItem, BatchEnrollResult, BatchEnrollResultItem } from '../../api/reports/types'
-import { Card, Button, Input, Alert, Table, Badge, Select, AnimatedCount } from '../../components/ui'
+import { Card, Button, Input, Alert, Table, Badge, Select, AnimatedCount, PageHeader } from '../../components/ui'
 
 export function BatchEnrollPage() {
   const [academicYears, setAcademicYears] = useState<{ id: number; name: string }[]>([])
@@ -55,11 +55,12 @@ export function BatchEnrollPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div>
-        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Data Operations</div>
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Batch Enroll Students</h1>
-        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Enroll multiple students in one operation</p>
-      </div>
+      <PageHeader
+        eyebrow="Data Operations"
+        title="Batch Enroll Students"
+        subtitle="Enroll multiple students in one operation"
+        compact
+      />
 
       <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="space-y-4">

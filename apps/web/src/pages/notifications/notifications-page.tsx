@@ -4,7 +4,7 @@ import { notificationApi } from '../../api/notifications'
 import type { NotificationResponse } from '../../api/notifications'
 import { getNotificationRoute } from '../../api/notifications/deep-link'
 import { cn } from '../../lib/utils'
-import { TabGroup, Button, Pagination, EmptyState, ErrorState, Badge } from '../../components/ui'
+import { TabGroup, Button, Pagination, EmptyState, ErrorState, Badge, PageHeader } from '../../components/ui'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 
 /**
@@ -157,32 +157,29 @@ export function NotificationsPage() {
   }
 
   const header = (
-    <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-      <div>
-        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">System</div>
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1 tracking-tight">Notifications</h1>
-        {!loading && !error && (
-          <p className="text-sm text-[var(--color-text-tertiary)] mt-1">
-            {total} {total === 1 ? 'notification' : 'notifications'}
-          </p>
-        )}
-      </div>
-      <div className="flex items-center gap-3">
-        <TabGroup
-          tabs={[
-            { id: 'all', label: 'All' },
-            { id: 'unread', label: 'Unread' },
-          ]}
-          activeTab={filter}
-          onChange={(id) => { setFilter(id as 'all' | 'unread'); setPage(1) }}
-          variant="pills"
-          size="sm"
-        />
-        <Button variant="outline" size="sm" onClick={handleMarkAllRead}>
-          Mark all read
-        </Button>
-      </div>
-    </div>
+    <PageHeader
+      eyebrow="System"
+      title="Notifications"
+      subtitle={!loading && !error ? `${total} ${total === 1 ? 'notification' : 'notifications'}` : undefined}
+      compact
+      actions={
+        <div className="flex items-center gap-3">
+          <TabGroup
+            tabs={[
+              { id: 'all', label: 'All' },
+              { id: 'unread', label: 'Unread' },
+            ]}
+            activeTab={filter}
+            onChange={(id) => { setFilter(id as 'all' | 'unread'); setPage(1) }}
+            variant="pills"
+            size="sm"
+          />
+          <Button variant="outline" size="sm" onClick={handleMarkAllRead}>
+            Mark all read
+          </Button>
+        </div>
+      }
+    />
   )
 
   return (

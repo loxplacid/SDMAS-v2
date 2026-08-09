@@ -3,7 +3,7 @@ import { academicYearApi } from '../../api/academic/academic-year-api'
 import { classApi } from '../../api/academic/class-api'
 import { feeReportApi } from '../../api/reports/fee-reports'
 import type { OutstandingReportItem } from '../../api/reports/types'
-import { Card, Select, Button, ErrorState, Table, Badge, Pagination, AnimatedCount } from '../../components/ui'
+import { Card, Select, Button, ErrorState, Table, Badge, Pagination, AnimatedCount, PageHeader } from '../../components/ui'
 import { formatCurrency, capitalize } from '../../lib/utils'
 import { useExport } from '../../hooks/use-export'
 
@@ -58,11 +58,12 @@ export function OutstandingReportPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div>
-        <div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Reports</div>
-        <h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Outstanding Fees Report</h1>
-        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Students with outstanding fee balances</p>
-      </div>
+      <PageHeader
+        eyebrow="Reports"
+        title="Outstanding Fees Report"
+        subtitle="Students with outstanding fee balances"
+        compact
+      />
 
       <Card className="hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

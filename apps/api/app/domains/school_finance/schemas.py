@@ -307,6 +307,48 @@ class FinanceReportResponse(BaseModel):
 FinanceReportPage = Page[FinanceReportResponse]
 
 
+# ── Financial Exceptions (P13) ──────────────────────────────────────────
+
+
+class LinkedCaseInfo(BaseModel):
+    """The operational case already opened for this exception (P11 reuse)."""
+
+    id: int
+    case_number: str
+    status: str
+
+
+class FinancialExceptionOut(BaseModel):
+    """A deterministic financial anomaly computed from real records.
+
+    Computed on read — never stored. ``key`` is stable per category+entity
+    so an operator can promote the exception into an operational case
+    (``source_type=financial_exception``, ``source_id`` = the entity id).
+    """
+
+    key: str
+    category: str
+    severity: str
+    title: str
+    description: str
+    student_id: Optional[int] = None
+    student_name: Optional[str] = None
+    payment_id: Optional[int] = None
+    amount: Optional[int] = None
+    reconciliation_item_id: Optional[int] = None
+    reconciliation_status: Optional[str] = None
+    evidence: dict = {}
+    created_at: Optional[datetime.datetime] = None
+    linked_case: Optional[LinkedCaseInfo] = None
+
+
+class FinancialExceptionSummary(BaseModel):
+    total: int
+    by_category: dict[str, int]
+    by_severity: dict[str, int]
+    items: list[FinancialExceptionOut]
+
+
 # ── Outstanding Balances ────────────────────────────────────────────────
 
 

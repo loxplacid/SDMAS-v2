@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { termApi } from '../../api/academic/term-api'
 import { academicYearApi } from '../../api/academic/academic-year-api'
 import type { TermResponse, TermCreate, TermUpdate, AcademicYearResponse } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast, PageHeader } from '../../components/ui'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { useDelight } from '../../components/delight/delight-provider'
 import { TERM_STATUSES, capitalize } from '../../lib/utils'
@@ -89,13 +89,18 @@ export function TermListPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div className="flex items-center justify-between">
-        <div><div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Academics</div><h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Terms</h1><p className="text-[var(--color-text-tertiary)] text-sm mt-1">{total} term{total !== 1 ? 's' : ''}</p></div>
-        <Button onClick={openCreateModal}>
-          Add Term
-          <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Academics"
+        title="Terms"
+        subtitle={`${total} term${total !== 1 ? 's' : ''}`}
+        compact
+        actions={
+          <Button onClick={openCreateModal}>
+            Add Term
+            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+          </Button>
+        }
+      />
       <div className="flex items-center gap-4">
         <Select options={years.map((y) => ({ value: String(y.id), label: y.name }))} placeholder="Select an academic year" value={yearFilter}
           onChange={(e) => { setYearFilter(e.target.value); setPage(1) }} />

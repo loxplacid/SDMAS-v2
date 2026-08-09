@@ -4,7 +4,7 @@ import { teacherApi } from '../../api/academic/teacher-api'
 import { classApi } from '../../api/academic/class-api'
 import { subjectApi } from '../../api/academic/subject-api'
 import type { TeacherAssignmentResponse, TeacherAssignmentCreate, TeacherResponse, ClassResponse, SubjectResponse } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast, PageHeader } from '../../components/ui'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { capitalize } from '../../lib/utils'
 
@@ -79,13 +79,18 @@ export function TeacherAssignmentListPage() {
 
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div className="flex items-center justify-between">
-        <div><div className="text-[var(--color-brand-accent)] text-xs font-semibold uppercase tracking-wider">Academics</div><h1 className="text-2xl font-bold text-[var(--color-text-primary)] mt-1">Teacher Assignments</h1><p className="text-[var(--color-text-tertiary)] text-sm mt-1">{total} assignment{total !== 1 ? 's' : ''}</p></div>
-        <Button onClick={openCreateModal}>
-          Add Assignment
-          <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Academics"
+        title="Teacher Assignments"
+        subtitle={`${total} assignment${total !== 1 ? 's' : ''}`}
+        compact
+        actions={
+          <Button onClick={openCreateModal}>
+            Add Assignment
+            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+          </Button>
+        }
+      />
       <div className="flex items-center gap-4">
         <Select options={classes.map((c) => ({ value: String(c.id), label: c.name }))} placeholder="All classes" value={classFilter}
           onChange={(e) => { setClassFilter(e.target.value); setPage(1) }} />

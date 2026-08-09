@@ -44,6 +44,7 @@ DocumentVerifiedEvent = standard_events.DocumentVerifiedEvent
 WorkflowSubmittedEvent = standard_events.WorkflowSubmittedEvent
 WorkflowApprovedEvent = standard_events.WorkflowApprovedEvent
 WorkflowRejectedEvent = standard_events.WorkflowRejectedEvent
+WorkflowCancelledEvent = standard_events.WorkflowCancelledEvent
 AcademicYearRolloverStartedEvent = standard_events.AcademicYearRolloverStartedEvent
 AcademicYearRolloverCompletedEvent = standard_events.AcademicYearRolloverCompletedEvent
 AcademicYearRolloverFailedEvent = standard_events.AcademicYearRolloverFailedEvent
@@ -232,6 +233,12 @@ register_event(
     WorkflowRejectedEvent,
 )
 register_event(
+    "workflow.cancelled",
+    "workflow",
+    "A workflow instance was cancelled (withdrawn before completion).",
+    WorkflowCancelledEvent,
+)
+register_event(
     "academic_year.rollover_started",
     "academic_year",
     "An academic year rollover began.",
@@ -296,6 +303,7 @@ __all__ = [
     "WorkflowSubmittedEvent",
     "WorkflowApprovedEvent",
     "WorkflowRejectedEvent",
+    "WorkflowCancelledEvent",
     "AcademicYearRolloverStartedEvent",
     "AcademicYearRolloverCompletedEvent",
     "AcademicYearRolloverFailedEvent",

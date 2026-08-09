@@ -5,12 +5,18 @@ import logging
 from datetime import timezone
 from typing import Optional, Sequence
 
-from app.core.exceptions import ConflictError, NotFoundError, ValidationError
+from app.core.exceptions import (
+    AuthorizationError,
+    ConflictError,
+    NotFoundError,
+    ValidationError,
+)
 from app.domains.audit.constants import APPROVE, UPDATE, WORKFLOW
 from app.domains.audit.service import AuditService
 from app.domains.events import publish_event
 from app.domains.events.events import (
     WorkflowApprovedEvent,
+    WorkflowCancelledEvent,
     WorkflowRejectedEvent,
     WorkflowSubmittedEvent,
 )
@@ -273,7 +279,17 @@ class WorkflowExecutionService:
         actor_id: Optional[int] = None,
         comment: Optional[str] = None,
         to_step_id: Optional[int] = None,
+        actor_roles: Optional[list[str]] = None,
     ) -> WorkflowInstance:
+        """
+        Perform an approval action on a workflow instance.
+
+        Role enforcement (P14 §4): when ``actor_roles`` is provided, the
+        actor must satisfy the current step's ``assigned_role`` (if set)
+        and, for forward transitions, the chosen transition's
+        ``required_role`` (if set).  The API router always passes
+        ``current_user.role_codes`` — the UI can never bypass the check.
+        """
         instance = await self.instance_repo.get_by_id(instance_id)
 
         if instance.status != "active":
@@ -281,13 +297,17 @@ class WorkflowExecutionService:
                 f"Cannot perform action on a {instance.status} workflow instance"
             )
 
-        allowed_actions = {"approve", "reject", "return", "submit"}
+        allowed_actions = {"approve", "reject", "return", "submit", "cancel"}
         if action not in allowed_actions:
             raise ValidationError(
                 f"Invalid action '{action}'. Must be one of {allowed_actions}"
             )
 
         current_step = instance.current_step
+
+        # ── Role enforcement ──
+        if actor_roles is not None:
+            self._assert_step_role(current_step, actor_roles)
 
         if action == "approve":
             transitions = await self.transition_repo.get_available_from_step(
@@ -309,6 +329,16 @@ class WorkflowExecutionService:
             else:
                 transition = transitions[0]
 
+            # The chosen transition may carry its own role requirement
+            # (e.g. only HOD may approve).  Enforce it server-side.
+            if actor_roles is not None and transition.required_role:
+                if transition.required_role not in actor_roles:
+                    raise AuthorizationError(
+                        f"Role '{transition.required_role}' is required to approve "
+                        f"from step '{current_step.name}'. User has: "
+                        f"{', '.join(actor_roles)}"
+                    )
+
             # Move to the target step.  Assign the relationship (not just
             # the FK) so ``instance.current_step`` is never stale within
             # the same session — important for chained transitions.
@@ -321,9 +351,38 @@ class WorkflowExecutionService:
 
         elif action == "reject":
             # Reject always terminates the instance as cancelled, moving
-            # to the designated step (if any) for record-keeping.
+            # to the designated step (if any) for record-keeping.  The
+            # matching graph edge (if any) may carry a ``required_role``
+            # that mirrors what the UI surfaced — enforce it too.
+            if actor_roles is not None and to_step_id is not None:
+                reject_edges = await self.transition_repo.get_available_from_step(
+                    current_step.id
+                )
+                edge = next(
+                    (e for e in reject_edges if e.to_step_id == to_step_id), None
+                )
+                if edge is not None and edge.required_role:
+                    if edge.required_role not in actor_roles:
+                        raise AuthorizationError(
+                            f"Role '{edge.required_role}' is required to reject "
+                            f"from step '{current_step.name}'. User has: "
+                            f"{', '.join(actor_roles)}"
+                        )
             if to_step_id is not None:
                 target_step = await self.step_repo.get_by_id(to_step_id)
+                instance.current_step = target_step
+            instance.status = "cancelled"
+            instance.updated_at = datetime.datetime.now(timezone.utc)
+
+        elif action == "cancel":
+            # Cancel: the submitter (or an admin) withdraws an active
+            # request before it completes.  Terminal like reject, but
+            # recorded with its own action so the audit trail can
+            # distinguish "withdrawn by submitter" from "rejected".
+            if to_step_id is not None:
+                target_step = await self.step_repo.get_by_id(to_step_id)
+                if target_step.workflow_id != instance.workflow_id:
+                    raise ValidationError("Target step does not belong to this workflow")
                 instance.current_step = target_step
             instance.status = "cancelled"
             instance.updated_at = datetime.datetime.now(timezone.utc)
@@ -350,6 +409,12 @@ class WorkflowExecutionService:
             if not transitions:
                 raise ValidationError("No forward transitions available from current step")
             transition = transitions[0]
+            if actor_roles is not None and transition.required_role:
+                if transition.required_role not in actor_roles:
+                    raise AuthorizationError(
+                        f"Role '{transition.required_role}' is required to submit "
+                        f"from step '{current_step.name}'"
+                    )
             target_step = await self.step_repo.get_by_id(transition.to_step_id)
             instance.current_step = target_step
             instance.updated_at = datetime.datetime.now(timezone.utc)
@@ -429,6 +494,18 @@ class WorkflowExecutionService:
                     created_by=instance.created_by,
                     comment=comment,
                 )
+            elif action == "cancel":
+                event = WorkflowCancelledEvent(
+                    instance_id=instance.id,
+                    workflow_id=instance.workflow_id,
+                    entity_type=instance.entity_type,
+                    entity_id=instance.entity_id,
+                    step_name=step_name,
+                    status=instance.status,
+                    actor_id=actor_id,
+                    created_by=instance.created_by,
+                    comment=comment,
+                )
             else:
                 event = WorkflowSubmittedEvent(
                     instance_id=instance.id,
@@ -446,14 +523,32 @@ class WorkflowExecutionService:
     # ── Get available transitions for the current step ──
 
     async def get_available_transitions(
-        self, instance_id: int
+        self, instance_id: int, actor_roles: Optional[list[str]] = None
     ) -> list[AvailableTransition]:
+        """
+        List transitions the actor may take from the current step.
+
+        When ``actor_roles`` is provided, the current step's
+        ``assigned_role`` and each transition's ``required_role`` are both
+        enforced — the UI only ever surfaces actions the user is actually
+        allowed to perform (the service still re-checks on
+        ``perform_action``).  The two checks mirror exactly what
+        ``perform_action`` enforces, so the inbox can never show an action
+        that would 403.
+        """
         instance = await self.instance_repo.get_by_id(instance_id)
+        if actor_roles is not None:
+            current_step = instance.current_step
+            if current_step.assigned_role and current_step.assigned_role not in actor_roles:
+                return []
         transitions = await self.transition_repo.get_available_from_step(
             instance.current_step_id
         )
         result = []
         for t in transitions:
+            if actor_roles is not None and t.required_role:
+                if t.required_role not in actor_roles:
+                    continue
             to_step = await self.step_repo.get_by_id(t.to_step_id)
             result.append(
                 AvailableTransition(
@@ -467,6 +562,15 @@ class WorkflowExecutionService:
                 )
             )
         return result
+
+    @staticmethod
+    def _assert_step_role(step, actor_roles: list[str]) -> None:
+        """Enforce the current step's ``assigned_role`` (if any)."""
+        if step.assigned_role and step.assigned_role not in actor_roles:
+            raise AuthorizationError(
+                f"Role '{step.assigned_role}' is required to act on step "
+                f"'{step.name}'. User has: {', '.join(actor_roles)}"
+            )
 
     # ── Get instance (detail) ──
 

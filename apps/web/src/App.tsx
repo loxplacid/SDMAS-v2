@@ -68,6 +68,7 @@ const ReceiptsPage = lazy(() => import('./pages/school-finance/receipts').then((
 const TransactionsPage = lazy(() => import('./pages/school-finance/transactions').then((m) => ({ default: m.TransactionsPage })))
 const OutstandingBalancesPage = lazy(() => import('./pages/school-finance/outstanding-balances').then((m) => ({ default: m.OutstandingBalancesPage })))
 const FinanceReportsPage = lazy(() => import('./pages/school-finance/reports').then((m) => ({ default: m.FinanceReportsPage })))
+const FinancialExceptionsPage = lazy(() => import('./pages/school-finance/exceptions').then((m) => ({ default: m.FinancialExceptionsPage })))
 
 // Attendance
 const AttendancePage = lazy(() => import('./pages/attendance').then((m) => ({ default: m.AttendancePage })))
@@ -292,6 +293,7 @@ export default function App() {
               <Route path="/fees/summary" element={<Suspense fallback={null}><FinancialSummaryPage /></Suspense>} />
               <Route path="/school-finance" element={<Suspense fallback={null}><SchoolFinancePage /></Suspense>} />
               <Route path="/school-finance/dashboard" element={<Suspense fallback={null}><SchoolFinanceDashboardPage /></Suspense>} />
+              <Route path="/school-finance/exceptions" element={<Suspense fallback={null}><FinancialExceptionsPage /></Suspense>} />
               <Route path="/school-finance/fee-schedules" element={<Suspense fallback={null}><FeeSchedulesPage /></Suspense>} />
               <Route path="/school-finance/reconciliation" element={<Suspense fallback={null}><ReconciliationPage /></Suspense>} />
               <Route path="/school-finance/receipts" element={<Suspense fallback={null}><ReceiptsPage /></Suspense>} />

@@ -117,6 +117,8 @@ describe('Work Queue page', () => {
       expect(screen.getByText('Attendance anomaly — Grade 10A')).toBeInTheDocument()
       expect(screen.getByText('OVERDUE')).toBeInTheDocument()
       expect(screen.getByText(/From risk finding/)).toBeInTheDocument()
+      // P11 — the queue exposes case age alongside priority/due/SLA/assignee.
+      expect(screen.getByText(/Created .* ago/)).toBeInTheDocument()
     })
     expect(screen.queryByLabelText('Loading work queue')).not.toBeInTheDocument()
   })

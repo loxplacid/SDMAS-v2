@@ -9,6 +9,7 @@ const listFindingsMock = vi.fn()
 const runChecksMock = vi.fn()
 const resolveFindingMock = vi.fn()
 const ignoreFindingMock = vi.fn()
+const getFindingMock = vi.fn()
 
 vi.mock('../api/data-quality/data-quality-api', () => ({
   dataQualityApi: {
@@ -17,6 +18,7 @@ vi.mock('../api/data-quality/data-quality-api', () => ({
     runChecks: (...args: unknown[]) => runChecksMock(...args),
     resolveFinding: (...args: unknown[]) => resolveFindingMock(...args),
     ignoreFinding: (...args: unknown[]) => ignoreFindingMock(...args),
+    getFinding: (...args: unknown[]) => getFindingMock(...args),
   },
 }))
 
@@ -279,6 +281,34 @@ describe('Data Quality Center page', () => {
     fireEvent.keyDown(screen.getAllByRole('listitem')[1], { key: 'ArrowUp' })
     await waitFor(() => {
       expect(screen.getAllByRole('listitem')[0]).toHaveAttribute('aria-current', 'true')
+    })
+  })
+
+  it('deep-links a case back to its finding via ?finding= and clears it', async () => {
+    getFindingMock.mockResolvedValueOnce(resolvedFinding)
+    renderPage('/data-quality?finding=2')
+
+    // The banner fetches the exact finding and renders it with its state —
+    // even a resolved finding hidden from the default open view.
+    const banner = await screen.findByLabelText('Deep-linked finding 2')
+    expect(getFindingMock).toHaveBeenCalledWith(2)
+    expect(within(banner).getByText('Student has no guardian on file')).toBeInTheDocument()
+    expect(within(banner).getByText(/Guardian contact added/)).toBeInTheDocument()
+    // A resolved finding is never offered for re-creation.
+    expect(within(banner).queryByRole('button', { name: /Create case/ })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /Show in list/ }))
+    await waitFor(() => {
+      expect(screen.queryByText(/Finding #2 — opened from a case/)).not.toBeInTheDocument()
+    })
+  })
+
+  it('shows an honest error in the deep-link banner when the finding is unavailable', async () => {
+    getFindingMock.mockRejectedValueOnce({ detail: 'Finding not found' })
+    renderPage('/data-quality?finding=999')
+
+    await waitFor(() => {
+      expect(screen.getByText(/Couldn't load finding #999/)).toBeInTheDocument()
     })
   })
 

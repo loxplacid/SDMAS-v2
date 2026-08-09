@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../api/auth/auth-context'
 import type { CasePriority } from '../../api/cases/cases-api'
 import {
@@ -61,6 +61,16 @@ const STATUS_OPTIONS = [
   { value: 'acknowledged', label: 'Acknowledged' },
   { value: 'resolved', label: 'Resolved' },
 ]
+
+// P11 — linked case status badge colors (a resolved/closed case is done).
+const caseStatusBadge: Record<string, 'success' | 'info' | 'warning'> = {
+  resolved: 'success',
+  closed: 'success',
+  in_progress: 'info',
+  waiting: 'info',
+  acknowledged: 'warning',
+  open: 'warning',
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -136,6 +146,14 @@ function FindingCard({
               {finding.status !== 'open' && (
                 <Badge variant={finding.status === 'resolved' ? 'success' : 'warning'} size="sm">{finding.status}</Badge>
               )}
+              {finding.case_id && finding.case_number && (
+                <Badge variant={caseStatusBadge[finding.case_status || 'open'] ?? 'info'} size="sm">
+                  Case {finding.case_number}
+                  {finding.case_status && finding.case_status !== 'open'
+                    ? ` · ${finding.case_status.replace('_', ' ')}`
+                    : ''}
+                </Badge>
+              )}
             </div>
             <p className="text-xs text-[var(--color-text-tertiary)] mt-1 leading-relaxed">{finding.reason}</p>
             {finding.status !== 'resolved' && (
@@ -167,14 +185,21 @@ function FindingCard({
               Acknowledge
             </button>
           )}
-          {isActive && (
+          {finding.case_id ? (
+            <button
+              onClick={() => navigate(`/cases/${finding.case_id}`)}
+              className="rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] hover:border-[var(--color-brand-accent)]/50 hover:text-[var(--color-brand-accent)] motion-safe:transition-colors"
+            >
+              Open case
+            </button>
+          ) : isActive ? (
             <button
               onClick={() => onCreateCase(finding)}
               className="rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] hover:border-[var(--color-brand-accent)]/50 hover:text-[var(--color-brand-accent)] motion-safe:transition-colors"
             >
               Create case
             </button>
-          )}
+          ) : null}
           {isActive && canResolve && (
             <button
               onClick={() => onResolve(finding)}
@@ -391,6 +416,45 @@ export function RiskCenterPage() {
   const [caseCreatingId, setCaseCreatingId] = useState<number | null>(null)
   const fetchIdRef = useRef(0)
 
+  // P11 — deep-link: a case's "View underlying records" arrives here as
+  // ?finding=<id>. The banner renders the exact finding regardless of the
+  // list's status filter/pagination, so a finding that was resolved by its
+  // case (and thus hidden from the default 'open' list) is never lost.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const findingParam = searchParams.get('finding')
+  const [contextFinding, setContextFinding] = useState<RiskFinding | null>(null)
+  const [contextError, setContextError] = useState(false)
+
+  useEffect(() => {
+    if (!findingParam) {
+      setContextFinding(null)
+      setContextError(false)
+      return
+    }
+    const parsed = Number(findingParam)
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      // Malformed deep-link (?finding=abc) — render a neutral invalid-link
+      // state instead of issuing a request for /findings/NaN.
+      setContextFinding(null)
+      setContextError(false)
+      return
+    }
+    let active = true
+    setContextFinding(null)
+    setContextError(false)
+    riskApi
+      .getFinding(parsed)
+      .then((f) => {
+        if (active) setContextFinding(f)
+      })
+      .catch(() => {
+        if (active) setContextError(true)
+      })
+    return () => {
+      active = false
+    }
+  }, [findingParam])
+
   const loadFindings = useCallback(async () => {
     const fetchId = ++fetchIdRef.current
     try {
@@ -484,6 +548,7 @@ export function RiskCenterPage() {
       setFindings((prev) =>
         prev ? { ...prev, items: prev.items.map((i) => (i.id === f.id ? updated : i)) } : prev
       )
+      setContextFinding((prev) => (prev?.id === f.id ? updated : prev))
       showToast('Finding acknowledged', 'success')
     } catch (err: any) {
       showToast(err?.detail || 'Acknowledge failed', 'error')
@@ -500,6 +565,7 @@ export function RiskCenterPage() {
       setFindings((prev) =>
         prev ? { ...prev, items: prev.items.map((i) => (i.id === resolveTarget.id ? updated : i)) } : prev
       )
+      setContextFinding((prev) => (prev?.id === resolveTarget.id ? updated : prev))
       showToast('Finding resolved (audited)', 'success')
       setResolveTarget(null)
       setResolveReason('')
@@ -703,6 +769,62 @@ export function RiskCenterPage() {
                 </select>
               </div>
             </div>
+
+            {findingParam && (
+              <div
+                aria-label={`Deep-linked finding ${findingParam}`}
+                className="mb-4 rounded-xl border border-[var(--color-brand-accent)]/25 bg-[var(--color-brand-accent)]/5 p-4 animate-fade-in"
+              >
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <p className="text-xs font-semibold text-[var(--color-brand-accent)]">
+                    Finding #{findingParam} — opened from a case
+                  </p>
+                  <button
+                    onClick={() =>
+                      setSearchParams((prev) => {
+                        const next = new URLSearchParams(prev)
+                        next.delete('finding')
+                        return next
+                      })
+                    }
+                    className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)] hover:border-[var(--color-brand-accent)]/40 hover:text-[var(--color-brand-accent)] motion-safe:transition-colors"
+                  >
+                    Show in list
+                  </button>
+                </div>
+                {(() => {
+                  const invalidLink = !!findingParam && (!Number.isInteger(Number(findingParam)) || Number(findingParam) <= 0)
+                  if (invalidLink) {
+                    return (
+                      <p className="text-xs text-[var(--color-text-tertiary)] py-2">
+                        This link is malformed — no finding reference was provided.
+                      </p>
+                    )
+                  }
+                  if (contextError) {
+                    return (
+                      <p className="text-xs text-[var(--color-danger)] py-2">
+                        Couldn't load finding #{findingParam}. It may have been removed, belong to another campus, or your role cannot view it.
+                      </p>
+                    )
+                  }
+                  if (!contextFinding) {
+                    return <Skeleton className="h-20 rounded-xl" />
+                  }
+                  return (
+                    <FindingCard
+                      finding={contextFinding}
+                      index={0}
+                      canResolve={canResolve}
+                      canAcknowledge={canAcknowledge}
+                      onResolve={setResolveTarget}
+                      onAcknowledge={handleAcknowledge}
+                      onCreateCase={handleCreateCase}
+                    />
+                  )
+                })()}
+              </div>
+            )}
 
             {visibleFindings.length === 0 ? (
               <div className="rounded-2xl border border-[var(--color-success)]/20 bg-[var(--color-success)]/5 p-8 text-center">

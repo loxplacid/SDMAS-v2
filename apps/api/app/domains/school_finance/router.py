@@ -30,6 +30,7 @@ from app.domains.school_finance.schemas import (
     FinanceReportGenerate,
     FinanceReportPage,
     FinanceReportResponse,
+    FinancialExceptionSummary,
     OutstandingBalanceSummary,
     PaymentMethodCreate,
     PaymentMethodPage,
@@ -49,6 +50,7 @@ from app.domains.school_finance.schemas import (
 from app.domains.school_finance.service import (
     FeeScheduleService,
     FinanceReportService,
+    FinancialExceptionService,
     OutstandingBalanceService,
     PaymentMethodService,
     ReceiptService,
@@ -74,6 +76,10 @@ async def get_fs_svc(session: AsyncSession = Depends(get_session)) -> FeeSchedul
 
 async def get_tx_svc(session: AsyncSession = Depends(get_session)) -> TransactionLogService:
     return TransactionLogService(session)
+
+
+async def get_fex_svc(session: AsyncSession = Depends(get_session)) -> FinancialExceptionService:
+    return FinancialExceptionService(session)
 
 
 async def get_rec_svc(session: AsyncSession = Depends(get_session)) -> ReconciliationService:
@@ -299,6 +305,9 @@ async def list_transactions(
     campus_id: Optional[int] = Query(None, alias="campus_id"),
     from_date: Optional[str] = Query(None, alias="from_date"),
     to_date: Optional[str] = Query(None, alias="to_date"),
+    min_amount: Optional[int] = Query(None, alias="min_amount"),
+    max_amount: Optional[int] = Query(None, alias="max_amount"),
+    q: Optional[str] = Query(None, alias="q"),
     svc: TransactionLogService = Depends(get_tx_svc),
     _actor: User = Depends(require_permission(FEES_VIEW)),
     tenant: TenantContext = Depends(require_tenant_context),
@@ -307,6 +316,8 @@ async def list_transactions(
         student_id=student_id, transaction_type=transaction_type,
         payment_id=payment_id, campus_id=effective_campus_id(tenant, campus_id),
         from_date=from_date, to_date=to_date,
+        min_amount=min_amount, max_amount=max_amount,
+        q=q,
         skip=pagination.offset, limit=pagination.limit,
     )
     return Page.create(
@@ -324,6 +335,30 @@ async def get_student_balance(
 ) -> dict:
     balance = await svc.get_student_balance(student_id, campus_id=effective_campus_id(tenant, None))
     return {"student_id": student_id, "balance": balance}
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# FINANCIAL EXCEPTIONS (P13)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+@router.get("/exceptions", response_model=FinancialExceptionSummary)
+async def list_financial_exceptions(
+    pagination: PaginationParams = Depends(),
+    campus_id: Optional[int] = Query(None, alias="campus_id"),
+    svc: FinancialExceptionService = Depends(get_fex_svc),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
+    tenant: TenantContext = Depends(require_tenant_context),
+) -> FinancialExceptionSummary:
+    """Deterministic financial anomalies computed from real records
+    (reconciliation discrepancies, payments without receipts, payments
+    missing ledger entries, duplicate-looking payments). Read-only —
+    promoting a finding into a case happens through the cases API."""
+    return await svc.list_exceptions(
+        campus_id=effective_campus_id(tenant, campus_id),
+        skip=pagination.offset,
+        limit=pagination.limit,
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -402,13 +437,14 @@ async def list_reconciliations(
     campus_id: Optional[int] = Query(None, alias="campus_id"),
     from_date: Optional[str] = Query(None, alias="from_date"),
     to_date: Optional[str] = Query(None, alias="to_date"),
+    q: Optional[str] = Query(None, alias="q"),
     svc: ReconciliationService = Depends(get_rec_svc),
     _actor: User = Depends(require_permission(FEES_VIEW)),
     tenant: TenantContext = Depends(require_tenant_context),
 ) -> ReconciliationPage:
     items, total = await svc.list(
         status_filter=status_filter, campus_id=effective_campus_id(tenant, campus_id),
-        from_date=from_date, to_date=to_date,
+        from_date=from_date, to_date=to_date, q=q,
         skip=pagination.offset, limit=pagination.limit,
     )
     return Page.create(

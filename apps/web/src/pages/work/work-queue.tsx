@@ -12,7 +12,7 @@ import {
 } from '../../api/cases/cases-api'
 import { Badge, Button, Modal, SearchInput, Skeleton } from '../../components/ui'
 import { useToast } from '../../components/ui/toast'
-import { cn, formatDateTime } from '../../lib/utils'
+import { cn, formatDateTime, formatRelativeTime } from '../../lib/utils'
 
 // ── Presentation helpers ─────────────────────────────────────────────
 
@@ -158,6 +158,7 @@ function CaseRow({
               {item.assignee_name ? `Assigned to ${item.assignee_name}` : 'Unassigned'}
               {item.due_at ? ` · Due ${formatDateTime(item.due_at)}` : ' · No deadline'}
               {item.source_type !== 'manual' && ` · From ${item.source_type.replace('_', ' ')}`}
+              {item.created_at ? ` · Created ${formatRelativeTime(item.created_at)}` : ''}
             </p>
           </div>
         </div>
