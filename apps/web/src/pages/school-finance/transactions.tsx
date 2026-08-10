@@ -9,7 +9,7 @@ import { Button, Badge, useToast } from '../../components/ui'
 import type { Column } from '../../components/ui/table'
 import { DataWorkspace, useWorkspace } from '../../components/data-workspace'
 import { exportApi } from '../../api/reports/export-api'
-import { formatCurrency } from '../../lib/utils'
+import { formatCurrency, plural } from '../../lib/utils'
 
 /**
  * P13 — Transaction workspace. The ledger's filter rail maps onto the
@@ -149,7 +149,7 @@ export const TransactionsPage: React.FC = () => {
       <DataWorkspace
         workspace={workspace}
         title="Transactions"
-        description={`${total.toLocaleString('en-KE')} ledger entr${total !== 1 ? 'ies' : 'y'}`}
+        description={plural(total, 'ledger entry', 'ledger entries', 'en-KE')}
         columns={TRANSACTION_COLUMNS}
         keyExtractor={(r) => r.id}
         data={data}

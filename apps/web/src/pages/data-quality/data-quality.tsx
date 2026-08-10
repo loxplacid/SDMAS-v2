@@ -9,7 +9,7 @@ import {
 import { casesApi } from '../../api/cases/cases-api'
 import { Button, Badge, Skeleton, Modal, TabGroup, SearchInput, EmptyState } from '../../components/ui'
 import { useToast } from '../../components/ui/toast'
-import { cn, formatDateTime } from '../../lib/utils'
+import { cn, formatDateTime, plural } from '../../lib/utils'
 
 // ── Presentation helpers ─────────────────────────────────────────────
 
@@ -715,7 +715,7 @@ export function DataQualityCenterPage() {
               <div>
                 <h2 className="text-base font-semibold text-[var(--color-text-primary)]">Findings</h2>
                 <p className="text-sm text-[var(--color-text-tertiary)] mt-0.5">
-                  {total.toLocaleString()} finding{total !== 1 ? 's' : ''}
+                  {plural(total, 'finding')}
                   {severityCount > 0 && total !== severityCount ? ` · ${severityCount} open` : ''}
                 </p>
               </div>

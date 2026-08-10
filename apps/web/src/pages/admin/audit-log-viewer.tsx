@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { auditLogApi } from '../../api/audit/audit-api'
 import type { AuditLogEntry } from '../../api/audit/audit-api'
-import { Card, Table, Pagination, Input, Select, Button, Badge, ErrorState, Drawer, Tooltip, PageHeader } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, ErrorState, Drawer, Tooltip, PageHeader, ShortcutKey } from '../../components/ui'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
-import { formatDateTime, cn } from '../../lib/utils'
+import { formatDateTime, cn, plural } from '../../lib/utils'
 
 // ── Helpers ──
 
@@ -128,7 +128,7 @@ export function AuditLogViewerPage() {
       <PageHeader
         eyebrow="Administration"
         title="Audit Logs"
-        subtitle={`${total} event${total !== 1 ? 's' : ''} · Immutable record of all mutating operations`}
+        subtitle={`${plural(total, 'event')} · Immutable record of all mutating operations`}
         compact
         actions={
           <Button variant="outline" onClick={() => fetch({ page, size, action: actionFilter || undefined, resource_type: resourceFilter || undefined })}>
@@ -136,7 +136,7 @@ export function AuditLogViewerPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
             Refresh
-            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-[var(--color-surface-hover)] text-[10px] font-medium text-[var(--color-text-muted)]">R</kbd>
+            <ShortcutKey tone="muted">R</ShortcutKey>
           </Button>
         }
       />

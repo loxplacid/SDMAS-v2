@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { feeDueApi, type FeeDueListParams } from '../../api/fees/fee-due-api'
 import type { FeeDueResponse } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Alert, ErrorState, useToast, PageHeader } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Alert, ErrorState, useToast, PageHeader, ShortcutKey} from '../../components/ui'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
-import { FEE_DUE_STATUSES, capitalize, formatCurrency } from '../../lib/utils'
+import { FEE_DUE_STATUSES, capitalize, formatCurrency, plural } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger'> = {
   paid: 'success',
@@ -85,12 +85,12 @@ export function FeeDueListPage() {
       <PageHeader
         eyebrow="Fees"
         title="Fee Dues"
-        subtitle={`${total} due${total !== 1 ? 's' : ''}`}
+        subtitle={plural(total, 'due')}
         compact
         actions={
           <Button onClick={() => { setGenModalOpen(true); setGenError(null) }}>
             Generate Dues
-            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+            <ShortcutKey>N</ShortcutKey>
           </Button>
         }
       />

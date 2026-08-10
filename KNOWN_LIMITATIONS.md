@@ -5,17 +5,19 @@ are resolved.
 
 ## Security / hygiene
 
-1. **Root `.env` is tracked in git.** The `.gitignore` already excludes
-   `.env`, but an early commit added it before the rule. Recommended: `git rm
-   --cached .env`, keep the file locally, and rotate any secrets that ever
-   lived in it. (The deployed docker-compose uses inline environment, not the
-   tracked `.env`.)
+1. **[RESOLVED] Root `.env` is tracked in git.** The `.gitignore` already
+   excludes `.env`, and `git rm --cached .env` was applied (see
+   docs/SECRETS.md). The file remains on disk for local development but is no
+   longer in the index. Rotation of any secrets that ever lived in it is
+   recommended.
 2. **Root `node_modules/` was tracked** (4,474 files) — now untracked in the
    index but still present on disk. Safe to delete from the working tree
    (`rm -rf node_modules`); it is the archived v1 JS demo's dependency set.
-3. **No CI/CD configuration exists in the repository.** The Makefile and
-   `infrastructure/scripts/deploy.sh` support automation, and DEPLOYMENT.md
-   includes a suggested GitHub Actions workflow, but nothing is wired up yet.
+3. **[RESOLVED] No CI/CD configuration exists in the repository.** CI
+   workflows are wired up in `.github/workflows/ci.yml` and
+   `.github/workflows/sbom_validation.yml` (see also docs/CI.md). The
+   Makefile and `infrastructure/scripts/deploy.sh` support automated
+   deployment.
 
 ## Billing / finance
 
@@ -41,6 +43,11 @@ are resolved.
    tenant queries and exempted in a few legacy-data guards
    (`assert_tenant_scope_or_owner`, receipt/reconciliation campus checks).
    New data is always campus-tagged.
+10. **Migration workspace (D2) imports students only.** The engine supports
+    multi-entity runs (`MigrationEngine.run_bulk`) and migrators for
+    users/academic/attendance/fees exist, but the workspace wizard currently
+    exposes the `students` entity type. Other entity types can be added to
+    the pipeline without changing the architecture.
 
 ## Reliability
 

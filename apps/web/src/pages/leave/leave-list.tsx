@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { leaveApi, LEAVE_TYPES, type LeaveRequestResponse } from '../../api/leave/leave-api'
-import { Table, Pagination, Button, Select, ErrorState, StatusBadge, SearchInput, EmptyState, getEmptyState, useToast } from '../../components/ui'
+import { Table, Pagination, Button, Select, ErrorState, StatusBadge, SearchInput, EmptyState, getEmptyState, useToast, ShortcutKey} from '../../components/ui'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { capitalize, debounce } from '../../lib/utils'
 
@@ -95,7 +95,7 @@ export function LeaveListPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
           New Leave
-          <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+          <ShortcutKey>N</ShortcutKey>
         </Button>
       </div>
 

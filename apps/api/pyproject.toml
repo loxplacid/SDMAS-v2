@@ -13,6 +13,7 @@ dependencies = [
     "asyncpg>=0.30.0",
     "alembic>=1.14.0",
     "redis>=5.0",
+    "openpyxl>=3.1.0",  # XLSX migration source parsing (app.domains.migration)
     "python-jose[cryptography]>=3.3.0",
     "passlib[bcrypt]>=1.7.4",
     "reportlab>=5.0.0",
@@ -30,6 +31,8 @@ dev = [
     "aiosqlite>=0.20.0",
     "ruff>=0.8.0",
     "mypy>=1.13.0",
+    "bandit>=1.7.10",   # Python SAST scanner (scripts/security-audit.sh)
+    "pip-audit>=2.7.0", # Python dependency vulnerability scanner
 ]
 integration = [
     "testcontainers>=4.0.0",
@@ -63,6 +66,7 @@ build-backend = "setuptools.build_meta"
 
 [project.scripts]
 seed = "scripts.seed:main"
+seed-enterprise-demo = "scripts.seed_enterprise_demo:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

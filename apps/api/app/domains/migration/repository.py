@@ -19,14 +19,10 @@ class MigrationRunRepository:
         return run
 
     async def get_by_id(self, run_id: int) -> MigrationRun | None:
-        result = await self.session.execute(
-            select(MigrationRun).where(MigrationRun.id == run_id)
-        )
+        result = await self.session.execute(select(MigrationRun).where(MigrationRun.id == run_id))
         return result.scalar_one_or_none()
 
-    async def update_status(
-        self, run_id: int, status: str, **extra: Any
-    ) -> None:
+    async def update_status(self, run_id: int, status: str, **extra: Any) -> None:
         values: dict[str, Any] = {
             "status": status,
         }
@@ -88,6 +84,24 @@ class MigrationLogRepository:
         await self.session.flush()
         return entry
 
+    async def entry_exists(self, run_id: int, legacy_id: str, entity_subtype: str | None) -> bool:
+        """True when a log entry already exists for (run, record, subtype).
+
+        ``migration_logs`` allows exactly one entry per record per run
+        (unique constraint), so callers that may re-run a stream must check
+        before logging to stay idempotent.
+        """
+        result = await self.session.execute(
+            select(MigrationLog.id)
+            .where(
+                MigrationLog.run_id == run_id,
+                MigrationLog.legacy_id == str(legacy_id),
+                MigrationLog.entity_subtype == entity_subtype,
+            )
+            .limit(1)
+        )
+        return result.scalar_one_or_none() is not None
+
     async def list_by_run(
         self,
         run_id: int,
@@ -96,9 +110,7 @@ class MigrationLogRepository:
         limit: int = 500,
     ) -> tuple[Sequence[MigrationLog], int]:
         query = select(MigrationLog).where(MigrationLog.run_id == run_id)
-        count_query = select(func.count(MigrationLog.id)).where(
-            MigrationLog.run_id == run_id
-        )
+        count_query = select(func.count(MigrationLog.id)).where(MigrationLog.run_id == run_id)
         if level:
             query = query.where(MigrationLog.level == level)
             count_query = count_query.where(MigrationLog.level == level)

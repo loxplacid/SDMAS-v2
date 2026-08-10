@@ -63,6 +63,18 @@ export function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1)
 }
 
+/**
+ * Count + noun pair with automatic pluralisation, e.g. plural(1, 'term') →
+ * "1 term", plural(3, 'term') → "3 terms". Pass an explicit plural form for
+ * irregular nouns (plural(2, 'class', 'classes')). Counts are grouped with
+ * thousands separators; pin a BCP-47 tag to force a currency-style grouping,
+ * e.g. 'en-KE' — defaults to 'en-US' so output never varies by browser locale.
+ */
+export function plural(count: number, singular: string, pluralForm?: string, locale = 'en-US'): string {
+  const word = count === 1 ? singular : (pluralForm ?? `${singular}s`)
+  return `${count.toLocaleString(locale)} ${word}`
+}
+
 export function debounce<T extends (...args: any[]) => void>(fn: T, ms: number): T & { cancel: () => void } {
   let timer: ReturnType<typeof setTimeout>
   const debounced = (...args: any[]) => {

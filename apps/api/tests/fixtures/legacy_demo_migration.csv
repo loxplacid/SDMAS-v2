@@ -1,0 +1,13 @@
+Admission No,Student Name,DOB,Gender,Email,Class,Section,Academic Year,Attendance Date,Attendance Status,Fee Type,Fee Paid,Payment Date,Receipt No,Guardian Phone
+ST-1001,John  Doe ,2005-08-14,M,john.doe@example.com,10-A,Sec 1,2025-2026,2026-08-10,Present,Tuition,45000,2026-01-10,RCT-1001,+254 700 123456
+ST-1002,Jane  Smith ,2006-03-22,F,JANE.SMITH@EXAMPLE.COM,10-A,Sec 1,2025-2026,2026-08-10,Absent,Tuition,30000,2026-01-11,RCT-1002,0700123456
+ST-1003,Alex  Brown ,2007-11-02,M,alex.brown@example.com,10-B,Sec 2,2025-2026,,,,,,0711 555 999
+ST-1004,Mary  Johnson ,2006-07-19,F,,11-A,Sec 3,2025-2026,,,,,,
+ST-1001,John  Doe ,2005-08-14,M,,10-A,Sec 1,2025-2026,,,,,,
+ST-1005,Chris  Lee ,2006-01-15,M,chris.lee@example.com,12-A,Sec 4,2025-2026,,,,,,
+ST-1002,,,,,10-A,Sec 1,2025-2026,2026-13-40,Present,,,,,
+ST-1003,,,,,12-C,Sec 9,2025-2026,2026-08-12,Present,,,,,
+ST-1002,,,,,10-A,Sec 1,2025-2026,2026-08-11,Present,Tuition,15000,2026-02-01,RCT-1003,
+ST-1004,,,,,11-A,Sec 3,2025-2026,,,Tuition,-5000,2026-02-02,RCT-1004,
+ST-1005,,,,,12-A,Sec 4,2025-2026,,,Tuition,30000,2026-02-03,RCT-1002,
+ST-9999,,,,,10-A,Sec 1,2025-2026,2026-08-12,Present,,,,,

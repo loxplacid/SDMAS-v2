@@ -134,6 +134,10 @@ const NewInquiryPage = lazy(() => import('./pages/admission/new-inquiry').then((
 // Admin
 const AuditLogViewerPage = lazy(() => import('./pages/admin/audit-log-viewer'))
 
+// Migration Center (D2)
+const MigrationCenterPage = lazy(() => import('./pages/migration/migration-center').then((m) => ({ default: m.MigrationCenterPage })))
+const MigrationWizardPage = lazy(() => import('./pages/migration/migration-wizard').then((m) => ({ default: m.MigrationWizardPage })))
+
 // Workflow
 const ApprovalInboxPage = lazy(() => import('./pages/workflow').then((m) => ({ default: m.ApprovalInboxPage })))
 
@@ -454,6 +458,23 @@ export default function App() {
               <Route path="/admin/approvals" element={
                 <RoleGuard roles={['admin']}>
                   <Suspense fallback={<PageFallback />}><ApprovalInboxPage /></Suspense>
+                </RoleGuard>
+              } />
+
+              {/* Migration Center (D2) */}
+              <Route path="/migration" element={
+                <RoleGuard roles={['admin']}>
+                  <Suspense fallback={<PageFallback />}><MigrationCenterPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/migration/new" element={
+                <RoleGuard roles={['admin']}>
+                  <Suspense fallback={<PageFallback />}><MigrationWizardPage /></Suspense>
+                </RoleGuard>
+              } />
+              <Route path="/migration/:id" element={
+                <RoleGuard roles={['admin']}>
+                  <Suspense fallback={<PageFallback />}><MigrationWizardPage /></Suspense>
                 </RoleGuard>
               } />
 

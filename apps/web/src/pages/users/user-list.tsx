@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adminUserApi } from '../../api/auth/auth-api'
 import type { UserResponse, UserCreate } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, ErrorState, useToast, PageHeader } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, ErrorState, useToast, PageHeader, ShortcutKey} from '../../components/ui'
 import { RoleMultiSelect } from '../../components/admin/role-multi-select'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
-import { capitalize, formatDateTime, cn } from '../../lib/utils'
+import { capitalize, formatDateTime, cn, plural } from '../../lib/utils'
 
 const roleColor: Record<string, string> = {
   admin: 'bg-[var(--color-brand-accent)] text-white',
@@ -123,12 +123,12 @@ export function UserListPage() {
       <PageHeader
         eyebrow="Administration"
         title="Users"
-        subtitle={`${total} user${total !== 1 ? 's' : ''}`}
+        subtitle={plural(total, 'user')}
         compact
         actions={
           <Button onClick={openCreateModal}>
             Add User
-            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+            <ShortcutKey>N</ShortcutKey>
           </Button>
         }
       />

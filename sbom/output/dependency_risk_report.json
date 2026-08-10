@@ -1,7 +1,7 @@
 {
   "by_severity": {
-    "low": 2348,
-    "medium": 75
+    "low": 2364,
+    "medium": 116
   },
   "findings": [
     {
@@ -5148,6 +5148,12 @@
     },
     {
       "category": "ambiguous_dependency",
+      "message": "'tslib' resolves to 2 candidate versions",
+      "package": "npm/@tailwindcss/oxide-wasm32-wasi@4.3.3",
+      "severity": "low"
+    },
+    {
+      "category": "ambiguous_dependency",
       "message": "'@babel/code-frame' resolves to 3 candidate versions",
       "package": "npm/@testing-library/dom@10.4.1",
       "severity": "low"
@@ -5612,6 +5618,12 @@
       "category": "ambiguous_dependency",
       "message": "'object.assign' resolves to 2 candidate versions",
       "package": "npm/assert@2.1.0",
+      "severity": "low"
+    },
+    {
+      "category": "ambiguous_dependency",
+      "message": "'tslib' resolves to 2 candidate versions",
+      "package": "npm/ast-types@0.15.2",
       "severity": "low"
     },
     {
@@ -7860,6 +7872,12 @@
     },
     {
       "category": "ambiguous_dependency",
+      "message": "'tslib' resolves to 2 candidate versions",
+      "package": "npm/framer-motion@13.0.0",
+      "severity": "low"
+    },
+    {
+      "category": "ambiguous_dependency",
       "message": "'graceful-fs' resolves to 2 candidate versions",
       "package": "npm/fs-extra@8.1.0",
       "severity": "low"
@@ -8384,6 +8402,12 @@
       "category": "ambiguous_dependency",
       "message": "'slash' resolves to 2 candidate versions",
       "package": "npm/globby@11.1.0",
+      "severity": "low"
+    },
+    {
+      "category": "ambiguous_dependency",
+      "message": "'tslib' resolves to 2 candidate versions",
+      "package": "npm/graphql-tag@2.12.7",
       "severity": "low"
     },
     {
@@ -10470,6 +10494,12 @@
     },
     {
       "category": "ambiguous_dependency",
+      "message": "'tslib' resolves to 2 candidate versions",
+      "package": "npm/motion@13.0.0",
+      "severity": "low"
+    },
+    {
+      "category": "ambiguous_dependency",
       "message": "'minimatch' resolves to 5 candidate versions",
       "package": "npm/node-dir@0.1.17",
       "severity": "low"
@@ -11119,6 +11149,12 @@
     {
       "category": "ambiguous_dependency",
       "message": "'source-map' resolves to 6 candidate versions",
+      "package": "npm/recast@0.21.5",
+      "severity": "low"
+    },
+    {
+      "category": "ambiguous_dependency",
+      "message": "'tslib' resolves to 2 candidate versions",
       "package": "npm/recast@0.21.5",
       "severity": "low"
     },
@@ -14009,6 +14045,66 @@
       "severity": "low"
     },
     {
+      "category": "ambiguous_dependency",
+      "message": "'numpy' resolves to 2 candidate versions",
+      "package": "pypi/ortools@9.15.6755",
+      "severity": "low"
+    },
+    {
+      "category": "ambiguous_dependency",
+      "message": "'numpy' resolves to 2 candidate versions",
+      "package": "pypi/ortools@9.15.6755",
+      "severity": "low"
+    },
+    {
+      "category": "ambiguous_dependency",
+      "message": "'numpy' resolves to 2 candidate versions",
+      "package": "pypi/pandas@3.0.5",
+      "severity": "low"
+    },
+    {
+      "category": "ambiguous_dependency",
+      "message": "'numpy' resolves to 2 candidate versions",
+      "package": "pypi/pandas@3.0.5",
+      "severity": "low"
+    },
+    {
+      "category": "ambiguous_dependency",
+      "message": "'numpy' resolves to 2 candidate versions",
+      "package": "pypi/scikit-learn@1.9.0",
+      "severity": "low"
+    },
+    {
+      "category": "ambiguous_dependency",
+      "message": "'numpy' resolves to 2 candidate versions",
+      "package": "pypi/scikit-learn@1.9.0",
+      "severity": "low"
+    },
+    {
+      "category": "ambiguous_dependency",
+      "message": "'scipy' resolves to 2 candidate versions",
+      "package": "pypi/scikit-learn@1.9.0",
+      "severity": "low"
+    },
+    {
+      "category": "ambiguous_dependency",
+      "message": "'scipy' resolves to 2 candidate versions",
+      "package": "pypi/scikit-learn@1.9.0",
+      "severity": "low"
+    },
+    {
+      "category": "ambiguous_dependency",
+      "message": "'numpy' resolves to 2 candidate versions",
+      "package": "pypi/scipy@1.17.1",
+      "severity": "low"
+    },
+    {
+      "category": "ambiguous_dependency",
+      "message": "'numpy' resolves to 2 candidate versions",
+      "package": "pypi/scipy@1.18.0",
+      "severity": "low"
+    },
+    {
       "category": "custom_license",
       "message": "license '(Apache-2.0 AND MIT)' is not a standard SPDX id",
       "package": "npm/@web3-storage/multipart-parser@1.0.0",
@@ -14155,6 +14251,12 @@
     {
       "category": "missing_license",
       "message": "no license metadata available",
+      "package": "pypi/absl-py@2.5.0",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
       "package": "pypi/aiosqlite@0.22.1",
       "severity": "medium"
     },
@@ -14203,7 +14305,25 @@
     {
       "category": "missing_license",
       "message": "no license metadata available",
+      "package": "pypi/bandit@1.9.4",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
       "package": "pypi/bcrypt@5.0.0",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/boolean-py@5.0",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/cachecontrol@0.14.4",
       "severity": "medium"
     },
     {
@@ -14239,7 +14359,19 @@
     {
       "category": "missing_license",
       "message": "no license metadata available",
-      "package": "pypi/cryptography@49.0.0",
+      "package": "pypi/cryptography@50.0.0",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/cyclonedx-python-lib@11.11.0",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/defusedxml@0.7.1",
       "severity": "medium"
     },
     {
@@ -14257,7 +14389,19 @@
     {
       "category": "missing_license",
       "message": "no license metadata available",
+      "package": "pypi/et-xmlfile@2.0.0",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
       "package": "pypi/fastapi@0.140.13",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/filelock@3.32.2",
       "severity": "medium"
     },
     {
@@ -14299,7 +14443,19 @@
     {
       "category": "missing_license",
       "message": "no license metadata available",
+      "package": "pypi/immutabledict@4.3.1",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
       "package": "pypi/iniconfig@2.3.0",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/joblib@1.5.3",
       "severity": "medium"
     },
     {
@@ -14311,13 +14467,37 @@
     {
       "category": "missing_license",
       "message": "no license metadata available",
+      "package": "pypi/license-expression@30.4.4",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
       "package": "pypi/mako@1.3.12",
       "severity": "medium"
     },
     {
       "category": "missing_license",
       "message": "no license metadata available",
+      "package": "pypi/markdown-it-py@4.2.0",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
       "package": "pypi/markupsafe@3.0.3",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/mdurl@0.1.2",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/msgpack@1.2.1",
       "severity": "medium"
     },
     {
@@ -14335,7 +14515,55 @@
     {
       "category": "missing_license",
       "message": "no license metadata available",
+      "package": "pypi/narwhals@2.24.0",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/networkx@3.6.1",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/numpy@2.4.6",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/numpy@2.5.2",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/openpyxl@3.1.5",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/ortools@9.15.6755",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/packageurl-python@0.17.6",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
       "package": "pypi/packaging@26.2",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/pandas@3.0.5",
       "severity": "medium"
     },
     {
@@ -14359,7 +14587,49 @@
     {
       "category": "missing_license",
       "message": "no license metadata available",
+      "package": "pypi/pip-api@0.0.34",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/pip-audit@2.10.1",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/pip-requirements-parser@32.0.1",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/pip@26.2.1",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/platformdirs@4.11.1",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
       "package": "pypi/pluggy@1.6.0",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/protobuf@6.33.6",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/py-serializable@2.1.0",
       "severity": "medium"
     },
     {
@@ -14401,6 +14671,12 @@
     {
       "category": "missing_license",
       "message": "no license metadata available",
+      "package": "pypi/pyparsing@3.3.2",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
       "package": "pypi/pytest-asyncio@1.4.0",
       "severity": "medium"
     },
@@ -14408,6 +14684,12 @@
       "category": "missing_license",
       "message": "no license metadata available",
       "package": "pypi/pytest@9.1.1",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/python-dateutil@2.9.0.post0",
       "severity": "medium"
     },
     {
@@ -14461,6 +14743,12 @@
     {
       "category": "missing_license",
       "message": "no license metadata available",
+      "package": "pypi/rich@15.0.0",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
       "package": "pypi/rsa@4.9.1",
       "severity": "medium"
     },
@@ -14473,7 +14761,31 @@
     {
       "category": "missing_license",
       "message": "no license metadata available",
+      "package": "pypi/scikit-learn@1.9.0",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/scipy@1.17.1",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/scipy@1.18.0",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
       "package": "pypi/six@1.17.0",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/sortedcontainers@2.4.0",
       "severity": "medium"
     },
     {
@@ -14491,7 +14803,31 @@
     {
       "category": "missing_license",
       "message": "no license metadata available",
+      "package": "pypi/stevedore@5.9.0",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
       "package": "pypi/testcontainers@4.15.0",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/threadpoolctl@3.6.0",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/tomli-w@1.2.0",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/tomli@2.4.1",
       "severity": "medium"
     },
     {
@@ -14504,6 +14840,12 @@
       "category": "missing_license",
       "message": "no license metadata available",
       "package": "pypi/typing-inspection@0.4.2",
+      "severity": "medium"
+    },
+    {
+      "category": "missing_license",
+      "message": "no license metadata available",
+      "package": "pypi/tzdata@2026.3",
       "severity": "medium"
     },
     {
@@ -14543,5 +14885,5 @@
       "severity": "medium"
     }
   ],
-  "total_findings": 2423
+  "total_findings": 2480
 }

@@ -273,7 +273,37 @@ async def seed(drop_first: bool = False) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="SDMAS database seed tool")
     parser.add_argument("--drop", action="store_true", help="Drop database before seeding (SQLite only)")
+    parser.add_argument(
+        "--profile",
+        choices=("default", "enterprise-demo"),
+        default="default",
+        help="Seed profile (enterprise-demo creates three isolated demo tenants)",
+    )
+    parser.add_argument(
+        "--reset", action="store_true",
+        help="With --profile enterprise-demo: wipe demo data before reseeding",
+    )
+    parser.add_argument(
+        "--force", action="store_true",
+        help="With --profile enterprise-demo: bypass the reset confirmation guard",
+    )
+    parser.add_argument(
+        "--scale", choices=("full", "small"), default="full",
+        help="With --profile enterprise-demo: dataset scale",
+    )
+    parser.add_argument(
+        "--no-risk", action="store_true",
+        help="With --profile enterprise-demo: skip the risk-engine recompute",
+    )
     args = parser.parse_args()
+
+    if args.profile == "enterprise-demo":
+        from scripts.seed_enterprise_demo import _guard, _run
+
+        _guard(reset=args.reset, force=args.force)
+        asyncio.run(_run(reset=args.reset, scale=args.scale, run_risk=not args.no_risk))
+        return
+
     asyncio.run(seed(drop_first=args.drop))
 
 

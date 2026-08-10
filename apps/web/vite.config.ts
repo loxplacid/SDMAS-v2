@@ -115,6 +115,7 @@ export default defineConfig({
       '/auth': 'http://localhost:8000',
       '/students': 'http://localhost:8000',
       '/attendance': 'http://localhost:8000',
+      '/migration': 'http://localhost:8000',
       '/health': 'http://localhost:8000',
       '/ready': 'http://localhost:8000',
     },

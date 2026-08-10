@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { workflowApi, type WorkflowInstanceResponse, type WorkflowInstanceDetail, type AvailableTransition, type ApprovalHistoryEntry, type WorkflowResponse } from '../../api/workflow/workflow-api'
-import { cn, capitalize, formatDateTime } from '../../lib/utils'
+import { cn, capitalize, formatDateTime, plural } from '../../lib/utils'
 import { TabGroup, Button, Pagination, Select, EmptyState, ErrorState, Badge, Alert, ConfirmDialog, useToast, Card, Skeleton } from '../../components/ui'
 import { WorkflowStatus } from '../../components/workflow/workflow-status'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
@@ -209,7 +209,7 @@ export function ApprovalInboxPage() {
         </h1>
         <p className="text-base text-[var(--color-text-tertiary)] mt-2 max-w-xl">
           {total > 0
-            ? `${total} workflow instance${total !== 1 ? 's' : ''} requiring attention`
+            ? `${plural(total, 'workflow instance', 'workflow instances')} requiring attention`
             : 'Track and manage approval requests across your school.'}
         </p>
       </div>

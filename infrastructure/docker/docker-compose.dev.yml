@@ -60,5 +60,23 @@ services:
         - path: ../../apps/api/pyproject.toml
           action: rebuild
 
+  worker:
+    build:
+      context: ../../apps/api
+      dockerfile: Dockerfile.worker
+    environment:
+      ENVIRONMENT: development
+      DEBUG: "true"
+      DATABASE_URL: postgresql+asyncpg://sdmas:sdmas_dev@postgres:5432/sdmas
+      REDIS_URL: redis://redis:6379/0
+      TRUSTED_PROXIES: 127.0.0.1,172.16.0.0/12
+      JWT_SECRET: dev-secret-do-not-use-in-production
+      LOG_LEVEL: DEBUG
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 volumes:
   postgres_dev_data:

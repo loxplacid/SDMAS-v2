@@ -5478,6 +5478,19 @@
     },
     {
       "ecosystem": "npm",
+      "kind": "multiple_sources_same_version",
+      "name": "tslib",
+      "severity": "info",
+      "sources": [
+        "apps/mobile/package-lock.json",
+        "apps/web/package-lock.json"
+      ],
+      "versions": [
+        "2.8.1"
+      ]
+    },
+    {
+      "ecosystem": "npm",
       "kind": "multiple_versions",
       "name": "type-fest",
       "severity": "medium",
@@ -5990,6 +6003,32 @@
       "versions": [
         "18.1.3",
         "21.1.1"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "kind": "multiple_versions",
+      "name": "numpy",
+      "severity": "medium",
+      "sources": [
+        "apps/api/uv.lock"
+      ],
+      "versions": [
+        "2.4.6",
+        "2.5.2"
+      ]
+    },
+    {
+      "ecosystem": "pypi",
+      "kind": "multiple_versions",
+      "name": "scipy",
+      "severity": "medium",
+      "sources": [
+        "apps/api/uv.lock"
+      ],
+      "versions": [
+        "1.17.1",
+        "1.18.0"
       ]
     }
   ]

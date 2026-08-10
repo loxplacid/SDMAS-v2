@@ -42,7 +42,7 @@ uvicorn app.main:app --reload  # http://localhost:8000/docs
 ### Whole stack with Docker
 
 ```bash
-make dev        # Postgres + Redis + API via docker compose
+make dev        # Postgres + Redis + API + background worker via docker compose
 make migrate    # alembic upgrade head
 make seed       # reference/seed data
 ```
@@ -58,9 +58,14 @@ npm run dev     # http://localhost:5173 (proxies /api → :8000)
 ## Testing
 
 ```bash
-make test       # full API suite (pytest, ~1,100 tests)
-make test-web   # frontend suite (vitest)
+make test       # Unit/security/async suite (1,499 tests; no Docker needed)
+make test-all   # Full suite including Docker-dependent integration tests
+make test-web   # Frontend suite (vitest, 513 tests)
 ```
+
+> The `test` target excludes Docker-dependent integration tests — the same
+> default the CI pipeline uses.  Run `make test-all` or `make test-integration`
+> on a machine with Docker to exercise the full suite.
 
 ## Core docs
 
@@ -72,6 +77,21 @@ make test-web   # frontend suite (vitest)
 | [`TENANCY.md`](TENANCY.md) | Multi-tenant context, scoped repositories, guards |
 | [`DEPLOYMENT.md`](DEPLOYMENT.md) | Environments, deployment, scaling, backup, monitoring |
 | [`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md) | Honest list of current gaps & risks |
+| [`docs/security-assurance-report.md`](docs/security-assurance-report.md) | Machine-generated security evidence (scanners, tests, SBOM, verification status) |
+| [`docs/security-policy.md`](docs/security-policy.md) | Security gate policy + accepted-risk register |
+
+## Security evidence package
+
+```bash
+make security-audit          # scanners + tests + SBOM + assurance report
+./enterprise audit           # same
+make security-audit-offline  # skip network-dependent scanners
+```
+
+Generates `artifacts/` (scanner JSON, JUnit test evidence, CycloneDX 1.5 +
+SPDX 2.3 SBOM copies, SHA-256 checksums, artifact manifest) and the
+machine-generated [`docs/security-assurance-report.md`](docs/security-assurance-report.md).
+Every number comes from a tool that actually ran.
 
 ## License
 

@@ -126,6 +126,7 @@ const adminNav: NavItem[] = [
   { to: '/analytics', label: 'Analytics', icon: NAV_ICONS.analytics, matchPaths: ['/analytics'] },
   { to: '/notifications', label: 'Notifications', icon: NAV_ICONS.notifications },
   { to: '/operations', label: 'Data Ops', icon: NAV_ICONS.operations },
+  { to: '/migration', label: 'Data Migration', icon: NAV_ICONS.operations, matchPaths: ['/migration'] },
   { to: '/users', label: 'Users', icon: NAV_ICONS.users },
   { to: '/admin/audit-logs', label: 'Audit Logs', icon: NAV_ICONS.operations, matchPaths: ['/admin/audit-logs'] },
   { to: '/admin/approvals', label: 'Approvals', icon: NAV_ICONS.approvals, matchPaths: ['/admin/approvals'] },
@@ -416,6 +417,15 @@ export const ROLE_BADGE_COLORS: Record<string, string> = {
   parent: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
 }
 
+/**
+ * True when `path` is `base` or a descendant route (`/base/...`). Plain
+ * `startsWith` would let `/students` match the `student` role prefix — a
+ * real over-permission bug (student role gaining the admin Students page).
+ */
+function routeOrDescendant(path: string, base: string): boolean {
+  return path === base || path.startsWith(`${base}/`)
+}
+
 /** Check if a role has access to a specific route pattern */
 export function hasRouteAccess(role: string, path: string): boolean {
   // Admin has access to everything
@@ -423,7 +433,7 @@ export function hasRouteAccess(role: string, path: string): boolean {
 
   // Principal, Accountant, Staff — role workspace + relevant domains
   if (['principal', 'accountant', 'staff'].includes(role)) {
-    if (path.startsWith(`/${role}`)) return true
+    if (routeOrDescendant(path, `/${role}`)) return true
     if (path === '/command-center' || path.startsWith('/command-center')) return true
     if (path === '/action-center' || path.startsWith('/action-center')) return true
     if (role !== 'accountant' && (path === '/data-quality' || path.startsWith('/data-quality'))) return true
@@ -433,14 +443,17 @@ export function hasRouteAccess(role: string, path: string): boolean {
     if (path === '/notifications' || path.startsWith('/notifications')) return true
     if (path === '/profile' || path.startsWith('/profile')) return true
     if (role === 'accountant' && (path.startsWith('/fees') || path.startsWith('/reports'))) return true
-    if (role === 'principal' && (path.startsWith('/reports') || path.startsWith('/analytics'))) return true
+    // Principal mirrors its nav: leadership also operates attendance and
+    // communications (not just reports/analytics) — the RoleGuard and the
+    // command palette must agree with what the sidebar shows.
+    if (role === 'principal' && (path.startsWith('/reports') || path.startsWith('/analytics') || path.startsWith('/attendance') || path.startsWith('/communications'))) return true
     if (role === 'staff' && (path.startsWith('/attendance') || path.startsWith('/leave'))) return true
     return false
   }
 
   // Teacher routes
   if (role === 'teacher') {
-    if (path.startsWith('/teacher')) return true
+    if (routeOrDescendant(path, '/teacher')) return true
     if (path === '/command-center' || path.startsWith('/command-center')) return true
     if (path === '/timeline' || path.startsWith('/timeline')) return true
     if (path.startsWith('/attendance')) return true
@@ -451,7 +464,7 @@ export function hasRouteAccess(role: string, path: string): boolean {
 
   // Student routes
   if (role === 'student') {
-    if (path.startsWith('/student')) return true
+    if (routeOrDescendant(path, '/student')) return true
     if (path === '/notifications' || path.startsWith('/notifications')) return true
     if (path === '/profile' || path.startsWith('/profile')) return true
     return false
@@ -459,7 +472,7 @@ export function hasRouteAccess(role: string, path: string): boolean {
 
   // Parent routes
   if (role === 'parent') {
-    if (path.startsWith('/parent')) return true
+    if (routeOrDescendant(path, '/parent')) return true
     if (path === '/notifications' || path.startsWith('/notifications')) return true
     if (path === '/profile' || path.startsWith('/profile')) return true
     return false

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { studentApi } from '../../api/student/student-api'
 import { exportApi } from '../../api/reports/export-api'
 import type { StudentResponse } from '../../api/generated/types'
-import { Button, Modal, Form, Input, Select, Alert, StatusBadge, ConfirmDialog, useToast } from '../../components/ui'
+import { Button, Modal, Form, Input, Select, Alert, StatusBadge, ConfirmDialog, useToast, ShortcutKey} from '../../components/ui'
 import type { Column } from '../../components/ui/table'
 import { applyFilters } from '../../components/ui/table/filter-model'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
@@ -274,7 +274,7 @@ export function StudentListPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             Add Student
-            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+            <ShortcutKey>N</ShortcutKey>
           </Button>
         }
         toolbarActions={

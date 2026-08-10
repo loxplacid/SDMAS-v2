@@ -284,3 +284,74 @@ jobs:
             exit 1
           fi
           echo "No hardcoded credential patterns found."
+
+  evidence:
+    name: Security evidence (bandit, pip-audit, SBOM, gates)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.5.x"
+          enable-cache: true
+
+      - name: Install dependencies including security scanners
+        run: uv sync --frozen --extra dev
+
+      # Gate 1 — Bandit SAST: fail on HIGH-severity findings.
+      - name: Bandit (Python SAST)
+        run: |
+          uv run bandit -r app -f json -o ../bandit.json -q
+          HIGH=$(uv run python -c \
+            "import json; d=json.load(open('../bandit.json')); \
+            print(len([r for r in d['results'] if r['issue_severity']=='HIGH']))")
+          echo "Bandit: HIGH=$HIGH"
+          if [ "$HIGH" -gt 0 ]; then
+            echo "::error::Bandit found HIGH-severity findings — fix or waive via docs/security-policy.md"
+            exit 1
+          fi
+
+      # Gate 2 — pip-audit: fail on any known dependency vulnerability.
+      # Accepted-risk waivers live in docs/security-policy.md and are
+      # supplied via the PIP_AUDIT_IGNORE list below.
+      - name: pip-audit (Python dependency vulnerabilities)
+        run: |
+          uv export --format requirements-txt --no-dev -o ../requirements-audit.txt
+          uv run pip-audit -r ../requirements-audit.txt --format json -o ../pip-audit.json \
+            --ignore-vuln PYSEC-2026-1325 || true
+          VULNS=$(uv run python -c \
+            "import json; d=json.load(open('../pip-audit.json')); \
+            print(sum(1 for dep in d.get('dependencies',[]) if dep.get('vulns')))")
+          echo "pip-audit: vulnerable packages=$VULNS (waived ids excluded)"
+          if [ "$VULNS" -gt 0 ]; then
+            echo "::error::pip-audit found un-waived vulnerabilities — see docs/security-policy.md"
+            exit 1
+          fi
+
+      # Gate 3 — SBOM: schema validation + determinism (existing job gates
+      # byte-reproducibility; this step re-validates from this checkout).
+      - name: SBOM validation
+        run: |
+          bash ../scripts/python_sbom.sh
+          bash ../scripts/node_sbom.sh
+          cd ..
+          SOURCE_DATE_EPOCH=0 python -m sbom.cli generate --output-dir sbom/output
+          python -m sbom.cli validate --dir sbom/output
+
+      # Gate 4 — evidence package integrity: checksums + manifest build.
+      - name: Build evidence package manifest
+        run: |
+          cd ..
+          bash scripts/security-audit.sh --ci-evidence-only || true
+          PYTHONPATH=scripts python -m evidence.cli checksums --dir artifacts
+          echo "Evidence package built: $(ls artifacts/SHA256SUMS)"

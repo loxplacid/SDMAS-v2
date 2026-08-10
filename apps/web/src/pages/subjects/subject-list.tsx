@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { subjectApi, type SubjectListParams } from '../../api/academic/subject-api'
 import type { SubjectResponse, SubjectCreate, SubjectUpdate } from '../../api/generated/types'
 import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast, PageHeader } from '../../components/ui'
-import { SUBJECT_STATUSES, capitalize } from '../../lib/utils'
+import { SUBJECT_STATUSES, capitalize, plural } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = { active: 'success', inactive: 'danger' }
 
@@ -63,7 +63,7 @@ export function SubjectListPage() {
       <PageHeader
         eyebrow="Academics"
         title="Subjects"
-        subtitle={`${total} subject${total !== 1 ? 's' : ''}`}
+        subtitle={plural(total, 'subject')}
         compact
         actions={<Button onClick={openCreateModal}>Add Subject</Button>}
       />

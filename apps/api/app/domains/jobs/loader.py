@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 _JOB_MODULES = (
     "app.domains.report_builder.jobs",
     "app.domains.jobs.periodic_jobs",
+    "app.domains.migration.import_job",
 )
 
 

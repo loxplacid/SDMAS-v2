@@ -21,10 +21,10 @@ import datetime
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from sqlalchemy import and_, case, func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domains.academic.models import AcademicYear, Enrollment, Term
+from app.domains.academic.models import Enrollment, Term
 from app.domains.academic_ops.models import GradeRecord
 from app.domains.admission.models import AdmissionApplication
 from app.domains.attendance.models import AttendanceRecord
@@ -297,16 +297,15 @@ class RiskEvaluator:
                 q = q.where(AttendanceRecord.campus_id == self.campus_id)
             return q
 
-        recent = {
-            r[0]: (r[1] or 0, r[2] or 0)
-            for r in (await self.session.execute(_window_q(midpoint.isoformat(), self.today_iso))).all()
-        }
-        earlier = {
-            r[0]: (r[1] or 0, r[2] or 0)
-            for r in (await self.session.execute(_window_q(start, midpoint.isoformat()))).all()
-        }
+        recent_rows = await self.session.execute(
+            _window_q(midpoint.isoformat(), self.today_iso)
+        )
+        earlier_rows = await self.session.execute(
+            _window_q(start, midpoint.isoformat())
+        )
+        recent = {r[0]: (r[1] or 0, r[2] or 0) for r in recent_rows.all()}
+        earlier = {r[0]: (r[1] or 0, r[2] or 0) for r in earlier_rows.all()}
 
-        drafts: list[RiskFindingDraft] = []
         flagged: list[int] = []
         trend_map: dict[int, dict] = {}
         for sid in recent:
@@ -793,27 +792,27 @@ class RiskEvaluator:
     async def _evaluate_operational_no_guardian(self) -> list[RiskFindingDraft]:
         """Students with no guardian/primary contact recorded.
 
-        Uses ``guardian_links`` (the canonical parent-child table). If the
-        table is absent (early environments), the rule degrades gracefully.
+        Uses ``guardian_links`` (the canonical parent-child table). If no
+        guardians exist yet, every active student is unguarded — return early.
         """
+        from app.domains.parent.models import Guardian
+
         active = await self._active_students()
         if not active:
             return []
 
-        guardian_table = __import__("sqlalchemy").text("guardian_links")
-        try:
-            result = await self.session.execute(
-                select(func.count()).select_from(guardian_table)
+        guarded_count = (
+            await self.session.execute(
+                select(func.count(Guardian.student_id))
             )
-            result.scalar()
-        except Exception:  # noqa: BLE001 — table may not exist yet
+        ).scalar_one()
+        if not guarded_count:
             return []
 
         ids = [sid for sid, _ in active]
         guarded = (
             await self.session.execute(
-                select(guardian_table.c.student_id)
-                .where(guardian_table.c.student_id.in_(ids))
+                select(Guardian.student_id).where(Guardian.student_id.in_(ids))
             )
         ).all()
         have_guardian = {r[0] for r in guarded}

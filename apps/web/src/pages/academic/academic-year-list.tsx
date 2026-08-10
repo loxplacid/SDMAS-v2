@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { academicYearApi, type AcademicYearListParams } from '../../api/academic/academic-year-api'
 import type { AcademicYearResponse } from '../../api/generated/types'
 import { Card, Table, Pagination, Input, Select, Button, Modal, Form, Alert, ErrorState, useToast, PageHeader, StatusBadge, ConfirmDialog } from '../../components/ui'
-import { ACADEMIC_STATUSES, capitalize } from '../../lib/utils'
+import { ACADEMIC_STATUSES, capitalize, plural } from '../../lib/utils'
 
 export function AcademicYearListPage() {
   const navigate = useNavigate()
@@ -97,7 +97,7 @@ export function AcademicYearListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Academic Years" subtitle={`${total} year${total !== 1 ? 's' : ''}`} compact
+      <PageHeader title="Academic Years" subtitle={plural(total, 'year')} compact
         actions={<Button onClick={openCreateModal}>Add Academic Year</Button>} />
       <div className="flex flex-wrap items-center gap-3">
         <Select options={ACADEMIC_STATUSES.map((s) => ({ value: s, label: capitalize(s) }))} placeholder="All statuses" value={statusFilter}

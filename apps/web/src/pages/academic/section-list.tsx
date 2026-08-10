@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { sectionApi, type SectionListParams } from '../../api/academic/section-api'
 import { classApi } from '../../api/academic/class-api'
 import type { SectionResponse, SectionCreate, SectionUpdate, ClassResponse } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast, PageHeader } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast, PageHeader, ShortcutKey} from '../../components/ui'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
-import { ACADEMIC_STATUSES, capitalize } from '../../lib/utils'
+import { ACADEMIC_STATUSES, capitalize, plural } from '../../lib/utils'
 
 type SectionFormData = { name: string; class_id: number | null; status?: string | null }
 
@@ -74,12 +74,12 @@ export function SectionListPage() {
       <PageHeader
         eyebrow="Academics"
         title="Sections"
-        subtitle={`${total} section${total !== 1 ? 's' : ''}`}
+        subtitle={plural(total, 'section')}
         compact
         actions={
           <Button onClick={openCreateModal}>
             Add Section
-            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+            <ShortcutKey>N</ShortcutKey>
           </Button>
         }
       />

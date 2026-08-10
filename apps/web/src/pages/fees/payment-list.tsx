@@ -6,7 +6,7 @@ import { Button, Modal, Form, Input, Select, Alert, Badge, useToast } from '../.
 import type { Column } from '../../components/ui/table'
 import { useDelight } from '../../components/delight/delight-provider'
 import { DataWorkspace, useWorkspace } from '../../components/data-workspace'
-import { PAYMENT_METHODS, capitalize, formatCurrency, formatDateTime } from '../../lib/utils'
+import { PAYMENT_METHODS, capitalize, formatCurrency, formatDateTime, plural } from '../../lib/utils'
 
 const methodBadge: Record<string, 'info' | 'success' | 'warning' | 'neutral'> = {
   cash: 'success',
@@ -152,7 +152,7 @@ export function PaymentListPage() {
       <DataWorkspace
         workspace={workspace}
         title="Payments"
-        description={`${total} payment${total !== 1 ? 's' : ''}`}
+        description={plural(total, 'payment')}
         columns={PAYMENT_COLUMNS}
         keyExtractor={(p) => p.id}
         data={data}

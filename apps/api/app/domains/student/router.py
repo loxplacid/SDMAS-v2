@@ -7,7 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.pagination import Page, PaginationParams
 from app.domains.auth.dependencies import require_permission
-from app.domains.auth.permissions import STUDENTS_DELETE
+from app.domains.auth.models import User
+from app.domains.auth.permissions import STUDENTS_CREATE, STUDENTS_DELETE, STUDENTS_UPDATE
 from app.domains.student.repository import StudentRepository
 from app.domains.student.schemas import (
     StudentCreate,
@@ -35,6 +36,7 @@ async def create_student(
     data: StudentCreate,
     service: StudentService = Depends(get_student_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(STUDENTS_CREATE)),  # noqa
 ) -> StudentResponse:
     student = await service.create_student(data)
     inject_campus(student, tenant)
@@ -98,6 +100,7 @@ async def update_student(
     data: StudentUpdate,
     service: StudentService = Depends(get_student_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(STUDENTS_UPDATE)),  # noqa
 ) -> StudentResponse:
     student = await service.get_student(student_id)
     assert_tenant_scope(student, tenant, resource="student")

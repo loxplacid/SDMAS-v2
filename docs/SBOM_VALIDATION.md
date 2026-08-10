@@ -90,3 +90,28 @@ python -m sbom.cli validate --dir sbom/output
 python -m sbom.cli analyze --output-dir sbom/output
 python -m pytest sbom/tests -q
 ```
+
+## Acquisition evidence package
+
+The SBOMs are copied into the due-diligence evidence package along with
+scanner output (Bandit, pip-audit, npm audit) and a machine-readable test
+manifest:
+
+```bash
+make security-audit          # full package: scanners + tests + SBOM + report
+./enterprise audit           # same
+make security-audit-offline  # skip network-dependent scanners
+```
+
+Outputs:
+
+| Path | Content |
+|---|---|
+| `artifacts/sbom/` | `sbom.cdx.json` (CycloneDX 1.5), `sbom.spdx.json` (SPDX 2.3), inventories |
+| `artifacts/security/` | `bandit.json`, `pip-audit.json`, `npm-audit-{web,mobile}.json` |
+| `artifacts/tests/test-manifest.json` | per-suite counts, pass/fail/skip, environment |
+| `artifacts/SHA256SUMS` | SHA-256 of every artifact |
+| `artifacts/artifact-manifest.json` | artifact → digest immutable manifest |
+| `docs/security-assurance-report.md` | VERIFIED / NOT VERIFIED / NOT APPLICABLE / KNOWN LIMITATION |
+
+Gate policy and accepted-risk waivers: `docs/security-policy.md`.

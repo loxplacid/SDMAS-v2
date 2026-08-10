@@ -8,8 +8,13 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 ENV ?= development
-COMPOSE_FILE := infrastructure/docker/docker-compose.$(ENV).yml
 COMPOSE_PROJECT := sdmas-$(ENV)
+
+# Map ENV names to compose-file suffixes:
+#   development → dev, staging → staging, production → production
+# (The files on disk are docker-compose.dev.yml / staging.yml / production.yml.)
+_compose_suffix = $(if $(filter development,$(ENV)),dev,$(ENV))
+COMPOSE_FILE := infrastructure/docker/docker-compose.$(_compose_suffix).yml
 
 # ── Development ───────────────────────────────────────────
 
@@ -93,15 +98,19 @@ restore:  ## Restore database (FILE=<path>)
 # ── Testing ──────────────────────────────────────────────
 
 .PHONY: test
-test:  ## Run all tests
+test:  ## Run unit/security/async tests (fast; no Docker needed)
+	cd apps/api && python -m pytest tests/ -v --tb=short -m "not integration"
+
+.PHONY: test-all
+test-all:  ## Run the full test suite including Docker-dependent integration tests
 	cd apps/api && python -m pytest tests/ -v --tb=short
 
 .PHONY: test-api
-test-api:  ## Run API tests
+test-api:  ## Run API tests (alias for test)
 	cd apps/api && python -m pytest tests/ -v --tb=short -m "not integration"
 
 .PHONY: test-integration
-test-integration:  ## Run integration tests (requires Docker)
+test-integration:  ## Run integration tests only (requires Docker)
 	cd apps/api && python -m pytest tests/ -v --tb=short -m integration
 
 .PHONY: test-web
@@ -119,6 +128,16 @@ lint:  ## Run linters
 format:  ## Format code
 	cd apps/api && ruff format .
 	cd apps/api && ruff check --fix .
+
+# ── Security / Due-diligence evidence ─────────────────────
+
+.PHONY: security-audit
+security-audit:  ## Generate the full security evidence package (scanners + tests + SBOM + report)
+	@bash scripts/security-audit.sh
+
+.PHONY: security-audit-offline
+security-audit-offline:  ## Evidence package without network-dependent scanners (pip-audit/npm audit)
+	@SKIP_NETWORK=1 bash scripts/security-audit.sh
 
 # ── Monitoring ────────────────────────────────────────────
 

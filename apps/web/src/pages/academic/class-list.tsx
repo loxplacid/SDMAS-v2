@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { classApi, type ClassListParams } from '../../api/academic/class-api'
 import { academicYearApi } from '../../api/academic/academic-year-api'
 import type { ClassResponse, AcademicYearResponse } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, ErrorState, useToast, PageHeader, StatusBadge, SearchInput } from '../../components/ui'
-import { ACADEMIC_STATUSES, capitalize } from '../../lib/utils'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, ErrorState, useToast, PageHeader, StatusBadge, SearchInput, ShortcutKey} from '../../components/ui'
+import { ACADEMIC_STATUSES, capitalize, plural } from '../../lib/utils'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { useDelight } from '../../components/delight/delight-provider'
 
@@ -105,11 +105,11 @@ export function ClassListPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Classes" subtitle={`${total} class${total !== 1 ? 'es' : ''}`} compact
+      <PageHeader title="Classes" subtitle={plural(total, 'class', 'classes')} compact
         actions={
           <Button onClick={openCreateModal}>
             Add Class
-            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+            <ShortcutKey>N</ShortcutKey>
           </Button>
         } />
       <div className="flex flex-wrap items-center gap-3">

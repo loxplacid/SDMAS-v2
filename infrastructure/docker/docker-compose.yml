@@ -1,4 +1,20 @@
+# =============================================================
+# SDMAS v2 — Zero-Touch Deployment
+# =============================================================
+# Usage:
+#   docker compose up --build
+#
+# Starts: PostgreSQL, Redis, migration init, API, background
+# worker, frontend SPA, and reverse proxy — all with safe
+# development defaults.  No manual .env editing required.
+#
+# Production: see docker-compose.production.yml (Docker secrets,
+# SSL, monitoring, no hardcoded defaults).
+# =============================================================
+name: sdmas
+
 services:
+  # ── PostgreSQL ────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
     environment:
@@ -14,7 +30,9 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
+  # ── Redis ─────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     ports:
@@ -24,10 +42,32 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
+  # ── Migration Init (one-shot) ─────────────────────────────────
+  # Runs Alembic migrations before the API and worker start.
+  # Exits 0 on success, non-zero on failure — the deployment
+  # fails fast if migration fails.
+  migration-init:
+    build:
+      context: ../../apps/api
+      dockerfile: Dockerfile
+    environment:
+      ENVIRONMENT: development
+      # The app's config reads DATABASE_URL → alembic/env.py calls
+      # config.set_main_option("sqlalchemy.url", settings.database_url).
+      DATABASE_URL: postgresql+asyncpg://sdmas:sdmas_dev@postgres:5432/sdmas
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: no
+
+  # ── API ───────────────────────────────────────────────────────
   api:
     build:
       context: ../../apps/api
+      dockerfile: Dockerfile
     environment:
       ENVIRONMENT: development
       DEBUG: "true"
@@ -35,14 +75,67 @@ services:
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: dev-secret-do-not-use-in-production
       LOG_LEVEL: DEBUG
-      CORS_ORIGINS: '["http://localhost:3000"]'
+      CORS_ORIGINS: '["http://localhost:80","http://localhost:8080","http://localhost:5173","http://localhost:3000"]'
     ports:
       - "8000:8000"
     depends_on:
+      migration-init:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: unless-stopped
+
+  # ── Background Worker ─────────────────────────────────────────
+  worker:
+    build:
+      context: ../../apps/api
+      dockerfile: Dockerfile.worker
+    environment:
+      ENVIRONMENT: development
+      DEBUG: "true"
+      DATABASE_URL: postgresql+asyncpg://sdmas:sdmas_dev@postgres:5432/sdmas
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: dev-secret-do-not-use-in-production
+      LOG_LEVEL: DEBUG
+      SCHEDULER_ENABLED: "true"
+      SCHEDULER_POLL_INTERVAL: "60.0"
+      WORKER_POLL_INTERVAL: "5.0"
+      OUTBOX_POLL_INTERVAL: "2.0"
+      OUTBOX_BATCH_SIZE: "10"
+      OUTBOX_MAX_ATTEMPTS: "10"
+      OUTBOX_REAP_INTERVAL: "60.0"
+      OUTBOX_STALE_AFTER: "600.0"
+    depends_on:
+      migration-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Frontend SPA (Nginx) ─────────────────────────────────────
+  web:
+    build:
+      context: ../../apps/web
+      dockerfile: Dockerfile
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # ── Reverse Proxy (Nginx) ─────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ../../infrastructure/nginx/dev.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+      - web
+    restart: unless-stopped
 
 volumes:
   postgres_data:

@@ -28,13 +28,25 @@ _registry: dict[str, BaseMigrator] = {}
 
 
 def register_migrator(migrator: BaseMigrator) -> BaseMigrator:
-    """Register a migrator instance in the global registry by entity type."""
-    if migrator.entity_type in _registry:
+    """Register a migrator in the global registry by entity type.
+
+    Migrators are decorated as classes (``@register_migrator``), but the
+    engine calls instance methods (``validate`` / ``migrate``).  A class is
+    therefore instantiated at registration time so the registry always
+    holds ready-to-use instances — callers must never receive a bare class.
+    The decorator still returns the class itself so module-level symbols
+    stay stable.
+    """
+    if isinstance(migrator, type):
+        instance: BaseMigrator = migrator()
+    else:
+        instance = migrator
+    if instance.entity_type in _registry:
         logger.warning(
             "Overwriting migrator for '%s' (was %s)",
-            migrator.entity_type, type(_registry[migrator.entity_type]).__name__,
+            instance.entity_type, type(_registry[instance.entity_type]).__name__,
         )
-    _registry[migrator.entity_type] = migrator
+    _registry[instance.entity_type] = instance
     return migrator
 
 

@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { admissionApi, ADMISSION_STATUSES, type ApplicationListParams, type AdmissionApplicationResponse } from '../../api/admission/admission-api'
-import { Card, Table, Pagination, Input, Select, Button, ErrorState, StatusBadge, SearchInput, EmptyState, getEmptyState, useToast } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, ErrorState, StatusBadge, SearchInput, EmptyState, getEmptyState, useToast, ShortcutKey} from '../../components/ui'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
-import { capitalize, debounce } from '../../lib/utils'
+import { capitalize, debounce, plural } from '../../lib/utils'
 
 const statusVariantMap: Record<string, string> = {
   inquiry: 'neutral',
@@ -89,7 +89,7 @@ export function ApplicationListPage() {
         </h1>
         <p className="text-base text-[var(--color-text-tertiary)] mt-2 max-w-xl">
           {total > 0
-            ? `${total} application${total !== 1 ? 's' : ''} in the admissions pipeline. Review, verify, and process applicants.`
+            ? `${plural(total, 'application')} in the admissions pipeline. Review, verify, and process applicants.`
             : 'Track your admissions pipeline. Applications move through verification, interview, merit listing, and enrollment.'}
         </p>
       </div>
@@ -119,7 +119,7 @@ export function ApplicationListPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
           New Inquiry
-          <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+          <ShortcutKey>N</ShortcutKey>
         </Button>
       </div>
 

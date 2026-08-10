@@ -27,7 +27,12 @@ RUN chown -R sdmas:sdmas /app
 
 USER sdmas
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+# The worker is a background process (`python -m app.domains.jobs.worker`), not
+# a web server — it does not listen on any port.  A truthful healthcheck for a
+# background process would require a heartbeat or a sidecar.  The container
+# relies on the `restart: unless-stopped` policy instead: if the process exits
+# abnormally Docker restarts it.  HEALTHCHECK NONE avoids the dishonesty of
+# checking the API port (which the worker does not serve).
+HEALTHCHECK NONE
 
 CMD ["python", "-m", "app.domains.jobs.worker"]

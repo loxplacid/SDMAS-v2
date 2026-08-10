@@ -9,6 +9,7 @@ import { ErrorState } from '../components/ui/error-state'
 import { Card } from '../components/ui/card'
 import { Alert } from '../components/ui/alert'
 import { PageHeader } from '../components/ui/page-header'
+import { ShortcutKey } from '../components/ui/shortcut-key'
 
 describe('Button', () => {
   it('renders with children', () => {
@@ -71,6 +72,18 @@ describe('Alert', () => {
   it('renders message', () => {
     render(<Alert>Something happened</Alert>)
     expect(screen.getByText('Something happened')).toBeInTheDocument()
+  })
+})
+
+describe('ShortcutKey', () => {
+  it('renders the key hint', () => {
+    render(<ShortcutKey>N</ShortcutKey>)
+    expect(screen.getByText('N').tagName).toBe('KBD')
+  })
+
+  it('applies the muted tone on a surface', () => {
+    render(<ShortcutKey tone="muted">R</ShortcutKey>)
+    expect(screen.getByText('R').className).toContain('bg-[var(--color-surface-hover)]')
   })
 })
 

@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { attendanceApi, type AttendanceListParams } from '../../api/attendance/attendance-api'
 import { exportApi } from '../../api/reports/export-api'
 import type { AttendanceRecordResponse } from '../../api/generated/types'
-import { Button, Badge, useToast } from '../../components/ui'
+import { Button, Badge, useToast, ShortcutKey} from '../../components/ui'
 import type { Column } from '../../components/ui/table'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { DataWorkspace, useWorkspace } from '../../components/data-workspace'
-import { capitalize } from '../../lib/utils'
+import { capitalize, plural } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
   present: 'success',
@@ -148,7 +148,7 @@ export function AttendanceRecordsPage() {
       <DataWorkspace
         workspace={workspace}
         title="Attendance Records"
-        description={`${total} record${total !== 1 ? 's' : ''}`}
+        description={plural(total, 'record')}
         columns={columns}
         keyExtractor={(r) => r.id}
         data={data}
@@ -165,7 +165,7 @@ export function AttendanceRecordsPage() {
         primaryAction={
           <Button onClick={() => navigate('/attendance/record')}>
             Record Attendance
-            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+            <ShortcutKey>N</ShortcutKey>
           </Button>
         }
         toolbarActions={

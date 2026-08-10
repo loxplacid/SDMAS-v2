@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { feeTypeApi, type FeeTypeListParams } from '../../api/fees/fee-type-api'
 import type { FeeTypeResponse, FeeTypeCreate, FeeTypeUpdate } from '../../api/generated/types'
-import { Card, Table, Pagination, Select, Button, Badge, Modal, Form, Alert, Input, ErrorState, useToast, PageHeader } from '../../components/ui'
+import { Card, Table, Pagination, Select, Button, Badge, Modal, Form, Alert, Input, ErrorState, useToast, PageHeader, ShortcutKey} from '../../components/ui'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
-import { FEE_TYPE_STATUSES, capitalize } from '../../lib/utils'
+import { FEE_TYPE_STATUSES, capitalize, plural } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'danger'> = { active: 'success', inactive: 'danger' }
 
@@ -97,12 +97,12 @@ export function FeeTypeListPage() {
       <PageHeader
         eyebrow="Fees"
         title="Fee Types"
-        subtitle={`${total} type${total !== 1 ? 's' : ''}`}
+        subtitle={plural(total, 'type')}
         compact
         actions={
           <Button onClick={openCreateModal}>
             Add Fee Type
-            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+            <ShortcutKey>N</ShortcutKey>
           </Button>
         }
       />

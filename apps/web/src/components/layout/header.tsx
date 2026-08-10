@@ -1,6 +1,7 @@
 import { useAuth } from '../../api/auth/auth-context'
 import { useCampus } from '../../hooks/use-campus'
 import { NotificationBell } from '../notifications/notification-bell'
+import { OrganizationContext } from './organization-context'
 import { ThemeToggle } from '../ui/theme-toggle'
 import { WorkspaceSwitcher } from '../ui/workspace-switcher'
 import { Tooltip } from '../ui/tooltip'
@@ -12,6 +13,13 @@ import { BreadcrumbBar } from '../ui/breadcrumb-bar'
 import { ContextualPageActions } from './contextual-actions'
 
 import { ROLE_BADGE_COLORS } from '../../types/roles'
+
+/**
+ * Persistent "DEMO ENVIRONMENT" marker (Step 5 §8). Rendered only when
+ * the build is explicitly flagged as a demo (VITE_DEMO_MODE=1), so a
+ * production deploy never shows it by accident.
+ */
+const IS_DEMO = import.meta.env.VITE_DEMO_MODE === '1'
 
 function RoleBadge({ role, isPrimary = false }: { role?: string; isPrimary?: boolean }) {
   if (!role) return null
@@ -81,11 +89,25 @@ export function Header({ onOpenCommandPalette, onOpenSearch, onOpenShortcuts }: 
       {/* Left — contextual page hierarchy (P8 §7), via the shared BreadcrumbBar.
           Hidden below sm: pages carry their own context and the controls would crowd. */}
       <div className="hidden sm:flex items-center gap-1.5 min-w-0">
+        {IS_DEMO && (
+          <span
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[9px] font-bold uppercase tracking-widest border border-amber-500/30 flex-shrink-0"
+            title="This environment contains synthetic demonstration data"
+          >
+            <span className="h-1 w-1 rounded-full bg-current animate-pulse-soft" aria-hidden="true" />
+            Demo
+          </span>
+        )}
         <BreadcrumbBar variant="header" />
       </div>
 
       {/* Center / Right */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5">
+        {/* Organization identity (D1 §1) — real campus name + role, always visible on desktop */}
+        <div className="hidden lg:block mr-0.5">
+          <OrganizationContext />
+        </div>
+
         {/* Contextual page actions (P8 §8) — desktop only; pages keep their own */}
         <div className="hidden lg:flex items-center mr-1">
           <ContextualPageActions />

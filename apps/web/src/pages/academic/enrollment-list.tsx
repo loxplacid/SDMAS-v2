@@ -6,9 +6,9 @@ import { academicYearApi } from '../../api/academic/academic-year-api'
 import { classApi } from '../../api/academic/class-api'
 import { sectionApi } from '../../api/academic/section-api'
 import type { EnrollmentResponse, EnrollmentCreate, EnrollmentUpdate, StudentResponse, AcademicYearResponse, ClassResponse, SectionResponse } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast, PageHeader } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast, PageHeader, ShortcutKey} from '../../components/ui'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
-import { ENROLLMENT_STATUSES, capitalize } from '../../lib/utils'
+import { ENROLLMENT_STATUSES, capitalize, plural } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = { active: 'success', inactive: 'danger' }
 
@@ -103,12 +103,12 @@ export function EnrollmentListPage() {
       <PageHeader
         eyebrow="Academics"
         title="Enrollments"
-        subtitle={`${total} enrollment${total !== 1 ? 's' : ''}`}
+        subtitle={plural(total, 'enrollment')}
         compact
         actions={
           <Button onClick={openCreateModal}>
             Add Enrollment
-            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+            <ShortcutKey>N</ShortcutKey>
           </Button>
         }
       />

@@ -12,7 +12,7 @@ import {
 } from '../../api/cases/cases-api'
 import { Badge, Button, Modal, SearchInput, Skeleton } from '../../components/ui'
 import { useToast } from '../../components/ui/toast'
-import { cn, formatDateTime, formatRelativeTime } from '../../lib/utils'
+import { cn, formatDateTime, formatRelativeTime, plural } from '../../lib/utils'
 
 // ── Presentation helpers ─────────────────────────────────────────────
 
@@ -569,7 +569,7 @@ export function WorkQueuePage() {
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h2 className="text-base font-semibold text-[var(--color-text-primary)]">Cases</h2>
-                <p className="text-sm text-[var(--color-text-tertiary)] mt-0.5">{total.toLocaleString()} case{total !== 1 ? 's' : ''}</p>
+                <p className="text-sm text-[var(--color-text-tertiary)] mt-0.5">{plural(total, 'case')}</p>
               </div>
               {items.length > 0 && canAct && (
                 <label className="flex items-center gap-2 text-xs text-[var(--color-text-tertiary)]">

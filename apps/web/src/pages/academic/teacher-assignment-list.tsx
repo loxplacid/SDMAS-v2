@@ -4,9 +4,9 @@ import { teacherApi } from '../../api/academic/teacher-api'
 import { classApi } from '../../api/academic/class-api'
 import { subjectApi } from '../../api/academic/subject-api'
 import type { TeacherAssignmentResponse, TeacherAssignmentCreate, TeacherResponse, ClassResponse, SubjectResponse } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast, PageHeader } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast, PageHeader, ShortcutKey} from '../../components/ui'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
-import { capitalize } from '../../lib/utils'
+import { capitalize, plural } from '../../lib/utils'
 
 const columns = [
   { key: 'teacher_id', header: 'Teacher ID', render: (a: TeacherAssignmentResponse) => `Teacher #${a.teacher_id}` },
@@ -82,12 +82,12 @@ export function TeacherAssignmentListPage() {
       <PageHeader
         eyebrow="Academics"
         title="Teacher Assignments"
-        subtitle={`${total} assignment${total !== 1 ? 's' : ''}`}
+        subtitle={plural(total, 'assignment')}
         compact
         actions={
           <Button onClick={openCreateModal}>
             Add Assignment
-            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+            <ShortcutKey>N</ShortcutKey>
           </Button>
         }
       />

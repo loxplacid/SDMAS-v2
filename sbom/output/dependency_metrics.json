@@ -1,8 +1,8 @@
 {
-  "ambiguous_edges": 2334,
+  "ambiguous_edges": 2350,
   "by_ecosystem": {
-    "npm": 1797,
-    "pypi": 65
+    "npm": 1804,
+    "pypi": 106
   },
   "cycles": [
     [
@@ -38,10 +38,10 @@
     ]
   ],
   "dangling_edges": 5,
-  "dependency_edges": 6807,
-  "direct_packages": 45,
+  "dependency_edges": 6880,
+  "direct_packages": 54,
   "empty_version_packages": [],
-  "max_depth": 1323,
+  "max_depth": 1368,
   "orphaned_names": [
     [
       "npm",
@@ -1549,15 +1549,15 @@
     ],
     [
       "pypi",
+      "filelock"
+    ],
+    [
+      "pypi",
       "httptools"
     ],
     [
       "pypi",
       "pycparser"
-    ],
-    [
-      "pypi",
-      "pyyaml"
     ],
     [
       "pypi",
@@ -1573,6 +1573,6 @@
     ]
   ],
   "orphaned_packages": 382,
-  "total_packages": 1862,
-  "transitive_packages": 1817
+  "total_packages": 1910,
+  "transitive_packages": 1856
 }

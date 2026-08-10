@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { termApi } from '../../api/academic/term-api'
 import { academicYearApi } from '../../api/academic/academic-year-api'
 import type { TermResponse, TermCreate, TermUpdate, AcademicYearResponse } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast, PageHeader } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, EmptyState, ErrorState, useToast, PageHeader, ShortcutKey} from '../../components/ui'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { useDelight } from '../../components/delight/delight-provider'
-import { TERM_STATUSES, capitalize } from '../../lib/utils'
+import { TERM_STATUSES, capitalize, plural } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'info'> = { active: 'success', inactive: 'danger' }
 
@@ -92,12 +92,12 @@ export function TermListPage() {
       <PageHeader
         eyebrow="Academics"
         title="Terms"
-        subtitle={`${total} term${total !== 1 ? 's' : ''}`}
+        subtitle={plural(total, 'term')}
         compact
         actions={
           <Button onClick={openCreateModal}>
             Add Term
-            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+            <ShortcutKey>N</ShortcutKey>
           </Button>
         }
       />

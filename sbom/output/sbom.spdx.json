@@ -8,7 +8,7 @@
     "licenseListVersion": "3.23"
   },
   "dataLicense": "CC0-1.0",
-  "documentNamespace": "https://sdmas.local/sbom/spdx/e2832d5d-60b9-5bea-9e26-bac42f04b356",
+  "documentNamespace": "https://sdmas.local/sbom/spdx/e83ffb87-bdff-5bb3-abf5-f8a96291f6f7",
   "name": "sdmas-api-0.1.0",
   "packages": [
     {
@@ -10596,6 +10596,30 @@
       "versionInfo": "10.3.0"
     },
     {
+      "SPDXID": "SPDXRef-Package-npm--sqlite.org-sqlite-wasm-3.53.0-build1",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "3df58f58dda7fbfdfb7686bca21dbfa145e4e0e3ac45866cc5cd56d6c0d72066ff3eee58adbf9fd9ec98a6040c1884d55fb1d583186cf4fd7c45ce88f7bca6fe"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://registry.npmjs.org/@sqlite.org/sqlite-wasm/-/sqlite-wasm-3.53.0-build1.tgz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:npm/%40sqlite.org/sqlite-wasm@3.53.0-build1",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "Apache-2.0",
+      "name": "@sqlite.org/sqlite-wasm",
+      "supplier": "NOASSERTION",
+      "versionInfo": "3.53.0-build1"
+    },
+    {
       "SPDXID": "SPDXRef-Package-npm--standard-schema-spec-1.1.0",
       "checksums": [
         {
@@ -12946,6 +12970,30 @@
       "name": "ajv-keywords",
       "supplier": "NOASSERTION",
       "versionInfo": "5.1.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-npm-animejs-4.5.0",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "3508a6617fa5cfc59a5e89c64bdcd5568be208802338d7896b2c5a714762b5a8af60bab25e01a314a8eeca5d1a5148452a6e4cae25fdb72d531a8bcdce825058"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://registry.npmjs.org/animejs/-/animejs-4.5.0.tgz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:npm/animejs@4.5.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "name": "animejs",
+      "supplier": "NOASSERTION",
+      "versionInfo": "4.5.0"
     },
     {
       "SPDXID": "SPDXRef-Package-npm-anser-1.4.10",
@@ -21636,6 +21684,30 @@
       "versionInfo": "1.1.2"
     },
     {
+      "SPDXID": "SPDXRef-Package-npm-framer-motion-13.0.0",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "9d01995e5b228a0378f27cef13b00bd462de92a97e7ad729869f2ff8f4345f4e28c4edb4c95995f6b53d5d0db9735dfa45d78862869694a4fda00c2f2736b79a"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://registry.npmjs.org/framer-motion/-/framer-motion-13.0.0.tgz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:npm/framer-motion@13.0.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "name": "framer-motion",
+      "supplier": "NOASSERTION",
+      "versionInfo": "13.0.0"
+    },
+    {
       "SPDXID": "SPDXRef-Package-npm-freeport-async-2.0.0",
       "checksums": [
         {
@@ -30250,6 +30322,78 @@
       "name": "mkdirp",
       "supplier": "NOASSERTION",
       "versionInfo": "1.0.4"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-npm-motion-13.0.0",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "4586631298075022a304daa39944335bddd52562ef1191933dd291152a8e74e974ec820cbf3f96aec6660f55d7024a052ebb96ffc6ced4bed417e562413c6d2e"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://registry.npmjs.org/motion/-/motion-13.0.0.tgz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:npm/motion@13.0.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "name": "motion",
+      "supplier": "NOASSERTION",
+      "versionInfo": "13.0.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-npm-motion-dom-13.0.0",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "5e4f9225ab3bd2e30050802983e9b79590d28712372c1147abb98519b04aa115dcd8f54f0f200a9b337ae016f3b7809974ffc222d4e22715ad9f84c0d2fe7736"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://registry.npmjs.org/motion-dom/-/motion-dom-13.0.0.tgz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:npm/motion-dom@13.0.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "name": "motion-dom",
+      "supplier": "NOASSERTION",
+      "versionInfo": "13.0.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-npm-motion-utils-13.0.0",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "ec39cded399b2dc617706e1155a757222856972b8cf5a7e8530c3c639020838df59062a2b8bdbf38cc8fe26279c0bcfea6f377b79c920a52ce6955c9fb07a445"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://registry.npmjs.org/motion-utils/-/motion-utils-13.0.0.tgz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:npm/motion-utils@13.0.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "MIT",
+      "name": "motion-utils",
+      "supplier": "NOASSERTION",
+      "versionInfo": "13.0.0"
     },
     {
       "SPDXID": "SPDXRef-Package-npm-mrmime-1.0.1",
@@ -39423,6 +39567,30 @@
       "versionInfo": "2.8.1"
     },
     {
+      "SPDXID": "SPDXRef-Package-npm-tslib-2.8.1-f4fecb97-1",
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a0916ef781d06fe29576e49440bef09e99aa9df98bb0e03f9c087a6fa107d30084a0ad3f98f79753a737c0a0d5f373243ae1cf447b525ca294f7d2016b34bfdb"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:npm/tslib@2.8.1",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "0BSD",
+      "name": "tslib",
+      "supplier": "NOASSERTION",
+      "versionInfo": "2.8.1"
+    },
+    {
       "SPDXID": "SPDXRef-Package-npm-turbo-stream-2.4.1",
       "checksums": [
         {
@@ -43143,6 +43311,34 @@
       "versionInfo": "2.1.0"
     },
     {
+      "SPDXID": "SPDXRef-Package-pypi-absl-py-2.5.0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0c996f25c0490700fadabe6351630f6111534fa0ae252cc6d2014ea3b141135f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0f17b89f2a4eaaedc4f28c622998aa690564b3012a396a4ffad0821007fe03ba"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/d0/4f/d79676ab82f2e42fc3611618139f13a9c4c31d0cff4b486982047679a802/absl_py-2.5.0.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/absl-py@2.5.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "absl-py",
+      "supplier": "NOASSERTION",
+      "versionInfo": "2.5.0"
+    },
+    {
       "SPDXID": "SPDXRef-Package-pypi-aiosqlite-0.22.1",
       "checksums": [
         {
@@ -43651,6 +43847,34 @@
       "versionInfo": "0.31.0"
     },
     {
+      "SPDXID": "SPDXRef-Package-pypi-bandit-1.9.4",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b589e5de2afe70bd4d53fa0c1da6199f4085af666fde00e8a034f152a52cd628"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f89ffa663767f5a0585ea075f01020207e966a9c0f2b9ef56a57c7963a3f6f8e"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/aa/c3/0cb80dfe0f3076e5da7e4c5ad8e57bac6ac357ff4a6406205501cade4965/bandit-1.9.4.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/bandit@1.9.4",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "bandit",
+      "supplier": "NOASSERTION",
+      "versionInfo": "1.9.4"
+    },
+    {
       "SPDXID": "SPDXRef-Package-pypi-bcrypt-5.0.0",
       "checksums": [
         {
@@ -43921,6 +44145,62 @@
       "name": "bcrypt",
       "supplier": "NOASSERTION",
       "versionInfo": "5.0.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-boolean-py-5.0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "60cbc4bad079753721d32649545505362c754e121570ada4658b852a3a318d95"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ef28a70bd43115208441b53a045d1549e2f0ec6e3d08a9d142cbc41c1938e8d9"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/c4/cf/85379f13b76f3a69bca86b60237978af17d6aa0bc5998978c3b8cf05abb2/boolean_py-5.0.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/boolean-py@5.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "boolean-py",
+      "supplier": "NOASSERTION",
+      "versionInfo": "5.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-cachecontrol-0.14.4",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e6220afafa4c22a47dd0badb319f84475d79108100d04e26e8542ef7d3ab05a1"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b7ac014ff72ee199b5f8af1de29d60239954f223e948196fa3d84adaffc71d2b"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/2d/f6/c972b32d80760fb79d6b9eeb0b3010a46b89c0b23cf6329417ff7886cd22/cachecontrol-0.14.4.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/cachecontrol@0.14.4",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "cachecontrol",
+      "supplier": "NOASSERTION",
+      "versionInfo": "0.14.4"
     },
     {
       "SPDXID": "SPDXRef-Package-pypi-certifi-2026.7.22",
@@ -44667,199 +44947,199 @@
       "versionInfo": "0.4.6"
     },
     {
-      "SPDXID": "SPDXRef-Package-pypi-cryptography-49.0.0",
+      "SPDXID": "SPDXRef-Package-pypi-cryptography-50.0.0",
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "f89660a348f4f78a92366240a61404e337586ef7f5909a2fef59ca88ef505493"
+          "checksumValue": "eeac2acb5a20ed25e0ad6d1df9891a520b78b404266b6d11778f25d5d691a6c9"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "966fe0e9c67490071f14c0d2b1cb2dfb3023c5ce39457343931415f08382f2db"
+          "checksumValue": "031e2d5dd4bb9caa3ca9c82e5a197fd8ae680232cee62603d1a813f3f07e3d03"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "36d1709f992593689b45bda411498d62c6e365f2ca00b84657d4dadd24de16db"
+          "checksumValue": "fd9192b7b70c573d7f214eb1ae35e00d359f6f5e4b27c7e21e30de1fc6204645"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "0e959b578856a3924bc0cbb710fc12c387b9412a951389f3ca61704a9e25f325"
+          "checksumValue": "06a32a980526a6ab9a4b9bf8f7385800791e2bb960903cb6b530e4817509a3b7"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "53ecee2e23f7169b6117e99fc8a944e5e50f79e69758a83b52a00cb98ab2b2d2"
+          "checksumValue": "a1b30560f2acc95aa8b2e06e716a13dbfc97314747b80d9707e307f77b40d6b3"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "2eda353d8a27bcbcaa4cbed18994a74ab4d19a2ca897db188ea269ab9b71419b"
+          "checksumValue": "8d89f3976b10b4ce31118de72329025f70d2c6ead14a8217c5514dd2c6d5a78f"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "2afe9051da7ae7bd5905da5a949280c7d2bb75682e188f650a9d0f2756b834c6"
+          "checksumValue": "b42a28c1844fd9de8f3f7d540e36b66f3a9c83fceac7170ebc7a6a19edd9dcae"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "0b82e28ee398a386f0807bba7884d30f25218855690f45115831bcce5d90822c"
+          "checksumValue": "900131fafd8aead39ac7dd3a7e833be754c17a95cfd91221636949fe4eb0aa8a"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "ccac2bfebc306b862133e3bb71f3f6ee8bb525240089b2d952e4144b3a6d5da7"
+          "checksumValue": "07949c449a1abcf60d1ee6e88956d89404c7df3c8258f46589e912988e551987"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "d0527ce944105f257f605a827d6ebead966c752038b6e8656abb9c5edee6fc68"
+          "checksumValue": "f89831ef99dd7dd169ab06d63a831adb9e20a87aac6d380266bbda5823349169"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "cbc77da8c523d5abd028635ba850a6966fcee2c82e2bf65a41d1d8afe0f98be9"
+          "checksumValue": "82148ec5bddac30b51a5b3c1945075f896fa022cb93f8e4a01e9f6ee95292c5f"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "b87e65d263b3e5d3bb92a57e2a6638e2f31110fa7aa890c7b2dbba42248d0a3f"
+          "checksumValue": "1489e263a8048bb8b6a8bac662eb2d402ea5d2b7b4699b72f385f1e2772db105"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "66ec79c3904820572d7e987abdf304281f141d37ad9a489b8e97066e7b9b6459"
+          "checksumValue": "7cec5b856506da6defb290f30c9ee687d5f5e8cb0bd3f6459dde43b0b4fa40ef"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "e5dfc1e64de5677cec922ffa8da89c546d0415bf6efdf081842e5d44c84e1f0e"
+          "checksumValue": "bd1c592e4d5974f0d08d4888e432157adba757c66da0246918e43677fafa2d30"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "73a205dce83953d131a4aa1e0fd917a2fd1c5b1eef251e9d7152efefcbf5caf7"
+          "checksumValue": "49e7d93abdbd2990caced757e5fade25302f719c3c8fb6e6fff2dde98999fc41"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "196ecd6a36e4e9aa10270393bb98d8df88fccee0bf1e5128b91ae4eb4375896d"
+          "checksumValue": "19736989797678c6af1e55cd49055cdbcb55d8f6b5583ac5335f933aba9101dc"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "7abcee80084cda3f7691f3eb1ce480d8df49cec637b429aa35986c1de71738aa"
+          "checksumValue": "80b63928fa35083b33966ce1efb70e5b9607181e49dcd1c22c8c005e319f667f"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "4ae387c9cb68ea569ca17e490d66d8142b81c3cc814bf179974b7d146e490bbb"
+          "checksumValue": "d58c3db7cd6eed54e6c06744db55456b65ebd7492ddeae9c1e93cfca7aa857d3"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "f37d847238971164fdbc68ade6f6574aecc9c0af714190e2083429ff68f4ce9d"
+          "checksumValue": "df2a58a472f332225671c35b0a830208b86d004f82baa8530fa3782c85646533"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "c2bc30226390d60ea19d9f82b19db005fe0452154a23c1c410c12ea801e43561"
+          "checksumValue": "11b74db56cdbe3cdee6e3f6982ecb70334fa10dce99ed58bf7894aaaa3b2a037"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "07cab27cc7b7e0fd28e5e26bb9eeedde5c135c868b46de4a27845abe94af6122"
+          "checksumValue": "f59e38625469987d7ef6d495323c55e7db6c212eaf6112267e0d3b565a2e9c9f"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "b20133d204d2bb56ba047642199603876c872026ca53e79c35b83772ab2cc505"
+          "checksumValue": "ecfed7367f965a0328cfbdd70da860f15441f002f613185668c6e6ebf5a0ac11"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "b970c6da94d5bb18629db453d14f2a1300f6bf59b61e9b82377931ef95504866"
+          "checksumValue": "9aa87839c383bdbab6ef865787a1fb877af8dd03464c4400322726feaaadfc6d"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "d8ecde755e2e91bf773fc94e8c9d730cd7f2007004cb492263a794ec3899a1c8"
+          "checksumValue": "6ba6a53445bd3cfa809ef3ef5f1589aa6ba08784a1d962bf47d0940e871dab1c"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "e3fb64c420688e5319ae25113a354015abbd8dffbfbc41781a1ea66fc7622ac3"
+          "checksumValue": "3f5735ffe4996d28b809371756219f5354864902a3b9e7c0b9ee87041209fc9c"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "32703d93296f5c1f4b53349ad3a250c2cae0fdecd3a3dd5d47e616d8d616af27"
+          "checksumValue": "1b4a266766514614f8aa60416e71f2fc6e575d36e7bdc90f644fadb2f4b75b95"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "33cd0565932807baddb67b96dbee92f2c374b5c89dee09fd74079aeb8c8dba61"
+          "checksumValue": "12b9c6996425c76ea6c457ace4f3073e715b8c545add07cd1a8f3a4f90691269"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "ec5e529fb80935c94fe7b729f9972b50e351a0e6b50aa294fd5cabb109fcc29a"
+          "checksumValue": "ccdc4a71a4dabae05de219404f9f4abc38e3b58422177ff93d0da05967dafa07"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "f78ff2c9ed8dc2d036b0f4d640e22522213d047c1b14e61205a7e55c80a494d4"
+          "checksumValue": "910e1d2668e7de9648f2bcee30e180db2a6b15c30f887d7c4c93ddf96e3992e3"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "35b151772baff2c74cba7fa290ceaff4c3b11c0c881eb93eb5dbc05a7cfbba18"
+          "checksumValue": "a91296cb61e8df6f86d0c19cc4068228da256bf59bf86049fbd821084565327f"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "0f21641cf4b30fca7aee061ced0ec7ad7b073518088b7c9969a297c0ae796c69"
+          "checksumValue": "e722f16708d854fe924790e051061f6704a472c3bac347b6fd88033ea8dd0dc5"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "9e82dcc8e56052715fb18b2429e3bca4823b1629136a2084fc45a9a5cecb9b64"
+          "checksumValue": "d764dcf130c428ef66786f866dd750f53182bc608813489915e9fc106bb0c82f"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "6f2debedf9ca60cf1d5bd466475638af5130f89965605cd818484d19987d3a21"
+          "checksumValue": "105110f43a471dbd0060b9c9516cb8a6a79233631a04cc2ba16f28323ac6e025"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "8c25ceb16df5b9435f3f6a9829204985b0e0cbee3b48aacd432c7d2c850b44d9"
+          "checksumValue": "828743d939e9629bc267b8e2d08d8bb67cd4319c771a33d4b18b22dd8fb7440a"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "28d8b15e6275f12c8a207dc309dfa957903c927d08d0cc937ee3f63f200693cc"
+          "checksumValue": "2a8183b489dc1f7f80f135780fadc1108f14b31b8a40411c7a5b17425f65f28b"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "6fc361c34fb6aac015ce19435876635e5c6d21db31998b0920f675f131e043b8"
+          "checksumValue": "6e7d61120573a7f2cd94cc095f9e81f6967c61ccdf194285aa143ecec8e0b708"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "2400ef9c9e2299a25614eb1dea3db54a69b1349efd043bfac9c67630d136df36"
+          "checksumValue": "37fdb0d0111f1e2ff07139dfb79f1b49531f8e213c46f1163dd7642979b58c47"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "67e1d20ad9ef3a563c59ef22e7a8a0b8210bd26604369ea4a30a7c66aefe504e"
+          "checksumValue": "c87f62a3d3b9888ed0fdde100ec06aa61ca9cd44bad9057d1dff9a516b5f5bb9"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "42b0684e0e40cf26122427802486f6d93aea593612603a94fbf260c7eb1e9c1b"
+          "checksumValue": "65c2c3add92b45fd0709db8594536aea39c2a67af0e27ffcf049c498501140b7"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "026ac7423e6fa66872d3bf889be5974507da3944f866f704fa200eadacd00001"
+          "checksumValue": "d24fead1d4d076e1bfb006dcec392074a3cd8d7b4fc8a595aa64073b2b7a96ba"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "fc1e275c2f1d97b1a6450b8b0ea3ebfa6e087a611c2b26cb2404d48588abab7b"
+          "checksumValue": "5e34edd123674534acd70147f0ca331eaa2c74e6325fb2028c886aa26ba0b68c"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "c83782480a4a9da4d0feb51950131ba32e12e70813848b3343f6e18c28a66838"
+          "checksumValue": "8eb5e1172eb569ea8a872796576e6a67c276351728b6455d5beb01242b027c6a"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "b39efa323140595abd3ecca8529d321ae50f55f3aa3ba9cc81ea56a6011953d5"
+          "checksumValue": "910d11e1a385c654bf738bf3e6b8e6ed5de0f5610fcae2be9e5b398d8081d20e"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "b47db11c2c3525083296069b98ac5221907455e989ae0c2e3008bde851921615"
+          "checksumValue": "62598a8a57f815db4c6259a4e97d857dab56697e7de8e8ab02352ab74da1995d"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "084ef1af862eb07ec46d25f68689f2102a9fc0e05ce7b80f14f5fe51e4eef0f6"
+          "checksumValue": "07479a1cb08219ab719147e742e76090c9c773321959bb94946fffdd397a6437"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "be9fcb48a55f023493482827d4f459bd263cc20efde64f204b97c123201850c6"
+          "checksumValue": "c99c003e088647b8a5b7c145d6f78c335f6348332b62e142d411c4b63d1460b9"
         }
       ],
       "copyrightText": "NOASSERTION",
-      "downloadLocation": "https://files.pythonhosted.org/packages/1f/99/d1c90d6041656cc6ee229dc99cd67fd0cd5aec3c5f7d72fffc27cc750054/cryptography-49.0.0.tar.gz",
+      "downloadLocation": "https://files.pythonhosted.org/packages/de/41/6cbdcf9142d00fe82836fbb51e503e58088575cf7a0fe1dbff6695bf0840/cryptography-50.0.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "PACKAGE-MANAGER",
-          "referenceLocator": "pkg:pypi/cryptography@49.0.0",
+          "referenceLocator": "pkg:pypi/cryptography@50.0.0",
           "referenceType": "purl"
         }
       ],
@@ -44868,7 +45148,63 @@
       "licenseDeclared": "NOASSERTION",
       "name": "cryptography",
       "supplier": "NOASSERTION",
-      "versionInfo": "49.0.0"
+      "versionInfo": "50.0.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-cyclonedx-python-lib-11.11.0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4b3194db72b613717f2912447e67ab618c75ff7dcac6c4af3c0e9e1ac617c102"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3049fc83e06a059b5c5907a527625a8ed5073caab10607ed4c9e5503b590fd44"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/75/c9/5d0ccdd19bc7d8ab803b90695c1706aa2ea8529685d18e682dc2524d2630/cyclonedx_python_lib-11.11.0.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/cyclonedx-python-lib@11.11.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "cyclonedx-python-lib",
+      "supplier": "NOASSERTION",
+      "versionInfo": "11.11.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-defusedxml-0.7.1",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1bb3032db185915b62d7c6209c5a8792be6a32ab2fedacc84e01b52c51aa3e69"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a352e7e428770286cc899e2542b6cdaedb2b4953ff269a210103ec58f6198a61"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/0f/d5/c66da9b79e5bdb124974bfe172b4daf3c984ebd9c2a06e2b8a4dc7331c72/defusedxml-0.7.1.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/defusedxml@0.7.1",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "defusedxml",
+      "supplier": "NOASSERTION",
+      "versionInfo": "0.7.1"
     },
     {
       "SPDXID": "SPDXRef-Package-pypi-docker-7.2.0",
@@ -44927,6 +45263,34 @@
       "versionInfo": "0.19.2"
     },
     {
+      "SPDXID": "SPDXRef-Package-pypi-et-xmlfile-2.0.0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "dab3f4764309081ce75662649be815c4c9081e88f0837825f90fd28317d4da54"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7a91720bc756843502c3b7504c77b8fe44217c85c537d85037f0f536151b2caa"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/d3/38/af70d7ab1ae9d4da450eeec1fa3918940a5fafb9055e934af8d6eb0c2313/et_xmlfile-2.0.0.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/et-xmlfile@2.0.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "et-xmlfile",
+      "supplier": "NOASSERTION",
+      "versionInfo": "2.0.0"
+    },
+    {
       "SPDXID": "SPDXRef-Package-pypi-fastapi-0.140.13",
       "checksums": [
         {
@@ -44953,6 +45317,34 @@
       "name": "fastapi",
       "supplier": "NOASSERTION",
       "versionInfo": "0.140.13"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-filelock-3.32.2",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c33351e1f49cae33414acbc6d56784e6ecee82514ec90795da1161fc4836b5b8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "87dd94cf281e586d135fa51132b8e3d9a598b316e90377a288663c9321036c82"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/f6/57/3ba6e6cb097f85b855b00163d169f35365f44277df044dcf96d55b8f62a3/filelock-3.32.2.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/filelock@3.32.2",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "filelock",
+      "supplier": "NOASSERTION",
+      "versionInfo": "3.32.2"
     },
     {
       "SPDXID": "SPDXRef-Package-pypi-greenlet-3.5.4",
@@ -45531,6 +45923,34 @@
       "versionInfo": "3.18"
     },
     {
+      "SPDXID": "SPDXRef-Package-pypi-immutabledict-4.3.1",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f844a669106cfdc73f47b1a9da003782fb17dc955a54c80972e0d93d1c63c514"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c9facdc0ff30fdb8e35bd16532026cac472a549e182c94fa201b51b25e4bf7bf"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/1d/e6/718471048fea0366c3e3d1df3acfd914ca66d571cdffcf6d37bbcd725708/immutabledict-4.3.1.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/immutabledict@4.3.1",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "immutabledict",
+      "supplier": "NOASSERTION",
+      "versionInfo": "4.3.1"
+    },
+    {
       "SPDXID": "SPDXRef-Package-pypi-iniconfig-2.3.0",
       "checksums": [
         {
@@ -45557,6 +45977,34 @@
       "name": "iniconfig",
       "supplier": "NOASSERTION",
       "versionInfo": "2.3.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-joblib-1.5.3",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8561a3269e6801106863fd0d6d84bb737be9e7631e33aaed3fb9ce5953688da3"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5fc3c5039fc5ca8c0276333a188bbd59d6b7ab37fe6632daa76bc7f9ec18e713"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/41/f2/d34e8b3a08a9cc79a50b2208a93dce981fe615b64d5a4d4abee421d898df/joblib-1.5.3.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/joblib@1.5.3",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "joblib",
+      "supplier": "NOASSERTION",
+      "versionInfo": "1.5.3"
     },
     {
       "SPDXID": "SPDXRef-Package-pypi-librt-0.13.0",
@@ -45851,6 +46299,34 @@
       "versionInfo": "0.13.0"
     },
     {
+      "SPDXID": "SPDXRef-Package-pypi-license-expression-30.4.4",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "73448f0aacd8d0808895bdc4b2c8e01a8d67646e4188f887375398c761f340fd"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "421788fdcadb41f049d2dc934ce666626265aeccefddd25e162a26f23bcbf8a4"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/40/71/d89bb0e71b1415453980fd32315f2a037aad9f7f70f695c7cec7035feb13/license_expression-30.4.4.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/license-expression@30.4.4",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "license-expression",
+      "supplier": "NOASSERTION",
+      "versionInfo": "30.4.4"
+    },
+    {
       "SPDXID": "SPDXRef-Package-pypi-mako-1.3.12",
       "checksums": [
         {
@@ -45877,6 +46353,34 @@
       "name": "mako",
       "supplier": "NOASSERTION",
       "versionInfo": "1.3.12"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-markdown-it-py-4.2.0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "04a21681d6fbb623de53f6f364d352309d4094dd4194040a10fd51833e418d49"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9f7ebbcd14fe59494226453aed97c1070d83f8d24b6fc3a3bcf9a38092641c4a"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/06/ff/7841249c247aa650a76b9ee4bbaeae59370dc8bfd2f6c01f3630c35eb134/markdown_it_py-4.2.0.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/markdown-it-py@4.2.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "markdown-it-py",
+      "supplier": "NOASSERTION",
+      "versionInfo": "4.2.0"
     },
     {
       "SPDXID": "SPDXRef-Package-pypi-markupsafe-3.0.3",
@@ -46167,6 +46671,278 @@
       "versionInfo": "3.0.3"
     },
     {
+      "SPDXID": "SPDXRef-Package-pypi-mdurl-0.1.2",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/d6/54/cfe61301667036ec958cb99bd3efefba235e65cdeb9c84d24a8293ba1d90/mdurl-0.1.2.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/mdurl@0.1.2",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "mdurl",
+      "supplier": "NOASSERTION",
+      "versionInfo": "0.1.2"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-msgpack-1.2.1",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "04c721c2c7448767e9e3f2520a475663d8ee0f09c31890f6d2bd70fd636a9647"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "29a3f6e9667868429d8240dfd063ea5ffdc1321c13d783aa23827a38de0dcb22"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "aded5bdf32609dc7987a49bbbd15a8ef096193f96dd8bbeb791de729e650acf5"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "146ee4e9ce80b365c6d4c47073da9da7bcec473e58194ceee5dd7620ace77e06"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a28d076ca7c82b9c8728ad90b7147489449557038bed50e4241eb832395169b4"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7d31c0ac0c640f877804c67cb2bc9f4e23dc2db97e96c2e67fa27d38283b41f8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8ff92d7feeaf5bc26c51495b69e2f99ed97ab79346fb6555f44be7dd2ac6503b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "779197a6513bab3c3632265e3d0f7cb3227e62510841a6f34f1eaa37efbb345e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "67f6dd22fa72a93752643f07889796d62739a13415ee630169a8ce764f86cf9f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "91054a783328e0ea7954b8771095705c8d2243b814743fbaadf14552c9c52c5d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2eda0b7ebb1283a98d3e4492ac933c8af6aff59fd3df1c3ed024f536af4b1dc8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6ee967f7c7e1df2890c671ff2ee51a28ded0efc95da3e507176dee881ce36c66"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2ef59c659f289eddf8aa6623823f19fa2f40a4029266889eac7a2505dd210c35"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d3567748a5107cb40cdf66a275430c2f87c07777698f4bfd25c35f44d533258c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "60926b75d00c8e816ef98f3034f484a8bc64242d66839cef4cf7e503142316a0"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "020e881a764b20d8d7ca1a54fc01b8175519d108e3c3f194fddc200bda95951a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4202c74688ca06591f78cb18988228bd4cca2cc75d57b60008372892d2f1e6e6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8b267ce94efb76fbd1b3373511420074ee3187f0f7811bf394531de13294735a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e4f1d0f8f98ade9634e01fb704a408f9336c0a8f1117b369f5db83dc7551d8b1"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f02cf17a6ca1abe29b5f980644f7551f94d71f2011509b26d8625ce038f0df64"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0c0d9802354507bcba62af19c17918e3eb437cc25e6f50657d511b5856a77aac"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5c24aa15d5963051e1a5c62b12c50cd705992502b5ec1f3bece6046f33c9fc24"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4227224aaec8f7fbcbfbd4272319347b2bb4030366502600f8c45588c5187b07"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0a70e3cf2804a300d921bb0940426e35f4e489a23adfb77a808892241db0a064"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "491cc39455ca765fad51fb451bf2915eb2cf41192ab5801ce8d67c1d614fe056"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f310233ef7fb9c14e201c93639fe5f5260b005f56f0b29048e999c30935596cc"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "787c9bebb5833e8f6fc8abca3c0597683d8d87f56a8842b6b89c75a5f3176e2d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "dc871b997a9370d855b7394465f2f350e847a5b806dd38dcc9c989e7d87da155"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "85f57e960d877f2977f6430896191b04a21f8901b3b4baf2e4604329f4db5402"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1233ee2dd0cefba127583de50ea654677277047d238303521db35def3d7b2e7c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e3dc2feb0876209d9c38aa56cb1de169bd6c4348f1aa48271f241226590993e6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6d09badf350af2be9d189184e04e64cf54ad93569ab3d96fca58bd3e84aad707"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "33f14fba63278b714efe6ad07e50ea5f03d91537aa6a1c5f1ceca4cf44013ca9"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "afc5febcd4c99effbc02b528e49d6fd0760b2b7d48c05239e345a5fa6e743d9a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "05f340e47e7e47d2da8db9b53e1bb1d294369e9ef45a747441309f6650b8351d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "810b916696c86ef0deb3b74588480224df4c1b071136c34183e4a2a4284d7ac7"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ca0dacff965c47afdc3749a8469d7302a8f801d6a28758d55120d75e66ce6889"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0e2bf9280bceb5efca998435904b5d3e9fdbcc11d90dc9df30aec7973252b720"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "aa6c4be5d1c02a42b066ca6ddb71adf36432868fdcdb6ee87e634e86e0674190"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ec0e675d59150a6269ddc9139087c722292664a37d071a849c05c473350f1f2d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "dd3bfe82d53edfe4b7fc9a7ec9761e23a7a5b1dac22264505af428253c29ed24"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5ad5467fc3f68b5468e06c5f788d712e9f8ffc8b0cd1bcb160c105c1ee92dae7"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "98b58bdb89c46190e4609bb36abe17c6d4105ad13f9c5f8f6f64d320f8ced3fb"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "74847557e28ce71bd3c438a447ca90e4b507e997ddbdef8a12a7b283b86c156b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b50b727bd652bdc37d950336c848ef20ec54a4cafc38dce19b1cd86ad625d0f7"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8d00f177ca88a77c1cf848d204a38f249751650b601cb6532acc68805d8a8273"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5bb9c386f0a329c035ddbab4b72d1028bf9627add8dda41070288563d57ed1b1"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "20466cca18c49c7292a8984bc15d65857b171e7264bdcb5f96baf8be238791fc"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "196300e7e5d6e74d50f1607ab9c06c4a1484c383cd22defd727902591f7e8dde"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "575957e79cd51903a4e8495a242442949641e08f1efd5197b43bebd3ea7682b4"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8c2ed1e48cc0f460bf3c7780e7137ff21a4e18433451916f2442c1b21036cd7d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5f6277e5f783c36786a145e0247fc189a03f35f84b251646e53592d2bc12b355"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f9389552ecf4784886345ead0647e4edc96bee37cbab05b75540f542f766c48c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c1c79a604a2969a868a78b6ebd27a887e00c624f14f66b3038e0590cb23332d1"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f12038a35fabd52e56a3547bab42401af49a45caa6dd00b34c44de235bc93ee2"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0adcf06ffde0777c0e1a9b771a2b1c4226ba1bbf748c8efcc02fcdeca3299107"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/31/f9/c0a1c127f9049db9155afc316952ea571720dd01833ff5e4d7e8e6352dbb/msgpack-1.2.1.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/msgpack@1.2.1",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "msgpack",
+      "supplier": "NOASSERTION",
+      "versionInfo": "1.2.1"
+    },
+    {
       "SPDXID": "SPDXRef-Package-pypi-mypy-2.3.0",
       "checksums": [
         {
@@ -46367,6 +47143,826 @@
       "versionInfo": "1.1.0"
     },
     {
+      "SPDXID": "SPDXRef-Package-pypi-narwhals-2.24.0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b5c0f684ccd9d7475b564111e319a4964abcf2baf79d3cf6b1003d06ac9b828d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "42fdedf44e5b2ca7505630d45b4ac3058f38d8485cba9fe1652ca23152df7489"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/2b/1d/58946e5aab18393e793bd4add6985b95d0e01c3a2d832f38f54468b10dcd/narwhals-2.24.0.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/narwhals@2.24.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "narwhals",
+      "supplier": "NOASSERTION",
+      "versionInfo": "2.24.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-networkx-3.6.1",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "26b7c357accc0c8cde558ad486283728b65b6a95d85ee1cd66bafab4c8168509"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d47fbf302e7d9cbbb9e2555a0d267983d2aa476bac30e90dfbe5669bd57f3762"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/6a/51/63fe664f3908c97be9d2e4f1158eb633317598cfa6e1fc14af5383f17512/networkx-3.6.1.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/networkx@3.6.1",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "networkx",
+      "supplier": "NOASSERTION",
+      "versionInfo": "3.6.1"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-numpy-2.4.6",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f3a3570c4a2a16746ac2c31a7c7c7b0c186b95ce902e33db6f28094ed7387dda"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0280e0356c0829a18d9de1cb7eee50ec22ca639878d7240307ca0943d73cd2c4"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "110f8b71aacb688ec69062bb7f6938a0f8acb01b7c1c4beb453c65b6d234584d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4cfe66903cc32a9921a6733d96b19bb6abf310397581bbad89c228f5abaf0ee8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8155154c7c691289fe18f510b5d4657c68c67989f293f0535a91360392ff6538"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0ab0a9c4ffb1a6d95ef519fe4247dba8eb6b18ad93999f76b7f657039acabd47"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "89cd468399cfd2504718f0ba50e410dca55a170b61a02ad92bb18c8a65186e93"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c2d37ab77531417474168eb79d6d80b14f821a966818505d03013d0833edb7a8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f407cb6b8e9d6d8c626bc73c945db1706035af8fd632295547bf1c9e46d092d6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ddea102b48f9e339f3948bf22040944184627a30fdf7f858667673b9c5f033c8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1e254a00cdf42b1e4d5b3d68d33af63268d41340d8885df2ab6470f2e1500147"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ed9749eef4cbd126da3dc1d6bcb3a57f5eb7ac6a6484146bdbf743f552dfc577"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "001fbb8e08d942dd57599e781f2472269ee7f2755fae407b4f67b2f0b17da3f1"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ebfb099f8dcf083deef3ac1ca4c1503f387cf76296fcb3816b66f5ecb5f54fdb"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3213d622a0283a39a93d188f3cf72b26862df52fbb4ca3697f51705016523d41"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "357cc07a6d7b0b182ff02249616a03742827ebb1277546b5c7cd7f7620a45698"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5f9fb9157b4ce2971008323afe46053787b526ef624fea915b261468a8421a0f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "90f9849678c75fe7afa2d348ac842c168b0a4d3d61919687216dfc547976d853"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c1a2af6c6ef86344a6b0db6b97834208bf598db514f2b155042439b62605601a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e5805d5a22fd19c8ccff10a9561f9df94436b0545619ea579db2d3c35294bce2"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e3eeb0aabd6bd5ce64faae67e9935203a6991b4bc2a485a767fbafb2c5125f45"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d8e8286dd7cea7895157318d1b91cdacac64c479f3cbc8dce548331728484751"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4081eb135ac24158bd51cdfbef16f1c64df7063b1143f24731387137c092bec8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "511dbaf848decaaaf4b4ca48032619fb3138710c4bf7da7617765edad1ef96b0"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "bf162abab1c1a736333192707cef898e735a5ca00f38f27eeedf44b39d9e85eb"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "043191bfa8eab18c776647b62723ac9dddece59743b13f49b2016094129c2b3f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6180d8b35af935aed8ece3a85e0a43f87393ae0ac87c8d2c8bd2c993f7270ef3"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "72fbe16c6fac95aedf5937fa873445cec2110be35d8a4e9433d7501fd98dae6b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a7830bab239b79cda9c08c2da014761cafb48da6150e1da17ac06283f43b6089"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ef4aea96ce4d3b074422cb4f2f64e216bf9e213004bb58ecfdf50ea02ea8eb9a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "dfa20cc6ca228e6b155b11da03825975ce66aea520985dbbddf0f2a5a495c605"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "56b39e5e0622a09a25bf5baf62f4bcf0cb8a41ae6e2819cf49bbc5a74c083f91"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c4fc99836233ea196540b17ab0983aff60ed07941751930f5f4d05bc3b3b7359"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a7c711e21628b52034bb5ab8d1bce291f752fcc5e92accc615778acee1ff4778"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "112b06a867b235ef466ed3508ddf0238050df9c727cafb5301ac385b899189a1"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "eaf7fa2de5c0be8ae6ff8e9bea2ccd725e980541244521d8d4b5f3354a27babe"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7265a2f3d436e54ef9f2b52b5c937e6be778781bd97a590319d7348f1c1ca997"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f74a575920ab21fe304421a3fc28793d82e299cae9eccb37084e9fc7f3617c20"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ede83e07a75dd06bc501566c1eca2afc0d61677c1472ac9ad93fdee6e638a48d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "68bb27509ac1b9a3443094260f6326150663b06abe40b73a2f81160623da5b67"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a0df0043bdb289bde1f62da130d20df23d58b45429f752bc7a8fc5325a225ecd"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "29a287e0cf63ff528da061de6b9f64a4618da591ca1046aafc54062e40ca7eab"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "25c692919ac5a01f170a3bfcd62d745b24fd095c353d50812637d6fcab442e75"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1e978ec1e8bd0e0e4de6bb75de9d30cbb74db6b6a2bb727618613703ca0167dd"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "06ca2f61ec4385a07a6977c55ba998a4466c123642b4a32694d3128fce18c079"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "38efbc8de75c7a0fc1ac190162d892787f3f47b57cc291231aafee36b80982b7"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d581b735e177fdcdce6fed8e7e8880a3fb6ee4e3653a3ac6af01c6f4c03effc5"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0a041d3d761dc3c35cc56ce0351506a02bcbc25f7b169f652435141a17db9096"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "40fdc1ae7125e518ea98e53e69a4ebc27e1fd50510c47b7ea130cf21e5e1d42b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a2c306dea656c12c68f51f4cea133cbe78ca7435eb28c735eac1d3ebe73be6e8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "33111801a01c12a8a1e3721f0a9232f8cfc8ae2c6b7098167e6f623c6073f402"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ae506e6902902557576a26ff33eda8695e7ecb3cb36c3b573a0765dee114ebdb"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "aaf159caa35993cb1f56fb9b8e4610d35758e7ca005412eb1daa856a78c9c4b1"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b507f5c4c1d508876d1819b6bf9a49d365b96320b5d4993426b33a23ca4b8261"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6f41ae150c4e32db4f3310cdaf64b1593a03dbabe29eec77fc9b50fe64061df6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ece3d2cfe132e7d51f44a832b303895e6f2d499c5e74dfbdb06ee246147a304a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e3e5193ef5a3dc73bceee50f7fdc2c90dbb76c42df8d8fae3d1067a583df579e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "17f9ade344e7d9b464a084d69bcf18fc691cb1db67c62ed80820bf4926d78f0e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9cd5ffd25db4e7ba6a375693b3fc0fc1791ec636c17db3720da19bde7180ec43"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7d92c3819208a60205a12a245c91ad70cb0a85336659b19b834205573ac8456e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e85b752a1e912b70eaad4fafbd4d1238007ab221de2009b9a2f5ae7461239895"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "29cb7f67d10b479ff07c17d33e39f78c07f71c40ef30d63c153d340e96cd3fb4"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "260a5d70215b61ab4fadf5c7baacd64821842975eea312125ed3c39a6391b063"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "81a1cca95ed5bb92aa8b10dd2cdc9a0d3853a50fad926c28b5d7e8ea54389627"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0c9136e14ed34a9e343a31c533d78a9813a69a3148332bce5e9821cb2f996e66"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "55cced7c52e981362f708ad635198e97a752dfba412cc03c23bbf3bd8d5cd662"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d6da64deb6b8ed903e7560180a92f2d804ee1ba5eeb849ac2748b8c1aba1f6d7"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "68a5124b13fa6cc2086764a20005d30bc0548146f7f5322f02fce212ca14317f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "948424b06129ce883307e8cff868c31396d8dc7630a59c61d70d98dbe70f222c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5dbbdb29840ca3d91ee0fece42fc29278886d908280bfec0a5846c6f901a3eb0"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8ad03c0965fb3c692200e74d458ca28c1dbb4ce96f9a479a8aa041ad5fabca02"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2803abfebfc990042cd494d8ce2d5f82e9d847af6d35ec486923aa19dbad5e73"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/d0/ad/fed0499ce6a338d2a03ebae59cd15093910c8875328855781952abf6c2fe/numpy-2.4.6.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/numpy@2.4.6",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "numpy",
+      "supplier": "NOASSERTION",
+      "versionInfo": "2.4.6"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-numpy-2.5.2",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d482d171c406ae88c5b19cad3b6a1c4c5209f886ab74bc44c2c865c23f52d860"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "14e373cfc6387177e8409dac3c7159be8eb05cd77096cd7c950268b86f62831c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4bbd96c833ecc8cc069ce518078fc8c60cb9cbfb0fea5b7a803ad65035596d03"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6e8172ddfcf5cf74b811d372b570b83c60bd2de87a6fbfbebdadb4a9bd9c6cbb"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "65f188481f1669e26f62b701e8205d19e460fa4a9b52a1414ba382330e4a3414"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8ee9c4eeb8454b3660a8b53493563c3e121c2fc94fbd72b848ef814ed7b676a9"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3cdec01fa790a186d430433fdd4d4ffb70eed6f0eeb4bf05c8dbe2dce0a9bcb8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7999d4ddb0c4025018373fd787510d46e04c769467af22869707b3c1cfd459ab"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c1f017dc0875c9209d219f97feceb7d54c2661bb243deb4114478e1295808af7"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d6a48072864e3324e194a8fbb3c657bcc5b5c869dbc64c9537b1d5c862572c0a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "28ac63476ec7651484215ee7fa15a1f78b57c14621f01e392afe17b9a1390ce4"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "27650bb0e7140fa3d37b9923b4803645e0b125d190f326eecfd3f4dad8e8ade1"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8e4cb9a754c8a0c62eaa88273a5fba3391f4a610d1dee893c0755da31c083f15"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "52c808f96484f5571a5cc863775ce50247c17dfb3b0361f8ed6b4b0456f80080"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "29d81e97f668489cba8ebfd796b9bdd453525d35dd9e162e2daec94bf3fc7740"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "afb3f0632d6b2e3ba04dbce8d1e48d321b369138b73830b5ca371a0e8d479d56"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0aadf13b60048d501e05fa699efaf7734e2494f3498a4c2a5521d822640324f3"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "29b86ff8a6cc556b47ec6b64b194815cc80e6bf5eedcc6cddfd65318cb0b4eee"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6950c4b7dd562453090548ba7f5da7e59f57f85663f15d5dcc60e249192f7e59"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b9727f472d2f3888053b8a75ab0cb94745a9de224bb5846dbadc0092101bc71d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4f9744f9fbdcea0bc552e8f19e1f141f811a3f9bc2be2cc6e86d982cab23e3f4"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "85aaccb24182c25df891ad0ec333585967e115269d5f1b17f2c9ae005bc96657"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "bd68ece1553d2023c09a4226d9e41c586ad2d20594d1a456186c33513d2cb3f2"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d787cf769c3baeb5f6235e778edb52c08dfa923789b5958f28e6450f96107cb1"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "24b9dc2e3d84aa58523798805194e23e736f3f6ce2d1a5b92583ae734e6dbda8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9e9413326d726c2545bfa65d2c0876871e8d8386e77f992c1d426e180bbd4323"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "60e902ac295855348a5ca2ea4c89108989a9f5fddfad3dfc0a8f36b10358567e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "50e500dc868e9313530ce12ba470fe50ff3afe3d62993ed6eff652dacd555b65"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "318b9a4c845dbea06708a29c84ee429cc3065048db34cdb799047643492050ee"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "34c319e2963be042673fb46570501b2f06c41924e17e3563d58646b4380dfb68"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f06571a052127dc1b4e8b83029b4d1b20daa2b64a31cdd181fc6bc774e9000eb"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2cc779226e476d1e1f08c74068c419e60f41a9e0e069c92f6671d31d5c985e98"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7587f53dfbd5edc0f7b87c6217b4c6d2d1f2ef9c3da70bc1315e7db5f8d7ec9d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3e4c367352d3747784248a227fbec218e193b56f7e6692e3b64fc805478ecfdf"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b879fb674276e331513fb136b78dbc6bd3c848309e0d841cfd63be3896c4cfc1"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "fd0d703772bba096843785bd38371e31bb4a0c1151497ad5739d182114a73f7f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3a2f061cebd9e3d23bdcfaaded5e2293a4c6a5b60fa42df85d410a725ce621bf"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6df895598c0edcb41030126c89e0f353b07d93238116143b7405e937359736c4"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1ab3d4a901f844ea836c3e80bf463c6a27d7f3c14e8e292fcf28d348b25b9bce"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "cebc2d6dbb605a7703d59751dea4bd6b0ab127a5a4338a6f432df1936fef8b26"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "eaca7ff36f0f52e2111ec71f169d8fd3e889e7ddc0d2592e0d703fd8d3ce8fac"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ddf47472af2e4280d79bac82304f5e80150211f1b9e614b760061d5fdfbb6eba"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "44ef9675d908e65f9953063837c3277730f3f4437615a4cdab67b366cabaf884"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "eaa088384c46f519dacb93b7ec483a6d6b19a4a2085ae4f25ab9b1c43d387d1e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "078f9b027b478c9379b9677babbf0f8b8f1ecfada27636d7b9a93990c638739f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "50a68f4bacd8a2b33d8da3d2269d0d78500f86ea582e4786dc10f5ef2c2c6842"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e79aba74ffaf5f78a050d777c184cddf8fdffabab38acf5f3ef1fecbc17895d6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9a0731745a72a184490a582fb4af2533512bd071ace67785b5fdffc0ae58dce8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4ec954036759bcee3aa484f8603bd9c14f3e776293b85578b8734c2d72777c69"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "dc649493697006bc90614a5f0bbc8cb3cb1866715c474e473694968d7e6b99ab"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "cf7de32f486e4ac9e2d93b810f9e9ac72a728dd46a32a0bb403222f27f653514"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2ffa7bacab3e2ee1b19ed31766bb60bb380b68c23f051e199c5cc598afd68710"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6b588cc8f902d6bff201c19fd00c43ab8545671e3554d014e12e14139e5e8617"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "07d4e89f3a9ab0a9ba24264ccdb642b3dd951b2281e8883a5481a4aa79cc31a7"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a610dc7e3c52edd39c2bc2375ff9c3fd59cb3ad00e4472d36f83bc1457145788"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "40f4d451aed46a8046a1aae41c4e55fb3612273df9c502480135e1501576a34b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c081cbe16ba1ab53078e5ff29013621e33c509eedab055775d956427712c236e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0090ccdd57ec2703e9b49d0bf554767370581c1dd0a6b2bb2b2d9def317d042a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6a9bb119fb8dd21ba30b3f0e555b7e2b081bd9883af21ec9c1c633d161cda3a8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a839318485284a6fb31be4f8f2c91c8f2cb22f4543c4a8903f12b0671ffe07cc"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ba0a474801b8dc67b66bf465548abc90e82b44d2611b5770f33008dcabffe8ec"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0a4035ae1129ff8777f08bfbd44f1e5d8e9c049ce0c2dd78fc0d92c13e7251c0"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "77843ca236b777e67f8d6b3660ea116e499612703a0ecd7093f316201eb9d8e2"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7354826bc6f8f69402e9b7fe28d15fcd34feebd74f856f111585c5b0c9fb0251"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e5651f3f87add730ee6608d915009e19c911fba0cb000c7e3ea994b7d768eb12"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5f8e00be2ec6f45f4e8a41a527f68d44a7d96fee92a650e4d8b1326f77f61e6e"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/9a/80/db0b4559e57ec36362bedbb05530a87fafbcb6067708c946967a41d449e7/numpy-2.5.2.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/numpy@2.5.2",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "numpy",
+      "supplier": "NOASSERTION",
+      "versionInfo": "2.5.2"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-openpyxl-3.1.5",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "cf0e3cf56142039133628b5acffe8ef0c12bc902d2aadd3e0fe5878dc08d1050"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5282c12b107bffeef825f4617dc029afaf41d0ea60823bbb665ef3079dc79de2"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/3d/f9/88d94a75de065ea32619465d2f77b29a0469500e99012523b91cc4141cd1/openpyxl-3.1.5.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/openpyxl@3.1.5",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "openpyxl",
+      "supplier": "NOASSERTION",
+      "versionInfo": "3.1.5"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-ortools-9.15.6755",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "55e291560d2fdb9590656cbee06ba99ee7f2476bd7d316ff757eeab33e9b20d6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e51ae55569650e5381fd6e50c655ccf6368a9532f5720ea41396bb90e0247a21"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c3bcccd15ef3fc6ac10bfa11630ba6dfe437d4fd1374a5b33f4773b7fee0f877"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7a85a68ffb3fc1967e78624f40d3707aae459e82e3f2d9fe02e91788b3c7bf2a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "781fb09d6c9f46015291f706bd7c7e0815db1bec6e92c74716342fb7ea2d0532"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ae1c6e1fd844b4d756b22eb6c0ed574ea4342ee206d807c4f903039e748228fa"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1e16686c2b457fa6242c474ab890ee1712347ab53678e0d2fab307ae03e97a4b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3cd6bec0a2e00e3891a53e3b436f45a1000269f302085572f49e9856b7f8eaf0"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "033836c0eb33bc72697a299e0caedbb25fc9d1cee0b13832d69cb30405f57b3e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "487796301fd9dad55f9cf21f9313c834697f74306d1a59f002e152862f8eb1b5"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "27a10474e62c9dceed37cfa0e4845c5ffaf792138ebf5b61483771b96f1290b6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "076565b803c85c4f87863e0616f537dd37f99c03e6f092e4068404f7b425d2b0"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b85bd20259b146abce5e0721ce1bfd8fd273efc904216aa3be178c31b6d34057"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ebd5aea00374e3aad7a78de59058aca5e871a26a3c385cd0860ef1d685d03c9a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "caac1d48b967adb877da2abcaf82c28f0f908a7cc208a6a1bbe01bc69590816c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "82b4a8e6e4f9380b453ab5fa4382ea7ee91e628f9b8be89d9ad760b33fca3323"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2d1f2fb2088e8953ccb902e68ffd06032cce0c7dcf7268b6135f3b6c553ca52b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "acdf06a167933307608e7eba23a9490255933504df44c8de5f62c48656c29688"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1a0677270b0cd317a6b8dae42514264eaf5da5756c5bc7215eeea409424577df"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "899b92afe3f775ab5867b9a8aa2850f81f2d95232db9b4ceec3456d69e6b8528"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7181183cdcafe2b0d83ca5505b65048c7953dc7b5ad479361dded607964cc1b3"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "afabb869e5fabeb704bd8147b22bf8139dee042e55fabd0d447a996428009e0c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d9d07cddca201e25e2e219006a9d6cda10c7e9ee2c712c50d19d508f9ed8a888"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "990838ad66a052e72a50e69da500878710e3420e91717fe88bf3071995caba9e"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/0b/16/a08369f1d2022b5aea8d9ceede08df417622015447b817019e11ef4a1d9b/ortools-9.15.6755-cp311-cp311-macosx_10_15_x86_64.whl",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/ortools@9.15.6755",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "ortools",
+      "supplier": "NOASSERTION",
+      "versionInfo": "9.15.6755"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-packageurl-python-0.17.6",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1252ce3a102372ca6f86eb968e16f9014c4ba511c5c37d95a7f023e2ca6e5c25"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "31a85c2717bc41dd818f3c62908685ff9eebcb68588213745b14a6ee9e7df7c9"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/f5/d6/3b5a4e3cfaef7a53869a26ceb034d1ff5e5c27c814ce77260a96d50ab7bb/packageurl_python-0.17.6.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/packageurl-python@0.17.6",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "packageurl-python",
+      "supplier": "NOASSERTION",
+      "versionInfo": "0.17.6"
+    },
+    {
       "SPDXID": "SPDXRef-Package-pypi-packaging-26.2",
       "checksums": [
         {
@@ -46393,6 +47989,194 @@
       "name": "packaging",
       "supplier": "NOASSERTION",
       "versionInfo": "26.2"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-pandas-3.0.5",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "dca3734d6ab7c906e6730f0788b0a1dbb9f2467731f9711f77995c8e9d62d712"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2946e77e4a53cd248cbde631a12f0e51c8324ce354c3eba4d20147c1ad6f4282"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "71ecc8fb7ed1a7aa4392316b5309a6347e8e7f832f38fd897846b3a1457a9298"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b173f5951ff6b8b0ec7675e20dff3c97b7e7a57dfcce387c2d7c5afe87cb7899"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2c0cf1dd9b55a22d105fc46c1b489af3bd42264fcba7c66297bf47a9a1d9c78a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0fac0010c75e4efb6b99e249c183a8993ce0dc95c240f9b120a5e67c727b7928"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "08d24fe11a17dc33bd6e937dc9c665f9cba08fbdc9f657f405713515febe300d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b1261758dfb6cf12c3cff8300e21cefad30e7ec709abb4c24ac7318e6a52462a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "679f4e85b30ddb1515458ab1e788d3e260eae369b1f78da7a3aa4cac8ebf4a2a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "fa290c16964d4963fbfbc358928239cf3bd755b20e988ce944877def2f44471d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c2e26bb46934b8a2ca0c3de1d3d606fc5f6746584791b2db264d58cf370e08dc"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "73fa87b08a7ef706f8aafda39ddaccf2a99047bea62d8c88a0361bcafb2237bc"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d373ce03ffd84010ed9839fa73672a9c8256990532e158440c0085db7d914b34"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2a29c53d85ea98c5e792c59ef82ee9fbe6ca902c0d0adb6b23f45ef894cd7bf6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a5ad3b02ed6bc7d7ae9b70804b2c6aa31827489d150f8e623ce82491b82085d7"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b2acb4650527eec6822c3dadb2b771277b65e7dae7a267d4bccf65fd1bb3fbce"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "80a611068e8a3ac23f7398c6c14eb46dc974e5cc9997f653e2dcfd1da74edd41"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "25ff585b972a18ef1fe9ffa3ac6544d9950508aa76832e5147640b6022821e49"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c1c05a767fe8e5b4fe9e1c29806829c582052eaedb9120a3da83ba3f69e24a5b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b86765f268b56f7e665b93bce9d5df69dee7f99e595cf8fb839483ab315942a3"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c597ecf5616b5c420372c1d4d4c00dbbfba7398bea857dcc984347e1ea48417b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4b11c36e218331d0387cbe3a0a5f75162357a1d92d57b2b08a336ff94b19b2be"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "cf52e1f61d229496da17dc7ab54acdee627357e7008fd4fecba3d0ba2937fa58"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "db172144bb56422bd157812f3b021eacc255451470b31e2c633c349490a1cfee"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0d298e951f23016ce4699951d044ae6418dbc91bf68cefca0f77666fcbb4e5c6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "66266d3442a5e8b3c90274c2b8b230bee42dd1c286bc822cc2f9f2c7e12b883e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2f264fc46911cc8131a7322a16199bbf8e353d27c10bb211f5bd0c814324dc36"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "53730687fcd161883b24e10411c06d6a4c0f2275d2faf3bb2bc25deb4ba8007c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "960d3ebcf249f75206899fcd2c6de53f736b7265759ced0d3e559df0b8b709b0"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9e94c2c5ca43bd3ca32bf64d32308887b65e5f9bfd8023ea52755107a999f93b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e819dd5f62966b481a8cb649d3299ebd886a1ea91ed5a99bf7ce77c98d18ab94"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3c5ed2e7c06e91d340dfd091d7934f9bc82e4a36b95f647f090b9d1c9ac649da"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "cd8f7c6dc98527058ee6264219343f5392240a6f1bfa654fc5d79023020d0c92"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5183427f5a8156d480f30333777bc978be93650a49a7c01db26adffe95b31e85"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "303da736987d481074ca720ada325f8bd80c64ebc2d45ed79b29df3aaa4a26ca"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3b2801bbb049d0136f6c213eae02b5fca969384fc2064dd728d8620552aa49da"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "cce3a9d11d2b1f82c69a27ec1f4948a170e2c403c4bbfa8cca62e3fdebe2ef3a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ef01af4d8dc6cd2c8d6c7736f149574ef93fe043811eeb5e445f2647154b5040"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e2759e890db96dfcffdbd9b86c3c2cb6afaf58def482820317e06163ec1066cd"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b58b1b39d46a5862e3fb18f50d1a201398619d16a0f9f73f57eea5583cf0e63c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1c10461f6eeb35d8f05b6184c65c8b9991663b66c46b1d559b682cb34ae7c6ea"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3c5015fd1730fbf883647e88068176c839c102cea883ba1769a6f4593bfc1f8c"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/be/4f/5f3422a2afec5ffc46308b79e53291365a93748b498ac2e58bead0197916/pandas-3.0.5.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/pandas@3.0.5",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "pandas",
+      "supplier": "NOASSERTION",
+      "versionInfo": "3.0.5"
     },
     {
       "SPDXID": "SPDXRef-Package-pypi-passlib-1.7.4",
@@ -46783,6 +48567,146 @@
       "versionInfo": "12.3.0"
     },
     {
+      "SPDXID": "SPDXRef-Package-pypi-pip-26.2.1",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f6ad667e89a1fe78046c8f13232b247200f5258d7828f3f7883d660878e0813f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "71138adf1f4ca900cdb7d289c21b7494329f2332b6d85f0e1c42108c0384ed3e"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/ae/15/4500e320e6b101ec3b719ae85b697d9940b6cda672bc555bd6016fc60c6f/pip-26.2.1.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/pip@26.2.1",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "pip",
+      "supplier": "NOASSERTION",
+      "versionInfo": "26.2.1"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-pip-api-0.0.34",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9b75e958f14c5a2614bae415f2adf7eeb54d50a2cfbe7e24fd4826471bac3625"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8b2d7d7c37f2447373aa2cf8b1f60a2f2b27a84e1e9e0294a3f6ef10eb3ba6bb"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/b9/f1/ee85f8c7e82bccf90a3c7aad22863cc6e20057860a1361083cd2adacb92e/pip_api-0.0.34.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/pip-api@0.0.34",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "pip-api",
+      "supplier": "NOASSERTION",
+      "versionInfo": "0.0.34"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-pip-audit-2.10.1",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1eb4565d19ebe5d48996f4b770b4d2b32887e12cb12cfa637f1a064011b55ffc"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "99ef3f600a317c1945f1e89e227ef26e1c2d618429b8bd3fa6f4f7c440c4611a"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/66/a4/f21d5f0a0edabcbce31560b73c7c5a6f72ae87af4236fd1069c8f59a353d/pip_audit-2.10.1.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/pip-audit@2.10.1",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "pip-audit",
+      "supplier": "NOASSERTION",
+      "versionInfo": "2.10.1"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-pip-requirements-parser-32.0.1",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b4fa3a7a0be38243123cf9d1f3518da10c51bdb165a2b2985566247f9155a7d3"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4659bc2a667783e7a15d190f6fccf8b2486685b6dba4c19c3876314769c57526"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/5e/2a/63b574101850e7f7b306ddbdb02cb294380d37948140eecd468fae392b54/pip-requirements-parser-32.0.1.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/pip-requirements-parser@32.0.1",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "pip-requirements-parser",
+      "supplier": "NOASSERTION",
+      "versionInfo": "32.0.1"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-platformdirs-4.11.1",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "bb1af68078f25e2f3e111e2d43b8d536df41b73c8a684b40bb018223b66fae27"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2efd27d363e8dd2e661639ffb398865a5e0a46442a11d266bf375a0e0c10e386"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/36/0a/062135c9a98dac804265073cc3afdbec5ae1aa37980bb354f461bafe81b4/platformdirs-4.11.1.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/platformdirs@4.11.1",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "platformdirs",
+      "supplier": "NOASSERTION",
+      "versionInfo": "4.11.1"
+    },
+    {
       "SPDXID": "SPDXRef-Package-pypi-pluggy-1.6.0",
       "checksums": [
         {
@@ -46809,6 +48733,86 @@
       "name": "pluggy",
       "supplier": "NOASSERTION",
       "versionInfo": "1.6.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-protobuf-6.33.6",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a6768d25248312c297558af96a9f9c929e8c4cee0659cb07e780731095f38135"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7d29d9b65f8afef196f8334e80d6bc1d5d4adedb449971fefd3723824e6e77d3"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0cd27b587afca21b7cfa59a74dcbd48a50f0a6400cfb59391340ad729d91d326"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9720e6961b251bde64edfdab7d500725a2af5280f3f4c87e57c0208376aa8c3a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e2afbae9b8e1825e3529f88d514754e094278bb95eadc0e199751cdd9a2e82a2"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c96c37eec15086b79762ed265d59ab204dabc53056e3443e702d2681f4b39ce3"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e9db7e292e0ab79dd108d7f1a94fe31601ce1ee3f7b79e0692043423020b0593"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "77179e006c476e69bf8e8ce866640091ec42e1beb80b213c3900006ecfba6901"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/66/70/e908e9c5e52ef7c3a6c7902c9dfbb34c7e29c25d2f81ade3856445fd5c94/protobuf-6.33.6.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/protobuf@6.33.6",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "protobuf",
+      "supplier": "NOASSERTION",
+      "versionInfo": "6.33.6"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-py-serializable-2.1.0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9d5db56154a867a9b897c0163b33a793c804c80cee984116d02d49e4578fc103"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b56d5d686b5a03ba4f4db5e769dc32336e142fc3bd4d68a8c25579ebb0a67304"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/73/21/d250cfca8ff30c2e5a7447bc13861541126ce9bd4426cd5d0c9f08b5547d/py_serializable-2.1.0.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/py-serializable@2.1.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "py-serializable",
+      "supplier": "NOASSERTION",
+      "versionInfo": "2.1.0"
     },
     {
       "SPDXID": "SPDXRef-Package-pypi-pyasn1-0.6.4",
@@ -47339,6 +49343,34 @@
       "versionInfo": "2.20.0"
     },
     {
+      "SPDXID": "SPDXRef-Package-pypi-pyparsing-3.3.2",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c777f4d763f140633dcb6d8a3eda953bf7a214dc4eff598413c070bcdc117cbc"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "850ba148bd908d7e2411587e247a1e4f0327839c40e2e5e6d05a007ecc69911d"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/f3/91/9c6ee907786a473bf81c5f53cf703ba0957b23ab84c264080fb5a450416f/pyparsing-3.3.2.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/pyparsing@3.3.2",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "pyparsing",
+      "supplier": "NOASSERTION",
+      "versionInfo": "3.3.2"
+    },
+    {
       "SPDXID": "SPDXRef-Package-pypi-pytest-9.1.1",
       "checksums": [
         {
@@ -47393,6 +49425,34 @@
       "name": "pytest-asyncio",
       "supplier": "NOASSERTION",
       "versionInfo": "1.4.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-python-dateutil-2.9.0.post0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/66/c0/0c8b6ad9f17a802ee498c46e004a0eb49bc148f2fd230864601a86dcf6db/python-dateutil-2.9.0.post0.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/python-dateutil@2.9.0.post0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "python-dateutil",
+      "supplier": "NOASSERTION",
+      "versionInfo": "2.9.0.post0"
     },
     {
       "SPDXID": "SPDXRef-Package-pypi-python-dotenv-1.2.2",
@@ -47855,6 +49915,34 @@
       "versionInfo": "2.34.2"
     },
     {
+      "SPDXID": "SPDXRef-Package-pypi-rich-15.0.0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "edd07a4824c6b40189fb7ac9bc4c52536e9780fbbfbddf6f1e2502c31b068c36"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "33bd4ef74232fb73fe9279a257718407f169c09b78a87ad3d296f548e27de0bb"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/c0/8f/0722ca900cc807c13a6a0c696dacf35430f72e0ec571c4275d2371fca3e9/rich-15.0.0.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/rich@15.0.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "rich",
+      "supplier": "NOASSERTION",
+      "versionInfo": "15.0.0"
+    },
+    {
       "SPDXID": "SPDXRef-Package-pypi-rsa-4.9.1",
       "checksums": [
         {
@@ -47975,6 +50063,598 @@
       "versionInfo": "0.16.0"
     },
     {
+      "SPDXID": "SPDXRef-Package-pypi-scikit-learn-1.9.0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8833266989d3a5110178a9fae30783675460724d0e1efb13b14901d2c660c557"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9db6f4d34e68c8899e4cab27fdf8eafe6ed21f2ba52ceb25ea250cd237f8e47b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f401448645a3e7bc115aa3c094097865155b34bff1cba8101857d9104e99074c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "fd3a8ef0c758555a3b23c03adaa858af32f7736785ded50ad5991f59c4ed03fa"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f7e254636164090da847715a27f8e5478feb98c40a9e0ee90cbd277de9e5ceb8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5dc1818c77575d149e25fce9ef82dd7b7263ae372f03494158668ad632a69759"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "366652351f092b219c248f1e72821e841960a63d8f358f1dcfd54dc1cbdbbc28"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2bd41b0d201bc81575531b96b713d3eb5e5f50fb0b82101ff0f92294fdc236ac"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5be45aa4a42a68a533913a6ed736cf309de2226411c79ef8d609a5456f1939b1"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5e50ed4da51974e86e940690e9a3d82e729b62b5a49f7c9bac534d515d39d86f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "056c92bb67ad4c28463c2f2653d9701449201e7e7a9e94e321be0f71c4fef2b8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4306775fad04cc4b472a1b15af1ae9cede1540fbfcc17fbce3767cd8dc7ae283"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "26e22435f63bcdcf396b574273f29f13dd531f5ea035801f5be10ba1540a4e60"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "80746d63bd4b6eaca54d36fe5feaf4d28bb38dc6f9470f81c7cad7c40155f119"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5b934c45c252844a91d69fda3a34cff5e7307e1db10d77cb10a3980312c74713"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "38c3dcb9a1ffb85505ec53d54c7b4aea0cff70050425a7760c2af661ac85df05"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "da76d09304a4706db7cc1e3ebaa3b6b98a67365cc11d2996c4f1e58ba47df714"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5808d98f15c6bf6d9d96d2348c1997392a5888ce7097e664105f930c4bca1277"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d77f54c017633791bc0225a43e2f8d03745fdcfe4880268fcc4df15f505dec2e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9656acd4e93f74e0b66c8a36c88830a99252dfa900044d36bc2212ae89a47162"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "24360002ae845e7866522b0a5bbf690802e7bc388cac8663502e78aa98598aa2"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5162ad10a418c8a282dde04c9aa06965de3e9a65f33c1440c0ae69bb1a09d913"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1fea2cc5677ab49d6f5bade978c866da44957b712d92e9635e8b4f723013c3cb"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "64fa347efc1c839c487433e40c5144d38c336e8a2b59c81aa8660373945c2673"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1b944b6db288f6b926e3650026ddafb988929de95d11fc2cc5fa117773c9ba42"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4ccacf04ca5f4b492158a5f28afe0ace43f81b2571e4b9a66d34848b46128949"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ee1a8db2c18c08e34c7412d4b10be1cac214cd4ea7dc9715a6a327eb49a37c96"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "147e9329ef0e39f75d4cffa02b2aa48d827832684926cd5210d9a2cb5c57246b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5bad8f8b9950321b54c965fdcbac6c6c55e79e16646b49977bcf3668d3870a1a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "78fc56eafd4edb9575d2d8950d1dd152061abb573341a1cb7e099fc40f6c6666"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "051075bda8b7aab87b1906ab3d4740a1e1224a19d7b3781a576736edc94e76aa"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/fa/6f/37092bdb25f712817231799fc5674d8e704066a8a70c1d2d40517e18b4ab/scikit_learn-1.9.0.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/scikit-learn@1.9.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "scikit-learn",
+      "supplier": "NOASSERTION",
+      "versionInfo": "1.9.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-scipy-1.17.1",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "95d8e012d8cb8816c226aef832200b1d45109ed4464303e997c5b13122b297c0"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1f95b894f13729334fb990162e911c9e5dc1ab390c58aa6cbecb389c5b5e28ec"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e18f12c6b0bc5a592ed23d3f7b891f68fd7f8241d69b7883769eb5d5dfb52696"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a3472cfbca0a54177d0faa68f697d8ba4c80bbdc19908c3465556d9f7efce9ee"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "766e0dc5a616d026a3a1cffa379af959671729083882f50307e18175797b3dfd"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "744b2bf3640d907b79f3fd7874efe432d1cf171ee721243e350f55234b4cec4c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "43af8d1f3bea642559019edfe64e9b11192a8978efbd1539d7bc2aaa23d92de4"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "cd96a1898c0a47be4520327e01f874acfd61fb48a9420f8aa9f6483412ffa444"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4eb6c25dd62ee8d5edf68a8e1c171dd71c292fdae95d8aeb3dd7d7de4c364082"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d30e57c72013c2a4fe441c2fcb8e77b14e152ad48b5464858e07e2ad9fbfceff"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9ecb4efb1cd6e8c4afea0daa91a87fbddbce1b99d2895d151596716c0b2e859d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "35c3a56d2ef83efc372eaec584314bd0ef2e2f0d2adb21c55e6ad5b344c0dcb8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "fcb310ddb270a06114bb64bbe53c94926b943f5b7f0842194d585c65eb4edd76"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "cc90d2e9c7e5c7f1a482c9875007c095c3194b1cfedca3c2f3291cdc2bc7c086"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c80be5ede8f3f8eded4eff73cc99a25c388ce98e555b17d31da05287015ffa5b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e19ebea31758fac5893a2ac360fedd00116cbb7628e650842a6691ba7ca28a21"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "02ae3b274fde71c5e92ac4d54bc06c42d80e399fec704383dcd99b301df37458"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8a604bae87c6195d8b1045eddece0514d041604b14f2727bbc2b3020172045eb"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f590cd684941912d10becc07325a3eeb77886fe981415660d9265c4c418d0bea"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "41b71f4a3a4cab9d366cd9065b288efc4d4f3c0b37a91a8e0947fb5bd7f31d87"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f4115102802df98b2b0db3cce5cb9b92572633a1197c77b7553e5203f284a5b3"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5e3c5c011904115f88a39308379c17f91546f77c1667cea98739fe0fccea804c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6fac755ca3d2c3edcb22f479fceaa241704111414831ddd3bc6056e18516892f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7ff200bf9d24f2e4d5dc6ee8c3ac64d739d3a89e2326ba68aaf6c4a2b838fd7d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4b400bdc6f79fa02a4d86640310dde87a21fba0c979efff5248908c6f15fad1b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2b64ca7d4aee0102a97f3ba22124052b4bd2152522355073580bf4845e2550b6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "581b2264fc0aa555f3f435a5944da7504ea3a065d7029ad60e7c3d1ae09c5464"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "beeda3d4ae615106d7094f7e7cef6218392e4465cc95d25f900bebabfded0950"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6609bc224e9568f65064cfa72edc0f24ee6655b47575954ec6339534b2798369"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "37425bc9175607b0268f493d79a292c39f9d001a357bebb6b88fdfaff13f6448"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5cf36e801231b6a2059bf354720274b7558746f3b1a4efb43fcf557ccd484a87"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d59c30000a16d8edc7e64152e30220bfbd724c9bbb08368c054e24c651314f0a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "010f4333c96c9bb1a4516269e33cb5917b08ef2166d5556ca2fd9f082a9e6ea0"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2ceb2d3e01c5f1d83c4189737a42d9cb2fc38a6eeed225e7515eef71ad301dce"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "844e165636711ef41f80b4103ed234181646b98a53c8f05da12ca5ca289134f6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "158dd96d2207e21c966063e1635b1063cd7787b627b6f07305315dd73d9c679e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "74cbb80d93260fe2ffa334efa24cb8f2f0f622a9b9febf8b483c0b865bfb3475"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "dbc12c9f3d185f5c737d801da555fb74b3dcfa1a50b66a1a93e09190f41fab50"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "94055a11dfebe37c656e70317e1996dc197e1a15bbcc351bcdd4610e128fe1ca"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e30bdeaa5deed6bc27b4cc490823cd0347d7dae09119b8803ae576ea0ce52e4c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a720477885a9d2411f94a93d16f9d89bad0f28ca23c3f8daa521e2dcc3f44d49"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a48a72c77a310327f6a3a920092fa2b8fd03d7deaa60f093038f22d98e096717"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "45abad819184f07240d8a696117a7aacd39787af9e0b719d00285549ed19a1e9"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3fd1fcdab3ea951b610dc4cef356d416d5802991e7e32b5254828d342f7b7e0b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7bdf2da170b67fdf10bca777614b1c7d96ae3ca5794fd9587dce41eb2966e866"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "adb2642e060a6549c343603a3851ba76ef0b74cc8c079a9a58121c7ec9fe2350"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "eee2cfda04c00a857206a4330f0c5e3e56535494e30ca445eb19ec624ae75118"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d2650c1fb97e184d12d8ba010493ee7b322864f7d3d00d3f9bb97d9c21de4068"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "08b900519463543aa604a06bec02461558a6e1cef8fdbb8098f77a48a83c8118"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3877ac408e14da24a6196de0ddcace62092bfc12a83823e92e49e40747e52c19"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f8885db0bc2bffa59d5c1b72fad7a6a92d3e80e7257f967dd81abb553a90d293"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1cc682cea2ae55524432f3cdff9e9a3be743d52a7443d0cba9017c23c87ae2f6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2040ad4d1795a0ae89bfc7e8429677f365d45aa9fd5e4587cf1ea737f927b4a1"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "131f5aaea57602008f9822e2115029b55d4b5f7c070287699fe45c661d051e39"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9cdc1a2fcfd5c52cfb3045feb399f7b3ce822abdde3a193a6b9a60b3cb5854ca"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6e3dcd57ab780c741fde8dc68619de988b966db759a3c3152e8e9142c26295ad"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a9956e4d4f4a301ebf6cde39850333a6b6110799d470dbbb1e25326ac447f52a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a4328d245944d09fd639771de275701ccadf5f781ba0ff092ad141e017eccda4"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a77cbd07b940d326d39a1d1b37817e2ee4d79cb30e7338f3d0cddffae70fcaa2"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "eb092099205ef62cd1782b006658db09e2fed75bffcae7cc0d44052d8aa0f484"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "200e1050faffacc162be6a486a984a0497866ec54149a01270adc8a59b7c7d21"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/7a/97/5a3609c4f8d58b039179648e62dd220f89864f56f7357f5d4f45c29eb2cc/scipy-1.17.1.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/scipy@1.17.1",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "scipy",
+      "supplier": "NOASSERTION",
+      "versionInfo": "1.17.1"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-scipy-1.18.0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "67b2ad2ad54c72ca6d04975a9b2df8c3638c34ddd5b28738e94fc2b57929d378"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7bd21faaf5a1a3b2eff922d02db5f191b99a6518db9078a8fb23169f6d22259a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "265915e79107de9f946b855e50d7470d5893ec3f54b342e1aa6201cbdcd8bb6b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9ab7b758be6940954a713ee466e2043e9f6e2ed965c1fce5c91039f4be3d90a9"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "97b6cddaaee0a779ef6b5ca83c9604b27cc16b2b8fc22c142652df8793319fb8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "52a96e21517c7292375c0e27dd796a811f03fcea5fd4d108fdfea8145dcf17ab"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1f55797419e16e7f30cf88ffb3113ce0467f00cfe3f70d5c281730b21769bfc2"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ad033410e2e0672ffdc1042110cef20e1c46f8fd0616cee1d44d8d58fad8fc11"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4a55985d54c769c872e64b7f4c8a81cc30ef700cc04296abbbf3705439c126de"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "71ccc8faa2dd16ac310233203474a8b5cb67f10dedd54a3116d34943f4b19132"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d88363fd9d8fbd3511bd273f1a49efb2a540773ddf92a91d57498ce7dd7f3e76"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "09143f676d157d9f546d663504ef9c1becb819824f1afc018814176411942446"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5efe260f69417b97ddae455bfb5a95e8359f7f66ad7fa9522a60feb66f169520"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "68363b7eaacd8b5dd426df56d782cc156468ac79a127a1b87ca597d6e2e82197"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c5557d8be5da8e41353fcd4d21491fdbab83b062fc579e94dc09a7c8ab4f669b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0d13bca67c096d89fb95ced0d8921807300fce0275643aef9533cc63a0773468"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a46f9273dbd0eb1cefba61c9b8648b4dfe3cbc14a080176f9a73e44b8336dc7f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5aba46108853ddfc77906b6557aac839d2b52e900c1d72a1180adaaab58d265f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b6f758e35f12757b5d95c00bc6de2438e229c2664b7a92e96f205959d9f2dfa4"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1afac4a847207c7ff8efd321734a50b06d0280b3b2a2c0fc2f413101747ad7c7"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c5dbddf60e58c2312316d097271a8e73d40eaf2eabfa4d95ed7d3695bbf2ce7b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4c256ee70c0d1a8a2ace807e199ccd4e3f57037433842abb3fb36bc17eaa9578"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2ef3abc54a4ffc53765374b0d5728532dfdd2585ed23f6b11c206a1f0b1b9af8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f2a6af57bd9e4a75d70e4117e78a1bbee84f79ae3fbb6d0111005d6ebcc4cb8d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3f1ac564d3bf6c03d861d2cd87a1bea0da2887136f7fb1bf519c05a8971452d6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "40395a5fcd1abee49a5c7aaa98c29db393eedc835138560a588c47ec16156690"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8ca01e8ae69f1b18e9a58d91afead31be3cef0dd905a10249dac559ee15460a0"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7a7f3b01647384dbc3a711e8c6778e0aabbe93959249fef5c7393396bcac0867"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "6aa94e78ec192a30063a5e72e561c28af769dc311190b24fe91774eff1969709"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2d8bbdc6c817f5b4006a54d799d4f5bab6f910193cbb9a1ff310833d4d270f61"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "18e9575f1569b2c54174e6159d32942e03731177f63dce7975f0a0c88d102f5b"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f351e0dd702687d12a402b867a1b4146a256923e1c38317cbc472f6372b94707"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7c7a51b33ce387193c97f228320cf8e87361daa1bba750638677729598b3e677"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "84031d7b052a54fae2f8632e0ec802073d385476eb9a63079bce6e23ef9283d4"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "56abf29a7c067dde59be8b9a22d606a4ea1b2f2a4b756d9d903c62818f5dacce"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1ad44305cfa24b1ba5803cbbebf033590ccbac1aa5d612d727b785325ab408b0"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "945c1761b93f38d7f99ae81ae80c63e621471608c7eeead563f6df025585cd58"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1a4441f15d620578772a49e5ab48c0ee1f7a0220e387110283062729136b2553"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "9aac6192fac56bf2ca534389d24623f07b39ff83317d58287285e7fbd622ff76"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e40baea28ae7f5475c779741e2d90b1247c78531207b49c7030e698ff81cee3f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "368e0a705903c466aa5f08eefb39e6b1b6b2d659e7352a31fd9e2438365be0f8"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/a7/25/c2700dfaf6442b4effaa91af24ebce5dc9d31bb4a69706313aae70d72cd0/scipy-1.18.0.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/scipy@1.18.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "scipy",
+      "supplier": "NOASSERTION",
+      "versionInfo": "1.18.0"
+    },
+    {
       "SPDXID": "SPDXRef-Package-pypi-six-1.17.0",
       "checksums": [
         {
@@ -48001,6 +50681,34 @@
       "name": "six",
       "supplier": "NOASSERTION",
       "versionInfo": "1.17.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-sortedcontainers-2.4.0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/e8/c4/ba2f8066cceb6f23394729afe52f3bf7adec04bf9ed2c820b39e19299111/sortedcontainers-2.4.0.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/sortedcontainers@2.4.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "sortedcontainers",
+      "supplier": "NOASSERTION",
+      "versionInfo": "2.4.0"
     },
     {
       "SPDXID": "SPDXRef-Package-pypi-sqlalchemy-2.0.51",
@@ -48199,6 +50907,34 @@
       "versionInfo": "1.3.1"
     },
     {
+      "SPDXID": "SPDXRef-Package-pypi-stevedore-5.9.0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "abbd0af7a38a8bbb1d6adea2e35b17609cf004eaac323e88a8d8963640dd2b3c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "e520945d4c257700eddc1eb1d79df04b2ea578eef185e0e3fa5b442fc848d3f7"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/d7/dd/04d56c2a5232358df41f3d0f0e31833d378b6c8ed7803a6b1b7867b0eba6/stevedore-5.9.0.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/stevedore@5.9.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "stevedore",
+      "supplier": "NOASSERTION",
+      "versionInfo": "5.9.0"
+    },
+    {
       "SPDXID": "SPDXRef-Package-pypi-testcontainers-4.15.0",
       "checksums": [
         {
@@ -48225,6 +50961,270 @@
       "name": "testcontainers",
       "supplier": "NOASSERTION",
       "versionInfo": "4.15.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-threadpoolctl-3.6.0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8ab8b4aa3491d812b623328249fab5302a68d2d71745c8a4c719a2fcaba9f44e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "43a0b8fd5a2928500110039e43a5eed8480b918967083ea48dc3ab9f13c4a7fb"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/b7/4d/08c89e34946fce2aec4fbb45c9016efd5f4d7f24af8e5d93296e935631d8/threadpoolctl-3.6.0.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/threadpoolctl@3.6.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "threadpoolctl",
+      "supplier": "NOASSERTION",
+      "versionInfo": "3.6.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-tomli-2.4.1",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7c7e1a961a0b2f2472c1ac5b69affa0ae1132c39adcb67aba98568702b9cc23f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f8f0fc26ec2cc2b965b7a3b87cd19c5c6b8c5e5f436b984e85f486d652285c30"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4ab97e64ccda8756376892c53a72bd1f964e519c77236368527f758fbc36a53a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "96481a5786729fd470164b47cdb3e0e58062a496f455ee41b4403be77cb5a076"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5a881ab208c0baf688221f8cecc5401bd291d67e38a1ac884d6736cbcd8247e9"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "47149d5bd38761ac8be13a84864bf0b7b70bc051806bc3669ab1cbc56216b23c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ec9bfaf3ad2df51ace80688143a6a4ebc09a248f6ff781a9945e51937008fcbc"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ff2983983d34813c1aeb0fa89091e76c3a22889ee83ab27c5eeb45100560c049"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5ee18d9ebdb417e384b58fe414e8d6af9f4e7a0ae761519fb50f721de398dd4e"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c2541745709bad0264b7d4705ad453b76ccd191e64aa6f0fc66b69a293a45ece"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c742f741d58a28940ce01d58f0ab2ea3ced8b12402f162f4d534dfe18ba1cd6a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7f86fd587c4ed9dd76f318225e7d9b29cfc5a9d43de44e5754db8d1128487085"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ff18e6a727ee0ab0388507b89d1bc6a22b138d1e2fa56d1ad494586d61d2eae9"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "136443dbd7e1dee43c68ac2694fde36b2849865fa258d39bf822c10e8068eac5"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5e262d41726bc187e69af7825504c933b6794dc3fbd5945e41a79bb14c31f585"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "5cb41aa38891e073ee49d55fbc7839cfdb2bc0e600add13874d048c94aadddd1"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "da25dc3563bff5965356133435b757a795a17b17d01dbc0f42fb32447ddfd917"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "52c8ef851d9a240f11a88c003eacb03c31fc1c9c4ec64a99a0f922b93874fda9"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f758f1b9299d059cc3f6546ae2af89670cb1c4d48ea29c3cacc4fe7de3058257"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "36d2bd2ad5fb9eaddba5226aa02c8ec3fa4f192631e347b3ed28186d43be6b54"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "eb0dc4e38e6a1fd579e5d50369aa2e10acfc9cace504579b2faabb478e76941a"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "c7f2c7f2b9ca6bdeef8f0fa897f8e05085923eb091721675170254cbc5b02897"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "f3c6818a1a86dd6dca7ddcaaf76947d5ba31aecc28cb1b67009a5877c9a64f3f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d312ef37c91508b0ab2cee7da26ec0b3ed2f03ce12bd87a588d771ae15dcf82d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "51529d40e3ca50046d7606fa99ce3956a617f9b36380da3b7f0dd3dd28e68cb5"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2190f2e9dd7508d2a90ded5ed369255980a1bcdd58e52f7fe24b8162bf9fedbd"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8d65a2fbf9d2f8352685bc1364177ee3923d6baf5e7f43ea4959d7d8bc326a36"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4b605484e43cdc43f0954ddae319fb75f04cc10dd80d830540060ee7cd0243cd"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "fd0409a3653af6c147209d267a0e4243f0ae46b011aa978b1080359fddc9b6cf"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "a120733b01c45e9a0c34aeef92bf0cf1d56cfe81ed9d47d562f9ed591a9828ac"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "559db847dc486944896521f68d8190be1c9e719fced785720d2216fe7022b662"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "01f520d4f53ef97964a240a035ec2a869fe1a37dde002b57ebc4417a27ccd853"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7f94b27a62cfad8496c8d2513e1a222dd446f095fca8987fceef261225538a15"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "ede3e6487c5ef5d28634ba3f31f989030ad6af71edfb0055cbbd14189ff240ba"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "3d48a93ee1c9b79c04bb38772ee1b64dcf18ff43085896ea460ca8dec96f35f6"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "88dceee75c2c63af144e456745e10101eb67361050196b0b6af5d717254dddf7"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b8c198f8c1805dc42708689ed6864951fd2494f924149d3e4bce7710f8eb5232"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "d4d8fe59808a54658fcc0160ecfb1b30f9089906c50b23bcb4c69eddc19ec2b4"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "7008df2e7655c495dd12d2a4ad038ff878d4ca4b81fccaf82b714e07eae4402c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "1d8591993e228b0c930c4bb0db464bdad97b3289fb981255d6c9a41aedc84b2d"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "734e20b57ba95624ecf1841e72b53f6e186355e216e5412de414e3c51e5e3c41"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "8a650c2dbafa08d42e51ba0b62740dae4ecb9338eefa093aa5c78ceb546fcd5c"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "504aa796fe0569bb43171066009ead363de03675276d2d121ac1a4572397870f"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "b1d22e6e9387bf4739fbe23bfa80e93f6b0373a7f1b96c6227c32bef95a4d7a8"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2c1c351919aca02858f740c6d33adea0c5deea37f9ecca1cc1ef9e884a619d26"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "eab21f45c7f66c13f2a9e0e1535309cee140182a9cdae1e041d02e47291e8396"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "0d85819802132122da43cb86656f8d1f8c6587d54ae7dcaf30e90533028b49fe"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/22/de/48c59722572767841493b26183a0d1cc411d54fd759c5607c4590b6563a6/tomli-2.4.1.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/tomli@2.4.1",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "tomli",
+      "supplier": "NOASSERTION",
+      "versionInfo": "2.4.1"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-tomli-w-1.2.0",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "2dd14fac5a47c27be9cd4c976af5a12d87fb1f0b4512f81d69cce3b35ae25021"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "188306098d013b691fcadc011abd66727d3c414c571bb01b1a174ba8c983cf90"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/19/75/241269d1da26b624c0d5e110e8149093c759b7a286138f4efd61a60e75fe/tomli_w-1.2.0.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/tomli-w@1.2.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "tomli-w",
+      "supplier": "NOASSERTION",
+      "versionInfo": "1.2.0"
     },
     {
       "SPDXID": "SPDXRef-Package-pypi-typing-extensions-4.16.0",
@@ -48281,6 +51281,34 @@
       "name": "typing-inspection",
       "supplier": "NOASSERTION",
       "versionInfo": "0.4.2"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-pypi-tzdata-2026.3",
+      "checksums": [
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "4a1518b8993086a7982523e071643f3c0e5f213e75b21318e78bcabfff9d1415"
+        },
+        {
+          "algorithm": "SHA256",
+          "checksumValue": "dc096730c87af6cab1b171c9d532be840741ff5d459015e7f6947bd7d7e54931"
+        }
+      ],
+      "copyrightText": "NOASSERTION",
+      "downloadLocation": "https://files.pythonhosted.org/packages/92/ff/5a28bdfd8c3ebec42564ac7d0e54ca3db65044a9314a97f9564fa7a1e926/tzdata-2026.3.tar.gz",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:pypi/tzdata@2026.3",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "licenseConcluded": "NOASSERTION",
+      "licenseDeclared": "NOASSERTION",
+      "name": "tzdata",
+      "supplier": "NOASSERTION",
+      "versionInfo": "2026.3"
     },
     {
       "SPDXID": "SPDXRef-Package-pypi-urllib3-2.7.0",
@@ -51766,6 +54794,11 @@
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-npm--sqlite.org-sqlite-wasm-3.53.0-build1",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-npm--standard-schema-spec-1.1.0",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
@@ -52252,6 +55285,11 @@
     },
     {
       "relatedSpdxElement": "SPDXRef-Package-npm-ajv-keywords-5.1.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-npm-animejs-4.5.0",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
@@ -54066,6 +57104,11 @@
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-npm-framer-motion-13.0.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-npm-freeport-async-2.0.0",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
@@ -55857,6 +58900,21 @@
     },
     {
       "relatedSpdxElement": "SPDXRef-Package-npm-mkdirp-1.0.4",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-npm-motion-13.0.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-npm-motion-dom-13.0.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-npm-motion-utils-13.0.0",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
@@ -57771,6 +60829,11 @@
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-npm-tslib-2.8.1-f4fecb97-1",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-npm-turbo-stream-2.4.1",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
@@ -58546,6 +61609,11 @@
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-absl-py-2.5.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-pypi-aiosqlite-0.22.1",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
@@ -58586,7 +61654,22 @@
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-bandit-1.9.4",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-pypi-bcrypt-5.0.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-boolean-py-5.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-cachecontrol-0.14.4",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
@@ -58616,7 +61699,17 @@
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
     {
-      "relatedSpdxElement": "SPDXRef-Package-pypi-cryptography-49.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-pypi-cryptography-50.0.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-cyclonedx-python-lib-11.11.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-defusedxml-0.7.1",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
@@ -58631,7 +61724,17 @@
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-et-xmlfile-2.0.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-pypi-fastapi-0.140.13",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-filelock-3.32.2",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
@@ -58666,7 +61769,17 @@
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-immutabledict-4.3.1",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-pypi-iniconfig-2.3.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-joblib-1.5.3",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
@@ -58676,12 +61789,32 @@
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-license-expression-30.4.4",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-pypi-mako-1.3.12",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-markdown-it-py-4.2.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-pypi-markupsafe-3.0.3",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-mdurl-0.1.2",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-msgpack-1.2.1",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
@@ -58696,7 +61829,47 @@
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-narwhals-2.24.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-networkx-3.6.1",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-numpy-2.4.6",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-numpy-2.5.2",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-openpyxl-3.1.5",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-ortools-9.15.6755",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-packageurl-python-0.17.6",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-pypi-packaging-26.2",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-pandas-3.0.5",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
@@ -58716,7 +61889,42 @@
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-pip-26.2.1",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-pip-api-0.0.34",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-pip-audit-2.10.1",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-pip-requirements-parser-32.0.1",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-platformdirs-4.11.1",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-pypi-pluggy-1.6.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-protobuf-6.33.6",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-py-serializable-2.1.0",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
@@ -58751,12 +61959,22 @@
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-pyparsing-3.3.2",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-pypi-pytest-9.1.1",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
     {
       "relatedSpdxElement": "SPDXRef-Package-pypi-pytest-asyncio-1.4.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-python-dateutil-2.9.0.post0",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
@@ -58801,6 +62019,11 @@
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-rich-15.0.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-pypi-rsa-4.9.1",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
@@ -58811,7 +62034,27 @@
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-scikit-learn-1.9.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-scipy-1.17.1",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-scipy-1.18.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-pypi-six-1.17.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-sortedcontainers-2.4.0",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
@@ -58826,7 +62069,27 @@
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-stevedore-5.9.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-pypi-testcontainers-4.15.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-threadpoolctl-3.6.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-tomli-2.4.1",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-tomli-w-1.2.0",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
@@ -58837,6 +62100,11 @@
     },
     {
       "relatedSpdxElement": "SPDXRef-Package-pypi-typing-inspection-0.4.2",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-tzdata-2026.3",
       "relationshipType": "DESCRIBES",
       "spdxElementId": "SPDXRef-DOCUMENT"
     },
@@ -70441,6 +73709,11 @@
       "spdxElementId": "SPDXRef-Package-npm--tailwindcss-oxide-wasm32-wasi-4.3.3"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-npm-tslib-2.8.1-f4fecb97-1",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-npm--tailwindcss-oxide-wasm32-wasi-4.3.3"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-npm--tailwindcss-node-4.3.3",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-Package-npm--tailwindcss-vite-4.3.3"
@@ -71592,6 +74865,11 @@
     },
     {
       "relatedSpdxElement": "SPDXRef-Package-npm-tslib-2.8.1",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-npm-ast-types-0.15.2"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-npm-tslib-2.8.1-f4fecb97-1",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-Package-npm-ast-types-0.15.2"
     },
@@ -76801,6 +80079,26 @@
       "spdxElementId": "SPDXRef-Package-npm-form-data-4.0.6-4a3edf78-1"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-npm-motion-dom-13.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-npm-framer-motion-13.0.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-npm-motion-utils-13.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-npm-framer-motion-13.0.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-npm-tslib-2.8.1",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-npm-framer-motion-13.0.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-npm-tslib-2.8.1-f4fecb97-1",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-npm-framer-motion-13.0.0"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-npm-graceful-fs-4.2.11",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-Package-npm-fs-extra-8.1.0"
@@ -77997,6 +81295,11 @@
     },
     {
       "relatedSpdxElement": "SPDXRef-Package-npm-tslib-2.8.1",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-npm-graphql-tag-2.12.7"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-npm-tslib-2.8.1-f4fecb97-1",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-Package-npm-graphql-tag-2.12.7"
     },
@@ -83881,6 +87184,26 @@
       "spdxElementId": "SPDXRef-Package-npm-mkdirp-0.5.6"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-npm-framer-motion-13.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-npm-motion-13.0.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-npm-tslib-2.8.1",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-npm-motion-13.0.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-npm-tslib-2.8.1-f4fecb97-1",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-npm-motion-13.0.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-npm-motion-utils-13.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-npm-motion-dom-13.0.0"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-npm-any-promise-1.3.0",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-Package-npm-mz-2.7.0"
@@ -85912,6 +89235,11 @@
     },
     {
       "relatedSpdxElement": "SPDXRef-Package-npm-tslib-2.8.1",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-npm-recast-0.21.5"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-npm-tslib-2.8.1-f4fecb97-1",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-Package-npm-recast-0.21.5"
     },
@@ -92591,6 +95919,36 @@
       "spdxElementId": "SPDXRef-Package-pypi-anyio-4.14.2"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-colorama-0.4.6",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-bandit-1.9.4"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-pyyaml-6.0.3",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-bandit-1.9.4"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-rich-15.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-bandit-1.9.4"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-stevedore-5.9.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-bandit-1.9.4"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-msgpack-1.2.1",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-cachecontrol-0.14.4"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-requests-2.34.2",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-cachecontrol-0.14.4"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-pypi-pycparser-3.0",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-Package-pypi-cffi-2.1.0"
@@ -92603,7 +95961,32 @@
     {
       "relatedSpdxElement": "SPDXRef-Package-pypi-cffi-2.1.0",
       "relationshipType": "DEPENDS_ON",
-      "spdxElementId": "SPDXRef-Package-pypi-cryptography-49.0.0"
+      "spdxElementId": "SPDXRef-Package-pypi-cryptography-50.0.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-license-expression-30.4.4",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-cyclonedx-python-lib-11.11.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-packageurl-python-0.17.6",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-cyclonedx-python-lib-11.11.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-py-serializable-2.1.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-cyclonedx-python-lib-11.11.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-sortedcontainers-2.4.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-cyclonedx-python-lib-11.11.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-typing-extensions-4.16.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-cyclonedx-python-lib-11.11.0"
     },
     {
       "relatedSpdxElement": "SPDXRef-Package-pypi-pywin32-312",
@@ -92681,9 +96064,19 @@
       "spdxElementId": "SPDXRef-Package-pypi-httpx-0.28.1"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-boolean-py-5.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-license-expression-30.4.4"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-pypi-markupsafe-3.0.3",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-Package-pypi-mako-1.3.12"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-mdurl-0.1.2",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-markdown-it-py-4.2.0"
     },
     {
       "relatedSpdxElement": "SPDXRef-Package-pypi-ast-serialize-0.6.0",
@@ -92709,6 +96102,136 @@
       "relatedSpdxElement": "SPDXRef-Package-pypi-typing-extensions-4.16.0",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-Package-pypi-mypy-2.3.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-et-xmlfile-2.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-openpyxl-3.1.5"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-absl-py-2.5.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-ortools-9.15.6755"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-immutabledict-4.3.1",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-ortools-9.15.6755"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-numpy-2.4.6",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-ortools-9.15.6755"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-numpy-2.5.2",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-ortools-9.15.6755"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-pandas-3.0.5",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-ortools-9.15.6755"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-protobuf-6.33.6",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-ortools-9.15.6755"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-typing-extensions-4.16.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-ortools-9.15.6755"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-numpy-2.4.6",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-pandas-3.0.5"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-numpy-2.5.2",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-pandas-3.0.5"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-python-dateutil-2.9.0.post0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-pandas-3.0.5"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-tzdata-2026.3",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-pandas-3.0.5"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-pip-26.2.1",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-pip-api-0.0.34"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-cachecontrol-0.14.4",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-pip-audit-2.10.1"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-cyclonedx-python-lib-11.11.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-pip-audit-2.10.1"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-packaging-26.2",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-pip-audit-2.10.1"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-pip-api-0.0.34",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-pip-audit-2.10.1"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-pip-requirements-parser-32.0.1",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-pip-audit-2.10.1"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-platformdirs-4.11.1",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-pip-audit-2.10.1"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-requests-2.34.2",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-pip-audit-2.10.1"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-rich-15.0.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-pip-audit-2.10.1"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-tomli-2.4.1",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-pip-audit-2.10.1"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-tomli-w-1.2.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-pip-audit-2.10.1"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-packaging-26.2",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-pip-requirements-parser-32.0.1"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-pyparsing-3.3.2",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-pip-requirements-parser-32.0.1"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-defusedxml-0.7.1",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-py-serializable-2.1.0"
     },
     {
       "relatedSpdxElement": "SPDXRef-Package-pypi-annotated-types-0.8.0",
@@ -92786,6 +96309,11 @@
       "spdxElementId": "SPDXRef-Package-pypi-pytest-asyncio-1.4.0"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-six-1.17.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-python-dateutil-2.9.0.post0"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-pypi-ecdsa-0.19.2",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-Package-pypi-python-jose-3.5.0"
@@ -92836,9 +96364,74 @@
       "spdxElementId": "SPDXRef-Package-pypi-requests-2.34.2"
     },
     {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-markdown-it-py-4.2.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-rich-15.0.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-pygments-2.20.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-rich-15.0.0"
+    },
+    {
       "relatedSpdxElement": "SPDXRef-Package-pypi-pyasn1-0.6.4",
       "relationshipType": "DEPENDS_ON",
       "spdxElementId": "SPDXRef-Package-pypi-rsa-4.9.1"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-joblib-1.5.3",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-scikit-learn-1.9.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-narwhals-2.24.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-scikit-learn-1.9.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-numpy-2.4.6",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-scikit-learn-1.9.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-numpy-2.5.2",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-scikit-learn-1.9.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-scipy-1.17.1",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-scikit-learn-1.9.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-scipy-1.18.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-scikit-learn-1.9.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-threadpoolctl-3.6.0",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-scikit-learn-1.9.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-numpy-2.4.6",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-scipy-1.17.1"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-numpy-2.5.2",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-scipy-1.17.1"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-numpy-2.4.6",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-scipy-1.18.0"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-pypi-numpy-2.5.2",
+      "relationshipType": "DEPENDS_ON",
+      "spdxElementId": "SPDXRef-Package-pypi-scipy-1.18.0"
     },
     {
       "relatedSpdxElement": "SPDXRef-Package-pypi-greenlet-3.5.4",

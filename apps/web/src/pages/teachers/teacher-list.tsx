@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { teacherApi } from '../../api/academic/teacher-api'
 import type { TeacherResponse } from '../../api/generated/types'
-import { Button, Modal, Form, Input, Select, Alert, Badge, useToast } from '../../components/ui'
+import { Button, Modal, Form, Input, Select, Alert, Badge, useToast, ShortcutKey} from '../../components/ui'
 import type { Column } from '../../components/ui/table'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { useDelight } from '../../components/delight/delight-provider'
@@ -172,7 +172,7 @@ export function TeacherListPage() {
         primaryAction={
           <Button onClick={openCreateModal}>
             Add Teacher
-            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+            <ShortcutKey>N</ShortcutKey>
           </Button>
         }
         empty={{

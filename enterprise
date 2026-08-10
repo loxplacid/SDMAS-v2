@@ -1,0 +1,185 @@
+#!/bin/bash
+# =============================================================
+# SDMAS v2 — Enterprise Bootstrap
+# =============================================================
+# Zero-touch management for the SDMAS deployment.
+#
+# Usage:
+#   ./enterprise up        # Start the full stack (build, migrate, run)
+#   ./enterprise down      # Stop all services
+#   ./enterprise health    # Check all services are healthy
+#   ./enterprise logs      # Tail logs from all services
+#   ./enterprise test      # Run the API and frontend test suites
+#   ./enterprise audit     # Generate the security due-diligence evidence package
+#   ./enterprise reset     # Stop, remove volumes, rebuild
+#   ./enterprise migrate   # Run Alembic migrations manually
+#   ./enterprise demo-seed # Seed the three-tenant enterprise demo environment
+#   ./enterprise demo-reset# Wipe demo data and reseed the three-tenant demo
+#
+# The canonical first-run command:
+#   ./enterprise up
+# =============================================================
+set -euo pipefail
+
+COMPOSE_DIR="infrastructure/docker"
+COMPOSE_FILE="${COMPOSE_DIR}/docker-compose.yml"
+COMPOSE_PROJECT="sdmas"
+ENTERPRISE_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+cd "${ENTERPRISE_DIR}"
+
+# ── Help ────────────────────────────────────────────────────
+
+show_help() {
+    sed -n 's/^# \?//p' "$0" | sed -n '3,/^$/p'
+    echo ""
+    echo "Quick start:"
+    echo "  ./enterprise up"
+    echo "  # → http://localhost:80 (frontend)"
+    echo "  # → http://localhost:8000/docs (API docs)"
+    echo "  # → http://localhost:8000/health (health check)"
+    echo ""
+    echo "See docs/zero-touch-deployment.md for full documentation."
+}
+
+# ── Commands ────────────────────────────────────────────────
+
+cmd_up() {
+    echo "=============================================="
+    echo "  SDMAS — Starting zero-touch deployment"
+    echo "=============================================="
+    echo ""
+    echo "  Frontend:  http://localhost:80"
+    echo "  API docs:  http://localhost:8000/docs"
+    echo "  Health:    http://localhost:8000/health"
+    echo ""
+    echo "  The migration-init job runs once and exits."
+    echo "  API and worker start only after migrations"
+    echo "  complete successfully."
+    echo "=============================================="
+    echo ""
+    docker compose -f "${COMPOSE_FILE}" -p "${COMPOSE_PROJECT}" up --build --detach
+    echo ""
+    echo "Services started. Run './enterprise health' to verify."
+}
+
+cmd_down() {
+    docker compose -f "${COMPOSE_FILE}" -p "${COMPOSE_PROJECT}" down
+    echo "Services stopped."
+}
+
+cmd_health() {
+    echo "Checking service health..."
+    echo ""
+
+    # Check each service (docker compose ps outputs health status).
+    docker compose -f "${COMPOSE_FILE}" -p "${COMPOSE_PROJECT}" ps --format "table {{.Name}}\t{{.Status}}" | head -20
+
+    echo ""
+    echo "--- API health endpoint ---"
+    curl -sf http://localhost:8000/health 2>/dev/null | python -m json.tool 2>/dev/null || echo "  (API not yet reachable — migrations may still be running)"
+
+    echo ""
+    echo "--- API readiness endpoint ---"
+    curl -sf http://localhost:8000/ready 2>/dev/null | python -m json.tool 2>/dev/null || echo "  (API not ready yet)"
+
+    echo ""
+    echo "--- Frontend ---"
+    curl -s -o /dev/null -w "  HTTP %{http_code}" http://localhost:80/ 2>/dev/null || echo "  (Frontend not yet reachable)"
+    echo ""
+
+    echo ""
+    echo "--- Nginx health ---"
+    curl -s -o /dev/null -w "  HTTP %{http_code}" http://localhost:80/health-check 2>/dev/null || echo "  (Nginx not ready)"
+    echo ""
+}
+
+cmd_logs() {
+    docker compose -f "${COMPOSE_FILE}" -p "${COMPOSE_PROJECT}" logs --follow "${@}"
+}
+
+cmd_test() {
+    echo "Running API tests (non-integration, no Docker required)..."
+    (cd apps/api && python -m pytest tests/ -v --tb=short -m "not integration" -q 2>&1 | tail -5) || true
+
+    echo ""
+    echo "Running frontend tests..."
+    (cd apps/web && npm test 2>&1 | tail -5) || true
+}
+
+cmd_reset() {
+    echo "WARNING: This will remove all data volumes and rebuild from scratch."
+    read -p "Are you sure? [y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        docker compose -f "${COMPOSE_FILE}" -p "${COMPOSE_PROJECT}" down --volumes --remove-orphans
+        echo "Volumes removed. Running './enterprise up' to rebuild..."
+        cmd_up
+    fi
+}
+
+cmd_migrate() {
+    docker compose -f "${COMPOSE_FILE}" -p "${COMPOSE_PROJECT}" run --rm api alembic upgrade head
+    echo "Migrations complete."
+}
+
+cmd_demo_seed() {
+    echo "Seeding the enterprise demo environment (three isolated tenants)..."
+    echo "  Apex Global School (APX)"
+    echo "  St. Jude Public Academy (STJ)"
+    echo "  Metropolitan Institute of Tech (MIT)"
+    echo ""
+    docker compose -f "${COMPOSE_FILE}" -p "${COMPOSE_PROJECT}" run --rm api \
+        python -m scripts.seed_enterprise_demo
+    echo ""
+    echo "Demo credentials (development-only):"
+    echo "  apex.admin / DemoPass!2026"
+    echo "  stjude.admin / DemoPass!2026"
+    echo "  mit.admin / DemoPass!2026"
+    echo ""
+    echo "See docs/enterprise-demo.md for the evaluator walkthrough."
+}
+
+cmd_demo_reset() {
+    echo "WARNING: This wipes all rows belonging to the three demo campuses."
+    read -p "Are you sure? [y/N] " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        docker compose -f "${COMPOSE_FILE}" -p "${COMPOSE_PROJECT}" run --rm api \
+            python -m scripts.seed_enterprise_demo --reset --force
+        echo "Demo data reset and reseeded."
+    else
+        echo "Aborted."
+    fi
+}
+
+cmd_audit() {
+    echo "Generating security due-diligence evidence package..."
+    bash scripts/security-audit.sh
+    echo ""
+    echo "Evidence package:"
+    echo "  artifacts/SHA256SUMS"
+    echo "  artifacts/tests/test-manifest.json"
+    echo "  docs/security-assurance-report.md"
+}
+
+# ── Dispatch ────────────────────────────────────────────────
+
+case "${1:-help}" in
+    up) cmd_up ;;
+    down) cmd_down ;;
+    health) cmd_health ;;
+    logs) shift; cmd_logs "$@" ;;
+    test) cmd_test ;;
+    audit) cmd_audit ;;
+    reset) cmd_reset ;;
+    migrate) cmd_migrate ;;
+    demo-seed) cmd_demo_seed ;;
+    demo-reset) cmd_demo_reset ;;
+    help|--help|-h) show_help ;;
+    *)
+        echo "Unknown command: $1"
+        echo "Usage: ./enterprise [up|down|health|logs|test|audit|reset|migrate|demo-seed|demo-reset]"
+        exit 1
+        ;;
+esac

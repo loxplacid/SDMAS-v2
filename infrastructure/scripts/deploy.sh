@@ -6,8 +6,16 @@
 set -euo pipefail
 
 ENVIRONMENT="${1:-production}"
-COMPOSE_FILE="infrastructure/docker/docker-compose.${ENVIRONMENT}.yml"
 COMPOSE_PROJECT="sdmas-${ENVIRONMENT}"
+
+# Map ENV names to compose-file suffixes (files are docker-compose.dev.yml /
+# staging.yml / production.yml).
+case "${ENVIRONMENT}" in
+    development) COMPOSE_SUFFIX="dev" ;;
+    staging|production) COMPOSE_SUFFIX="${ENVIRONMENT}" ;;
+    *) echo "Error: Unknown environment '${ENVIRONMENT}'. Use development|staging|production."; exit 1 ;;
+esac
+COMPOSE_FILE="infrastructure/docker/docker-compose.${COMPOSE_SUFFIX}.yml"
 
 # Validate
 if [ ! -f "${COMPOSE_FILE}" ]; then

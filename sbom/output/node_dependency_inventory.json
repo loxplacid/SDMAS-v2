@@ -13134,6 +13134,24 @@
       "checksums": [
         [
           "SHA512",
+          "3df58f58dda7fbfdfb7686bca21dbfa145e4e0e3ac45866cc5cd56d6c0d72066ff3eee58adbf9fd9ec98a6040c1884d55fb1d583186cf4fd7c45ce88f7bca6fe"
+        ]
+      ],
+      "dependencies": [],
+      "download_url": "https://registry.npmjs.org/@sqlite.org/sqlite-wasm/-/sqlite-wasm-3.53.0-build1.tgz",
+      "ecosystem": "npm",
+      "is_direct": true,
+      "license_expression": "Apache-2.0",
+      "name": "@sqlite.org/sqlite-wasm",
+      "origin": "registry",
+      "purl": "pkg:npm/%40sqlite.org/sqlite-wasm@3.53.0-build1",
+      "source": "apps/web/package-lock.json",
+      "version": "3.53.0-build1"
+    },
+    {
+      "checksums": [
+        [
+          "SHA512",
           "976685cb98c02e19e21b91e0aab0fa8d72e2feb516acabea37fa89c7aca826c80a85b95577e8aaa94e110976af9bf8cf8adc83a394c2bca327a632a73ab8b2d3"
         ]
       ],
@@ -15424,6 +15442,24 @@
       "purl": "pkg:npm/ajv-keywords@5.1.0",
       "source": "apps/mobile/package-lock.json",
       "version": "5.1.0"
+    },
+    {
+      "checksums": [
+        [
+          "SHA512",
+          "3508a6617fa5cfc59a5e89c64bdcd5568be208802338d7896b2c5a714762b5a8af60bab25e01a314a8eeca5d1a5148452a6e4cae25fdb72d531a8bcdce825058"
+        ]
+      ],
+      "dependencies": [],
+      "download_url": "https://registry.npmjs.org/animejs/-/animejs-4.5.0.tgz",
+      "ecosystem": "npm",
+      "is_direct": true,
+      "license_expression": "MIT",
+      "name": "animejs",
+      "origin": "registry",
+      "purl": "pkg:npm/animejs@4.5.0",
+      "source": "apps/web/package-lock.json",
+      "version": "4.5.0"
     },
     {
       "checksums": [
@@ -24523,6 +24559,37 @@
       "purl": "pkg:npm/frac@1.1.2",
       "source": "apps/web/package-lock.json",
       "version": "1.1.2"
+    },
+    {
+      "checksums": [
+        [
+          "SHA512",
+          "9d01995e5b228a0378f27cef13b00bd462de92a97e7ad729869f2ff8f4345f4e28c4edb4c95995f6b53d5d0db9735dfa45d78862869694a4fda00c2f2736b79a"
+        ]
+      ],
+      "dependencies": [
+        {
+          "name": "motion-dom",
+          "specifier": "^13.0.0"
+        },
+        {
+          "name": "motion-utils",
+          "specifier": "^13.0.0"
+        },
+        {
+          "name": "tslib",
+          "specifier": "^2.4.0"
+        }
+      ],
+      "download_url": "https://registry.npmjs.org/framer-motion/-/framer-motion-13.0.0.tgz",
+      "ecosystem": "npm",
+      "is_direct": false,
+      "license_expression": "MIT",
+      "name": "framer-motion",
+      "origin": "registry",
+      "purl": "pkg:npm/framer-motion@13.0.0",
+      "source": "apps/web/package-lock.json",
+      "version": "13.0.0"
     },
     {
       "checksums": [
@@ -34193,6 +34260,74 @@
       "checksums": [
         [
           "SHA512",
+          "4586631298075022a304daa39944335bddd52562ef1191933dd291152a8e74e974ec820cbf3f96aec6660f55d7024a052ebb96ffc6ced4bed417e562413c6d2e"
+        ]
+      ],
+      "dependencies": [
+        {
+          "name": "framer-motion",
+          "specifier": "^13.0.0"
+        },
+        {
+          "name": "tslib",
+          "specifier": "^2.4.0"
+        }
+      ],
+      "download_url": "https://registry.npmjs.org/motion/-/motion-13.0.0.tgz",
+      "ecosystem": "npm",
+      "is_direct": true,
+      "license_expression": "MIT",
+      "name": "motion",
+      "origin": "registry",
+      "purl": "pkg:npm/motion@13.0.0",
+      "source": "apps/web/package-lock.json",
+      "version": "13.0.0"
+    },
+    {
+      "checksums": [
+        [
+          "SHA512",
+          "5e4f9225ab3bd2e30050802983e9b79590d28712372c1147abb98519b04aa115dcd8f54f0f200a9b337ae016f3b7809974ffc222d4e22715ad9f84c0d2fe7736"
+        ]
+      ],
+      "dependencies": [
+        {
+          "name": "motion-utils",
+          "specifier": "^13.0.0"
+        }
+      ],
+      "download_url": "https://registry.npmjs.org/motion-dom/-/motion-dom-13.0.0.tgz",
+      "ecosystem": "npm",
+      "is_direct": false,
+      "license_expression": "MIT",
+      "name": "motion-dom",
+      "origin": "registry",
+      "purl": "pkg:npm/motion-dom@13.0.0",
+      "source": "apps/web/package-lock.json",
+      "version": "13.0.0"
+    },
+    {
+      "checksums": [
+        [
+          "SHA512",
+          "ec39cded399b2dc617706e1155a757222856972b8cf5a7e8530c3c639020838df59062a2b8bdbf38cc8fe26279c0bcfea6f377b79c920a52ce6955c9fb07a445"
+        ]
+      ],
+      "dependencies": [],
+      "download_url": "https://registry.npmjs.org/motion-utils/-/motion-utils-13.0.0.tgz",
+      "ecosystem": "npm",
+      "is_direct": false,
+      "license_expression": "MIT",
+      "name": "motion-utils",
+      "origin": "registry",
+      "purl": "pkg:npm/motion-utils@13.0.0",
+      "source": "apps/web/package-lock.json",
+      "version": "13.0.0"
+    },
+    {
+      "checksums": [
+        [
+          "SHA512",
           "873cc46a00200f2a14d50eb2839b88f80a2b42076f302babdc570a7fb36130a5ac69883e4676d3c8745affd2252c5f6b7f8e7930e0ad72aaab410f37a4f3fb53"
         ]
       ],
@@ -43528,6 +43663,24 @@
       "origin": "registry",
       "purl": "pkg:npm/tslib@2.8.1",
       "source": "apps/mobile/package-lock.json",
+      "version": "2.8.1"
+    },
+    {
+      "checksums": [
+        [
+          "SHA512",
+          "a0916ef781d06fe29576e49440bef09e99aa9df98bb0e03f9c087a6fa107d30084a0ad3f98f79753a737c0a0d5f373243ae1cf447b525ca294f7d2016b34bfdb"
+        ]
+      ],
+      "dependencies": [],
+      "download_url": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz",
+      "ecosystem": "npm",
+      "is_direct": false,
+      "license_expression": "0BSD",
+      "name": "tslib",
+      "origin": "registry",
+      "purl": "pkg:npm/tslib@2.8.1",
+      "source": "apps/web/package-lock.json",
       "version": "2.8.1"
     },
     {

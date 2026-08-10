@@ -7,7 +7,7 @@ import {
 import { Button, Badge, Modal, Input, useToast } from '../../components/ui'
 import type { Column } from '../../components/ui/table'
 import { DataWorkspace, useWorkspace } from '../../components/data-workspace'
-import { formatDate } from '../../lib/utils'
+import { formatDate, plural } from '../../lib/utils'
 import { ReconciliationDetail } from './reconciliation-detail'
 
 /**
@@ -186,7 +186,7 @@ export const ReconciliationPage: React.FC = () => {
         title="Reconciliation"
         description={
           total > 0
-            ? `${total.toLocaleString('en-KE')} reconciliation${total !== 1 ? 's' : ''} — verify and approve against the ledger.`
+            ? `${plural(total, 'reconciliation', 'reconciliations', 'en-KE')} — verify and approve against the ledger.`
             : 'Verify and approve financial reconciliations against the ledger.'
         }
         columns={RECONCILIATION_COLUMNS}

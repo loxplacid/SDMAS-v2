@@ -4,9 +4,9 @@ import { feeTypeApi } from '../../api/fees/fee-type-api'
 import { academicYearApi } from '../../api/academic/academic-year-api'
 import { classApi } from '../../api/academic/class-api'
 import type { FeeStructureResponse, FeeStructureCreate, FeeStructureUpdate } from '../../api/generated/types'
-import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, ErrorState, useToast, PageHeader } from '../../components/ui'
+import { Card, Table, Pagination, Input, Select, Button, Badge, Modal, Form, Alert, ErrorState, useToast, PageHeader, ShortcutKey} from '../../components/ui'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
-import { FEE_STRUCTURE_STATUSES, capitalize, formatCurrency } from '../../lib/utils'
+import { FEE_STRUCTURE_STATUSES, capitalize, formatCurrency, plural } from '../../lib/utils'
 
 const statusBadge: Record<string, 'success' | 'danger'> = { active: 'success', inactive: 'danger' }
 
@@ -113,12 +113,12 @@ export function FeeStructureListPage() {
       <PageHeader
         eyebrow="Fees"
         title="Fee Structures"
-        subtitle={`${total} structure${total !== 1 ? 's' : ''}`}
+        subtitle={plural(total, 'structure')}
         compact
         actions={
           <Button onClick={openCreateModal}>
             Add Fee Structure
-            <kbd className="ml-2 hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-medium text-white/80">N</kbd>
+            <ShortcutKey>N</ShortcutKey>
           </Button>
         }
       />
