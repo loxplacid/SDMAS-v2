@@ -1,6 +1,6 @@
 """add campus_id to device_tokens, leave_requests, and workflow_instances
 
-Revision ID: 016_add_missing_campus_id_columns
+Revision ID: 016_campus_id_columns
 Revises: 015_create_audit_logs
 Create Date: 2026-07-30
 
@@ -23,7 +23,7 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = "016_add_missing_campus_id_columns"
+revision: str = "016_campus_id_columns"
 down_revision: Union[str, None] = "015_create_audit_logs"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

@@ -44,8 +44,16 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any, Callable, Coroutine
 
-from sqlalchemy import DateTime, Integer, String, Text, TypeDecorator, UniqueConstraint
-from sqlalchemy import select, update
+from sqlalchemy import (
+    DateTime,
+    Integer,
+    String,
+    Text,
+    TypeDecorator,
+    UniqueConstraint,
+    select,
+    update,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
@@ -501,7 +509,27 @@ class OutboxDispatcher:
             school_id=outbox_event.school_id,
         ):
             for handler in handlers:
-                await handler(event, session=session)
+                # Handler work is a SAVEPOINT: if the handler raises, its
+                # partial writes roll back so the delivery's retry starts
+                # clean — a poisoned delivery can never leave half-applied
+                # side effects (e.g. an orphan notification) committed by
+                # the worker's poll-cycle commit.
+                savepoint = await session.begin_nested()
+                try:
+                    await handler(event, session=session)
+                except BaseException:
+                    # BaseException (not just Exception): a worker shutdown
+                    # cancel mid-delivery must still roll the savepoint back.
+                    try:
+                        await savepoint.rollback()
+                    except Exception:
+                        pass
+                    raise
+                else:
+                    try:
+                        await savepoint.commit()
+                    except Exception:
+                        pass
         return True
 
     def _rehydrate(self, outbox_event: OutboxEvent) -> Any:

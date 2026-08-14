@@ -61,13 +61,15 @@ export function ExportJobsPage() {
     }
   }, [data, fetchJobs])
 
-  const handleDownload = useCallback(async (id: number) => {
-    setDownloading(id)
+  const handleDownload = useCallback(async (row: ExportJobResponse) => {
+    setDownloading(row.id)
     try {
-      const blob = await exportJobApi.download(id)
-      const disposition = (blob as any)?.headers?.get?.('content-disposition') || ''
-      const match = disposition.match(/filename="?(.+?)"?(?:;|$)/)
-      const filename = match?.[1] || `export-${id}.csv`
+      const blob = await exportJobApi.download(row.id)
+      // The http-client returns the body as a Blob, so the Content-Disposition
+      // header is unavailable here — derive the extension from the job format
+      // (the backend names the artifact {report-name}.{ext} for that format).
+      const ext = row.format === 'excel' ? 'xlsx' : row.format === 'pdf' ? 'pdf' : 'csv'
+      const filename = `report-${row.report_definition_id}-${row.id}.${ext}`
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -146,7 +148,7 @@ export function ExportJobsPage() {
               variant="secondary"
               size="xs"
               loading={downloading === row.id}
-              onClick={(e) => { e.stopPropagation(); handleDownload(row.id) }}
+              onClick={(e) => { e.stopPropagation(); handleDownload(row) }}
             >
               Download
             </Button>

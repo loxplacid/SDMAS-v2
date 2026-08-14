@@ -93,8 +93,10 @@ exception for a user's own records).
 
 ## Verification
 
-`tests/test_multi_tenant/test_security_suite.py` (60 tests) proves, end to
+`tests/test_multi_tenant/test_security_suite.py` (28 tests) proves, end to
 end, that Tenant A cannot read/update/delete/search/export/batch/reach
 Tenant B's data through any surface — including 360 views, analytics, jobs,
 notifications, documents, and parent/student-portal junctions — and that
-platform operations require explicit authorization.
+platform operations require explicit authorization. (A further 64 tests in
+`tests/test_security_acquisition/` cover authentication, authorization,
+IDOR, rate limiting, and database invariants.)

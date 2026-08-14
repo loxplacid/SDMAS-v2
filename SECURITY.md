@@ -19,6 +19,8 @@ canonical system (`apps/`). It is not a wishlist.
   public allowlist. The allowlist is minimal and intentional:
   - `POST /auth/login`, `POST /auth/refresh`, `POST /auth/register`
   - `GET /health`, `GET /ready`, `GET /metrics`
+  - `GET /docs`, `GET /redoc`, `GET /openapi.json` (dev/staging only)
+  - `GET /billing/plans` — public plan catalog
   - `POST /billing/webhook/{provider}` — authenticated by **provider
     signature**, not by user session.
 - **Login rate limiting** (per-IP) on the login endpoint.
@@ -49,14 +51,15 @@ Isolation is **structural**, not by developer discipline:
    access requires an explicit `platform.*` permission.
 
 See [`TENANCY.md`](TENANCY.md) for the full mechanism. A dedicated
-multi-tenant security test suite (61 tests) continuously proves Tenant A
-cannot read/update/delete/search/export/reach Tenant B's data.
+multi-tenant security test suite (28 tests in
+`tests/test_multi_tenant/test_security_suite.py`) continuously proves Tenant
+A cannot read/update/delete/search/export/reach Tenant B's data.
 
 **Admin user management** (`/admin/users`) is tenant-scoped: a tenant admin
 can only list/get/update/assign-roles for users of their own campus, and
 new users are pinned to the acting admin's campus.
 
-An **acquisition-grade security & invariants suite** (57 tests in
+An **acquisition-grade security & invariants suite** (64 tests in
 `apps/api/tests/test_security_acquisition/`) proves the boundaries end-to-end
 for every requested category — authentication (expired/invalid/revoked
 tokens, refresh rotation/reuse, invalid refresh), authorization (missing
@@ -113,9 +116,10 @@ rollback, FK integrity with `PRAGMA foreign_keys=ON`), and audit invariants
 - Production secrets are expected in `infrastructure/secrets/` (files
   `chmod 600`) or injected by the platform; `app/core/secrets.py` provides a
   Vault backend.
-- **Known gap**: the root `.env` file is currently tracked in git history
-  (see [`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md)) — it should be
-  untracked and rotated if it ever contained real values.
+- **Known gap (resolved)**: the root `.env` file was previously tracked in
+  git; it is now untracked (`git rm --cached`) and `.gitignore`d (see
+  [`KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md) and `docs/SECRETS.md`).
+  Rotation of any secrets that ever lived in it is recommended.
 
 ## Transport & hardening
 
@@ -128,4 +132,6 @@ rollback, FK integrity with `PRAGMA foreign_keys=ON`), and audit invariants
 ## Reporting
 
 Report vulnerabilities privately to the maintainers (see
-`docs/SECURITY_POLICY.md`).
+[`docs/security-policy-and-controls.md`](docs/security-policy-and-controls.md)
+and the accepted-risk register in
+[`docs/security-policy.md`](docs/security-policy.md)).

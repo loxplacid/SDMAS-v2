@@ -19,6 +19,7 @@ from app.domains.auth.permissions import (
     FEES_RECORD_PAYMENT,
     FEES_REFUND,
     FEES_UPDATE,
+    FEES_VIEW,
 )
 from app.domains.fees.repository import (
     FeeDueRepository,
@@ -149,6 +150,7 @@ async def get_fee_type(
     type_id: int,
     service: FeeTypeService = Depends(get_fee_type_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
 ) -> FeeTypeResponse:
     ft = await service.get(type_id)
     assert_tenant_scope(ft, tenant, resource="fee type")
@@ -166,6 +168,7 @@ async def list_fee_types(
     ),
     service: FeeTypeService = Depends(get_fee_type_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
 ) -> Page[FeeTypeResponse]:
     effective_campus = effective_campus_id(tenant, campus_id)
     items, total = await service.list(
@@ -241,6 +244,7 @@ async def get_fee_structure(
     structure_id: int,
     service: FeeStructureService = Depends(get_fee_structure_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
 ) -> FeeStructureResponse:
     fs = await service.get(structure_id)
     assert_tenant_scope(fs, tenant, resource="fee structure")
@@ -265,6 +269,7 @@ async def list_fee_structures(
     ),
     service: FeeStructureService = Depends(get_fee_structure_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
 ) -> Page[FeeStructureResponse]:
     effective_campus = effective_campus_id(tenant, campus_id)
     items, total = await service.list(
@@ -315,6 +320,7 @@ async def get_student_fees(
     service: FeeDueService = Depends(get_fee_due_service),
     session: AsyncSession = Depends(get_session),
     tenant: TenantContext = Depends(require_tenant_context),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
 ) -> list[StudentFeeResponse]:
     student = await StudentRepository(session, tenant).get_by_id(student_id)
     assert_tenant_scope(student, tenant, resource="student")
@@ -353,6 +359,7 @@ async def get_fee_due(
     due_id: int,
     service: FeeDueService = Depends(get_fee_due_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
 ) -> FeeDueResponse:
     due = await service.get(due_id)
     assert_tenant_scope(due, tenant, resource="fee due")
@@ -376,6 +383,7 @@ async def list_fee_dues(
     ),
     service: FeeDueService = Depends(get_fee_due_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
 ) -> Page[FeeDueResponse]:
     effective_campus = effective_campus_id(tenant, campus_id)
     items, total = await service.list(
@@ -406,6 +414,7 @@ async def get_student_dues(
     service: FeeDueService = Depends(get_fee_due_service),
     session: AsyncSession = Depends(get_session),
     tenant: TenantContext = Depends(require_tenant_context),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
 ) -> list[FeeDueResponse]:
     student = await StudentRepository(session, tenant).get_by_id(student_id)
     assert_tenant_scope(student, tenant, resource="student")
@@ -452,6 +461,7 @@ async def get_payment(
     payment_id: int,
     service: PaymentService = Depends(get_payment_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
 ) -> PaymentResponse:
     payment = await service.get_payment(payment_id)
     assert_tenant_scope(payment, tenant, resource="payment")
@@ -477,6 +487,7 @@ async def refund_payment(
         amount=data.amount,
         reason=data.reason,
         actor=AuditActor.user(actor.id, actor.username),
+        idempotency_key=data.idempotency_key,
     )
     return RefundResult(
         payment=PaymentResponse.model_validate(result["payment"]),
@@ -498,6 +509,7 @@ async def list_payments(
     ),
     service: PaymentService = Depends(get_payment_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
 ) -> Page[PaymentResponse]:
     effective_campus = effective_campus_id(tenant, campus_id)
     items, total = await service.repo.list(
@@ -524,6 +536,7 @@ async def get_student_payments(
     service: PaymentService = Depends(get_payment_service),
     session: AsyncSession = Depends(get_session),
     tenant: TenantContext = Depends(require_tenant_context),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
 ) -> list[PaymentResponse]:
     student = await StudentRepository(session, tenant).get_by_id(student_id)
     assert_tenant_scope(student, tenant, resource="student")
@@ -540,6 +553,7 @@ async def get_fee_due_payments(
     service: PaymentService = Depends(get_payment_service),
     session: AsyncSession = Depends(get_session),
     tenant: TenantContext = Depends(require_tenant_context),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
 ) -> list[PaymentResponse]:
     due = await FeeDueRepository(session, tenant).get_by_id(fee_due_id)
     assert_tenant_scope(due, tenant, resource="fee due")
@@ -554,6 +568,7 @@ async def get_payments_by_date_range(
     campus_id: Optional[int] = Query(default=None, alias="campus_id"),
     service: PaymentService = Depends(get_payment_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
 ) -> list[PaymentResponse]:
     effective_campus = effective_campus_id(tenant, campus_id)
     payments = await service.get_payments_by_date_range(
@@ -570,6 +585,7 @@ async def get_payment_by_receipt_number(
     receipt_number: str,
     service: PaymentService = Depends(get_payment_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
 ) -> PaymentResponse:
     payment = await service.get_payment_by_receipt_number(receipt_number)
     assert_tenant_scope(payment, tenant, resource="payment")
@@ -593,6 +609,7 @@ async def get_student_financial_summary(
     service: SummaryService = Depends(get_summary_service),
     session: AsyncSession = Depends(get_session),
     tenant: TenantContext = Depends(require_tenant_context),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
 ) -> StudentFinancialSummary:
     student = await StudentRepository(session, tenant).get_by_id(student_id)
     assert_tenant_scope(student, tenant, resource="student")
@@ -612,6 +629,7 @@ async def get_class_financial_summary(
     service: SummaryService = Depends(get_summary_service),
     session: AsyncSession = Depends(get_session),
     tenant: TenantContext = Depends(require_tenant_context),
+    _actor: User = Depends(require_permission(FEES_VIEW)),
 ) -> ClassFinancialSummary:
     cls = await ClassRepository(session, tenant).get_by_id(class_id)
     assert_tenant_scope(cls, tenant, resource="class")

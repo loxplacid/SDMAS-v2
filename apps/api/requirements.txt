@@ -7,6 +7,10 @@ fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
 pydantic>=2.10.0
 pydantic-settings>=2.7.0
+python-jose[cryptography]>=3.3.0
+# Password hashing (bcrypt is imported lazily by app.domains.auth.security —
+# REQUIRED for login/register to work in the container).
+bcrypt>=4.0.1
 sqlalchemy[asyncio]>=2.0.36
 asyncpg>=0.30.0
 alembic>=1.14.0
@@ -14,6 +18,15 @@ redis>=5.0
 
 # XLSX migration source parsing (openpyxl; used by app.domains.migration).
 openpyxl>=3.1.0
+
+# PDF report/export rendering (reportlab; imported by app.domains.report_cards.pdf
+# at module import time — REQUIRED for the API to boot).
+reportlab>=5.0.0
+
+# Multipart form parsing (python-multipart; required by FastAPI at route
+# construction time for File(...)/Form(...) endpoints, e.g. the migration
+# upload endpoint — REQUIRED for the API to boot).
+python-multipart>=0.0.32
 
 # Development
 pytest>=8.3.0

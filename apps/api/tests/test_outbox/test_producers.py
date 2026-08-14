@@ -381,7 +381,8 @@ class TestJobTenantContext:
         self, db_session: AsyncSession
     ) -> None:
         from app.domains.events.context import get_correlation_id, get_school_id
-        from app.domains.jobs.registry import BaseJob, register_job, clear_registry
+        from app.domains.jobs.registry import BaseJob, register_job
+        from app.domains.jobs import registry as _job_registry_module
 
         captured: dict = {}
 
@@ -396,6 +397,14 @@ class TestJobTenantContext:
                 captured["job_user"] = self.tenant.user_id if self.tenant else None
                 return {"ok": True}
 
+        # Snapshot the global job registry and restore it afterwards. A naive
+        # ``clear_registry()`` would wipe job types registered by *other*
+        # suites in this process (e.g. ``test.always_fail`` from
+        # ``test_async_hardening``, ``report_builder.export``), and re-importing
+        # modules cannot re-run their ``@register_job`` decorators because
+        # Python caches modules in ``sys.modules`` — later suites would hit
+        # "No handler registered" and dead-letter every job.
+        snapshot = dict(_job_registry_module._registry)
         try:
             job = Job(
                 job_type="test.context_probe",
@@ -423,4 +432,5 @@ class TestJobTenantContext:
             assert captured["job_user"] == 42
             assert captured["correlation_id"] == "probe-1"
         finally:
-            clear_registry()
+            _job_registry_module._registry.clear()
+            _job_registry_module._registry.update(snapshot)

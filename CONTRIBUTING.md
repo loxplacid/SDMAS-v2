@@ -5,7 +5,10 @@ Welcome to our project! This document outlines the process for contributing to t
 
 ## Code of Conduct
 
-All contributors are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md), which promotes a respectful and inclusive environment for everyone involved in the project.
+All contributors are expected to follow a respectful and inclusive environment for everyone involved in the project.
+
+> Note: no `CODE_OF_CONDUCT.md` file exists in the repository yet — this
+> section is a placeholder until one is added.
 
 ## How to Contribute
 
@@ -47,16 +50,20 @@ All contributors are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md
 ## Development Environment Setup
 
 ### Prerequisites
-- Python 3.8 or higher
-- Virtual environment support
+- Python 3.11 or higher (see `apps/api/pyproject.toml` `requires-python`)
+- Node.js 20+ (web/mobile)
+- [uv](https://docs.astral.sh/uv/) for the Python backend
 - Git version control system
 - IDE with Python support (recommended: VS Code)
 
 ### Getting Started
 1. Clone the repository
-2. Create a virtual environment
-3. Install dependencies from requirements.txt
-4. Run tests to verify setup
+2. Install backend dependencies from the lockfile: `cd apps/api && uv sync --frozen --extra dev`
+3. Install frontend dependencies: `cd apps/web && npm ci`
+4. Run tests to verify setup (`make test` / `make test-web`)
+
+> The backend's `requirements.txt` exists for pip-based audit tooling; the
+> canonical install path is `uv sync` against `uv.lock`.
 
 ## Testing Requirements
 
@@ -132,9 +139,11 @@ All contributors are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md
 ## Recognition & Attribution
 
 We value all contributions to this project. Contributors will be:
-- Acknowledged in the CHANGELOG.md file
 - Recognized in release notes when appropriate
 - Added to contributor list in README.md
 - Considered for special recognition roles (if applicable)
+
+> Note: no `CHANGELOG.md` exists in the repository yet — release notes and
+> git history serve this purpose until one is introduced.
 
 Thank you for contributing to our project!

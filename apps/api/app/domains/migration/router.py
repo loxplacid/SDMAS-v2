@@ -71,6 +71,7 @@ async def list_entities(
 async def import_from_source(
     data: BulkMigrationRequest,
     _: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_school_context),
     session: AsyncSession = Depends(get_session),
 ) -> list[MigrationRunResponse]:
     reader = LegacyJSONReader(data.source)
@@ -87,10 +88,11 @@ async def import_from_source(
         all_data,
         is_dry_run=data.is_dry_run,
         source=data.source,
+        campus_id=tenant.campus_id,
     )
 
     run_repo = MigrationRunRepository(session)
-    runs, _ = await run_repo.list_runs(limit=len(results))
+    runs, _ = await run_repo.list_runs(limit=len(results), campus_id=tenant.campus_id)
     return [MigrationRunResponse.model_validate(r) for r in runs[: len(results)]]
 
 
@@ -98,6 +100,7 @@ async def import_from_source(
 async def run_migration(
     data: MigrationRunCreate,
     _: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_school_context),
     session: AsyncSession = Depends(get_session),
 ) -> MigrationRunResponse:
     reader = LegacyJSONReader(data.source)
@@ -109,10 +112,16 @@ async def run_migration(
         records,
         is_dry_run=data.is_dry_run,
         source=data.source,
+        campus_id=tenant.campus_id,
     )
 
     run_repo = MigrationRunRepository(session)
-    run = await run_repo.get_by_id(1)
+    runs, _ = await run_repo.list_runs(
+        entity_type=data.entity_type, limit=1, campus_id=tenant.campus_id
+    )
+    run = runs[0] if runs else None
+    if run is None:
+        raise NotFoundError(f"Migration run for '{data.entity_type}' not found")
     return MigrationRunResponse.model_validate(run)
 
 
@@ -126,6 +135,7 @@ async def list_runs(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     _: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_school_context),
     run_repo: MigrationRunRepository = Depends(_get_run_repo),
 ) -> list[MigrationRunResponse]:
     items, _ = await run_repo.list_runs(
@@ -133,6 +143,7 @@ async def list_runs(
         status=status,
         skip=skip,
         limit=limit,
+        campus_id=tenant.campus_id,
     )
     return [MigrationRunResponse.model_validate(r) for r in items]
 
@@ -141,9 +152,10 @@ async def list_runs(
 async def get_run(
     run_id: int,
     _: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_school_context),
     run_repo: MigrationRunRepository = Depends(_get_run_repo),
 ) -> MigrationRunResponse:
-    run = await run_repo.get_by_id(run_id)
+    run = await run_repo.get_by_id(run_id, campus_id=tenant.campus_id)
     if run is None:
         raise NotFoundError(f"Migration run {run_id} not found")
     return MigrationRunResponse.model_validate(run)
@@ -159,8 +171,14 @@ async def get_run_logs(
     skip: int = Query(0, ge=0),
     limit: int = Query(500, ge=1, le=5000),
     _: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_school_context),
+    run_repo: MigrationRunRepository = Depends(_get_run_repo),
     log_repo: MigrationLogRepository = Depends(_get_log_repo),
 ) -> list[MigrationLogResponse]:
+    # The run must exist in the caller's campus before any log is exposed.
+    run = await run_repo.get_by_id(run_id, campus_id=tenant.campus_id)
+    if run is None:
+        raise NotFoundError(f"Migration run {run_id} not found")
     items, _ = await log_repo.list_by_run(
         run_id,
         level=level,
@@ -174,9 +192,10 @@ async def get_run_logs(
 async def get_run_report(
     run_id: int,
     _: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_school_context),
     run_repo: MigrationRunRepository = Depends(_get_run_repo),
 ) -> MigrationSummary:
-    run = await run_repo.get_by_id(run_id)
+    run = await run_repo.get_by_id(run_id, campus_id=tenant.campus_id)
     if run is None:
         raise NotFoundError(f"Migration run {run_id} not found")
     return MigrationSummary(
@@ -195,12 +214,13 @@ async def get_run_report(
 async def get_run_report_text(
     run_id: int,
     _: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_school_context),
     session: AsyncSession = Depends(get_session),
 ) -> str:
     run_repo = MigrationRunRepository(session)
     log_repo = MigrationLogRepository(session)
 
-    run = await run_repo.get_by_id(run_id)
+    run = await run_repo.get_by_id(run_id, campus_id=tenant.campus_id)
     if run is None:
         raise NotFoundError(f"Migration run {run_id} not found")
 
@@ -236,10 +256,15 @@ async def get_run_report_text(
 async def plan_rollback(
     run_id: int,
     _: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_school_context),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
+    run_repo = MigrationRunRepository(session)
+    run = await run_repo.get_by_id(run_id, campus_id=tenant.campus_id)
+    if run is None:
+        raise NotFoundError(f"Migration run {run_id} not found")
     svc = RollbackService(session)
-    plan = await svc.plan_rollback(run_id)
+    plan = await svc.plan_rollback(run_id, campus_id=tenant.campus_id)
     return {
         "run_id": plan.run_id,
         "entity_type": plan.entity_type,
@@ -253,10 +278,15 @@ async def plan_rollback(
 async def execute_rollback(
     run_id: int,
     _: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(get_school_context),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
+    run_repo = MigrationRunRepository(session)
+    run = await run_repo.get_by_id(run_id, campus_id=tenant.campus_id)
+    if run is None:
+        raise NotFoundError(f"Migration run {run_id} not found")
     svc = RollbackService(session)
-    count = await svc.execute_rollback(run_id)
+    count = await svc.execute_rollback(run_id, campus_id=tenant.campus_id)
     return {"run_id": run_id, "records_removed": count}
 
 

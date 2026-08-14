@@ -191,7 +191,9 @@ def upgrade() -> None:
                 sa.text(
                     "INSERT INTO case_sla_configs "
                     "(campus_id, case_type, priority, after_hours, escalation_after_hours, enabled) "
-                    "VALUES (NULL, :t, :p, :a, :e, 1)"
+                    # enabled is BOOLEAN: PostgreSQL rejects the bare integer 1
+                    # (SQLite tolerates it), so use the SQL TRUE literal.
+                    "VALUES (NULL, :t, :p, :a, :e, TRUE)"
                 ),
                 {"t": case_type, "p": priority, "a": after, "e": escalation},
             )

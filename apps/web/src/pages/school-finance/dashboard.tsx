@@ -132,7 +132,7 @@ export const SchoolFinanceDashboardPage: React.FC = () => {
         <Card
           title="Outstanding Balances"
           actions={
-            <Link to="/school-finance/outstanding-balances" className="text-xs font-medium text-[var(--color-brand-accent)] hover:underline">
+            <Link to="/school-finance/outstanding" className="text-xs font-medium text-[var(--color-brand-accent)] hover:underline">
               View all
             </Link>
           }

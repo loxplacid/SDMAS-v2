@@ -7074,24 +7074,6 @@
       "checksums": [
         [
           "SHA512",
-          "d520e01fa6523d3960832d7223af836e48b3f31ce91c911502517f00cd6d1cf2ec7f9493a26f6bc2d8c4e21280176d057d75cd4c5a84617c893568751a265e75"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/aix-ppc64/-/aix-ppc64-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/aix-ppc64",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/aix-ppc64@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
           "1e19b077a0889d9dddc29b864c5f1f246eb2a169ac4e813ebd8803e27cad655c5cbb5ba51e9510440075509f3e375026dcccf8fb1381ca84284997f80fe0a990"
         ]
       ],
@@ -7105,24 +7087,6 @@
       "purl": "pkg:npm/%40esbuild/aix-ppc64@0.25.12",
       "source": "apps/web/package-lock.json",
       "version": "0.25.12"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
-          "bc23efcd28e93c7122d6c899765bc096c3f15e5ed66ce554041028c16ba0e2b2476faf0ec7c2ae6a507ed6870dbd3e5f8efeb0a645faa3f884a5b0eb7faf3372"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/android-arm/-/android-arm-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/android-arm",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/android-arm@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
     },
     {
       "checksums": [
@@ -7146,24 +7110,6 @@
       "checksums": [
         [
           "SHA512",
-          "734b97f55014050edd4c30a3abec1dc862e8c0c76d47f1a80b653921893fec3d47d49602d2ab1e0fbfb5d6230fda644b37d45c08c45c8c2e1831c942cc6c12fc"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/android-arm64/-/android-arm64-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/android-arm64",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/android-arm64@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
           "e800262c6ef3c03d59d79f6308a3ef03165de32fd54ced15929ad8cbedcdd85b49f3e0505855d4f8ec40448c00e3a739b5d0fd4ac28667fd6872a052fe000a1e"
         ]
       ],
@@ -7177,24 +7123,6 @@
       "purl": "pkg:npm/%40esbuild/android-arm64@0.25.12",
       "source": "apps/web/package-lock.json",
       "version": "0.25.12"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
-          "0fb68f45450d1d10701f1cf146fa7ce7aae35074455b549d4004ca5c7da1a80d240196f584a9a2d363a961169c9744f1206cff6665d695b6608f05986826a44c"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/android-x64/-/android-x64-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/android-x64",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/android-x64@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
     },
     {
       "checksums": [
@@ -7218,24 +7146,6 @@
       "checksums": [
         [
           "SHA512",
-          "0f0a97a99cae9390225967f751f2e2443279103778f7383a3bdc1c959ee450cbf659116be072a35e9ff9b7c259d7541b41f512ebf71108a1b0621b4d018f3c91"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/darwin-arm64",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/darwin-arm64@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
           "377ce5fa5c470a27e022570c50fe74d7a11291e4232e3ffde7d471c4d608b61220f82407227ba316e5de59b58c8274e8e1ca795d51ea14f9a9caef49eb90b562"
         ]
       ],
@@ -7249,24 +7159,6 @@
       "purl": "pkg:npm/%40esbuild/darwin-arm64@0.25.12",
       "source": "apps/web/package-lock.json",
       "version": "0.25.12"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
-          "b1efc98c5f0d9662951b890d22ec96315ff6d9969eac1faa6928b931dad7b5de91d3c92fb36a823780b4f668aea64b438adbe1f234457e5c0614141cc594636f"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/darwin-x64/-/darwin-x64-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/darwin-x64",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/darwin-x64@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
     },
     {
       "checksums": [
@@ -7290,24 +7182,6 @@
       "checksums": [
         [
           "SHA512",
-          "e49711c714435092d7f095e9ff07010b2de910d9c280147d6cde89b18e0e9a17d4b481dedd95b499ac00efe44301c30bacc21969fd373654225fd0c6c81f21e2"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/freebsd-arm64/-/freebsd-arm64-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/freebsd-arm64",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/freebsd-arm64@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
           "800d01c7be7dfbb26f7b4dcad52d2f90ebb92e0ffce5da2edc4b1e38651eb3c7e554e1b16e10c387f8996a87a4d7563c9adc8a3c6177bcff178679031009b37a"
         ]
       ],
@@ -7321,24 +7195,6 @@
       "purl": "pkg:npm/%40esbuild/freebsd-arm64@0.25.12",
       "source": "apps/web/package-lock.json",
       "version": "0.25.12"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
-          "27de643418f5ce46cc5ed1d51f6f5b06b890ca0317aa8550390600f884acd3fda5dd3f7f923e36a30da6a6a7ab441c432679a450309a413fdd7cd5d65ff65909"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/freebsd-x64/-/freebsd-x64-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/freebsd-x64",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/freebsd-x64@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
     },
     {
       "checksums": [
@@ -7362,24 +7218,6 @@
       "checksums": [
         [
           "SHA512",
-          "6cf6f900766d6de3468c229567d506a86c28f0452ee1c2eaebc13de40e772a5c403d1994c98bf60fa174b9423ae578ac18e2f58413f9993ae89db828fb46c570"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/linux-arm/-/linux-arm-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/linux-arm",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/linux-arm@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
           "94f0c6c82d493c3a2ef2419ccb06346082f35a58619d18dda1fdd495ca2a6264bd125f35f0b2df2497373d75e0647ac70802acfd9d92799b4326be4cae4c6d3b"
         ]
       ],
@@ -7393,24 +7231,6 @@
       "purl": "pkg:npm/%40esbuild/linux-arm@0.25.12",
       "source": "apps/web/package-lock.json",
       "version": "0.25.12"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
-          "89b2af9b26332ac05e5fc77c23b307fd331f5835c117775be2a33ab32fbbaded185f26be2b571e9b7a27f5781d4f611018cbb8850c9985a9fb4de43c5e41a9e1"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/linux-arm64/-/linux-arm64-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/linux-arm64",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/linux-arm64@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
     },
     {
       "checksums": [
@@ -7434,24 +7254,6 @@
       "checksums": [
         [
           "SHA512",
-          "62f8d70ea2d1a8f0e5d9dbd13836269a1cf8acf795298be9a5f198292346772664034d74e3aa4b5b244a288ddac7c7db2682b941bc5b954464c0afcc598d7c4e"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/linux-ia32/-/linux-ia32-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/linux-ia32",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/linux-ia32@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
           "d32f4aadd5676cc336fef1bc29f5346f285437e1050a7cbdfbc836d36818a924953289dbb027cb8d43beac2722ee933458112dcfea0afcf2301e4cf193285aac"
         ]
       ],
@@ -7465,24 +7267,6 @@
       "purl": "pkg:npm/%40esbuild/linux-ia32@0.25.12",
       "source": "apps/web/package-lock.json",
       "version": "0.25.12"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
-          "b877f5066306f2a12fcddaf302a8364881bfd36fb8fc31c1e9af4a6f26b45c3bf00c4282a02f19456239249bcd7548ed722046150e4fb8196910e5d08fe2504a"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/linux-loong64/-/linux-loong64-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/linux-loong64",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/linux-loong64@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
     },
     {
       "checksums": [
@@ -7506,24 +7290,6 @@
       "checksums": [
         [
           "SHA512",
-          "21a8ce98ef8a24adb76e3e7674548d08cb33d503f50ea33a7302d4bf75b5430cb193221679c7da7e7239e797ef486a842b08cc5d52e891c579ca01d6e5bdc96e"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/linux-mips64el/-/linux-mips64el-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/linux-mips64el",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/linux-mips64el@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
           "8b246b3353f3cbd1853032ec5e7d621d49b5f2784a9cd316b1c8e6a78fa1a5a7dc663aebd966d3fff776d316869635c30581ea45c97c1e7c5b5fab9a03f78657"
         ]
       ],
@@ -7537,24 +7303,6 @@
       "purl": "pkg:npm/%40esbuild/linux-mips64el@0.25.12",
       "source": "apps/web/package-lock.json",
       "version": "0.25.12"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
-          "d611d5fd9e0e11f330a4b3bcae9ec2be58410e78ec0b70adb495c88418bee408f9afe301bf2e1e820ef009b7bffe14ac4fe46f0c01bbb3cd6d02fa4bd97004e3"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/linux-ppc64/-/linux-ppc64-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/linux-ppc64",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/linux-ppc64@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
     },
     {
       "checksums": [
@@ -7578,24 +7326,6 @@
       "checksums": [
         [
           "SHA512",
-          "d877570cc77d18c8131ab3d69c9ccfd802d2a2413fd0ee4785352f5886c3dd8763304f09c2f4829cd1819d34e1286101f75399873ac9e2a208c64fd2066c830c"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/linux-riscv64/-/linux-riscv64-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/linux-riscv64",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/linux-riscv64@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
           "66beca478860294a560306f57f7a39ca04f4e0ccea56b18419718b9e3d796100c912b62efc11a0fb09859480ce749a743e607494bbf1148397660151add8d1d3"
         ]
       ],
@@ -7614,24 +7344,6 @@
       "checksums": [
         [
           "SHA512",
-          "ceeb39b31cea0490f7797c70be3375c909117a900d83113d960396daa2e79abf2290c4e98648e05eed47474d4ae05260f21d641040c0a8371942d6eb467078d4"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/linux-s390x/-/linux-s390x-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/linux-s390x",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/linux-s390x@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
           "32c2a770e7204cdbddb6221273f8d9b3f65ff1dd1c97fb77818597f09f6e6c19d53b0964eb9508104be004e4538a58e5a085a70732ece2a8733e425c8ad23322"
         ]
       ],
@@ -7645,24 +7357,6 @@
       "purl": "pkg:npm/%40esbuild/linux-s390x@0.25.12",
       "source": "apps/web/package-lock.json",
       "version": "0.25.12"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
-          "d6b61d4e9cafd378b2705d7e061cebcd024274eb803ad6aa1d35896425af8a3283d8de57bb44ed542f3ffb57da5aa70ff6204258e9a39a1a07f78747f360713d"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/linux-x64/-/linux-x64-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/linux-x64",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/linux-x64@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
     },
     {
       "checksums": [
@@ -7704,24 +7398,6 @@
       "checksums": [
         [
           "SHA512",
-          "5a88b6317cd78cc50b71c2303272dc8b2647e2708832959002cd38f4a11e32f39c3400d5c68d1404840f7d29b107709629e767820eec59974bbcb733a5ed2d2e"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/netbsd-x64/-/netbsd-x64-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/netbsd-x64",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/netbsd-x64@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
           "2dde694e5ccfcb763019e7383ae1e1d5a095091bce5dd1fc0e04637c3cbfa2e995a2f9ae4b359f9d2260f95b5a901f429b483134ef41cd6923ea6b4ed4531791"
         ]
       ],
@@ -7753,24 +7429,6 @@
       "purl": "pkg:npm/%40esbuild/openbsd-arm64@0.25.12",
       "source": "apps/web/package-lock.json",
       "version": "0.25.12"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
-          "1cb34dc3df71b2fc75da5141530a13f04542b12bd13435713698d9edb3e7f78edbf2024fcde1d6c8d56116c69eadcd27dd3b1b38836f44fd9bc936792ca7b3a3"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/openbsd-x64/-/openbsd-x64-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/openbsd-x64",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/openbsd-x64@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
     },
     {
       "checksums": [
@@ -7812,24 +7470,6 @@
       "checksums": [
         [
           "SHA512",
-          "ebe823985a5fcb40475394e9a6d92e87cfaec379a7aef82cf9d48f41740ebf77a46e8addc27cd35446f8aa722f41c617aba8339324e7a19f5d646f83e206ab2a"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/sunos-x64/-/sunos-x64-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/sunos-x64",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/sunos-x64@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
           "df0192083cae4c7414cedd2757b6e8703cbbdabda5237dd02f78240cd1a4a1ddb612c625d38b0c7f4a8b6fc96e34a4ce9a017f7831033f9045370a01287e38d7"
         ]
       ],
@@ -7843,24 +7483,6 @@
       "purl": "pkg:npm/%40esbuild/sunos-x64@0.25.12",
       "source": "apps/web/package-lock.json",
       "version": "0.25.12"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
-          "67480e4ddef956f5eacaaee7b25f77cf06a171344e82abee01c60352bfaf3aff2e1e13522913b253deb5920b420f57bde48a8f29240a1fbb414ec9674b7b40f0"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/win32-arm64/-/win32-arm64-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/win32-arm64",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/win32-arm64@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
     },
     {
       "checksums": [
@@ -7884,24 +7506,6 @@
       "checksums": [
         [
           "SHA512",
-          "4965c517508bd9154d31a56cf81042970b5f652bc382d2fffc6fec9b001ce6854afd43eed86bbdb486918059981452ab9a0dd2c808d2ac495fd13889d6ff1f60"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/win32-ia32/-/win32-ia32-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/win32-ia32",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/win32-ia32@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
           "1e4aa79a606809b0b0c5428a34f062c62583182a50195b2b41f26854660b3d3e355d617c947b84e4de9685589ada7e28e502b9338b58af6d7cdbb7cd862e1bc9"
         ]
       ],
@@ -7915,24 +7519,6 @@
       "purl": "pkg:npm/%40esbuild/win32-ia32@0.25.12",
       "source": "apps/web/package-lock.json",
       "version": "0.25.12"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
-          "b5077fd5e7c9bb33c2eab085c04bcbb5c8bfc4d15c4d9927997b3df056037c6138c0ff4294557df27c8aaf324a54f3217439e3ccb85d532317e0fb1000f8f023"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/@esbuild/win32-x64/-/win32-x64-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "@esbuild/win32-x64",
-      "origin": "registry",
-      "purl": "pkg:npm/%40esbuild/win32-x64@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
     },
     {
       "checksums": [
@@ -13955,6 +13541,33 @@
       "checksums": [
         [
           "SHA512",
+          "330e79f28780f5f15bbfae7fcb8987b570ecf5b3e714c6402ff8f174f154a4e1c72175fdd667201076d2e4b6a1afea7064547c03b19095e456788e9c1850b650"
+        ]
+      ],
+      "dependencies": [
+        {
+          "name": "@types/deep-eql",
+          "specifier": "*"
+        },
+        {
+          "name": "assertion-error",
+          "specifier": "^2.0.1"
+        }
+      ],
+      "download_url": "https://registry.npmjs.org/@types/chai/-/chai-5.2.3.tgz",
+      "ecosystem": "npm",
+      "is_direct": false,
+      "license_expression": "MIT",
+      "name": "@types/chai",
+      "origin": "registry",
+      "purl": "pkg:npm/%40types/chai@5.2.3",
+      "source": "apps/web/package-lock.json",
+      "version": "5.2.3"
+    },
+    {
+      "checksums": [
+        [
+          "SHA512",
           "e0a87d6ba0766d07220217fb152b8c45191459e709809bbd9cf9f1df2ce9b1f5d7fdce7444422aa476380bcd9b5cff74aab2ed5ed903c53668b183b75293b094"
         ]
       ],
@@ -14145,6 +13758,24 @@
       "purl": "pkg:npm/%40types/d3-timer@3.0.2",
       "source": "apps/web/package-lock.json",
       "version": "3.0.2"
+    },
+    {
+      "checksums": [
+        [
+          "SHA512",
+          "73d87d75554c8a030f7386f04ef0b9771aada8967040f78fb168cf96948e9e88dba2bea91aa764e78d657c0ec0a8542be6907505176ad23b98f5d6fcd41c3217"
+        ]
+      ],
+      "dependencies": [],
+      "download_url": "https://registry.npmjs.org/@types/deep-eql/-/deep-eql-4.0.2.tgz",
+      "ecosystem": "npm",
+      "is_direct": false,
+      "license_expression": "MIT",
+      "name": "@types/deep-eql",
+      "origin": "registry",
+      "purl": "pkg:npm/%40types/deep-eql@4.0.2",
+      "source": "apps/web/package-lock.json",
+      "version": "4.0.2"
     },
     {
       "checksums": [
@@ -14818,48 +14449,52 @@
       "checksums": [
         [
           "SHA512",
-          "50908891305e9c778a4f54d394a3095b2d656997b0b11233622821c98889299adeaad7714a8b3f4b5b7e92d44c416bb608aa9a6abae47accc9c757200b9b4667"
+          "13c7815da2a26eebc7da949912b3a37556f9bc5e0f6ca61cae796e053631124d65fd5861c1983591942c76d8eaf82b05e4217275fd91764cfb8c31ca4a2b22df"
         ]
       ],
       "dependencies": [
         {
+          "name": "@types/chai",
+          "specifier": "^5.2.2"
+        },
+        {
           "name": "@vitest/spy",
-          "specifier": "2.1.9"
+          "specifier": "3.2.7"
         },
         {
           "name": "@vitest/utils",
-          "specifier": "2.1.9"
+          "specifier": "3.2.7"
         },
         {
           "name": "chai",
-          "specifier": "^5.1.2"
+          "specifier": "^5.2.0"
         },
         {
           "name": "tinyrainbow",
-          "specifier": "^1.2.0"
+          "specifier": "^2.0.0"
         }
       ],
-      "download_url": "https://registry.npmjs.org/@vitest/expect/-/expect-2.1.9.tgz",
+      "download_url": "https://registry.npmjs.org/@vitest/expect/-/expect-3.2.7.tgz",
       "ecosystem": "npm",
       "is_direct": false,
       "license_expression": "MIT",
       "name": "@vitest/expect",
       "origin": "registry",
-      "purl": "pkg:npm/%40vitest/expect@2.1.9",
+      "purl": "pkg:npm/%40vitest/expect@3.2.7",
       "source": "apps/web/package-lock.json",
-      "version": "2.1.9"
+      "version": "3.2.7"
     },
     {
       "checksums": [
         [
           "SHA512",
-          "b552fab8982851d8ba89ca7199dae7e58368de0dc3c6ff881c906bd065c7684753730dc5f9c3ca9ec5c58658ba9cef9fffa48328f1c42b550dfa4f9342fd0486"
+          "4ebaf48583bd08cdd68fa92c5874612bd219a4863ac1330ee6efcca97bab3314f9eec58168e3c4b4fdceabad22859ba1e49b226a029fcfde4e7317443fa741ac"
         ]
       ],
       "dependencies": [
         {
           "name": "@vitest/spy",
-          "specifier": "2.1.9"
+          "specifier": "3.2.7"
         },
         {
           "name": "estree-walker",
@@ -14867,153 +14502,157 @@
         },
         {
           "name": "magic-string",
-          "specifier": "^0.30.12"
+          "specifier": "^0.30.17"
         }
       ],
-      "download_url": "https://registry.npmjs.org/@vitest/mocker/-/mocker-2.1.9.tgz",
+      "download_url": "https://registry.npmjs.org/@vitest/mocker/-/mocker-3.2.7.tgz",
       "ecosystem": "npm",
       "is_direct": false,
       "license_expression": "MIT",
       "name": "@vitest/mocker",
       "origin": "registry",
-      "purl": "pkg:npm/%40vitest/mocker@2.1.9",
+      "purl": "pkg:npm/%40vitest/mocker@3.2.7",
       "source": "apps/web/package-lock.json",
-      "version": "2.1.9"
+      "version": "3.2.7"
     },
     {
       "checksums": [
         [
           "SHA512",
-          "2a144874657653d1ce533c5f887998f081474ddaad3a12330a977c591749884ec3fc751c6550f41204025639be43d8245175a006f3264ed660206e3cc2aeec39"
+          "2941e5c2a56ed2c4658427723dd43fc01a137d16a18d4932d4cb9b3a6630f5f59f219cb580da07a6e69a4013c068c69561d4181c92eeaf38fc1020a3e4ec13a8"
         ]
       ],
       "dependencies": [
         {
           "name": "tinyrainbow",
-          "specifier": "^1.2.0"
+          "specifier": "^2.0.0"
         }
       ],
-      "download_url": "https://registry.npmjs.org/@vitest/pretty-format/-/pretty-format-2.1.9.tgz",
+      "download_url": "https://registry.npmjs.org/@vitest/pretty-format/-/pretty-format-3.2.7.tgz",
       "ecosystem": "npm",
       "is_direct": false,
       "license_expression": "MIT",
       "name": "@vitest/pretty-format",
       "origin": "registry",
-      "purl": "pkg:npm/%40vitest/pretty-format@2.1.9",
+      "purl": "pkg:npm/%40vitest/pretty-format@3.2.7",
       "source": "apps/web/package-lock.json",
-      "version": "2.1.9"
+      "version": "3.2.7"
     },
     {
       "checksums": [
         [
           "SHA512",
-          "657492a93148af376e0faddbb487c4c8e98d701990be0395b0f34f7b48d8b444a25e485df2ed9eac32e7331986ac30b01c208713b871c110c24f7a6dd1eb13e2"
+          "b01f72e28be5b6840ff966943f0992c4ef56220f4883af780e2e4f6a554fb181e4940744d36ee67a1a56176490495abe93ab0581a8af6d38d327064b4876de74"
         ]
       ],
       "dependencies": [
         {
           "name": "@vitest/utils",
-          "specifier": "2.1.9"
+          "specifier": "3.2.7"
         },
         {
           "name": "pathe",
-          "specifier": "^1.1.2"
+          "specifier": "^2.0.3"
+        },
+        {
+          "name": "strip-literal",
+          "specifier": "^3.0.0"
         }
       ],
-      "download_url": "https://registry.npmjs.org/@vitest/runner/-/runner-2.1.9.tgz",
+      "download_url": "https://registry.npmjs.org/@vitest/runner/-/runner-3.2.7.tgz",
       "ecosystem": "npm",
       "is_direct": false,
       "license_expression": "MIT",
       "name": "@vitest/runner",
       "origin": "registry",
-      "purl": "pkg:npm/%40vitest/runner@2.1.9",
+      "purl": "pkg:npm/%40vitest/runner@3.2.7",
       "source": "apps/web/package-lock.json",
-      "version": "2.1.9"
+      "version": "3.2.7"
     },
     {
       "checksums": [
         [
           "SHA512",
-          "a013bcdab123b312cd2629dc5612e16b1c59744b55d0414730ae4a9b1e6c27a1fd2f5f377471028e279f380767aa92204f9799c13d383e88205275bcf2f38135"
+          "ec2f8cc12870b41488e41bb0a32837b3f898d5e1cbf4f2807fe3b5c1587f4dd9e35d4b64a0bffd610b6b7bdd22e0cb4d5cce9e74fd70276cce0697c2ca1212ee"
         ]
       ],
       "dependencies": [
         {
           "name": "@vitest/pretty-format",
-          "specifier": "2.1.9"
+          "specifier": "3.2.7"
         },
         {
           "name": "magic-string",
-          "specifier": "^0.30.12"
+          "specifier": "^0.30.17"
         },
         {
           "name": "pathe",
-          "specifier": "^1.1.2"
+          "specifier": "^2.0.3"
         }
       ],
-      "download_url": "https://registry.npmjs.org/@vitest/snapshot/-/snapshot-2.1.9.tgz",
+      "download_url": "https://registry.npmjs.org/@vitest/snapshot/-/snapshot-3.2.7.tgz",
       "ecosystem": "npm",
       "is_direct": false,
       "license_expression": "MIT",
       "name": "@vitest/snapshot",
       "origin": "registry",
-      "purl": "pkg:npm/%40vitest/snapshot@2.1.9",
+      "purl": "pkg:npm/%40vitest/snapshot@3.2.7",
       "source": "apps/web/package-lock.json",
-      "version": "2.1.9"
+      "version": "3.2.7"
     },
     {
       "checksums": [
         [
           "SHA512",
-          "135077e45c335d74ecf451cd2ba6c3b33b3b9adc9d362e4c21f516a5c789f176df6f580132c7009f02db12ef81e3879de96dd78cbf7f7a12cf1d1d5f91fd4a2d"
+          "436790188e9dd8bfe106d674a8db8a7001a277af172ba72fd71b2868899ae8f6898473e8a9c109858a5767fe66c8232a90d82d3fa50ab8185b7349c72a7ae4b9"
         ]
       ],
       "dependencies": [
         {
           "name": "tinyspy",
-          "specifier": "^3.0.2"
+          "specifier": "^4.0.3"
         }
       ],
-      "download_url": "https://registry.npmjs.org/@vitest/spy/-/spy-2.1.9.tgz",
+      "download_url": "https://registry.npmjs.org/@vitest/spy/-/spy-3.2.7.tgz",
       "ecosystem": "npm",
       "is_direct": false,
       "license_expression": "MIT",
       "name": "@vitest/spy",
       "origin": "registry",
-      "purl": "pkg:npm/%40vitest/spy@2.1.9",
+      "purl": "pkg:npm/%40vitest/spy@3.2.7",
       "source": "apps/web/package-lock.json",
-      "version": "2.1.9"
+      "version": "3.2.7"
     },
     {
       "checksums": [
         [
           "SHA512",
-          "bf4a6c68c4a4349dc0d8d32b5041c547326d0cf167fbf5566795b1226076d53f5f8ee7094664bbc424b7a691270116fdcb5d4e033683f8fd8fb3e6fe0465f989"
+          "c7a04339deddca8dcf14b63723dfc7276e57ffa3aeae1197936fc1f6039934f17b5c35637812b8934d65404e6ebc3a5bba1784ae1f75a98b84d44d8e1232b747"
         ]
       ],
       "dependencies": [
         {
           "name": "@vitest/pretty-format",
-          "specifier": "2.1.9"
+          "specifier": "3.2.7"
         },
         {
           "name": "loupe",
-          "specifier": "^3.1.2"
+          "specifier": "^3.1.4"
         },
         {
           "name": "tinyrainbow",
-          "specifier": "^1.2.0"
+          "specifier": "^2.0.0"
         }
       ],
-      "download_url": "https://registry.npmjs.org/@vitest/utils/-/utils-2.1.9.tgz",
+      "download_url": "https://registry.npmjs.org/@vitest/utils/-/utils-3.2.7.tgz",
       "ecosystem": "npm",
       "is_direct": false,
       "license_expression": "MIT",
       "name": "@vitest/utils",
       "origin": "registry",
-      "purl": "pkg:npm/%40vitest/utils@2.1.9",
+      "purl": "pkg:npm/%40vitest/utils@3.2.7",
       "source": "apps/web/package-lock.json",
-      "version": "2.1.9"
+      "version": "3.2.7"
     },
     {
       "checksums": [
@@ -15240,24 +14879,6 @@
       "purl": "pkg:npm/acorn-walk@8.3.5",
       "source": "apps/mobile/package-lock.json",
       "version": "8.3.5"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
-          "ca7678c3f9d452fe6baec47c5141a87b5542f61663e95e6153d430d4794c0c9184270e52ed37d312b5938cccace8ceefaf461670faacdea02be2cb349c37cff8"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/adler-32/-/adler-32-1.3.1.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "Apache-2.0",
-      "name": "adler-32",
-      "origin": "registry",
-      "purl": "pkg:npm/adler-32@1.3.1",
-      "source": "apps/web/package-lock.json",
-      "version": "1.3.1"
     },
     {
       "checksums": [
@@ -17322,7 +16943,7 @@
       "checksums": [
         [
           "SHA512",
-          "0d1771e6778db06fd05db9e22c55a2d98982ffaf2878e3a62b3eb33a3564e994b564b5e02c82aa54473a856b2692305b8228b44b06814dc2795ca8f983363fe0"
+          "8467d5ccfc6d85b7f7fb6ca383f441b3ad1c074161a814bfcef755ff8c27e3f0663746cd30c1cf73857f05b1627aa7f54ca0061801e76387928da8c29747f65e"
         ]
       ],
       "dependencies": [
@@ -17331,21 +16952,21 @@
           "specifier": "^1.0.0"
         }
       ],
-      "download_url": "https://registry.npmjs.org/brace-expansion/-/brace-expansion-2.1.3.tgz",
+      "download_url": "https://registry.npmjs.org/brace-expansion/-/brace-expansion-2.1.4.tgz",
       "ecosystem": "npm",
       "is_direct": false,
       "license_expression": "MIT",
       "name": "brace-expansion",
       "origin": "registry",
-      "purl": "pkg:npm/brace-expansion@2.1.3",
+      "purl": "pkg:npm/brace-expansion@2.1.4",
       "source": "apps/web/package-lock.json",
-      "version": "2.1.3"
+      "version": "2.1.4"
     },
     {
       "checksums": [
         [
           "SHA512",
-          "259c83caadc3e005227ca4cf381ec310b7fa5ec07759d3ee3710ada1bd6f1573ec49785d0221c1589fed27c1c073d687f3804afb924564b36424ac771bd93342"
+          "49c43822ebc8105d533253fb66dfaf8c9ffff7394f6f64837315b13376e4f2ceade8619d27b28ed5d09c4e274e3c929e3d6df42c4ff6713ef00b23e1a3dfd6c6"
         ]
       ],
       "dependencies": [
@@ -17354,15 +16975,15 @@
           "specifier": "^4.0.2"
         }
       ],
-      "download_url": "https://registry.npmjs.org/brace-expansion/-/brace-expansion-5.0.8.tgz",
+      "download_url": "https://registry.npmjs.org/brace-expansion/-/brace-expansion-5.0.9.tgz",
       "ecosystem": "npm",
       "is_direct": false,
       "license_expression": "MIT",
       "name": "brace-expansion",
       "origin": "registry",
-      "purl": "pkg:npm/brace-expansion@5.0.8",
+      "purl": "pkg:npm/brace-expansion@5.0.9",
       "source": "apps/web/package-lock.json",
-      "version": "5.0.8"
+      "version": "5.0.9"
     },
     {
       "checksums": [
@@ -18122,33 +17743,6 @@
       "checksums": [
         [
           "SHA512",
-          "29f75466c48ec35f7f39b1166acbc13ff01ce2b799bc019ab9986ce92fe0a8d857848edc2b0be51fbba58fe74e1189dc6b86e6e121a8f02d5b4c042f9d38e040"
-        ]
-      ],
-      "dependencies": [
-        {
-          "name": "adler-32",
-          "specifier": "~1.3.0"
-        },
-        {
-          "name": "crc-32",
-          "specifier": "~1.2.0"
-        }
-      ],
-      "download_url": "https://registry.npmjs.org/cfb/-/cfb-1.2.2.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "Apache-2.0",
-      "name": "cfb",
-      "origin": "registry",
-      "purl": "pkg:npm/cfb@1.2.2",
-      "source": "apps/web/package-lock.json",
-      "version": "1.2.2"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
           "e333617490ff88e8d21f4034e5e6be29ee8c5399a6a5071b42c48e92075a50c27dcd39434c3fc6625c28866204daed206b11d88951c49f5170f6667f92d25683"
         ]
       ],
@@ -18694,24 +18288,6 @@
       "purl": "pkg:npm/co@4.6.0",
       "source": "apps/mobile/package-lock.json",
       "version": "4.6.0"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
-          "de0e8d5133ddfd8b6eb86ae132738c46315cf8b270fdb9cca77fb4aff59ccf721752e0a8b0a449bcca619b9f90f9bbd354670926e46f54bb986daf96a2368568"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/codepage/-/codepage-1.15.0.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "Apache-2.0",
-      "name": "codepage",
-      "origin": "registry",
-      "purl": "pkg:npm/codepage@1.15.0",
-      "source": "apps/web/package-lock.json",
-      "version": "1.15.0"
     },
     {
       "checksums": [
@@ -19422,24 +18998,6 @@
       "purl": "pkg:npm/cosmiconfig@5.2.1",
       "source": "apps/mobile/package-lock.json",
       "version": "5.2.1"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
-          "44e9b308aad39cec326cf709029000e960568a3db71d57c654d2aaaab669bb264e1ea2b60b01d2be91aecadfd434dbda22311df17e48146a78321f887b520725"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/crc-32/-/crc-32-1.2.2.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "Apache-2.0",
-      "name": "crc-32",
-      "origin": "registry",
-      "purl": "pkg:npm/crc-32@1.2.2",
-      "source": "apps/web/package-lock.json",
-      "version": "1.2.2"
     },
     {
       "checksums": [
@@ -21170,19 +20728,19 @@
       "checksums": [
         [
           "SHA512",
-          "cd0bc67adf19dac59b4210a67c5cff4f94161f6a019a39ea2b7aaf3a36aa68d2eb2c417dd7659a994fa88674e9d1309ea7f305547a5d26e09911d14e7539c416"
+          "daf998228aa3cded9dfa46a43fc4bf9d2e6c85fb25e7cee4cf012370695376292c5158051e7142b0b603563fc936a2553906464980539aec9cbf43e87709a731"
         ]
       ],
       "dependencies": [],
-      "download_url": "https://registry.npmjs.org/dompurify/-/dompurify-3.4.12.tgz",
+      "download_url": "https://registry.npmjs.org/dompurify/-/dompurify-3.4.13.tgz",
       "ecosystem": "npm",
       "is_direct": false,
       "license_expression": "(MPL-2.0 OR Apache-2.0)",
       "name": "dompurify",
       "origin": "registry",
-      "purl": "pkg:npm/dompurify@3.4.12",
+      "purl": "pkg:npm/dompurify@3.4.13",
       "source": "apps/web/package-lock.json",
-      "version": "3.4.12"
+      "version": "3.4.13"
     },
     {
       "checksums": [
@@ -22521,24 +22079,6 @@
       "checksums": [
         [
           "SHA512",
-          "9a0dce3cc578857cb0c29a03c6edd075ae7108a422faf09366af12f49fc4a64841d87cca5eae12345644dfe34af77258c5cf153127a9fa5394482fd154a681ab"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/esbuild/-/esbuild-0.21.5.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "esbuild",
-      "origin": "registry",
-      "purl": "pkg:npm/esbuild@0.21.5",
-      "source": "apps/web/package-lock.json",
-      "version": "0.21.5"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
           "6db3c1618aed65b92de8eb3a1624cb093171beae2db7724a6a5975bd1c2c840ddf755cedb0b01ab45699a1b864042f3f06b3deb686b4a24b18a0a5e81b8af226"
         ]
       ],
@@ -23758,19 +23298,19 @@
       "checksums": [
         [
           "SHA512",
-          "f099db910e23b83caf62ce26805190aa0e32098b450ed52d9a9d90210ab5d5965ee42150e7072a9b5aea0e0021fd074cc92b819cfccc5222543591b937f02243"
+          "807c00d4ef4b0c870aba730a84e6d2fc78a6c2d7a13b59cf50408a02ee53a4a81a3b5f5f716125e1b96259ed635b1545bc85f3b498e34382fc5d0d4453d7fb27"
         ]
       ],
       "dependencies": [],
-      "download_url": "https://registry.npmjs.org/fast-uri/-/fast-uri-3.1.4.tgz",
+      "download_url": "https://registry.npmjs.org/fast-uri/-/fast-uri-3.1.5.tgz",
       "ecosystem": "npm",
       "is_direct": false,
       "license_expression": "BSD-3-Clause",
       "name": "fast-uri",
       "origin": "registry",
-      "purl": "pkg:npm/fast-uri@3.1.4",
+      "purl": "pkg:npm/fast-uri@3.1.5",
       "source": "apps/web/package-lock.json",
-      "version": "3.1.4"
+      "version": "3.1.5"
     },
     {
       "checksums": [
@@ -24541,24 +24081,6 @@
       "purl": "pkg:npm/form-data@4.0.6",
       "source": "apps/web/package-lock.json",
       "version": "4.0.6"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
-          "c3f5c17e489b693977603a804b07c352a9276b8676a7d7054abd5a1c3b745a83131029d17c13afd9602b95920b96a8169667489402d71a933600e8449395b720"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/frac/-/frac-1.1.2.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "Apache-2.0",
-      "name": "frac",
-      "origin": "registry",
-      "purl": "pkg:npm/frac@1.1.2",
-      "source": "apps/web/package-lock.json",
-      "version": "1.1.2"
     },
     {
       "checksums": [
@@ -30993,6 +30515,24 @@
       "checksums": [
         [
           "SHA512",
+          "9b16bd13d21314eb746da9f78fa2f93298f07a01b3ea505098cd4826459e05919c331b68e74f9e59d8c2ff9db10db4b6bf2d24eef20c2b415edb07cbf4e412a5"
+        ]
+      ],
+      "dependencies": [],
+      "download_url": "https://registry.npmjs.org/js-tokens/-/js-tokens-9.0.1.tgz",
+      "ecosystem": "npm",
+      "is_direct": false,
+      "license_expression": "MIT",
+      "name": "js-tokens",
+      "origin": "registry",
+      "purl": "pkg:npm/js-tokens@9.0.1",
+      "source": "apps/web/package-lock.json",
+      "version": "9.0.1"
+    },
+    {
+      "checksums": [
+        [
+          "SHA512",
           "b6d05020840f0de2e3a4f3a886d51d5ee5d4568036b8807a7c41fd1f227bdb7e2ce66049e704f1db49e3c6994b65080b68e7e998f400ed7dade405fab483dba2"
         ]
       ],
@@ -34449,19 +33989,19 @@
       "checksums": [
         [
           "SHA512",
-          "6f394a4f2349efe2dd188230cbc8a316922a11022f69f6a157b798ca427c0af878d8474978e0e827a814257a5026f7a3d4175d1fc3aa4d764d13f29f6d602ef1"
+          "0d38383096c631691f8ba55915d36ddbf71a31b432e0ebbe3a9fe1250bc611672755fa00d5003ec7344a033c3d8c3ebe19538e798aff98872e0d276e83a17afb"
         ]
       ],
       "dependencies": [],
-      "download_url": "https://registry.npmjs.org/nanoid/-/nanoid-3.3.16.tgz",
+      "download_url": "https://registry.npmjs.org/nanoid/-/nanoid-3.3.18.tgz",
       "ecosystem": "npm",
       "is_direct": false,
       "license_expression": "MIT",
       "name": "nanoid",
       "origin": "registry",
-      "purl": "pkg:npm/nanoid@3.3.16",
+      "purl": "pkg:npm/nanoid@3.3.18",
       "source": "apps/web/package-lock.json",
-      "version": "3.3.16"
+      "version": "3.3.18"
     },
     {
       "checksums": [
@@ -36199,19 +35739,19 @@
       "checksums": [
         [
           "SHA512",
-          "c212dd58c60bd93c08d3c867f3f66a01bad57a6bb42cd68d349657ef73baa9a21d0937d7badb0b84c923744357d2a86c43db888a6a38fda40e997928a27da70d"
+          "5948c6700a8fd6041a72841ef8e049b0503b2dde03c97b9422367971cef970b1ef27b76d36c4ee8298712000f0b294be02b68051e3c22ab495b4f2c58ff17cf3"
         ]
       ],
       "dependencies": [],
-      "download_url": "https://registry.npmjs.org/pathe/-/pathe-1.1.2.tgz",
+      "download_url": "https://registry.npmjs.org/pathe/-/pathe-2.0.3.tgz",
       "ecosystem": "npm",
       "is_direct": false,
       "license_expression": "MIT",
       "name": "pathe",
       "origin": "registry",
-      "purl": "pkg:npm/pathe@1.1.2",
+      "purl": "pkg:npm/pathe@2.0.3",
       "source": "apps/web/package-lock.json",
-      "version": "1.1.2"
+      "version": "2.0.3"
     },
     {
       "checksums": [
@@ -37844,7 +37384,7 @@
       "checksums": [
         [
           "SHA512",
-          "1832e08378b7b8cd1a7893b7166f93092fac0d0ee0bb5d93eb1d2a753133730a847e579c8bb270ba054d205dd4fffd0558a9c94fba6d1bedb40768df0ea9d902"
+          "69454c8c59b71803d34d92fba18af913b1138aa7d008744b1fe07ee5a7e7202bdfd2bee490ae1e47a48cbb06d24c9c3feedfb5da4853fca6a18a3e3d7ea38222"
         ]
       ],
       "dependencies": [
@@ -37857,38 +37397,38 @@
           "specifier": "^2.6.0"
         }
       ],
-      "download_url": "https://registry.npmjs.org/react-router/-/react-router-7.18.1.tgz",
+      "download_url": "https://registry.npmjs.org/react-router/-/react-router-7.18.2.tgz",
       "ecosystem": "npm",
       "is_direct": false,
       "license_expression": "MIT",
       "name": "react-router",
       "origin": "registry",
-      "purl": "pkg:npm/react-router@7.18.1",
+      "purl": "pkg:npm/react-router@7.18.2",
       "source": "apps/web/package-lock.json",
-      "version": "7.18.1"
+      "version": "7.18.2"
     },
     {
       "checksums": [
         [
           "SHA512",
-          "29a661f97ffa52d129dbcc79d40518643320f4d1a8cf68daddd3476beb5afed938d2f0b32a143f472a4258130b6e60ebebffc4db856fe6e3ecaea5c5a3376402"
+          "008289fe38069456f711b7c25e4e46cec862c2dfa5de6a9b0ab36398458c323a90c4d277b2f05ae9b833172082d92c37440d15585d64837b907f63858716fc87"
         ]
       ],
       "dependencies": [
         {
           "name": "react-router",
-          "specifier": "7.18.1"
+          "specifier": "7.18.2"
         }
       ],
-      "download_url": "https://registry.npmjs.org/react-router-dom/-/react-router-dom-7.18.1.tgz",
+      "download_url": "https://registry.npmjs.org/react-router-dom/-/react-router-dom-7.18.2.tgz",
       "ecosystem": "npm",
       "is_direct": true,
       "license_expression": "MIT",
       "name": "react-router-dom",
       "origin": "registry",
-      "purl": "pkg:npm/react-router-dom@7.18.1",
+      "purl": "pkg:npm/react-router-dom@7.18.2",
       "source": "apps/web/package-lock.json",
-      "version": "7.18.1"
+      "version": "7.18.2"
     },
     {
       "checksums": [
@@ -41283,29 +40823,6 @@
       "checksums": [
         [
           "SHA512",
-          "fa275b9885e86044f8ee11fe77b75f9b67a974e3140e3a9c078eb8f2c4d9fadd89c28c8114bfe29ec2df07fada72b0e6b0a077762c2c0c0ebdea964c89e002e6"
-        ]
-      ],
-      "dependencies": [
-        {
-          "name": "frac",
-          "specifier": "~1.1.2"
-        }
-      ],
-      "download_url": "https://registry.npmjs.org/ssf/-/ssf-0.11.2.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "Apache-2.0",
-      "name": "ssf",
-      "origin": "registry",
-      "purl": "pkg:npm/ssf@0.11.2",
-      "source": "apps/web/package-lock.json",
-      "version": "0.11.2"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
           "306ac51fd67834ff48ca1aa7d7ab03b41a5144d27463684d6ba0fae61ef7e9f55268f087af80cce2c59436f55a4ae0bed0e046870b2bc9d4309a07e0e4b9dca9"
         ]
       ],
@@ -42419,6 +41936,29 @@
       "checksums": [
         [
           "SHA512",
+          "f2bde690833fdbe3e98c7a0eb62016f118378c92c7695ef13f01be6111abbfa14fd30c24feda13a404f1598396d0129d5b097cd954f6b45622e4395139ad0cc6"
+        ]
+      ],
+      "dependencies": [
+        {
+          "name": "js-tokens",
+          "specifier": "^9.0.1"
+        }
+      ],
+      "download_url": "https://registry.npmjs.org/strip-literal/-/strip-literal-3.1.0.tgz",
+      "ecosystem": "npm",
+      "is_direct": false,
+      "license_expression": "MIT",
+      "name": "strip-literal",
+      "origin": "registry",
+      "purl": "pkg:npm/strip-literal@3.1.0",
+      "source": "apps/web/package-lock.json",
+      "version": "3.1.0"
+    },
+    {
+      "checksums": [
+        [
+          "SHA512",
           "beb37e07b0c12284d36639cf35ec30871e9c040fc7f884bbadf5baf27ed7c42d72eeea2219007168aceab9c19481abd7d797498221b3b4b27cbf1b84cf0a8174"
         ]
       ],
@@ -43326,37 +42866,37 @@
       "checksums": [
         [
           "SHA512",
-          "c1e10312aed9e5e4c73c3878c635fbf3df9f1df17e3fc6e888507ed2f6d6ce96e76ec12bfc645aa218bfb8c2b183c4593179e5d48b408bf2141d632c8c357b91"
+          "a29e27b13478ed1ea9d2f314528625fdafa58cb155b657da5e42d09aa7cb475a8799ad61ff2b189388445d9f3cd1b7f6098813b24bd36bf7b5f7a55de5d0d05f"
         ]
       ],
       "dependencies": [],
-      "download_url": "https://registry.npmjs.org/tinyrainbow/-/tinyrainbow-1.2.0.tgz",
+      "download_url": "https://registry.npmjs.org/tinyrainbow/-/tinyrainbow-2.0.0.tgz",
       "ecosystem": "npm",
       "is_direct": false,
       "license_expression": "MIT",
       "name": "tinyrainbow",
       "origin": "registry",
-      "purl": "pkg:npm/tinyrainbow@1.2.0",
+      "purl": "pkg:npm/tinyrainbow@2.0.0",
       "source": "apps/web/package-lock.json",
-      "version": "1.2.0"
+      "version": "2.0.0"
     },
     {
       "checksums": [
         [
           "SHA512",
-          "9f5730f24d64d31e29800dbef57ace905c9d4deacd709d735823b9367f6c7161d30fee6da7c760853db1d6e76e41e3d94d981ddd3ba97fec7d0712637898bbed"
+          "6b397eb74cfba70ff3f79f06cbdb2f393bb3a8893ac6af8d4a1789ce7e4c316b564c5cb021a720db0525cca146b6dddcb61c74af64b130ad32cc9391d08112ed"
         ]
       ],
       "dependencies": [],
-      "download_url": "https://registry.npmjs.org/tinyspy/-/tinyspy-3.0.2.tgz",
+      "download_url": "https://registry.npmjs.org/tinyspy/-/tinyspy-4.0.4.tgz",
       "ecosystem": "npm",
       "is_direct": false,
       "license_expression": "MIT",
       "name": "tinyspy",
       "origin": "registry",
-      "purl": "pkg:npm/tinyspy@3.0.2",
+      "purl": "pkg:npm/tinyspy@4.0.4",
       "source": "apps/web/package-lock.json",
-      "version": "3.0.2"
+      "version": "4.0.4"
     },
     {
       "checksums": [
@@ -45217,37 +44757,6 @@
       "checksums": [
         [
           "SHA512",
-          "a396bdc4a8dbb6e858e818b94b7f87bdb444466a2e69b59bc947295d7500d6ef863542a844e8bd6f2389f0cd271db1d81e46080a2325ab1920d4a9189a6db94b"
-        ]
-      ],
-      "dependencies": [
-        {
-          "name": "esbuild",
-          "specifier": "^0.21.3"
-        },
-        {
-          "name": "postcss",
-          "specifier": "^8.4.43"
-        },
-        {
-          "name": "rollup",
-          "specifier": "^4.20.0"
-        }
-      ],
-      "download_url": "https://registry.npmjs.org/vite/-/vite-5.4.21.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "MIT",
-      "name": "vite",
-      "origin": "registry",
-      "purl": "pkg:npm/vite@5.4.21",
-      "source": "apps/web/package-lock.json",
-      "version": "5.4.21"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
           "3532a57108e500aecc950a326fa2e06aa1dcf2cb28fe9572509616330b378e0db5b93270fcb75da8814f70fa8fe8fce981b21c672288f39b051381c1ad00c0f0"
         ]
       ],
@@ -45291,7 +44800,7 @@
       "checksums": [
         [
           "SHA512",
-          "00cf5a43f20fad6ffa10d2d08370066382b53764c665d4797b882efcc9a6476c51dcb975f9d89bfa7a2893dda0e135773d75727b2c5d5b0b5a0808942f484cc4"
+          "11b2922a1f9b875135205c5e3b4a60d67e1dbe8393b7450389731dfea9fefabf7cfa33ced71b498a5bd795d7ae43c822201e489298c280c95e1cc344b061faa6"
         ]
       ],
       "dependencies": [
@@ -45301,30 +44810,30 @@
         },
         {
           "name": "debug",
-          "specifier": "^4.3.7"
+          "specifier": "^4.4.1"
         },
         {
           "name": "es-module-lexer",
-          "specifier": "^1.5.4"
+          "specifier": "^1.7.0"
         },
         {
           "name": "pathe",
-          "specifier": "^1.1.2"
+          "specifier": "^2.0.3"
         },
         {
           "name": "vite",
-          "specifier": "^5.0.0"
+          "specifier": "^5.0.0 || ^6.0.0 || ^7.0.0-0"
         }
       ],
-      "download_url": "https://registry.npmjs.org/vite-node/-/vite-node-2.1.9.tgz",
+      "download_url": "https://registry.npmjs.org/vite-node/-/vite-node-3.2.4.tgz",
       "ecosystem": "npm",
       "is_direct": false,
       "license_expression": "MIT",
       "name": "vite-node",
       "origin": "registry",
-      "purl": "pkg:npm/vite-node@2.1.9",
+      "purl": "pkg:npm/vite-node@3.2.4",
       "source": "apps/web/package-lock.json",
-      "version": "2.1.9"
+      "version": "3.2.4"
     },
     {
       "checksums": [
@@ -45369,61 +44878,69 @@
       "checksums": [
         [
           "SHA512",
-          "31298f33d44462a0c6048f38dfd980e265a1579b0a9839412962186c0de545bd8f4c70021349a02b003cc90db1abdbf10d3ba4e223eb102040116d9aa055d8d1"
+          "2abc4827ad8577cf607f2b11e16a2d960640062cf676a14f82a1b35fbb3e0b0b2a2c5a26447efbefb65cace0faf9654087b9213d03f8d40f8129ba5c245add12"
         ]
       ],
       "dependencies": [
         {
+          "name": "@types/chai",
+          "specifier": "^5.2.2"
+        },
+        {
           "name": "@vitest/expect",
-          "specifier": "2.1.9"
+          "specifier": "3.2.7"
         },
         {
           "name": "@vitest/mocker",
-          "specifier": "2.1.9"
+          "specifier": "3.2.7"
         },
         {
           "name": "@vitest/pretty-format",
-          "specifier": "^2.1.9"
+          "specifier": "^3.2.7"
         },
         {
           "name": "@vitest/runner",
-          "specifier": "2.1.9"
+          "specifier": "3.2.7"
         },
         {
           "name": "@vitest/snapshot",
-          "specifier": "2.1.9"
+          "specifier": "3.2.7"
         },
         {
           "name": "@vitest/spy",
-          "specifier": "2.1.9"
+          "specifier": "3.2.7"
         },
         {
           "name": "@vitest/utils",
-          "specifier": "2.1.9"
+          "specifier": "3.2.7"
         },
         {
           "name": "chai",
-          "specifier": "^5.1.2"
+          "specifier": "^5.2.0"
         },
         {
           "name": "debug",
-          "specifier": "^4.3.7"
+          "specifier": "^4.4.1"
         },
         {
           "name": "expect-type",
-          "specifier": "^1.1.0"
+          "specifier": "^1.2.1"
         },
         {
           "name": "magic-string",
-          "specifier": "^0.30.12"
+          "specifier": "^0.30.17"
         },
         {
           "name": "pathe",
-          "specifier": "^1.1.2"
+          "specifier": "^2.0.3"
+        },
+        {
+          "name": "picomatch",
+          "specifier": "^4.0.2"
         },
         {
           "name": "std-env",
-          "specifier": "^3.8.0"
+          "specifier": "^3.9.0"
         },
         {
           "name": "tinybench",
@@ -45431,38 +44948,42 @@
         },
         {
           "name": "tinyexec",
-          "specifier": "^0.3.1"
+          "specifier": "^0.3.2"
+        },
+        {
+          "name": "tinyglobby",
+          "specifier": "^0.2.14"
         },
         {
           "name": "tinypool",
-          "specifier": "^1.0.1"
+          "specifier": "^1.1.1"
         },
         {
           "name": "tinyrainbow",
-          "specifier": "^1.2.0"
+          "specifier": "^2.0.0"
         },
         {
           "name": "vite",
-          "specifier": "^5.0.0"
+          "specifier": "^5.0.0 || ^6.0.0 || ^7.0.0-0"
         },
         {
           "name": "vite-node",
-          "specifier": "2.1.9"
+          "specifier": "3.2.4"
         },
         {
           "name": "why-is-node-running",
           "specifier": "^2.3.0"
         }
       ],
-      "download_url": "https://registry.npmjs.org/vitest/-/vitest-2.1.9.tgz",
+      "download_url": "https://registry.npmjs.org/vitest/-/vitest-3.2.7.tgz",
       "ecosystem": "npm",
       "is_direct": false,
       "license_expression": "MIT",
       "name": "vitest",
       "origin": "registry",
-      "purl": "pkg:npm/vitest@2.1.9",
+      "purl": "pkg:npm/vitest@3.2.7",
       "source": "apps/web/package-lock.json",
-      "version": "2.1.9"
+      "version": "3.2.7"
     },
     {
       "checksums": [
@@ -46419,24 +45940,6 @@
       "checksums": [
         [
           "SHA512",
-          "fe9f4aedb121d038fa59b5e0e091b4c6f2d098869dae77abd5b8b8e553094df9db547b1cef221a8d9ca84a82bad3f76d541b35d859ba5a4508e7fdd6015b0d33"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/wmf/-/wmf-1.0.2.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "Apache-2.0",
-      "name": "wmf",
-      "origin": "registry",
-      "purl": "pkg:npm/wmf@1.0.2",
-      "source": "apps/web/package-lock.json",
-      "version": "1.0.2"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
           "5342144072975e7e8f168f67aac1e9855084e66dc89eda99341f498e7ec407596b47b6130d8dd85a016f12fc27893cd74af387fd73330196887c917f2ef1d85e"
         ]
       ],
@@ -46450,24 +45953,6 @@
       "purl": "pkg:npm/wonka@4.0.15",
       "source": "apps/mobile/package-lock.json",
       "version": "4.0.15"
-    },
-    {
-      "checksums": [
-        [
-          "SHA512",
-          "3842de63443ad4e5e97547d3a7ea30780fefb4b560e550ce5e1fb785edcf3732c61bfcb4a32952382d714558f4fa5e2f437b63fdb0751d51efd6871791071e14"
-        ]
-      ],
-      "dependencies": [],
-      "download_url": "https://registry.npmjs.org/word/-/word-0.3.0.tgz",
-      "ecosystem": "npm",
-      "is_direct": false,
-      "license_expression": "Apache-2.0",
-      "name": "word",
-      "origin": "registry",
-      "purl": "pkg:npm/word@0.3.0",
-      "source": "apps/web/package-lock.json",
-      "version": "0.3.0"
     },
     {
       "checksums": [
@@ -47335,48 +46820,19 @@
       "checksums": [
         [
           "SHA512",
-          "7668372c28c13c7667429e7f17ffa79d36be9a23c9c545c1eafb64e3662304129ac8335a8311847887560299183ce7f7677a66de4eb62a78f3a7b94c79312d15"
+          "a0b0eade3c3b01c2ea2961f60210a9553665f267fa5f661178ff8d7a1d12254cd5fc1759623b61f78b46e6da22301d4f3eb62dc4e09f6a850292fb6e1fedc024"
         ]
       ],
-      "dependencies": [
-        {
-          "name": "adler-32",
-          "specifier": "~1.3.0"
-        },
-        {
-          "name": "cfb",
-          "specifier": "~1.2.1"
-        },
-        {
-          "name": "codepage",
-          "specifier": "~1.15.0"
-        },
-        {
-          "name": "crc-32",
-          "specifier": "~1.2.1"
-        },
-        {
-          "name": "ssf",
-          "specifier": "~0.11.2"
-        },
-        {
-          "name": "wmf",
-          "specifier": "~1.0.1"
-        },
-        {
-          "name": "word",
-          "specifier": "~0.3.0"
-        }
-      ],
-      "download_url": "https://registry.npmjs.org/xlsx/-/xlsx-0.18.5.tgz",
+      "dependencies": [],
+      "download_url": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
       "ecosystem": "npm",
       "is_direct": true,
       "license_expression": "Apache-2.0",
       "name": "xlsx",
       "origin": "registry",
-      "purl": "pkg:npm/xlsx@0.18.5",
+      "purl": "pkg:npm/xlsx@0.20.3",
       "source": "apps/web/package-lock.json",
-      "version": "0.18.5"
+      "version": "0.20.3"
     },
     {
       "checksums": [

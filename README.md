@@ -58,9 +58,9 @@ npm run dev     # http://localhost:5173 (proxies /api → :8000)
 ## Testing
 
 ```bash
-make test       # Unit/security/async suite (1,499 tests; no Docker needed)
+make test       # Unit/security/async suite (1,652 tests; no Docker needed)
 make test-all   # Full suite including Docker-dependent integration tests
-make test-web   # Frontend suite (vitest, 513 tests)
+make test-web   # Frontend suite (vitest, 520 tests)
 ```
 
 > The `test` target excludes Docker-dependent integration tests — the same

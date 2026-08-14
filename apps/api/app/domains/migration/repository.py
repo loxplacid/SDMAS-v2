@@ -10,6 +10,12 @@ from app.domains.migration.models import MigrationLog, MigrationMapping, Migrati
 
 
 class MigrationRunRepository:
+    """Migration-run repository with optional tenant (``campus_id``) pinning.
+
+    Every read endpoint must scope by ``campus_id`` so one tenant can never
+    list, read or roll back another tenant's migration runs.
+    """
+
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
@@ -18,8 +24,13 @@ class MigrationRunRepository:
         await self.session.flush()
         return run
 
-    async def get_by_id(self, run_id: int) -> MigrationRun | None:
-        result = await self.session.execute(select(MigrationRun).where(MigrationRun.id == run_id))
+    async def get_by_id(
+        self, run_id: int, campus_id: int | None = None
+    ) -> MigrationRun | None:
+        query = select(MigrationRun).where(MigrationRun.id == run_id)
+        if campus_id is not None:
+            query = query.where(MigrationRun.campus_id == campus_id)
+        result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def update_status(self, run_id: int, status: str, **extra: Any) -> None:
@@ -38,10 +49,13 @@ class MigrationRunRepository:
         status: str | None = None,
         skip: int = 0,
         limit: int = 50,
+        campus_id: int | None = None,
     ) -> tuple[Sequence[MigrationRun], int]:
         query = select(MigrationRun)
         count_query = select(func.count(MigrationRun.id))
         filters = []
+        if campus_id is not None:
+            filters.append(MigrationRun.campus_id == campus_id)
         if entity_type:
             filters.append(MigrationRun.entity_type == entity_type)
         if status:

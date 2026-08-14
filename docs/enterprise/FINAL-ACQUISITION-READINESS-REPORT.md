@@ -197,10 +197,11 @@ Actual scanner results (from committed evidence artifacts + re-execution):
 
 ### Findings
 
-- **[MEDIUM]** `README.md` test-count claims are stale (1,499 vs. 1,583 collected; 513 vs. 516 web).
-- **[MEDIUM]** `.env.example` SQLite claim contradicts the known-broken SQLite migration chain (see §4).
-- **[LOW]** Multiple overlapping security docs exist at different paths (`SECURITY.md`, `docs/SECURITY_POLICY.md`, `docs/security-policy.md`, `docs/security-assurance-report.md`) — an acquirer may read a stale one. Consider a single canonical pointer.
+- **[RESOLVED]** `README.md` / `ARCHITECTURE.md` / `SECURITY.md` / `TENANCY.md` test-count claims were stale — corrected to executed counts (1,652 API / 520 web / 28 security-suite / 64 acquisition-suite) in the documentation audit.
+- **[RESOLVED]** The SQLite migration-chain limitation was fixed (chain `001→048` verified on a fresh SQLite DB) and KNOWN_LIMITATIONS #8 marked RESOLVED.
+- **[RESOLVED]** The overlapping security-doc paths (`docs/SECURITY_POLICY.md` vs `docs/security-policy.md` — a case collision) were consolidated: the older file is now `docs/security-policy-and-controls.md` and all references updated.
 - **[LOW]** No broken file references found in the three primary delivery docs (`zero-touch-deployment.md`, `enterprise-demo.md`, `security-assurance-report.md`) — the check passed.
+- See `docs/enterprise/DOCUMENTATION-AUDIT.md` for the full verification matrix.
 
 ---
 

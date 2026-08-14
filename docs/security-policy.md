@@ -29,8 +29,8 @@ dependency refresh.
 |---|---|---|---|---|---|
 | W-001 | `ecdsa 0.19.2` | PYSEC-2026-1325 | No upstream fix available. Transitive via `python-jose[cryptography]`; not exposed to untrusted input paths. Waived in CI via `--ignore-vuln`. Re-review on next dependency refresh. | Security | OPEN |
 | W-002 | `cryptography 49.0.0` | CVE-2026-69247 (fix 50.0.0) | **RESOLVED** — bumped to 50.0.0 in `uv.lock` (verified with `pip-audit`). | Security | RESOLVED |
-| W-003 | web `react-router-dom` | high (transitive via `react-router`) | Runtime dependency; requires major-version bump. Assess impact before upgrading. | Frontend | OPEN |
-| W-004 | web `xlsx` | high | Direct dep `^0.18.5` for spreadsheet import/export; no patched release in the 0.18 line. | Frontend | OPEN |
+| W-003 | web `react-router-dom` | high (transitive via `react-router`) | **RESOLVED** — at 7.18.2 (`^7.0.0`); `npm audit` reports 0 vulnerabilities for the web app. | Frontend | RESOLVED |
+| W-004 | web `xlsx` | high | **RESOLVED** — bumped to 0.20.3 (SheetJS CDN tarball); `npm audit` reports 0 vulnerabilities for the web app. | Frontend | RESOLVED |
 | W-005 | mobile (Expo toolchain) | 43 findings (30 high, 1 critical) | Expo/React Native build-chain findings; most fixed by SDK 57.0.11 which is current. Many are dev-time only. | Mobile | OPEN — TRACKED |
 
 ## Process

@@ -171,6 +171,24 @@ async def change_my_password(
     return {"detail": "Password updated"}
 
 
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+@rate_limit("logout", max_requests=20, window_seconds=60)
+async def logout(
+    request: Request,
+    service: UserService = Depends(get_user_service),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    """End the user's server-side session.
+
+    Revokes every outstanding refresh token for the user — no new access
+    token can be minted afterwards — and records a ``LOGOUT`` audit
+    event.  Idempotent: a second logout returns 204 again.  Already
+    issued access tokens remain valid until their short expiry
+    (stateless JWTs); clients must discard them on logout.
+    """
+    await service.logout(current_user, ip_address=get_client_ip(request))
+
+
 # ---------------------------------------------------------------------------
 # School membership / active-school switching
 # ---------------------------------------------------------------------------

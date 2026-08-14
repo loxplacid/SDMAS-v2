@@ -44,9 +44,9 @@ from __future__ import annotations
 
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = 'c21889d4e562'
@@ -56,10 +56,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.create_view(
-        'legacy_null_campus_records',
+    # ``op.create_view`` does not exist in Alembic — views must be created
+    # with raw DDL (supported on PostgreSQL and SQLite alike).
+    op.execute(
         sa.text(
             """
+            CREATE VIEW legacy_null_campus_records AS
             SELECT 'students' AS table_name, id AS record_id, campus_id
             FROM students WHERE campus_id IS NULL
             UNION ALL
@@ -122,4 +124,4 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_view('legacy_null_campus_records')
+    op.execute(sa.text("DROP VIEW legacy_null_campus_records"))

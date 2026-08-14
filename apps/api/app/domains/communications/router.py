@@ -9,6 +9,11 @@ from app.core.pagination import Page, PaginationParams
 from app.domains.auth.dependencies import get_current_user, require_role
 from app.domains.auth.models import User
 from app.domains.communications.constants import MESSAGE_TYPES, ALL_CHANNELS
+import datetime
+
+from sqlalchemy.orm import selectinload
+
+from app.domains.communications.models import CommunicationMessage, MessageRecipient
 from app.domains.communications.schemas import (
     CommunicationPreferenceResponse,
     CommunicationPreferenceUpdate,
@@ -62,8 +67,9 @@ async def get_resolver(session: AsyncSession = Depends(get_session)) -> Recipien
 async def list_templates(
     svc: MessageTemplateService = Depends(get_template_svc),
     _user: User = Depends(require_role("admin", "staff", "teacher", "principal")),
+    tenant: TenantContext = Depends(require_tenant_context),
 ) -> list[MessageTemplateResponse]:
-    items, _ = await svc.list()
+    items, _ = await svc.list(campus_id=tenant.campus_id)
     return [MessageTemplateResponse.model_validate(t) for t in items]
 
 
@@ -81,9 +87,10 @@ async def create_template(
 async def get_template(
     template_id: int,
     _user: User = Depends(require_role("admin", "staff", "teacher", "principal")),
+    tenant: TenantContext = Depends(require_tenant_context),
     svc: MessageTemplateService = Depends(get_template_svc),
 ) -> MessageTemplateResponse:
-    tpl = await svc.get(template_id)
+    tpl = await svc.get(template_id, campus_id=tenant.campus_id)
     return MessageTemplateResponse.model_validate(tpl)
 
 
@@ -92,9 +99,10 @@ async def update_template(
     template_id: int,
     data: MessageTemplateUpdate,
     _user: User = Depends(require_role("admin", "staff")),
+    tenant: TenantContext = Depends(require_tenant_context),
     svc: MessageTemplateService = Depends(get_template_svc),
 ) -> MessageTemplateResponse:
-    tpl = await svc.update(template_id, data)
+    tpl = await svc.update(template_id, data, campus_id=tenant.campus_id)
     return MessageTemplateResponse.model_validate(tpl)
 
 
@@ -102,18 +110,20 @@ async def update_template(
 async def delete_template(
     template_id: int,
     _user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(require_tenant_context),
     svc: MessageTemplateService = Depends(get_template_svc),
 ) -> None:
-    await svc.delete(template_id)
+    await svc.delete(template_id, campus_id=tenant.campus_id)
 
 
 @router.post("/templates/render", response_model=dict)
 async def render_template(
     data: TemplateRenderRequest,
     _user: User = Depends(require_role("admin", "staff", "teacher", "principal")),
+    tenant: TenantContext = Depends(require_tenant_context),
     svc: MessageTemplateService = Depends(get_template_svc),
 ) -> dict:
-    return await svc.render(data.template_id, data.variables)
+    return await svc.render(data.template_id, data.variables, campus_id=tenant.campus_id)
 
 
 @router.post("/templates/render-context", response_model=dict)
@@ -168,6 +178,7 @@ async def get_context(
 async def resolve_recipients(
     data: RecipientResolveRequest,
     _user: User = Depends(require_role("admin", "staff", "teacher")),
+    tenant: TenantContext = Depends(require_tenant_context),
     svc: RecipientResolver = Depends(get_resolver),
 ) -> RecipientResolveResponse:
     recipients = await svc.resolve_with_details(
@@ -175,6 +186,7 @@ async def resolve_recipients(
                      for rid in data.recipient_ids] if data.recipient_ids else None,
         class_ids=data.class_ids,
         section_ids=data.section_ids,
+        campus_id=tenant.campus_id,
     )
     return RecipientResolveResponse(recipients=recipients, total=len(recipients))
 
@@ -383,6 +395,7 @@ async def get_channels() -> list[str]:
 @router.get("/schedules/pending", response_model=list[MessageScheduleResponse])
 async def get_pending_schedules(
     _user: User = Depends(require_role("admin")),
+    tenant: TenantContext = Depends(require_tenant_context),
     svc: CommunicationService = Depends(get_comm_svc),
 ) -> list[MessageScheduleResponse]:
     from sqlalchemy import select
@@ -392,20 +405,16 @@ async def get_pending_schedules(
     now = datetime.datetime.now(datetime.timezone.utc)
     result = await svc.session.execute(
         select(MessageSchedule)
+        .join(CommunicationMessage, MessageSchedule.message_id == CommunicationMessage.id)
         .where(
             MessageSchedule.status == SCHEDULE_STATUS_PENDING,
             MessageSchedule.scheduled_at <= now,
+            CommunicationMessage.campus_id == tenant.campus_id,
         )
         .options(selectinload(MessageSchedule.message))
     )
     schedules = list(result.scalars().all())
     return [MessageScheduleResponse.model_validate(s) for s in schedules]
-
-
-import datetime
-from sqlalchemy.orm import selectinload
-
-from app.domains.communications.models import MessageRecipient
 
 
 def _build_message_response(msg: CommunicationMessage) -> MessageResponse:

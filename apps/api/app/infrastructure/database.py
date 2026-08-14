@@ -38,12 +38,16 @@ def create_engine_and_factory(
             poolclass=NullPool,
         )
     else:
-        engine = create_async_engine(
-            database_url,
-            echo=echo,
-            pool_size=pool_size,
-            max_overflow=max_overflow,
-        )
+        # Pass pool_size/max_overflow only when the caller supplied them —
+        # SQLAlchemy raises if it receives explicit None (e.g. the seed
+        # script calling without pool kwargs); omitted kwargs fall back to
+        # the driver's own defaults.
+        pool_kwargs: dict[str, int] = {}
+        if pool_size is not None:
+            pool_kwargs["pool_size"] = pool_size
+        if max_overflow is not None:
+            pool_kwargs["max_overflow"] = max_overflow
+        engine = create_async_engine(database_url, echo=echo, **pool_kwargs)
     factory = async_sessionmaker(
         engine,
         class_=AsyncSession,

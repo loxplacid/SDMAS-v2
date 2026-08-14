@@ -130,6 +130,7 @@ const AdmissionsPage = lazy(() => import('./pages/admission').then((m) => ({ def
 const ApplicationListPage = lazy(() => import('./pages/admission/application-list').then((m) => ({ default: m.ApplicationListPage })))
 const ApplicationDetailPage = lazy(() => import('./pages/admission/application-detail').then((m) => ({ default: m.ApplicationDetailPage })))
 const NewInquiryPage = lazy(() => import('./pages/admission/new-inquiry').then((m) => ({ default: m.NewInquiryPage })))
+const MeritListPage = lazy(() => import('./pages/admission/merit-list').then((m) => ({ default: m.MeritListPage })))
 
 // Admin
 const AuditLogViewerPage = lazy(() => import('./pages/admin/audit-log-viewer'))
@@ -487,6 +488,7 @@ export default function App() {
               <Route path="/admissions" element={<Suspense fallback={null}><AdmissionsPage /></Suspense>} />
               <Route path="/admissions/applications" element={<Suspense fallback={null}><ApplicationListPage /></Suspense>} />
               <Route path="/admissions/new" element={<Suspense fallback={null}><NewInquiryPage /></Suspense>} />
+              <Route path="/admissions/merit-list" element={<Suspense fallback={null}><MeritListPage /></Suspense>} />
               <Route path="/admissions/:id" element={<Suspense fallback={null}><ApplicationDetailPage /></Suspense>} />
 
               {/* Communications */}

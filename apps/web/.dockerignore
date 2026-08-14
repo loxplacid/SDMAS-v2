@@ -1,0 +1,15 @@
+# Local installs / build output — must NEVER enter the build context:
+# the Dockerfile runs `npm ci` then `COPY . .`; shipping the host's
+# node_modules or dist would silently override the fresh install.
+node_modules
+dist
+
+# Stale incremental-build metadata
+*.tsbuildinfo
+vitest.config.ts.timestamp-*.mjs
+
+# Local env / editor noise
+.env
+.env.*
+!.env.example
+.DS_Store

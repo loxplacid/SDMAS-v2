@@ -11,19 +11,17 @@ from collections.abc import Sequence
 from alembic import op
 
 revision: str = "024_add_performance_indexes"
-down_revision: str | None = "d29e45f87a2c"
+down_revision: str | None = "d30_add_student_portal_tables"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     # ---- timetable_entries ----
-    op.create_index("ix_timetable_entries_class_id", "timetable_entries", ["class_id"])
-    op.create_index("ix_timetable_entries_section_id", "timetable_entries", ["section_id"])
+    # Single-column class/section/teacher/room/time_slot indexes already exist
+    # from 020_create_academic_ops_tables; only the new composites and the
+    # subject_id index are added here.
     op.create_index("ix_timetable_entries_subject_id", "timetable_entries", ["subject_id"])
-    op.create_index("ix_timetable_entries_teacher_id", "timetable_entries", ["teacher_id"])
-    op.create_index("ix_timetable_entries_room_id", "timetable_entries", ["room_id"])
-    op.create_index("ix_timetable_entries_time_slot_id", "timetable_entries", ["time_slot_id"])
     op.create_index(
         "ix_timetable_entries_class_day",
         "timetable_entries",
@@ -41,21 +39,8 @@ def upgrade() -> None:
     )
 
     # ---- substitutions ----
-    op.create_index(
-        "ix_substitutions_timetable_entry_id",
-        "substitutions",
-        ["timetable_entry_id"],
-    )
-    op.create_index(
-        "ix_substitutions_original_teacher_id",
-        "substitutions",
-        ["original_teacher_id"],
-    )
-    op.create_index(
-        "ix_substitutions_substitute_teacher_id",
-        "substitutions",
-        ["substitute_teacher_id"],
-    )
+    # Single-column teacher/timetable_entry indexes already exist from 020;
+    # only the (timetable_entry_id, substitution_date) composite is new.
     op.create_index(
         "ix_substitutions_entry_date",
         "substitutions",
@@ -63,20 +48,12 @@ def upgrade() -> None:
     )
 
     # ---- exam_schedules ----
-    op.create_index(
-        "ix_exam_schedules_academic_year_id",
-        "exam_schedules",
-        ["academic_year_id"],
-    )
+    # academic_year_id/class_id/subject_id/room_id single-column indexes already
+    # exist from 020; only term_id/section_id/invigilator_id are new here.
     op.create_index("ix_exam_schedules_term_id", "exam_schedules", ["term_id"])
-    op.create_index("ix_exam_schedules_class_id", "exam_schedules", ["class_id"])
     op.create_index(
         "ix_exam_schedules_section_id", "exam_schedules", ["section_id"]
     )
-    op.create_index(
-        "ix_exam_schedules_subject_id", "exam_schedules", ["subject_id"]
-    )
-    op.create_index("ix_exam_schedules_room_id", "exam_schedules", ["room_id"])
     op.create_index(
         "ix_exam_schedules_invigilator_id",
         "exam_schedules",
@@ -84,7 +61,8 @@ def upgrade() -> None:
     )
 
     # ---- grade_records ----
-    op.create_index("ix_grade_records_term_id", "grade_records", ["term_id"])
+    # ix_grade_records_term_id already exists from 020; only the grading
+    # structure index is new here.
     op.create_index(
         "ix_grade_records_grading_structure_id",
         "grade_records",
@@ -92,11 +70,8 @@ def upgrade() -> None:
     )
 
     # ---- curricula ----
-    op.create_index(
-        "ix_curricula_academic_year_id", "curricula", ["academic_year_id"]
-    )
-    op.create_index("ix_curricula_class_id", "curricula", ["class_id"])
-    op.create_index("ix_curricula_subject_id", "curricula", ["subject_id"])
+    # academic_year_id/class_id/subject_id indexes already exist from 020; only
+    # the term_id index is new here.
     op.create_index("ix_curricula_term_id", "curricula", ["term_id"])
 
     # ---- attendance_records (composite for duplicate check) ----
@@ -139,49 +114,20 @@ def downgrade() -> None:
         table_name="attendance_records",
     )
     op.drop_index("ix_curricula_term_id", table_name="curricula")
-    op.drop_index("ix_curricula_subject_id", table_name="curricula")
-    op.drop_index("ix_curricula_class_id", table_name="curricula")
-    op.drop_index(
-        "ix_curricula_academic_year_id", table_name="curricula"
-    )
     op.drop_index(
         "ix_grade_records_grading_structure_id",
         table_name="grade_records",
     )
-    op.drop_index("ix_grade_records_term_id", table_name="grade_records")
     op.drop_index(
         "ix_exam_schedules_invigilator_id",
         table_name="exam_schedules",
     )
-    op.drop_index("ix_exam_schedules_room_id", table_name="exam_schedules")
-    op.drop_index(
-        "ix_exam_schedules_subject_id", table_name="exam_schedules"
-    )
     op.drop_index(
         "ix_exam_schedules_section_id", table_name="exam_schedules"
     )
-    op.drop_index(
-        "ix_exam_schedules_class_id", table_name="exam_schedules"
-    )
     op.drop_index("ix_exam_schedules_term_id", table_name="exam_schedules")
     op.drop_index(
-        "ix_exam_schedules_academic_year_id",
-        table_name="exam_schedules",
-    )
-    op.drop_index(
         "ix_substitutions_entry_date", table_name="substitutions"
-    )
-    op.drop_index(
-        "ix_substitutions_substitute_teacher_id",
-        table_name="substitutions",
-    )
-    op.drop_index(
-        "ix_substitutions_original_teacher_id",
-        table_name="substitutions",
-    )
-    op.drop_index(
-        "ix_substitutions_timetable_entry_id",
-        table_name="substitutions",
     )
     op.drop_index(
         "ix_timetable_entries_room_day", table_name="timetable_entries"
@@ -194,21 +140,5 @@ def downgrade() -> None:
         "ix_timetable_entries_class_day", table_name="timetable_entries"
     )
     op.drop_index(
-        "ix_timetable_entries_time_slot_id",
-        table_name="timetable_entries",
-    )
-    op.drop_index(
-        "ix_timetable_entries_room_id", table_name="timetable_entries"
-    )
-    op.drop_index(
-        "ix_timetable_entries_teacher_id", table_name="timetable_entries"
-    )
-    op.drop_index(
         "ix_timetable_entries_subject_id", table_name="timetable_entries"
-    )
-    op.drop_index(
-        "ix_timetable_entries_section_id", table_name="timetable_entries"
-    )
-    op.drop_index(
-        "ix_timetable_entries_class_id", table_name="timetable_entries"
     )

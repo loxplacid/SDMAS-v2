@@ -184,7 +184,7 @@ async def create_case(
     return _out(case, sla_state=service.sla_state(case))
 
 
-@router.get("/{case_id}", response_model=CaseDetailOut)
+@router.get("/{case_id:int}", response_model=CaseDetailOut)
 async def case_detail(
     case_id: int,
     tenant: TenantContext = Depends(get_school_context),
@@ -204,7 +204,7 @@ async def case_detail(
     )
 
 
-@router.post("/{case_id}/transition", response_model=CaseOut)
+@router.post("/{case_id:int}/transition", response_model=CaseOut)
 async def transition_case(
     case_id: int,
     data: CaseTransitionIn,
@@ -224,7 +224,7 @@ async def transition_case(
     return _out(case, sla_state=service.sla_state(case))
 
 
-@router.post("/{case_id}/assign", response_model=CaseOut)
+@router.post("/{case_id:int}/assign", response_model=CaseOut)
 async def assign_case(
     case_id: int,
     data: CaseAssignIn,
@@ -244,7 +244,7 @@ async def assign_case(
     return _out(case, sla_state=service.sla_state(case))
 
 
-@router.post("/{case_id}/priority", response_model=CaseOut)
+@router.post("/{case_id:int}/priority", response_model=CaseOut)
 async def change_priority(
     case_id: int,
     data: CasePriorityIn,
@@ -264,7 +264,7 @@ async def change_priority(
     return _out(case, sla_state=service.sla_state(case))
 
 
-@router.post("/{case_id}/due-date", response_model=CaseOut)
+@router.post("/{case_id:int}/due-date", response_model=CaseOut)
 async def set_due_date(
     case_id: int,
     data: CaseDueDateIn,
@@ -284,7 +284,7 @@ async def set_due_date(
     return _out(case, sla_state=service.sla_state(case))
 
 
-@router.post("/{case_id}/comment", response_model=CaseCommentOut)
+@router.post("/{case_id:int}/comment", response_model=CaseCommentOut)
 async def add_comment(
     case_id: int,
     data: CaseCommentIn,
@@ -303,7 +303,7 @@ async def add_comment(
     return CaseCommentOut.model_validate(comment)
 
 
-@router.post("/{case_id}/evidence", response_model=CaseEvidenceOut)
+@router.post("/{case_id:int}/evidence", response_model=CaseEvidenceOut)
 async def add_evidence(
     case_id: int,
     data: CaseEvidenceIn,

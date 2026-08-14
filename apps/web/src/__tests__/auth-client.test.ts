@@ -331,14 +331,29 @@ describe('Auth API Client', () => {
     expect(refreshAttempted).toBe(false)
   })
 
-  it('logout clears tokens', async () => {
+  it('logout clears tokens and revokes the session server-side', async () => {
     const m = await import('../api/client/http-client')
     m.clearTokens()
     m.api.setTokens('access', 'refresh')
+
+    const calls: { url: string; opts: any }[] = []
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string, opts: any) => {
+      calls.push({ url, opts })
+      return Promise.resolve({ ok: true, status: 204 })
+    }))
+
     m.api.logout()
 
+    // Best-effort server-side invalidation: the logout call must carry the
+    // access token (so the backend can revoke the user's refresh tokens).
+    const logoutCall = calls.find(c => String(c.url).includes('/auth/logout'))
+    expect(logoutCall).toBeDefined()
+    expect(logoutCall!.opts.method).toBe('POST')
+    expect(logoutCall!.opts.headers['Authorization']).toBe('Bearer access')
+
+    // Local tokens are cleared: a subsequent request carries no auth header.
     let capturedAuth: string | undefined
-    vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string, opts: any) => {
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((_url: string, opts: any) => {
       capturedAuth = opts.headers['Authorization']
       return Promise.resolve({
         ok: true,

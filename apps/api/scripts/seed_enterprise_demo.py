@@ -1632,12 +1632,20 @@ async def _run(reset: bool, scale: str, run_risk: bool) -> None:
         )
     print("\n  Demo credentials (development-only):")
     for profile in TENANT_PROFILES:
-        print(f"    {profile.code.lower()}.admin / {DEMO_PASSWORD}")
+        print(f"    {profile.user_prefix}.admin / {DEMO_PASSWORD}")
     print("\n  Reset with:  uv run seed --profile enterprise-demo --reset --force")
     print("               ./enterprise demo-reset")
 
 
 def main() -> None:
+    # The banner uses Unicode box-drawing characters; on Windows consoles
+    # (cp1252) stdout can otherwise raise UnicodeEncodeError before any
+    # seeding happens. Reconfigure deterministically — safe no-op elsewhere.
+    for _stream in (sys.stdout, sys.stderr):
+        try:
+            _stream.reconfigure(encoding="utf-8")
+        except (AttributeError, ValueError):
+            pass
     parser = argparse.ArgumentParser(
         description="SDMAS enterprise demo seeder (three isolated tenants)"
     )

@@ -1,6 +1,6 @@
 """create academic structure extensions (teachers, subjects, terms, assignments)
 
-Revision ID: 005_create_academic_structure_extensions
+Revision ID: 005_academic_structure_ext
 Revises: 004_create_fees
 Create Date: 2025-07-28 12:00:00.000000
 
@@ -11,7 +11,7 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "005_create_academic_structure_extensions"
+revision: str = "005_academic_structure_ext"
 down_revision: str | None = "004_create_fees"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime
-import datetime
 import logging
 from datetime import timezone
 from typing import List, Optional, Sequence
@@ -50,7 +49,6 @@ from app.domains.fees.schemas import (
     PaymentCreate,
 )
 from app.domains.student.repository import StudentRepository
-
 
 # ---------------------------------------------------------------------------
 # FeeTypeService
@@ -687,6 +685,7 @@ class PaymentService:
         amount: int,
         reason: Optional[str] = None,
         actor: Optional["AuditActor"] = None,
+        idempotency_key: Optional[str] = None,
     ) -> dict:
         """Refund part or all of a recorded payment.
 
@@ -696,12 +695,39 @@ class PaymentService:
         single database transaction (savepoint), so a refund can never
         partially apply.  The refund is journaled in the transaction ledger
         and audited with the acting user.
+
+        ``idempotency_key`` (optional) makes the *request* idempotent: a
+        retried or double-submitted refund for the same payment resolves to
+        the first result instead of refunding a second time.  The key is
+        recorded on the refund's ledger row (the ledger is the idempotency
+        store, mirroring how payments journal ``payment:{id}``).
         """
         # Lock the payment row first: two concurrent refunds on the same
         # payment must serialize, and the refundable balance must be
         # re-read *after* the lock so a stale ``refunded_amount`` can never
         # let a refund apply twice.
         payment = await self.repo.get_by_id_for_update(payment_id)
+
+        # The ledger is the refund idempotency store; one instance is shared
+        # by the dedupe check, the journal write, and the race recovery below.
+        tx_log_svc = TransactionLogService(self.repo.session)
+
+        # Idempotent replay: an earlier refund carrying this key already
+        # journaled the effect — return that result rather than refunding
+        # again.  The key is scoped to the payment (a key minted for a
+        # different payment is a conflict, not a replay).
+        if idempotency_key:
+            existing_tx = await tx_log_svc.find_by_idempotency_key(
+                idempotency_key, campus_id=payment.campus_id
+            )
+            if existing_tx is not None:
+                if existing_tx.payment_id != payment.id:
+                    raise ConflictError(
+                        f"Idempotency key {idempotency_key} was already used "
+                        "for a different payment"
+                    )
+                return await self._payment_result(payment)
+
         if payment.status == "refunded":
             raise ConflictError(f"Payment {payment_id} is already fully refunded")
 
@@ -749,7 +775,6 @@ class PaymentService:
 
                 # Journal the refund in the immutable transaction ledger.
                 recorded_by = self._actor_user_id(actor)
-                tx_log_svc = TransactionLogService(self.repo.session)
                 await tx_log_svc.record(
                     transaction_type="refund",
                     student_id=payment.student_id,
@@ -757,7 +782,12 @@ class PaymentService:
                     payment_id=payment.id,
                     fee_due_id=payment.fee_due_id,
                     reference_number=payment.receipt_number,
-                    idempotency_key=f"refund:{payment.id}:{new_refunded}",
+                    # The client idempotency key is the retry signal; the
+                    # default is a deterministic per-refund key.
+                    idempotency_key=(
+                        idempotency_key
+                        or f"refund:{payment.id}:{new_refunded}"
+                    ),
                     description=reason or f"Refund for payment {payment.id}",
                     campus_id=fee_due.campus_id,
                     recorded_by=recorded_by,
@@ -781,6 +811,18 @@ class PaymentService:
 
                 return await self._payment_result(payment)
         except IntegrityError as exc:
+            # A concurrent duplicate won the race on the ledger's unique
+            # (campus_id, idempotency_key) constraint — for an idempotent
+            # caller the answer is the already-journaled refund.  The
+            # savepoint rollback restored this session's payment object to
+            # its pre-winner-commit state, so refresh before reporting it.
+            if idempotency_key:
+                existing_tx = await tx_log_svc.find_by_idempotency_key(
+                    idempotency_key, campus_id=payment.campus_id
+                )
+                if existing_tx is not None and existing_tx.payment_id == payment.id:
+                    await self.repo.session.refresh(payment)
+                    return await self._payment_result(payment)
             raise ConflictError(
                 f"Refund for payment {payment_id} could not be applied."
             ) from exc

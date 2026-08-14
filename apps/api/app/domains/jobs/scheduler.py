@@ -7,6 +7,7 @@ deterministic identity keys scoped to the current cycle::
 
     billing.period_end:{YYYY-MM-DD}
     billing.expire_past_due:{YYYY-MM-DD}
+    cases.escalation:{YYYY-MM-DD-HH-MM (5-min bucket)}
     communications.scheduled:{YYYY-MM-DD-HH-MM (5-min bucket)}
 
 Because ``Job.identity_key`` is UNIQUE and ``JobService.create_job`` is

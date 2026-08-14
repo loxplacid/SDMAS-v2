@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { receiptApi, type ReceiptResponse, type ReceiptDetailResponse } from '../../api/school-finance/school-finance-api'
+import { fetchAuthed } from '../../api/client/http-client'
 import { Card, Table, PageHeader, Button, Badge, Pagination, Loading, ErrorState, useToast, Modal, Input, Select } from '../../components/ui'
 import { formatDate } from '../../lib/utils'
 
@@ -79,13 +80,30 @@ export const ReceiptsPage: React.FC = () => {
     } catch (err: any) { showToast(err?.detail || 'Failed to load receipt detail', 'error') }
   }
 
+  // The print route requires auth; open the server-rendered HTML in a new
+  // tab via an authenticated fetch instead of a bare window.open (which 401s).
+  const handlePrint = async (id: number) => {
+    try {
+      const res = await fetchAuthed(`/api/school-finance/receipts/${id}/print`)
+      const html = await res.text()
+      const blob = new Blob([html], { type: 'text/html' })
+      const url = window.URL.createObjectURL(blob)
+      const win = window.open(url, '_blank')
+      // Revoke once the new tab has had a chance to load the blob URL.
+      setTimeout(() => window.URL.revokeObjectURL(url), 60_000)
+      if (win) win.focus()
+    } catch (err: any) {
+      showToast(err?.detail || 'Failed to open receipt', 'error')
+    }
+  }
+
   const actionCol = {
     key: 'actions' as const,
     header: 'Actions' as const,
     render: (r: ReceiptResponse) => (
       <div className="flex gap-2">
         <Button size="sm" variant="outline" onClick={(e: any) => { e.stopPropagation(); handleViewDetail(r.id) }}>View</Button>
-        <Button size="sm" variant="ghost" onClick={(e: any) => { e.stopPropagation(); window.open(`/api/school-finance/receipts/${r.id}/print`, '_blank') }}>Print</Button>
+        <Button size="sm" variant="ghost" onClick={(e: any) => { e.stopPropagation(); handlePrint(r.id) }}>Print</Button>
       </div>
     ),
   }
@@ -145,7 +163,7 @@ export const ReceiptsPage: React.FC = () => {
         footer={
           <div className="flex gap-2 justify-end">
             {detailData && (
-              <Button variant="outline" onClick={() => window.open(`/api/school-finance/receipts/${detailData.id}/print`, '_blank')}>Print</Button>
+              <Button variant="outline" onClick={() => handlePrint(detailData.id)}>Print</Button>
             )}
             <Button variant="outline" onClick={() => setShowDetail(false)}>Close</Button>
           </div>

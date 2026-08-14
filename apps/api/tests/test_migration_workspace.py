@@ -8,6 +8,7 @@ reconciliation, tenant isolation, authorization and audit events.
 
 from __future__ import annotations
 
+import datetime
 import os
 from typing import Any
 
@@ -22,6 +23,7 @@ from app.domains.migration.discovery import (
     profile_columns,
     suggest_mappings,
 )
+from app.domains.migration.engine import MigrationEngine
 from app.domains.migration.import_job import run_project_import
 from app.domains.migration.models import (
     MIGRATION_STATUS_COMPLETED,
@@ -513,3 +515,79 @@ class TestAuthAndAudit:
         # Actor attribution is explicit.
         discover = next(e for e in entries if e.action == "MIGRATION_PROJECT_DISCOVERED")
         assert discover.actor_type == "user"
+
+
+# ---------------------------------------------------------------------------
+# Multi-tenant audit regression: migration RUN reads and rollbacks are
+# campus-scoped (a cross-tenant IDOR — apex could read/roll back stjude runs).
+# ---------------------------------------------------------------------------
+
+
+class TestMigrationRunTenantScoping:
+    async def test_get_by_id_is_campus_scoped(self, db_session) -> None:
+        from app.domains.migration.models import MigrationRun
+        from app.domains.migration.repository import MigrationRunRepository
+
+        run = MigrationRun(
+            entity_type="students", status="completed", source="legacy.json",
+            total_records=5, imported=5, campus_id=1,
+            created_at=datetime.datetime.now(datetime.timezone.utc),
+        )
+        db_session.add(run)
+        await db_session.flush()
+
+        repo = MigrationRunRepository(db_session)
+        assert await repo.get_by_id(run.id, campus_id=1) is not None
+        # Same id, different campus → invisible (isolation, not existence).
+        assert await repo.get_by_id(run.id, campus_id=2) is None
+
+    async def test_list_runs_is_campus_scoped(self, db_session) -> None:
+        from app.domains.migration.models import MigrationRun
+        from app.domains.migration.repository import MigrationRunRepository
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+        db_session.add_all([
+            MigrationRun(entity_type="students", status="completed", source="a.json",
+                         total_records=1, campus_id=1, created_at=now),
+            MigrationRun(entity_type="students", status="completed", source="b.json",
+                         total_records=1, campus_id=2, created_at=now),
+        ])
+        await db_session.flush()
+
+        repo = MigrationRunRepository(db_session)
+        items, total = await repo.list_runs(campus_id=1)
+        assert total == 1
+        assert all(i.campus_id == 1 for i in items)
+
+    async def test_rollback_requires_run_in_caller_campus(self, db_session) -> None:
+        """RollbackService must refuse a run owned by another campus."""
+        from app.domains.migration.models import MigrationRun
+        from app.domains.migration.rollback import RollbackService
+
+        run = MigrationRun(
+            entity_type="students", status="completed", source="legacy.json",
+            total_records=1, imported=1, campus_id=1,
+            created_at=datetime.datetime.now(datetime.timezone.utc),
+        )
+        db_session.add(run)
+        await db_session.flush()
+
+        svc = RollbackService(db_session)
+        with pytest.raises(ValueError):
+            await svc.plan_rollback(run.id, campus_id=2)
+        with pytest.raises(ValueError):
+            await svc.execute_rollback(run.id, campus_id=2)
+
+    async def test_engine_run_pins_campus(self, db_session) -> None:
+        """Runs created through the engine belong to the calling campus."""
+        from app.domains.migration.models import MigrationRun
+
+        engine = MigrationEngine(db_session)
+        # students migrator may require valid records; use dry run on empty-safe entity
+        await engine.run(
+            "students", [], is_dry_run=True, source="x.json", campus_id=3,
+        )
+        run = (await db_session.execute(
+            select(MigrationRun).order_by(MigrationRun.id.desc()).limit(1)
+        )).scalar_one()
+        assert run.campus_id == 3

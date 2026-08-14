@@ -1,7 +1,7 @@
 {
-  "ambiguous_edges": 2350,
+  "ambiguous_edges": 2347,
   "by_ecosystem": {
-    "npm": 1804,
+    "npm": 1775,
     "pypi": 106
   },
   "cycles": [
@@ -38,10 +38,10 @@
     ]
   ],
   "dangling_edges": 5,
-  "dependency_edges": 6880,
+  "dependency_edges": 6878,
   "direct_packages": 54,
   "empty_version_packages": [],
-  "max_depth": 1368,
+  "max_depth": 1363,
   "orphaned_names": [
     [
       "npm",
@@ -654,6 +654,14 @@
     [
       "npm",
       "@types/babel__traverse"
+    ],
+    [
+      "npm",
+      "@types/chai"
+    ],
+    [
+      "npm",
+      "@types/deep-eql"
     ],
     [
       "npm",
@@ -1353,6 +1361,10 @@
     ],
     [
       "npm",
+      "strip-literal"
+    ],
+    [
+      "npm",
       "svg-pathdata"
     ],
     [
@@ -1572,7 +1584,7 @@
       "websockets"
     ]
   ],
-  "orphaned_packages": 382,
-  "total_packages": 1910,
-  "transitive_packages": 1856
+  "orphaned_packages": 385,
+  "total_packages": 1881,
+  "transitive_packages": 1827
 }

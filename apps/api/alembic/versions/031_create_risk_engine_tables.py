@@ -1,7 +1,7 @@
 """create risk engine tables (risk_rule_configs, risk_findings)
 
 Revision ID: 031_create_risk_engine_tables
-Revises: 030_create_user_school_memberships
+Revises: 030_user_school_memberships
 Create Date: 2026-08-01 00:00:00.000000
 """
 
@@ -14,7 +14,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "031_create_risk_engine_tables"
-down_revision: Union[str, None] = "030_create_user_school_memberships"
+down_revision: Union[str, None] = "030_user_school_memberships"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -26,7 +26,7 @@ def upgrade() -> None:
         sa.Column("campus_id", sa.Integer(), nullable=True),
         sa.Column("rule_code", sa.String(length=100), nullable=False),
         sa.Column("category", sa.String(length=50), nullable=False),
-        sa.Column("enabled", sa.Boolean(), nullable=False, server_default=sa.text("1")),
+        sa.Column("enabled", sa.Boolean(), nullable=False, server_default=sa.true()),
         sa.Column("thresholds", sa.JSON(), nullable=False),
         sa.Column("severity_overrides", sa.JSON(), nullable=True),
         sa.Column("updated_by", sa.Integer(), nullable=True),

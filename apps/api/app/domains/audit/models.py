@@ -58,7 +58,7 @@ class AuditLog(Base):
         String(100), nullable=True, index=True
     )
     action: Mapped[str] = mapped_column(
-        String(30), nullable=False, index=True
+        String(64), nullable=False, index=True
     )
     resource_type: Mapped[str] = mapped_column(
         String(100), nullable=False, index=True

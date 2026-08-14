@@ -83,6 +83,7 @@ class MigrationEngine:
         *,
         is_dry_run: bool = False,
         source: str = "unknown",
+        campus_id: int | None = None,
     ) -> MigratorResult:
         migrator = get_migrator(entity_type)
         if migrator is None:
@@ -95,6 +96,7 @@ class MigrationEngine:
             source=source,
             total_records=len(records),
             is_dry_run=is_dry_run,
+            campus_id=campus_id,
             started_at=now,
             created_at=now,
         )
@@ -246,10 +248,12 @@ class MigrationEngine:
         *,
         is_dry_run: bool = False,
         source: str = "unknown",
+        campus_id: int | None = None,
     ) -> list[MigratorResult]:
         """Run migrations for multiple entity types in dependency order.
 
         ``source_data`` maps each entity type to its list of records.
+        ``campus_id`` pins every created run to the calling tenant.
         """
         results: list[MigratorResult] = []
         for entity_type in entity_types:
@@ -267,13 +271,14 @@ class MigrationEngine:
                 entity_type, records,
                 is_dry_run=is_dry_run,
                 source=source,
+                campus_id=campus_id,
             )
             results.append(result)
         return results
 
-    async def rollback(self, run_id: int) -> int:
+    async def rollback(self, run_id: int, campus_id: int | None = None) -> int:
         """Roll back a completed migration run."""
-        run = await self.run_repo.get_by_id(run_id)
+        run = await self.run_repo.get_by_id(run_id, campus_id=campus_id)
         if run is None:
             raise ValueError(f"Migration run {run_id} not found")
 

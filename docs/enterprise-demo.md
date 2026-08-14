@@ -56,7 +56,7 @@ The seed is **deterministic** (fixed per-tenant RNG seeds) and
 | Redis | cache / queues | internal (6379) |
 | API (FastAPI) | backend | `http://localhost:8000` |
 | Worker | background jobs | internal |
-| Web (React) | frontend | `http://localhost:3000` |
+| Web (React / nginx) | frontend | `http://localhost:80` (nginx entry; the demo URL is `http://localhost`) |
 
 ## 4. Demo credentials (development-only)
 
@@ -104,7 +104,7 @@ allowed against a production database (a `_guard` raises otherwise).
 
 ### 1. Login
 
-Open `http://localhost:3000`, sign in as **`apex.admin` / `DemoPass!2026`**.
+Open `http://localhost` (nginx entry, port 80), sign in as **`apex.admin` / `DemoPass!2026`**.
 The organization switcher / account menu shows **Apex Global School** and
 the current role (**admin**).
 

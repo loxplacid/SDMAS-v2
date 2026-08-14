@@ -26,9 +26,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Union
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 revision: str = "034_harden_tenant_boundaries"
 down_revision: Union[str, None] = "033_add_notification_event_key"
@@ -37,17 +37,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 # Tables that gained campus_id after migration 011/016 and never received
-# an index on it.
+# an index on it.  admission_applications, rooms, time_slots,
+# timetable_entries, substitutions, exam_schedules, grading_structures,
+# grade_records, curricula, attendance_thresholds and period_attendances
+# already carry ``ix_<table>_campus_id`` from their creating migrations
+# (012/020), so they are excluded here.
 TABLES_NEEDING_INDEX = [
-    "admission_applications",
-    "rooms",
-    "time_slots",
-    "timetable_entries",
-    "substitutions",
-    "exam_schedules",
-    "grading_structures",
-    "grade_records",
-    "curricula",
     "payment_methods",
     "fee_schedules",
     "transaction_logs",
@@ -56,8 +51,6 @@ TABLES_NEEDING_INDEX = [
     "finance_reports",
     "absence_reasons",
     "attendance_corrections",
-    "attendance_thresholds",
-    "period_attendances",
     "documents",
     "communication_messages",
     "message_templates",

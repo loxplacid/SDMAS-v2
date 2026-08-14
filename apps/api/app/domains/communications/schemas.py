@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MessageTemplateCreate(BaseModel):
@@ -27,6 +27,8 @@ class MessageTemplateUpdate(BaseModel):
 
 
 class MessageTemplateResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     code: str
     name: str
@@ -105,6 +107,8 @@ class MessageUpdate(BaseModel):
 
 
 class MessageRecipientResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     message_id: int
     recipient_type: str
@@ -118,6 +122,8 @@ class MessageRecipientResponse(BaseModel):
 
 
 class MessageAttachmentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     message_id: int
     filename: str
@@ -127,6 +133,8 @@ class MessageAttachmentResponse(BaseModel):
 
 
 class MessageScheduleResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     message_id: int
     scheduled_at: datetime.datetime
@@ -139,6 +147,8 @@ class MessageScheduleResponse(BaseModel):
 
 
 class MessageResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     template_id: Optional[int]
     thread_id: Optional[int]
@@ -248,6 +258,8 @@ class InboxMessageInfo(BaseModel):
 
 
 class InboxItemResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     message_id: int
     recipient_type: str

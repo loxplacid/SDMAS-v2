@@ -102,8 +102,12 @@ class FeeSchedule(Base):
 class TransactionLog(Base):
     __tablename__ = "transaction_logs"
     __table_args__ = (
+        # Idempotency keys are unique *per campus* — two independent tenants
+        # may legitimately use the same key.  (NULL keys are distinct in
+        # PostgreSQL, so legacy rows without a key are unaffected.)
         UniqueConstraint(
-            "idempotency_key", name="uq_transaction_idempotency"
+            "campus_id", "idempotency_key",
+            name="uq_transaction_idempotency",
         ),
     )
 
@@ -131,7 +135,7 @@ class TransactionLog(Base):
         String(100), nullable=True
     )
     idempotency_key: Mapped[Optional[str]] = mapped_column(
-        String(255), nullable=True, unique=True
+        String(255), nullable=True
     )
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     campus_id: Mapped[int | None] = mapped_column(

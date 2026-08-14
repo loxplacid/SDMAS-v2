@@ -1,7 +1,7 @@
 """create users table
 
 Revision ID: 006_create_users
-Revises: 005_create_academic_structure_extensions
+Revises: 005_academic_structure_ext
 Create Date: 2026-07-28
 
 """
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "006_create_users"
-down_revision: str | None = "005_create_academic_structure_extensions"
+down_revision: str | None = "005_academic_structure_ext"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
@@ -35,7 +35,7 @@ def upgrade() -> None:
             "is_active",
             sa.Boolean(),
             nullable=False,
-            server_default=sa.text("1"),
+            server_default=sa.true(),
         ),
         sa.Column(
             "created_at",

@@ -10,7 +10,7 @@ SDMAS-v2 ships a GitHub Actions pipeline in `.github/workflows/ci.yml`.
 | `api-integration` | `-m integration` (Testcontainers) | Requires Docker-in-Docker on the runner |
 | `migrations` | single-head check + `alembic upgrade head` | Runs against a PostgreSQL 16 service container (the chain cannot run on SQLite) |
 | `web` | `npm ci`, `tsc --noEmit`, vitest, production build, `npm audit --audit-level=high` | Lockfile: `apps/web/package-lock.json` |
-| `mobile` | `npm ci`, `tsc --noEmit`, jest | Lockfile: `apps/mobile/package-lock.json` |
+| `mobile` | `npm ci`, `tsc --noEmit`, jest (no `--passWithNoTests` — a zero-test suite must fail) | Lockfile: `apps/mobile/package-lock.json` |
 | `security` | Gitleaks scan, `.env`-tracked guard, hardcoded-credential grep | Values are redacted in output |
 
 ## Design decisions
@@ -50,7 +50,7 @@ DATABASE_URL=postgresql+asyncpg://sdmas:sdmas_dev@localhost:5432/sdmas uv run al
 cd apps/web && npm ci && npx tsc --noEmit && npm test && npm run build && npm audit --audit-level=high
 
 # Mobile
-cd apps/mobile && npm ci && npx tsc --noEmit && npx jest --passWithNoTests
+cd apps/mobile && npm ci && npx tsc --noEmit && npx jest
 ```
 
 ## Adding a new backend dependency

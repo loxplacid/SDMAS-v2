@@ -20,7 +20,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.infrastructure.database import Base
 
-# Import all models so Base.metadata can resolve cross-module foreign keys
+# Import all models so Base.metadata can resolve cross-module foreign keys.
+# Importing ``app.main`` registers every domain model with Base.metadata
+# (mirrors the main ``tests/conftest.py::api_client`` fixture), so table
+# creation is order-independent regardless of which file runs first —
+# otherwise ``enrollments.student_id`` cannot resolve ``students`` when
+# this suite runs in isolation.
+from app.main import app  # noqa: F401
 from app.domains.institution.models import (  # noqa: F401
     Institution,
     Campus,

@@ -5,6 +5,8 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator, model_validator
 
+from app.domains.auth.permissions import TENANT_ROLES
+
 
 class UserCreate(BaseModel):
     email: str
@@ -118,10 +120,11 @@ class AdminUserUpdate(BaseModel):
     def valid_roles(cls, v: Optional[list[str]]) -> Optional[list[str]]:
         if v is None:
             return v
-        allowed = {"admin", "principal", "accountant", "staff", "teacher", "student", "parent"}
         for r in v:
-            if r not in allowed:
-                raise ValueError(f"Invalid role '{r}'. Must be one of: {', '.join(sorted(allowed))}")
+            if r not in TENANT_ROLES:
+                raise ValueError(
+                    f"Invalid role '{r}'. Must be one of: {', '.join(sorted(TENANT_ROLES))}"
+                )
         return v
 
 

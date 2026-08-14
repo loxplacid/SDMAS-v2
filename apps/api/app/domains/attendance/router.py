@@ -21,6 +21,13 @@ from app.domains.attendance.schemas import (
     StudentAttendanceSummary,
 )
 from app.domains.attendance.service import AttendanceService
+from app.domains.auth.dependencies import require_permission
+from app.domains.auth.models import User
+from app.domains.auth.permissions import (
+    ATTENDANCE_RECORD,
+    ATTENDANCE_UPDATE,
+    ATTENDANCE_VIEW,
+)
 from app.domains.student.repository import StudentRepository
 from app.infrastructure.database import get_session
 from app.multi_tenant.dependencies import require_tenant_context
@@ -53,6 +60,7 @@ async def record_attendance(
     data: AttendanceRecordCreate,
     service: AttendanceService = Depends(get_attendance_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ATTENDANCE_RECORD)),
 ) -> AttendanceRecordResponse:
     record = await service.record_attendance(data)
     inject_campus(record, tenant)
@@ -68,6 +76,7 @@ async def record_daily_attendance(
     data: DailyAttendanceCreate,
     service: AttendanceService = Depends(get_attendance_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ATTENDANCE_RECORD)),
 ) -> list[AttendanceRecordResponse]:
     records = await service.record_daily_attendance(data)
     for r in records:
@@ -80,6 +89,7 @@ async def get_attendance(
     record_id: int,
     service: AttendanceService = Depends(get_attendance_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ATTENDANCE_VIEW)),
 ) -> AttendanceRecordResponse:
     record = await service.get_attendance(record_id)
     assert_tenant_scope(record, tenant, resource="attendance")
@@ -92,6 +102,7 @@ async def update_attendance(
     data: AttendanceRecordUpdate,
     service: AttendanceService = Depends(get_attendance_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ATTENDANCE_UPDATE)),
 ) -> AttendanceRecordResponse:
     record = await service.get_attendance(record_id)
     assert_tenant_scope(record, tenant, resource="attendance")
@@ -119,6 +130,7 @@ async def list_attendance(
     ),
     service: AttendanceService = Depends(get_attendance_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ATTENDANCE_VIEW)),
 ) -> Page[AttendanceRecordResponse]:
     records, total = await service.repo.list(
         student_id=student_id,
@@ -168,6 +180,7 @@ async def get_student_attendance(
     service: AttendanceService = Depends(get_attendance_service),
     session: AsyncSession = Depends(get_session),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ATTENDANCE_VIEW)),
 ) -> Page[AttendanceRecordResponse]:
     if tenant.is_tenant_scoped:
         student = await StudentRepository(session, tenant).get_by_id(student_id)
@@ -201,6 +214,7 @@ async def get_section_attendance(
     attendance_date: str = Query(..., alias="attendance_date", description="Date to query"),
     service: AttendanceService = Depends(get_attendance_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ATTENDANCE_VIEW)),
 ) -> list[AttendanceRecordResponse]:
     records = await service.get_section_attendance(section_id, attendance_date)
     return [AttendanceRecordResponse.model_validate(r) for r in records]
@@ -216,6 +230,7 @@ async def get_student_summary(
     end_date: str = Query(..., alias="end_date", description="End date (inclusive)"),
     service: AttendanceService = Depends(get_attendance_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ATTENDANCE_VIEW)),
 ) -> StudentAttendanceSummary:
     summary = await service.get_student_summary(student_id, start_date, end_date)
     return StudentAttendanceSummary(**summary)
@@ -230,6 +245,7 @@ async def get_section_summary(
     attendance_date: str = Query(..., alias="attendance_date", description="Date to summarize"),
     service: AttendanceService = Depends(get_attendance_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ATTENDANCE_VIEW)),
 ) -> SectionAttendanceSummary:
     summary = await service.get_section_summary(section_id, attendance_date)
     return SectionAttendanceSummary(**summary)

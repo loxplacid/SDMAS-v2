@@ -23,7 +23,6 @@ from __future__ import annotations
 
 from typing import Final
 
-
 # =====================================================================
 # Permission string constants
 # =====================================================================
@@ -174,6 +173,16 @@ ALL_PERMISSIONS: list[str] = [
 # =====================================================================
 # Default role → permission mappings
 # =====================================================================
+
+#: The roles a tenant admin may assign to users (primary ``role`` or M2M
+#: ``assigned_roles``).  Single source of truth — schemas and routers
+#: that validate role input MUST reference this set so a new role cannot
+#: be added in one place and forgotten in another.  Platform roles
+#: (``platform_admin``) are deliberately excluded: a tenant admin must
+#: never be able to mint a cross-tenant account.
+TENANT_ROLES: frozenset[str] = frozenset(
+    {"admin", "principal", "accountant", "staff", "teacher", "student", "parent"}
+)
 
 # Every permission EXCEPT the platform-gating ones.  ``admin`` is a
 # TENANT role: it gets full control inside its own campus but must NEVER

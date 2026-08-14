@@ -1,7 +1,7 @@
 """create roles, permissions, and role_permissions tables
 
 Revision ID: 017_create_permission_tables
-Revises: 016_add_missing_campus_id_columns
+Revises: 016_campus_id_columns
 Create Date: 2026-07-30
 """
 from __future__ import annotations
@@ -15,7 +15,7 @@ import sqlalchemy as sa
 from app.domains.auth.permissions import ALL_PERMISSIONS, ROLE_PERMISSIONS
 
 revision: str = "017_create_permission_tables"
-down_revision: Union[str, None] = "016_add_missing_campus_id_columns"
+down_revision: Union[str, None] = "016_campus_id_columns"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -50,9 +50,12 @@ def upgrade() -> None:
         desc_sql = "NULL" if description is None else f"'{description}'"
         op.execute(
             sa.text(
-                "INSERT OR IGNORE INTO roles "
+                "INSERT INTO roles "
                 "(code, label, description, is_system, created_at) "
-                f"VALUES ('{code}', '{label}', {desc_sql}, 1, '{now}')"
+                # is_system is BOOLEAN: PostgreSQL rejects the bare integer 1
+                # (SQLite tolerates it), so use the SQL TRUE literal.
+                f"VALUES ('{code}', '{label}', {desc_sql}, TRUE, '{now}') "
+                "ON CONFLICT DO NOTHING"
             )
         )
 
@@ -71,9 +74,10 @@ def upgrade() -> None:
     for perm_code in ALL_PERMISSIONS:
         op.execute(
             sa.text(
-                "INSERT OR IGNORE INTO permissions "
+                "INSERT INTO permissions "
                 "(code, description, created_at) "
-                f"VALUES ('{perm_code}', NULL, '{now}')"
+                f"VALUES ('{perm_code}', NULL, '{now}') "
+                "ON CONFLICT DO NOTHING"
             )
         )
 
@@ -96,9 +100,10 @@ def upgrade() -> None:
         for perm_code in perms:
             op.execute(
                 sa.text(
-                    "INSERT OR IGNORE INTO role_permissions (role_id, permission_id) "
+                    "INSERT INTO role_permissions (role_id, permission_id) "
                     "SELECT r.id, p.id FROM roles r, permissions p "
-                    f"WHERE r.code = '{role_code}' AND p.code = '{perm_code}'"
+                    f"WHERE r.code = '{role_code}' AND p.code = '{perm_code}' "
+                    "ON CONFLICT DO NOTHING"
                 )
             )
 

@@ -33,9 +33,29 @@ from app.domains.school_finance.schemas import (
     PaymentMethodUpdate,
     ReconciliationCreate,
     ReceiptGenerate,
+    VALID_TRANSACTION_TYPES,
 )
 
 logger = logging.getLogger(__name__)
+
+# ── Ledger classification (single source of truth) ──────────────────────
+# The running balance chain (``record``) and the recomputed balance
+# (``get_student_balance``) MUST agree on the sign of every transaction
+# type.  A type counted by one but not the other silently drifts the
+# ledger apart, so both consume these constants.
+#
+# Terminology follows the codebase's existing convention: a "debit" is
+# money received from the student (increases the running balance) and a
+# "credit" is money returned / credited (decreases it).  The sign of the
+# currently-unused types (``fine``, ``reversal``, ``adjustment``) is a
+# deliberate choice — the hard invariant is ``chain == recomputed sum``,
+# not any particular sign.
+
+#: Money received from the student — increases the running balance.
+LEDGER_DEBIT_TYPES = frozenset({"payment", "fine"})
+
+#: Money returned / credited to the student — decreases the running balance.
+LEDGER_CREDIT_TYPES = frozenset({"refund", "waiver", "discount", "reversal", "adjustment"})
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -231,13 +251,48 @@ class TransactionLogService:
         recorded_by: Optional[int] = None,
     ) -> TransactionLog:
         if idempotency_key:
-            existing = await self.find_by_idempotency_key(idempotency_key)
+            existing = await self.find_by_idempotency_key(
+                idempotency_key, campus_id=campus_id
+            )
             if existing:
                 return existing
 
-        last_balance = await self._get_last_balance(student_id)
-        balance_before = balance_before or last_balance
-        balance_after = balance_before - amount if transaction_type in ("refund", "waiver", "discount") else balance_before + amount
+        # Service-layer validation: the ledger is immutable and written by
+        # services and jobs as well as by validated router schemas — a
+        # direct caller must not be able to journal garbage.
+        if transaction_type not in VALID_TRANSACTION_TYPES:
+            raise ValidationError(
+                f"Invalid transaction type '{transaction_type}'"
+            )
+        if amount <= 0:
+            raise ValidationError(
+                "Transaction amount must be a positive integer"
+            )
+
+        # Per-student serialization: concurrent payments/refunds for the
+        # same student must not both read the same pre-transaction balance
+        # (running-balance drift).  The student row is the serialization
+        # point — PostgreSQL honours the row lock, and the recomputed sum
+        # below keeps every row truthful even where locks are not enforced.
+        # LOCK ORDERING: this is intentionally the LAST lock acquired in a
+        # student's money flow (the fees service already holds the fee-due /
+        # payment row locks).  Never acquire a fee-due or payment lock after
+        # this one — that would invert the order and deadlock.
+        from app.domains.student.models import Student
+        await self.session.execute(
+            select(Student.id)
+            .where(Student.id == student_id)
+            .with_for_update()
+        )
+
+        # Opening balance comes from the authoritative recomputed sum, so a
+        # drifted or legacy chain can never corrupt the next row.
+        if not balance_before:
+            balance_before = await self.get_student_balance(
+                student_id, campus_id
+            )
+        is_credit = transaction_type in LEDGER_CREDIT_TYPES
+        balance_after = balance_before - amount if is_credit else balance_before + amount
 
         log = TransactionLog(
             transaction_type=transaction_type,
@@ -257,10 +312,20 @@ class TransactionLogService:
         await self.session.flush()
         return log
 
-    async def find_by_idempotency_key(self, key: str) -> TransactionLog | None:
-        result = await self.session.execute(
-            select(TransactionLog).where(TransactionLog.idempotency_key == key)
+    async def find_by_idempotency_key(
+        self, key: str, campus_id: Optional[int] = None
+    ) -> TransactionLog | None:
+        """Find a prior transaction log by idempotency key.
+
+        Scoped to ``campus_id`` when provided: a key supplied by one
+        tenant must never resolve to another tenant's ledger record.
+        """
+        query = select(TransactionLog).where(
+            TransactionLog.idempotency_key == key
         )
+        if campus_id is not None:
+            query = query.where(TransactionLog.campus_id == campus_id)
+        result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def get(self, log_id: int) -> TransactionLog:
@@ -339,12 +404,96 @@ class TransactionLogService:
         result = await self.session.execute(q)
         return result.scalars().all(), total
 
+    async def export_transactions_csv(
+        self,
+        student_id: Optional[int] = None,
+        transaction_type: Optional[str] = None,
+        payment_id: Optional[int] = None,
+        campus_id: Optional[int] = None,
+        from_date: Optional[str] = None,
+        to_date: Optional[str] = None,
+        min_amount: Optional[int] = None,
+        max_amount: Optional[int] = None,
+        q: Optional[str] = None,
+    ) -> str:
+        """CSV dump of the ledger rows matching the same filters as ``list``.
+
+        Uses the same condition-building as ``list`` (including the P13
+        free-text search) but without pagination, so a finance user can
+        export the full matching ledger for reconciliation.
+        """
+        conditions = []
+        if student_id is not None:
+            conditions.append(TransactionLog.student_id == student_id)
+        if transaction_type is not None:
+            conditions.append(TransactionLog.transaction_type == transaction_type)
+        if payment_id is not None:
+            conditions.append(TransactionLog.payment_id == payment_id)
+        if campus_id is not None:
+            conditions.append(TransactionLog.campus_id == campus_id)
+        if from_date is not None:
+            conditions.append(TransactionLog.created_at >= from_date)
+        if to_date is not None:
+            conditions.append(TransactionLog.created_at <= to_date)
+        if min_amount is not None:
+            conditions.append(TransactionLog.amount >= min_amount)
+        if max_amount is not None:
+            conditions.append(TransactionLog.amount <= max_amount)
+        if q:
+            needle = q.strip()
+            if needle:
+                numeric_student = None
+                if needle.isdigit():
+                    try:
+                        numeric_student = int(needle)
+                    except ValueError:
+                        numeric_student = None
+                like_terms = [
+                    TransactionLog.reference_number.ilike(f"%{needle}%"),
+                    TransactionLog.description.ilike(f"%{needle}%"),
+                    TransactionLog.idempotency_key.ilike(f"%{needle}%"),
+                ]
+                if numeric_student is not None:
+                    conditions.append(
+                        or_(TransactionLog.student_id == numeric_student, *like_terms)
+                    )
+                else:
+                    conditions.append(or_(*like_terms))
+
+        q = select(TransactionLog)
+        if conditions:
+            q = q.where(and_(*conditions))
+        q = q.order_by(TransactionLog.created_at.desc())
+        result = await self.session.execute(q)
+        logs = result.scalars().all()
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow([
+            "ID", "Date", "Type", "Student ID", "Payment ID", "Amount (cents)",
+            "Balance After (cents)", "Reference", "Description", "Idempotency Key",
+        ])
+        for log in logs:
+            writer.writerow([
+                log.id,
+                log.created_at.isoformat() if log.created_at else "",
+                log.transaction_type,
+                log.student_id,
+                log.payment_id or "",
+                log.amount,
+                log.balance_after if log.balance_after is not None else "",
+                log.reference_number or "",
+                log.description or "",
+                log.idempotency_key or "",
+            ])
+        return output.getvalue()
+
     async def get_student_balance(
         self, student_id: int, campus_id: Optional[int] = None
     ) -> int:
         credits_q = select(func.coalesce(func.sum(TransactionLog.amount), 0)).where(
             TransactionLog.student_id == student_id,
-            TransactionLog.transaction_type.in_(["payment"]),
+            TransactionLog.transaction_type.in_(LEDGER_DEBIT_TYPES),
         )
         if campus_id is not None:
             credits_q = credits_q.where(TransactionLog.campus_id == campus_id)
@@ -353,22 +502,17 @@ class TransactionLogService:
 
         debits_q = select(func.coalesce(func.sum(TransactionLog.amount), 0)).where(
             TransactionLog.student_id == student_id,
-            TransactionLog.transaction_type.in_(["refund", "waiver", "discount"]),
+            TransactionLog.transaction_type.in_(LEDGER_CREDIT_TYPES),
         )
         if campus_id is not None:
             debits_q = debits_q.where(TransactionLog.campus_id == campus_id)
         debits = await self.session.execute(debits_q)
         return credits - (debits.scalar() or 0)
 
-    async def _get_last_balance(self, student_id: int) -> int:
-        result = await self.session.execute(
-            select(TransactionLog)
-            .where(TransactionLog.student_id == student_id)
-            .order_by(TransactionLog.created_at.desc())
-            .limit(1)
-        )
-        last = result.scalar_one_or_none()
-        return last.balance_after if last else 0
+    # NOTE: the previous ``_get_last_balance`` (last-row read without any
+    # per-student serialization) was removed — the running balance is now
+    # always derived from the authoritative recomputed sum in ``record``,
+    # so a stale last row can never corrupt the next ledger entry.
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1351,9 +1495,7 @@ class FinanceReportService:
     async def generate_collection_summary_csv(
         self, academic_year_id: Optional[int] = None, campus_id: Optional[int] = None
     ) -> str:
-        from app.domains.fees.models import Payment, FeeDue
-        from app.domains.student.models import Student
-        from app.domains.academic.models import Class
+        from app.domains.fees.models import Payment, FeeDue, FeeStructure
 
         conditions = []
         if academic_year_id is not None:
@@ -1364,15 +1506,16 @@ class FinanceReportService:
         q = (
             select(
                 FeeDue.student_id,
-                FeeDue.class_id,
+                FeeStructure.class_id,
                 func.sum(FeeDue.original_amount).label("total_fees"),
                 func.coalesce(func.sum(Payment.amount), 0).label("total_paid"),
             )
+            .join(FeeStructure, FeeStructure.id == FeeDue.fee_structure_id)
             .outerjoin(Payment, Payment.fee_due_id == FeeDue.id)
         )
         if conditions:
             q = q.where(and_(*conditions))
-        q = q.group_by(FeeDue.student_id, FeeDue.class_id)
+        q = q.group_by(FeeDue.student_id, FeeStructure.class_id)
         result = await self.session.execute(q)
         rows = result.all()
 
@@ -1398,6 +1541,15 @@ class FinanceReportService:
         )
         self.session.add(report)
         await self.session.flush()
+        return report
+
+    async def get_report(self, report_id: int) -> FinanceReport:
+        result = await self.session.execute(
+            select(FinanceReport).where(FinanceReport.id == report_id)
+        )
+        report = result.scalar_one_or_none()
+        if report is None:
+            raise NotFoundError(f"Finance report {report_id} not found")
         return report
 
     async def list_reports(

@@ -1,7 +1,7 @@
 # SDMAS v2 — Security Assurance Report
 
-**Generated:** 2026-08-10T11:16:16+00:00  
-**Commit:** 6109d987c33bbb50d7542098731cb387b7ace710  
+**Generated:** 2026-08-14T09:14:37+00:00  
+**Commit:** f4d7fce7c79f31c679093a05837db7ac27740350  
 **Python:** 3.13.1  
 **Node:** v24.14.1  
 **OS:** Windows (11)  
@@ -14,9 +14,9 @@
 
 ### Bandit (Python)
 
-- **Total findings:** 32  
+- **Total findings:** 36  
 - **HIGH severity:** 0  
-- **MEDIUM/LOW:** 32  
+- **MEDIUM/LOW:** 36  
 
 **Gate: PASS** (0 HIGH findings)  
 
@@ -26,20 +26,18 @@ Artifact: `artifacts/security/bandit.json`
 
 ### pip-audit (Python — production deps)
 
-- **Vulnerable packages:** 1  
-  - **ecdsa** 0.19.2: PYSEC-2026-1325  
+- **Vulnerable packages:** 0  
 
-**Gate: FAIL** — vulnerabilities found.  
-See `docs/security-policy.md` for the accepted-risk register.  
+**Gate: PASS** — no known vulnerabilities.  
 
 Artifact: `artifacts/security/pip-audit.json`  
 
 ### npm audit (Web)
 
-- **Total:** 12  
-  - Critical: 1  
-  - High: 7  
-  - Moderate: 4  
+- **Total:** 0  
+  - Critical: 0  
+  - High: 0  
+  - Moderate: 0  
 
 Artifact: `artifacts/security/npm-audit-web.json`  
 
@@ -117,9 +115,9 @@ Artifact manifest: `artifact-manifest.json`
 | **Finance idempotency** | VERIFIED | test_finance_security + test_outbox |
 | **Outbox durability** | VERIFIED | test_outbox + test_async_hardening |
 | **Migration isolation** | VERIFIED | test_migration_step2 tenant IDOR tests |
-| **SAST (Bandit)** | VERIFIED | 32 findings, 0 HIGH |
+| **SAST (Bandit)** | VERIFIED | 36 findings, 0 HIGH |
 | **Dependency audit (Python)** | VERIFIED | See pip-audit findings |
-| **Dependency audit (Web)** | VERIFIED | 12 findings |
+| **Dependency audit (Web)** | VERIFIED | 0 findings |
 | **Dependency audit (Mobile)** | VERIFIED | 43 findings |
 | **Secret scanning** | VERIFIED | Gitleaks + hardcoded-credential pattern scan in CI |
 | **SBOM generation** | VERIFIED | CycloneDX 1.5 + SPDX 2.3; validated; deterministic |

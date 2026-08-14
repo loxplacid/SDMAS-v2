@@ -218,6 +218,10 @@ class PaymentCreate(BaseModel):
 class RefundCreate(BaseModel):
     amount: int
     reason: Optional[str] = None
+    #: Client-supplied idempotency key so a retried / double-submitted
+    #: refund request resolves to the first result instead of refunding
+    #: twice (mirrors ``PaymentCreate.idempotency_key``).
+    idempotency_key: Optional[str] = None
 
     @field_validator("amount")
     @classmethod
@@ -225,6 +229,18 @@ class RefundCreate(BaseModel):
         if v <= 0:
             raise ValueError("Refund amount must be a positive integer")
         return v
+
+    @field_validator("idempotency_key")
+    @classmethod
+    def normalize_key(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        stripped = v.strip()
+        if not stripped:
+            raise ValueError("idempotency_key cannot be blank")
+        if len(stripped) > 255:
+            raise ValueError("idempotency_key is too long (max 255 characters)")
+        return stripped
 
 
 class RefundResult(BaseModel):

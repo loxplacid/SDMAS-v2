@@ -32,6 +32,11 @@ from app.domains.academic.models import AcademicYear, Class, Section, Subject, T
 from app.domains.attendance.models import AttendanceRecord
 from app.domains.auth.models import User
 from app.domains.fees.models import FeeType, FeeStructure, FeeDue
+# Institution models must be imported too: ``users.campus_id`` is an FK to
+# ``campuses.id`` — without ``Campus`` in the mapper registry, flushing the
+# admin user raises NoReferencedTableError when SQLAlchemy resolves the
+# dependency graph for the INSERT.
+from app.domains.institution.models import Campus, Institution  # noqa: F401
 from app.domains.student.models import Student
 from app.domains.workflow.models import Workflow, WorkflowStep, WorkflowTransition
 from app.infrastructure.database import create_engine_and_factory
@@ -120,10 +125,13 @@ async def seed_sample_data(session: AsyncSession) -> None:
     year_id = year.id
 
     # -- Terms --
+    # ``Term.start_date/end_date`` are String(10) — PostgreSQL rejects
+    # datetime.date for a VARCHAR column (SQLite tolerates it).  Pass
+    # ISO strings, not date objects.
     terms = [
-        Term(name="Term 1", academic_year_id=year_id, start_date=date(2025, 9, 1), end_date=date(2025, 12, 20), status="active"),
-        Term(name="Term 2", academic_year_id=year_id, start_date=date(2026, 1, 10), end_date=date(2026, 4, 10), status="active"),
-        Term(name="Term 3", academic_year_id=year_id, start_date=date(2026, 4, 20), end_date=date(2026, 6, 30), status="active"),
+        Term(name="Term 1", academic_year_id=year_id, start_date="2025-09-01", end_date="2025-12-20", status="active"),
+        Term(name="Term 2", academic_year_id=year_id, start_date="2026-01-10", end_date="2026-04-10", status="active"),
+        Term(name="Term 3", academic_year_id=year_id, start_date="2026-04-20", end_date="2026-06-30", status="active"),
     ]
     session.add_all(terms)
     await session.flush()
@@ -205,7 +213,9 @@ async def seed_sample_data(session: AsyncSession) -> None:
             due_status = "paid" if paid >= amount else ("partially_paid" if paid > 0 else "unpaid")
             session.add(FeeDue(
                 student_id=sid, academic_year_id=year_id, fee_structure_id=fs.id,
-                original_amount=amount, amount_paid=paid, due_date=date(2025, 10, 15),
+                original_amount=amount, amount_paid=paid,
+                # FeeDue.due_date is String(10) — ISO string, not a date object.
+                due_date="2025-10-15",
                 status=due_status,
             ))
     await session.flush()
@@ -221,7 +231,8 @@ async def seed_sample_data(session: AsyncSession) -> None:
             session.add(AttendanceRecord(
                 student_id=sid, academic_year_id=year_id,
                 class_id=grade9_id, section_id=sec9a_id,
-                attendance_date=d, status=random.choice(statuses),
+                # attendance_date is String(10) — ISO string, not a date object.
+                attendance_date=d.isoformat(), status=random.choice(statuses),
             ))
     await session.flush()
 

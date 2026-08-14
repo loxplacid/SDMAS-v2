@@ -35,25 +35,27 @@ are resolved.
 
 ## Data / migrations
 
-8. **SQLite migration chain is broken before `034`** (a non-batch ALTER in
-   `c09b48a8d73d`). Tests use `Base.metadata.create_all` on SQLite, so this
-   only matters if someone runs `alembic upgrade` against SQLite; production
-   targets PostgreSQL where the chain applies cleanly.
+8. **[RESOLVED] SQLite migration chain was broken before `034`** (a
+   non-batch ALTER in `c09b48a8d73d`). The migration was repaired; the full
+   chain `001 → 048` now applies cleanly from an empty SQLite database
+   (verified). Production targets PostgreSQL.
 9. **Legacy NULL-campus rows** (pre-tenancy data) are invisible to scoped
    tenant queries and exempted in a few legacy-data guards
    (`assert_tenant_scope_or_owner`, receipt/reconciliation campus checks).
    New data is always campus-tagged.
-10. **Migration workspace (D2) imports students only.** The engine supports
-    multi-entity runs (`MigrationEngine.run_bulk`) and migrators for
-    users/academic/attendance/fees exist, but the workspace wizard currently
-    exposes the `students` entity type. Other entity types can be added to
-    the pipeline without changing the architecture.
+10. **Migration workspace (D2) exposes five entity types.** The engine
+    supports multi-entity runs (`MigrationEngine.run_bulk`) with migrators
+    for `users`, `students`, `academic`, `attendance`, and `fees` — the
+    workspace wizard exposes all five via `get_registered_entity_types()`.
+    Additional entity types can be added without changing the architecture.
 
 ## Reliability
 
-10. **Two outbox tests are timing-flaky under full-suite load**
+10. **Two outbox tests were timing-flaky under full-suite load**
     (`tests/test_outbox/test_outbox.py` — reaper/stale-processing windows are
-    wall-clock sensitive). They pass in isolation.
+    wall-clock sensitive). They passed in isolation and in the full
+    non-integration suite (1,652 tests) on 2026-08-14; the flakiness has not
+    been reproduced recently but the wall-clock sensitivity remains.
 11. **`process_period_end` idempotency relies on row locks** (see #5); under
     an extremely unlucky interleaving on non-Postgres dialects a duplicate
     invoice guard could degrade to the constraint-free path.

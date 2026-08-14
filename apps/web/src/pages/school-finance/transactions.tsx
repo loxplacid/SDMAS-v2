@@ -8,7 +8,6 @@ import {
 import { Button, Badge, useToast } from '../../components/ui'
 import type { Column } from '../../components/ui/table'
 import { DataWorkspace, useWorkspace } from '../../components/data-workspace'
-import { exportApi } from '../../api/reports/export-api'
 import { formatCurrency, plural } from '../../lib/utils'
 
 /**
@@ -92,8 +91,8 @@ export const TransactionsPage: React.FC = () => {
   // Server round-trip: map the filter rail onto the backend params.
   // `q` is the ledger free-text search; a bare numeric query additionally
   // resolves as a student id on the backend.
-  useEffect(() => {
-    const params: SchoolFinanceListParams = { page: workspace.page, size: workspace.size }
+  const buildParams = useCallback((): SchoolFinanceListParams => {
+    const params: SchoolFinanceListParams = {}
     const q = workspace.filters.query.trim()
     if (q) params.q = q
     const t = workspace.filters.facets.transaction_type
@@ -104,6 +103,12 @@ export const TransactionsPage: React.FC = () => {
     const amount = workspace.filters.ranges.amount
     if (amount?.min !== undefined) params.min_amount = Number(amount.min)
     if (amount?.max !== undefined) params.max_amount = Number(amount.max)
+    return params
+  }, [workspace.filters])
+
+  useEffect(() => {
+    const params = { ...buildParams(), page: workspace.page, size: workspace.size }
+    const q = workspace.filters.query.trim()
 
     // `?student_id=` deep-link (from Student 360's ledger link): kept in the
     // canonical URL while active, dropped when the query no longer matches.
@@ -123,20 +128,22 @@ export const TransactionsPage: React.FC = () => {
     }
 
     fetch(params, true)
-  }, [workspace.page, workspace.size, workspace.filters, fetch])
+  }, [workspace.page, workspace.size, workspace.filters, buildParams, fetch])
 
   const [exporting, setExporting] = useState(false)
   const handleExport = async () => {
     setExporting(true)
     try {
-      const blob = await exportApi.payments({})
+      const blob = await transactionLogApi.exportCsv(buildParams())
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
       a.download = 'transactions.csv'
+      document.body.appendChild(a)
       a.click()
+      document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
-      showToast('Exporting all payments', 'success')
+      showToast('Ledger export downloaded', 'success')
     } catch (err: any) {
       showToast(err?.detail || 'Export failed', 'error')
     } finally {

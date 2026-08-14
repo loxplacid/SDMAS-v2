@@ -159,19 +159,44 @@ def upgrade() -> None:
     )
     op.create_index("ix_semesters_program_id", "semesters", ["program_id"])
 
-    # Ensure we have a default institution for backward compatibility
+    # Ensure we have a default institution for backward compatibility.
+    # Portability: `INSERT OR IGNORE` and `datetime('now')` are SQLite-only;
+    # `ON CONFLICT DO NOTHING` + `CURRENT_TIMESTAMP` work on PostgreSQL and
+    # SQLite >= 3.24 alike.
     op.execute(
         sa.text(
-            "INSERT OR IGNORE INTO institutions (id, name, code, status, created_at, updated_at) "
-            "VALUES (1, 'Default Institution', 'DEFAULT', 'active', datetime('now'), datetime('now'))"
+            "INSERT INTO institutions (id, name, code, status, created_at, updated_at) "
+            "VALUES (1, 'Default Institution', 'DEFAULT', 'active', "
+            "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) "
+            "ON CONFLICT (id) DO NOTHING"
         )
     )
     op.execute(
         sa.text(
-            "INSERT OR IGNORE INTO campuses (id, institution_id, name, code, status, created_at, updated_at) "
-            "VALUES (1, 1, 'Main Campus', 'MAIN', 'active', datetime('now'), datetime('now'))"
+            "INSERT INTO campuses (id, institution_id, name, code, status, created_at, updated_at) "
+            "VALUES (1, 1, 'Main Campus', 'MAIN', 'active', "
+            "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) "
+            "ON CONFLICT (id) DO NOTHING"
         )
     )
+
+    # Explicit-ID inserts do NOT advance PostgreSQL sequences, so the next
+    # default-ID insert (e.g. the enterprise demo seeder) would collide with
+    # id=1. Resync the sequences after seeding. SQLite autoincrement handles
+    # this implicitly and needs no action.
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute(
+            sa.text(
+                "SELECT setval(pg_get_serial_sequence('institutions', 'id'), "
+                "(SELECT COALESCE(MAX(id), 1) FROM institutions))"
+            )
+        )
+        op.execute(
+            sa.text(
+                "SELECT setval(pg_get_serial_sequence('campuses', 'id'), "
+                "(SELECT COALESCE(MAX(id), 1) FROM campuses))"
+            )
+        )
 
 
 def downgrade() -> None:

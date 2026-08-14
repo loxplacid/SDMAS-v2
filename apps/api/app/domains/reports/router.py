@@ -5,11 +5,17 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domains.auth.dependencies import get_current_user, require_role
+from app.domains.auth.dependencies import get_current_user, require_permission, require_role
 from app.domains.auth.models import User
-from app.multi_tenant.dependencies import require_tenant_context
-from app.multi_tenant.guards import assert_tenant_scope, effective_campus_id
-from app.multi_tenant.models import TenantContext
+from app.domains.auth.permissions import (
+    ACADEMIC_CREATE,
+    ATTENDANCE_EXPORT,
+    ATTENDANCE_VIEW,
+    FEES_CREATE,
+    FEES_EXPORT,
+    FEES_VIEW,
+    STUDENTS_EXPORT,
+)
 from app.domains.reports.attendance_reports import AttendanceReportService
 from app.domains.reports.batch_service import BatchService
 from app.domains.reports.export_service import ExportService
@@ -30,6 +36,9 @@ from app.domains.reports.schemas import (
     SectionAttendanceSummaryReport,
 )
 from app.infrastructure.database import get_session
+from app.multi_tenant.dependencies import require_tenant_context
+from app.multi_tenant.guards import assert_tenant_scope, effective_campus_id
+from app.multi_tenant.models import TenantContext
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
 
@@ -49,7 +58,7 @@ async def get_class_attendance_report(
     start_date: Optional[str] = Query(default=None, alias="start_date"),
     end_date: Optional[str] = Query(default=None, alias="end_date"),
     session: AsyncSession = Depends(get_session),
-    _current_user: User = Depends(require_role("admin", "staff")),
+    _current_user: User = Depends(require_permission(ATTENDANCE_VIEW)),
     tenant: TenantContext = Depends(require_tenant_context),
 ) -> ClassAttendanceSummaryReport:
     from app.domains.academic.models import Class as _Class
@@ -71,7 +80,7 @@ async def get_section_attendance_report(
     start_date: Optional[str] = Query(default=None, alias="start_date"),
     end_date: Optional[str] = Query(default=None, alias="end_date"),
     session: AsyncSession = Depends(get_session),
-    _current_user: User = Depends(require_role("admin", "staff")),
+    _current_user: User = Depends(require_permission(ATTENDANCE_VIEW)),
     tenant: TenantContext = Depends(require_tenant_context),
 ) -> SectionAttendanceSummaryReport:
     from app.domains.academic.models import Section as _Section
@@ -98,7 +107,7 @@ async def get_collection_report(
     start_date: Optional[str] = Query(default=None, alias="start_date"),
     end_date: Optional[str] = Query(default=None, alias="end_date"),
     session: AsyncSession = Depends(get_session),
-    _current_user: User = Depends(require_role("admin", "staff")),
+    _current_user: User = Depends(require_permission(FEES_VIEW)),
     tenant: TenantContext = Depends(require_tenant_context),
 ) -> list[CollectionReportItem]:
     from app.domains.academic.models import AcademicYear as _AY
@@ -119,7 +128,7 @@ async def get_outstanding_report(
     academic_year_id: int = Query(..., alias="academic_year_id"),
     class_id: Optional[int] = Query(default=None, alias="class_id"),
     session: AsyncSession = Depends(get_session),
-    _current_user: User = Depends(require_role("admin", "staff")),
+    _current_user: User = Depends(require_permission(FEES_VIEW)),
     tenant: TenantContext = Depends(require_tenant_context),
 ) -> list[OutstandingReportItem]:
     from app.domains.academic.models import AcademicYear as _AY
@@ -137,7 +146,7 @@ async def get_outstanding_report(
 async def get_detailed_receipt(
     payment_id: int,
     session: AsyncSession = Depends(get_session),
-    _current_user: User = Depends(require_role("admin", "staff")),
+    _current_user: User = Depends(require_permission(FEES_VIEW)),
     tenant: TenantContext = Depends(require_tenant_context),
 ) -> DetailedReceipt:
     from app.domains.fees.models import Payment as _Payment
@@ -158,7 +167,7 @@ async def export_students(
     status: Optional[str] = Query(default=None),
     search: Optional[str] = Query(default=None),
     session: AsyncSession = Depends(get_session),
-    _current_user: User = Depends(require_role("admin", "staff")),
+    _current_user: User = Depends(require_permission(STUDENTS_EXPORT)),
     tenant: TenantContext = Depends(require_tenant_context),
 ):
     service = ExportService(session, tenant)
@@ -173,7 +182,7 @@ async def export_attendance(
     start_date: Optional[str] = Query(default=None, alias="start_date"),
     end_date: Optional[str] = Query(default=None, alias="end_date"),
     session: AsyncSession = Depends(get_session),
-    _current_user: User = Depends(require_role("admin", "staff")),
+    _current_user: User = Depends(require_permission(ATTENDANCE_EXPORT)),
     tenant: TenantContext = Depends(require_tenant_context),
 ):
     service = ExportService(session, tenant)
@@ -193,7 +202,7 @@ async def export_payments(
     start_date: Optional[str] = Query(default=None, alias="start_date"),
     end_date: Optional[str] = Query(default=None, alias="end_date"),
     session: AsyncSession = Depends(get_session),
-    _current_user: User = Depends(require_role("admin", "staff")),
+    _current_user: User = Depends(require_permission(FEES_EXPORT)),
     tenant: TenantContext = Depends(require_tenant_context),
 ):
     service = ExportService(session, tenant)
@@ -261,7 +270,7 @@ async def execute_rollover(
 async def batch_enroll(
     data: BatchEnrollInput,
     session: AsyncSession = Depends(get_session),
-    _current_user: User = Depends(require_role("admin", "staff")),
+    _current_user: User = Depends(require_permission(ACADEMIC_CREATE)),
     tenant: TenantContext = Depends(require_tenant_context),
 ) -> BatchEnrollResult:
     service = BatchService(session, tenant)
@@ -282,7 +291,7 @@ async def batch_enroll(
 async def batch_create_fee_dues(
     data: BatchFeeDueInput,
     session: AsyncSession = Depends(get_session),
-    _current_user: User = Depends(require_role("admin", "staff")),
+    _current_user: User = Depends(require_permission(FEES_CREATE)),
     tenant: TenantContext = Depends(require_tenant_context),
 ) -> BatchFeeDueResult:
     service = BatchService(session, tenant)

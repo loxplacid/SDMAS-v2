@@ -7,8 +7,8 @@ import secrets
 from typing import Optional, Sequence
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.config import settings
@@ -19,7 +19,16 @@ from app.core.exceptions import (
     ValidationError,
 )
 from app.core.security import SecurityAuditLogger
-from app.domains.audit.constants import CREATE, LOGIN, LOGIN_FAILED, PASSWORD_CHANGE, UPDATE, USER, ROLE
+from app.domains.audit.constants import (
+    CREATE,
+    LOGIN,
+    LOGIN_FAILED,
+    LOGOUT,
+    PASSWORD_CHANGE,
+    ROLE,
+    UPDATE,
+    USER,
+)
 from app.domains.audit.service import AuditService
 from app.domains.audit.utils import safe_details
 from app.domains.auth.models import RefreshToken, Role, User
@@ -250,6 +259,37 @@ class UserService:
 
         return access_token, refresh_token_str, settings.access_token_expire_minutes * 60
 
+    async def logout(
+        self,
+        user: User,
+        ip_address: str | None = None,
+    ) -> None:
+        """Invalidate the user's server-side session.
+
+        Revokes every outstanding refresh token for the user, so no new
+        access token can be minted after logout.  Already-issued access
+        tokens remain valid only until their short expiry (stateless
+        JWTs) — the client discards them on logout.  Idempotent.
+        """
+        await self.repo.revoke_all_user_tokens(user.id)
+
+        try:
+            audit_svc = AuditService(self.repo.session)
+            await audit_svc.record(
+                user_id=user.id,
+                username=user.username,
+                action=LOGOUT,
+                resource_type=USER,
+                resource_id=str(user.id),
+                campus_id=user.campus_id,
+                ip_address=ip_address,
+            )
+            await self.repo.session.flush()
+        except Exception:
+            logger.warning(
+                "Failed to write audit entry for logout (non-fatal)", exc_info=True
+            )
+
     async def _audit_login_failed(
         self,
         *,
@@ -325,6 +365,11 @@ class UserService:
             raise AuthenticationError("Invalid or expired refresh token")
 
         user = await self.repo.get_by_id(int(user_id))
+
+        # Deactivated users must not be able to rotate their session:
+        # a deactivation terminates refresh-token minting, not just login.
+        if not user.is_active:
+            raise AuthenticationError("Account is inactive")
 
         token_data = {"sub": str(user.id), "username": user.username, "jti": secrets.token_hex(16)}
         campus_id = user.campus_id
@@ -431,7 +476,13 @@ class UserService:
         if data.role is not None:
             user.role = data.role
         if data.is_active is not None:
+            was_active = user.is_active
             user.is_active = data.is_active
+            if was_active and not data.is_active:
+                # Deactivation terminates the session: revoke every
+                # outstanding refresh token so no new access token can
+                # be minted after the account is disabled.
+                await self.repo.revoke_all_user_tokens(user.id)
         if data.roles is not None:
             await self._sync_user_roles(user, data.roles)
 

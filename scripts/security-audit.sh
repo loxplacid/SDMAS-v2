@@ -55,6 +55,10 @@ fi
 # exceeded so CI can fail the build.
 GATE_FAILURES=()
 
+# Accepted-risk waivers (docs/security-policy.md). Kept in sync with the
+# pip-audit invocation in .github/workflows/ci.yml (evidence job).
+PIP_AUDIT_IGNORES=(--ignore-vuln PYSEC-2026-1325)
+
 mkdir -p "${SEC_DIR}" "${SBOM_OUT}" "${TESTS_DIR}" "${ARCH_DIR}"
 
 echo "================================================================"
@@ -85,8 +89,10 @@ echo "[3/8] Bandit (Python static analysis)"
 if command -v uvx >/dev/null 2>&1; then
   # bandit exits non-zero when findings exist — the report is still written
   # and the gate is decided after inspection.
+  # bandit exits non-zero when findings exist — the report is still written
+  # and the gate is decided after inspection.
   uvx bandit -r "${ROOT}/apps/api/app" -f json -o "${SEC_DIR}/bandit.json" -q 2>/dev/null || true
-  BANDIT_JSON="${SEC_DIR}/bandit.json" python - <<'PYEOF'
+  BANDIT_JSON="${SEC_DIR}/bandit.json" python - <<'PYEOF' || BANDIT_HIGH=1
 import json, collections, os
 bandit_json = os.environ["BANDIT_JSON"]
 try:
@@ -100,7 +106,12 @@ else:
     print(f"  bandit: {len(rs)} findings, {len(high)} HIGH")
     for (sev, conf), n in sorted(counts.items()):
         print(f"    {sev}/{conf}: {n}")
+    if high:
+        raise SystemExit(1)
 PYEOF
+  if [ "${BANDIT_HIGH:-0}" = "1" ]; then
+    GATE_FAILURES+=("bandit HIGH findings — fix or waive via docs/security-policy.md")
+  fi
 else
   echo "  uvx not available — bandit skipped"
 fi
@@ -118,9 +129,20 @@ else
   # output this evidence package must keep.  Treat it as failed only when
   # no report file was actually produced.
   uvx pip-audit -r "${SEC_DIR}/req_clean.txt" --format json \
-    -o "${SEC_DIR}/pip-audit.json" 2>/dev/null || true
+    -o "${SEC_DIR}/pip-audit.json" "${PIP_AUDIT_IGNORES[@]}" 2>/dev/null || true
   if [ -s "${SEC_DIR}/pip-audit.json" ]; then
     echo "  pip-audit completed (see artifacts/security/pip-audit.json)"
+    PIP_AUDIT_JSON="${SEC_DIR}/pip-audit.json" python - <<'PYEOF' || PIP_AUDIT_VULNS=1
+import json, os
+vulns = [dep for dep in json.load(open(os.environ["PIP_AUDIT_JSON"]))["dependencies"] if dep.get("vulns")]
+if vulns:
+    print(f"  pip-audit: {len(vulns)} vulnerable package(s) — see docs/security-policy.md waivers")
+    raise SystemExit(1)
+print("  pip-audit: no un-waived vulnerabilities")
+PYEOF
+    if [ "${PIP_AUDIT_VULNS:-0}" = "1" ]; then
+      GATE_FAILURES+=("pip-audit found vulnerable packages — fix or waive via docs/security-policy.md")
+    fi
   else
     echo "  pip-audit failed or timed out (network) — recorded in report as NOT VERIFIED"
   fi
@@ -135,10 +157,16 @@ if [ "${SKIP_NETWORK}" = "1" ]; then
 else
   for app in web mobile; do
     if [ -d "${ROOT}/apps/${app}" ]; then
+      # npm audit exits non-zero when it FINDS vulnerabilities — the JSON
+      # report is still written.  Judge by the report file, not the exit
+      # code, or every vulnerable app is misreported as "failed".
       (cd "${ROOT}/apps/${app}" && npm audit --json \
-        > "${SEC_DIR}/npm-audit-${app}.json" 2>/dev/null \
-        && echo "  ${app}: report saved") \
-        || echo "  ${app}: npm audit failed (no lockfile or network)"
+        > "${SEC_DIR}/npm-audit-${app}.json" 2>/dev/null || true)
+      if [ -s "${SEC_DIR}/npm-audit-${app}.json" ]; then
+        echo "  ${app}: report saved"
+      else
+        echo "  ${app}: npm audit failed (no lockfile or network)"
+      fi
     fi
   done
 fi
@@ -151,9 +179,14 @@ if command -v "${ROOT}/scripts/python_sbom.sh" >/dev/null 2>&1 || [ -x "${ROOT}/
   bash "${ROOT}/scripts/node_sbom.sh" >/dev/null 2>&1 || true
   (cd "${ROOT}" && SOURCE_DATE_EPOCH=0 python -m sbom.cli generate \
     --output-dir sbom/output >/dev/null 2>&1) || true
-  (cd "${ROOT}" && python -m sbom.cli validate --dir sbom/output \
-    > "${SBOM_OUT}/validate.txt" 2>&1) || true
-  echo "  validate: $(grep -c 'ok' "${SBOM_OUT}/validate.txt" 2>/dev/null || echo 0) checks"
+  if (cd "${ROOT}" && python -m sbom.cli validate --dir sbom/output \
+      > "${SBOM_OUT}/validate.txt" 2>&1); then
+    CLEAN=$(grep -c "0 error(s)" "${SBOM_OUT}/validate.txt" 2>/dev/null || echo 0)
+    echo "  validate: ${CLEAN} document(s) clean"
+  else
+    echo "  validate: FAILED — see ${SBOM_OUT}/validate.txt"
+    GATE_FAILURES+=("SBOM schema/data-quality validation failed")
+  fi
   cp -f "${ROOT}"/sbom/output/sbom.cdx.json "${SBOM_OUT}/" 2>/dev/null || true
   cp -f "${ROOT}"/sbom/output/sbom.spdx.json "${SBOM_OUT}/" 2>/dev/null || true
   cp -f "${ROOT}"/sbom/output/python_dependency_inventory.json "${SBOM_OUT}/" 2>/dev/null || true

@@ -12,12 +12,21 @@ import datetime
 
 import pytest
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ValidationError
-from app.domains.academic.models import AcademicYear, Class, Enrollment  # noqa: F401 — register tables for Base.metadata
-from app.domains.fees.models import FeeDue, FeeStructure, FeeType, Payment  # noqa: F401 — register tables for Base.metadata
-from app.domains.student.models import Student
+from app.domains.academic.models import (  # noqa: F401 — register tables for Base.metadata
+    AcademicYear,
+    Class,
+    Enrollment,
+)
+from app.domains.fees.models import (  # noqa: F401 — register tables for Base.metadata
+    FeeDue,
+    FeeStructure,
+    FeeType,
+    Payment,
+)
 from app.domains.school_finance.models import TransactionLog
 from app.domains.school_finance.schemas import (
     ReconciliationCreate,
@@ -27,6 +36,7 @@ from app.domains.school_finance.service import (
     ReconciliationService,
     SchoolFinanceDashboardService,
 )
+from app.domains.student.models import Student
 
 
 async def _seed_payment(
@@ -34,12 +44,19 @@ async def _seed_payment(
     campus_id: int,
     amount: int,
     key: str,
+    student_tag: str | None = None,
 ) -> int:
     """Compact payment + ledger seed (FKs are not enforced in the in-memory
-    test DB, so the academic chain is stubbed with id=1)."""
+    test DB, so the academic chain is stubbed with id=1).
+
+    ``student_tag`` distinguishes rows that reuse the same ``key`` (e.g.
+    same-campus idempotent replay) because ``students.student_number`` is
+    globally unique while the payment idempotency key is campus-scoped.
+    """
     student = Student(
         first_name=f"SF{key}", last_name="Seed",
-        student_number=f"SF-{key}", campus_id=campus_id, status="active",
+        student_number=f"SF-{student_tag or key}", campus_id=campus_id,
+        status="active",
     )
     db_session.add(student)
     await db_session.flush()
@@ -153,6 +170,81 @@ async def test_dashboard_is_campus_scoped(db_session: AsyncSession):
 
 
 # ---------------------------------------------------------------------------
+# Idempotency keys — scoped per campus (migration 047)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_payment_idempotency_keys_are_campus_scoped(db_session: AsyncSession):
+    """Two independent campuses may legitimately use the same client-supplied
+    idempotency key (regression for migration 047: the unique constraint used
+    to be global, so the second campus hit a spurious IntegrityError/409).
+
+    A same-campus duplicate is still rejected — the composite
+    (campus_id, idempotency_key) constraint enforces one payment per key.
+    """
+    await _seed_payment(db_session, 1, 5000, "camp-a-key")
+    await _seed_payment(db_session, 2, 5000, "camp-b-key")
+
+    rows_a = (
+        await db_session.execute(
+            select(Payment).where(Payment.idempotency_key == "camp-a-key")
+        )
+    ).scalars().all()
+    rows_b = (
+        await db_session.execute(
+            select(Payment).where(Payment.idempotency_key == "camp-b-key")
+        )
+    ).scalars().all()
+    assert len(rows_a) == 1 and rows_a[0].campus_id == 1
+    assert len(rows_b) == 1 and rows_b[0].campus_id == 2
+
+    # Same campus + same key → the composite (campus_id, idempotency_key)
+    # constraint fires: replay is a DB-level IntegrityError, not a silent
+    # duplicate. student_tag varies because students.student_number is
+    # globally unique even though the payment idempotency key is campus-scoped.
+    # A savepoint confines the expected failure so the outer test
+    # transaction (with the earlier rows) survives.
+    with pytest.raises(IntegrityError):
+        async with db_session.begin_nested():
+            await _seed_payment(db_session, 1, 5000, "camp-a-key", student_tag="camp-a-key-replay")
+
+    rows_a2 = (
+        await db_session.execute(
+            select(Payment).where(Payment.idempotency_key == "camp-a-key")
+        )
+    ).scalars().all()
+    assert len(rows_a2) == 1  # one payment per (campus, key)
+
+
+@pytest.mark.asyncio
+async def test_transaction_log_idempotency_scoped_by_campus(db_session: AsyncSession):
+    """``TransactionLogService.find_by_idempotency_key`` must not resolve a
+    key that belongs to another campus (regression for the unscoped lookup
+    fixed alongside migration 047).
+    """
+    from app.domains.school_finance.service import TransactionLogService
+
+    await _seed_payment(db_session, 1, 5000, "tx-scope-a")
+    await _seed_payment(db_session, 2, 7000, "tx-scope-b")
+
+    svc = TransactionLogService(db_session)
+
+    # Campus 1 must find its own ledger row...
+    found = await svc.find_by_idempotency_key("tx-tx-scope-a", campus_id=1)
+    assert found is not None
+    assert found.campus_id == 1
+
+    # ...and must NOT see campus 2's row under the same key.
+    cross = await svc.find_by_idempotency_key("tx-tx-scope-b", campus_id=1)
+    assert cross is None
+
+    # Same-campus replay resolves to the original row.
+    same = await svc.find_by_idempotency_key("tx-tx-scope-a", campus_id=1)
+    assert same is not None and same.id == found.id
+
+
+# ---------------------------------------------------------------------------
 # Transaction log — free-text search (P13)
 # ---------------------------------------------------------------------------
 
@@ -168,9 +260,11 @@ async def test_transaction_list_q_search(db_session: AsyncSession):
     svc = TransactionLogService(db_session)
 
     # reference-number search (the ledger's own reference_number column)
-    row1 = (await db_session.execute(select(TransactionLog).where(TransactionLog.payment_id == p1))).scalar_one()
+    stmt1 = select(TransactionLog).where(TransactionLog.payment_id == p1)
+    row1 = (await db_session.execute(stmt1)).scalar_one()
     row1.reference_number = "RCP-TEST-1001"
-    row2 = (await db_session.execute(select(TransactionLog).where(TransactionLog.payment_id == p2))).scalar_one()
+    stmt2 = select(TransactionLog).where(TransactionLog.payment_id == p2)
+    row2 = (await db_session.execute(stmt2)).scalar_one()
     row2.reference_number = "RCP-TEST-2002"
     await db_session.flush()
 

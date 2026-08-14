@@ -29,6 +29,38 @@ export function getAccessToken() {
   return accessToken
 }
 
+/**
+ * Authenticated fetch for non-JSON/non-CSV responses (e.g. printable HTML
+ * generated server-side). Shares the access/refresh token lifecycle with
+ * `request`, so a 401 triggers a refresh instead of a silent failure.
+ */
+export async function fetchAuthed(path: string): Promise<Response> {
+  const urlStr = BASE_URL ? `${BASE_URL}${path}` : path
+  const url = new URL(urlStr, BASE_URL ? undefined : window.location.origin)
+
+  const headers: Record<string, string> = {}
+  if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`
+
+  let res = await fetch(url.toString(), { headers })
+  if (res.status === 401 && refreshToken) {
+    const refreshed = await tryRefresh()
+    if (refreshed) {
+      headers['Authorization'] = `Bearer ${accessToken}`
+      res = await fetch(url.toString(), { headers })
+    } else {
+      clearTokens()
+      onLogout?.()
+      throw { status: 401, detail: 'Session expired. Please log in again.' } as ApiError
+    }
+  }
+
+  if (!res.ok) {
+    const errorBody = await res.json().catch(() => null)
+    throw parseApiError(res.status, errorBody) as ApiError
+  }
+  return res
+}
+
 async function tryRefresh(): Promise<boolean> {
   if (!refreshToken) return false
   if (refreshPromise) return refreshPromise
@@ -189,6 +221,18 @@ export const api = {
   },
 
   logout: () => {
+    // Best-effort server-side invalidation: revoke all refresh tokens
+    // so no new access token can be minted after logout.  Fire-and-forget
+    // (raw fetch, never through the refresh/onLogout machinery) so a
+    // network or auth failure can never block the local sign-out.
+    const token = accessToken
+    if (token) {
+      const url = BASE_URL ? `${BASE_URL}/auth/logout` : '/auth/logout'
+      fetch(url, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {})
+    }
     clearTokens()
   },
 

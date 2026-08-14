@@ -187,6 +187,54 @@ jobs:
       - name: Upgrade database to head
         run: uv run alembic upgrade head
 
+  docker-build:
+    name: Docker images (build + healthcheck smoke)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Every image must build from a clean checkout — a Dockerfile regression
+      # (base image, COPY paths, build args) must fail CI, not first appear at
+      # deploy time.
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/api
+          file: apps/api/Dockerfile
+          push: false
+          load: true
+          tags: sdmas-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build worker image
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/api
+          file: apps/api/Dockerfile.worker
+          push: false
+          load: true
+          tags: sdmas-worker:ci
+          cache-from: type=gha
+
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/web
+          file: apps/web/Dockerfile
+          push: false
+          load: true
+          tags: sdmas-web:ci
+          cache-from: type=gha
+
+      - name: Smoke-test images (healthcheck shape)
+        run: |
+          docker run --rm --entrypoint python sdmas-api:ci -c "import app.main; print('api ok')"
+          docker run --rm --entrypoint nginx sdmas-web:ci -t 2>&1 | grep -q "syntax is ok" && echo "web nginx ok"
+
   web:
     name: Web (type, tests, build, audit)
     runs-on: ubuntu-latest
@@ -241,7 +289,9 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Run tests
-        run: npx jest --passWithNoTests
+        # Deliberately NOT --passWithNoTests: a zero-test suite must fail the
+        # build so test coverage cannot silently disappear.
+        run: npx jest
 
   security:
     name: Security (secret scan, .env guard)
@@ -251,11 +301,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Gitleaks secret scan
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+      - name: Gitleaks secret scan (license-free CLI via container)
+        run: |
+          # The official gitleaks-action requires a GITLEAKS_LICENSE secret for
+          # organisation repositories, which a fresh clone cannot provide.
+          # The gitleaks CLI itself is free and license-free: run it through
+          # the official container image instead, so the gate works for any
+          # acquirer without configuring secrets.
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            zricethezav/gitleaks:latest detect --source /repo --no-banner --redact
 
       - name: Ensure no environment files are tracked by Git
         run: |
@@ -309,9 +363,12 @@ jobs:
         run: uv sync --frozen --extra dev
 
       # Gate 1 — Bandit SAST: fail on HIGH-severity findings.
+      # bandit exits non-zero when ANY finding exists (even 0 HIGH), so the
+      # report is always written and the JSON is the gate — the documented
+      # policy is HIGH-only (see docs/security-policy.md).
       - name: Bandit (Python SAST)
         run: |
-          uv run bandit -r app -f json -o ../bandit.json -q
+          uv run bandit -r app -f json -o ../bandit.json -q || true
           HIGH=$(uv run python -c \
             "import json; d=json.load(open('../bandit.json')); \
             print(len([r for r in d['results'] if r['issue_severity']=='HIGH']))")
@@ -352,6 +409,6 @@ jobs:
       - name: Build evidence package manifest
         run: |
           cd ..
-          bash scripts/security-audit.sh --ci-evidence-only || true
+          bash scripts/security-audit.sh --ci-evidence-only
           PYTHONPATH=scripts python -m evidence.cli checksums --dir artifacts
           echo "Evidence package built: $(ls artifacts/SHA256SUMS)"

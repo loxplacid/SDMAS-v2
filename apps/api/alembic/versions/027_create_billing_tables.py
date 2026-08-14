@@ -8,8 +8,9 @@ Create Date: 2026-07-31 06:30:00.000000
 
 from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 
 revision: str = "027_create_billing"
 down_revision: str | None = "026_create_jobs"
@@ -104,9 +105,14 @@ def upgrade() -> None:
     op.create_index("ix_invoices_status", "invoices", ["status"])
 
     # ── Seed default plans ────────────────────────────────────────────
+    # ``:now`` placeholders were never bound — ``op.execute`` raised
+    # ``InvalidRequestError: A value is required for bind parameter 'now'``
+    # on every dialect, blocking the whole migration chain.  ``Alembic's
+    # ``Operations.execute`` (1.18) accepts no bind params, so the
+    # timestamps are inlined as ``CURRENT_TIMESTAMP`` (valid on SQLite and
+    # PostgreSQL alike).
     from sqlalchemy.sql import text
 
-    now = sa.func.now()
     op.execute(
         text("""
             INSERT INTO plans (name, code, description, features, limits,
@@ -117,25 +123,25 @@ def upgrade() -> None:
              'Get started with basic features for 14 days',
              '{"basic_reports": true, "email_notifications": true, "sms": false, "ai_grading": false, "advanced_reports": false, "api_access": false}',
              '{"users": 10, "students": 100, "storage_gb": 1, "ai_requests": 0}',
-             'monthly', 0, 14, 1, 0, :now, :now),
+             'monthly', 0, 14, TRUE, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
             ('Starter', 'starter',
              'Essential features for small schools',
              '{"basic_reports": true, "email_notifications": true, "sms": false, "ai_grading": false, "advanced_reports": false, "api_access": false}',
              '{"users": 25, "students": 500, "storage_gb": 5, "ai_requests": 100}',
-             'monthly', 29900, 0, 1, 1, :now, :now),
+             'monthly', 29900, 0, TRUE, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
             ('Growth', 'growth',
              'Advanced features for growing schools',
              '{"basic_reports": true, "email_notifications": true, "sms": true, "ai_grading": false, "advanced_reports": true, "api_access": true}',
              '{"users": 100, "students": 2000, "storage_gb": 25, "ai_requests": 1000}',
-             'monthly', 99900, 0, 1, 2, :now, :now),
+             'monthly', 99900, 0, TRUE, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 
             ('Enterprise', 'enterprise',
              'Full platform access for large institutions',
              '{"basic_reports": true, "email_notifications": true, "sms": true, "ai_grading": true, "advanced_reports": true, "api_access": true}',
              '{"users": 500, "students": 10000, "storage_gb": 100, "ai_requests": 10000}',
-             'monthly', 299900, 0, 1, 3, :now, :now)
+             'monthly', 299900, 0, TRUE, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         """),
     )
 

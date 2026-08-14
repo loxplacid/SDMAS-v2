@@ -42,7 +42,7 @@ app/
 │   ├── dependencies.py          # require_tenant_context / get_current_tenant
 │   ├── middleware.py            # Tenant context resolution per request
 │   └── service_mixin.py         # Shared service helpers
-└── domains/                     # 33 domain modules, each with models/schemas/
+└── domains/                     # 36 domain modules, each with models/schemas/
                                  # repository/service/router + domain events
 ```
 
@@ -74,9 +74,10 @@ observability, and domain thresholds (e.g. `attendance_low_threshold`).
 
 ### Migrations
 
-Alembic (`apps/api/alembic/`), **41 migrations** today. Migration history is
-chain `001` → `036+`; production DDL is applied via `make migrate`
-(`alembic upgrade head`). Tests use `Base.metadata.create_all` on SQLite.
+Alembic (`apps/api/alembic/`), **55 migration files** today (single head,
+`048_perf_indexes`). Migration history is chain `001` → `048`; production DDL
+is applied via `make migrate` (`alembic upgrade head`). Tests use
+`Base.metadata.create_all` on SQLite.
 
 ## Domain architecture
 
@@ -139,10 +140,11 @@ push notifications; shares the same API.
 
 ## Testing
 
-- **API**: pytest + pytest-asyncio + httpx (in-memory SQLite), **~1,100
-  tests** covering domains, multi-tenant isolation (a dedicated security
-  suite), finance/webhook security, permissions, audit, and jobs. PostgreSQL
-  integration tests (Testcontainers) are gated behind `@pytest.mark.integration`.
+- **API**: pytest + pytest-asyncio + httpx (in-memory SQLite), **1,652
+  tests** (non-integration) covering domains, multi-tenant isolation (a
+  dedicated security suite), finance/webhook security, permissions, audit,
+  and jobs. PostgreSQL integration tests (Testcontainers) are gated behind
+  `@pytest.mark.integration`.
 - **Web**: vitest + Testing Library.
 - **JS/Python v1**: archived at `_archive/legacy-v1/` — no longer run.
 

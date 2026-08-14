@@ -47,31 +47,49 @@ def upgrade() -> None:
     # ── Seed the LEAVE_REQUEST workflow template ──
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
+    # Portability: `INSERT OR IGNORE` is SQLite-only — PostgreSQL needs
+    # `ON CONFLICT DO NOTHING` (also supported by SQLite >= 3.24).
     op.execute(
         sa.text(
-            "INSERT OR IGNORE INTO workflows "
+            "INSERT INTO workflows "
             "(id, name, code, description, entity_type, status, created_at, updated_at) "
             "VALUES (1, 'Leave Request', 'LEAVE_REQUEST', "
             "'Standard leave approval process', 'leave_request', 'active', "
-            f"'{now}', '{now}')"
+            f"'{now}', '{now}') "
+            "ON CONFLICT DO NOTHING"
         )
     )
 
+    # Explicit-ID inserts do NOT advance PostgreSQL sequences; resync so the
+    # next default-ID insert (e.g. the enterprise demo seeder) cannot collide
+    # with id=1. SQLite autoincrement needs no action.
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute(
+            sa.text(
+                "SELECT setval(pg_get_serial_sequence('workflows', 'id'), "
+                "(SELECT COALESCE(MAX(id), 1) FROM workflows))"
+            )
+        )
+
     for step_id, name, label, order, initial, final, role in [
-        (1, 'Draft', 'Draft', 0, 1, 0, None),
-        (2, 'Submitted', 'Submitted', 1, 0, 0, None),
-        (3, 'Manager Approval', 'Manager Approval', 2, 0, 0, 'admin'),
-        (4, 'HR Approval', 'HR Approval', 3, 0, 0, 'admin'),
-        (5, 'Approved', 'Approved', 4, 0, 1, None),
-        (6, 'Rejected', 'Rejected', 5, 0, 1, None),
+        (1, 'Draft', 'Draft', 0, True, False, None),
+        (2, 'Submitted', 'Submitted', 1, False, False, None),
+        (3, 'Manager Approval', 'Manager Approval', 2, False, False, 'admin'),
+        (4, 'HR Approval', 'HR Approval', 3, False, False, 'admin'),
+        (5, 'Approved', 'Approved', 4, False, True, None),
+        (6, 'Rejected', 'Rejected', 5, False, True, None),
     ]:
         role_str = "NULL" if role is None else f"'{role}'"
         op.execute(
             sa.text(
-                "INSERT OR IGNORE INTO workflow_steps "
+                "INSERT INTO workflow_steps "
                 "(id, workflow_id, name, label, step_order, is_initial, is_final, assigned_role, created_at) "
-                f"VALUES ({step_id}, 1, '{name}', '{label}', {order}, {initial}, {final}, "
-                f"{role_str}, '{now}')"
+                # PostgreSQL rejects bare integer literals for boolean columns
+                # (SQLite tolerates them) — render SQL TRUE/FALSE explicitly.
+                f"VALUES ({step_id}, 1, '{name}', '{label}', {order}, "
+                f"{'TRUE' if initial else 'FALSE'}, {'TRUE' if final else 'FALSE'}, "
+                f"{role_str}, '{now}') "
+                "ON CONFLICT DO NOTHING"
             )
         )
 
@@ -86,10 +104,11 @@ def upgrade() -> None:
         role_str = "NULL" if role is None else f"'{role}'"
         op.execute(
             sa.text(
-                "INSERT OR IGNORE INTO workflow_transitions "
+                "INSERT INTO workflow_transitions "
                 "(id, workflow_id, from_step_id, to_step_id, label, required_role, created_at) "
                 f"VALUES ({t_id}, 1, {from_step}, {to_step}, '{tlabel}', "
-                f"{role_str}, '{now}')"
+                f"{role_str}, '{now}') "
+                "ON CONFLICT DO NOTHING"
             )
         )
 

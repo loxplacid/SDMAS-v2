@@ -1,7 +1,4 @@
 import { useCallback, useState } from 'react'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
-import { utils as xlsxUtils, writeFile as xlsxWriteFile } from 'xlsx'
 
 interface Column {
   key: string
@@ -31,7 +28,12 @@ export function useExport() {
   ) => {
     setExporting('pdf')
     try {
-      // Use dynamic import to avoid bundling issues
+      // jsPDF is ~700KB raw / ~200KB gz — load it only when the user
+      // actually exports, not when the report page opens.
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable'),
+      ])
       const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
 
       // Header
@@ -70,6 +72,11 @@ export function useExport() {
   ) => {
     setExporting('excel')
     try {
+      // SheetJS is ~300KB in the bundle — load it only on export, keeping
+      // report pages light for users who only need the PDF.
+      const [{ utils: xlsxUtils, writeFile: xlsxWriteFile }] = await Promise.all([
+        import('xlsx'),
+      ])
       const headers = columns.map((c) => c.header)
       const rows = data.map((row) => columns.map((col) => getCellValue(row, col)))
 

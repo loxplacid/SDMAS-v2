@@ -324,6 +324,9 @@ export const transactionLogApi = {
   list: (params: SchoolFinanceListParams = {}) =>
     api.get<Page<TransactionLogResponse>>(`${BASE}/transactions`, params as any),
 
+  exportCsv: (params: SchoolFinanceListParams = {}) =>
+    api.get<Blob>(`${BASE}/transactions/export/csv`, params as any),
+
   getStudentBalance: (studentId: number) =>
     api.get<{ balance: number }>(`${BASE}/transactions/student/${studentId}/balance`),
 }
@@ -382,6 +385,9 @@ export const financeReportApi = {
 
   exportCollectionSummaryCsv: (params: SchoolFinanceListParams = {}) =>
     api.get<Blob>(`${BASE}/reports/collection-summary/csv`, params as any),
+
+  download: (id: number) =>
+    api.get<Blob>(`${BASE}/reports/${id}/download`),
 }
 
 export const schoolFinanceDashboardApi = {

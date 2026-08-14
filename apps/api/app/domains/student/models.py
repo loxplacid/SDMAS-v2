@@ -122,11 +122,17 @@ class Student(Base):
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="active"
     )
+    # DateTime(timezone=True) matches the migrated ``timestamp with time
+    # zone`` column.  Without it the model binds an aware UTC value through
+    # asyncpg's naive timestamp codec — PostgreSQL rejects the insert while
+    # SQLite silently tolerates it.
     created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
         nullable=False,
         default=lambda: datetime.datetime.now(timezone.utc),
     )
     updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
         nullable=False,
         default=lambda: datetime.datetime.now(timezone.utc),
         onupdate=lambda: datetime.datetime.now(timezone.utc),

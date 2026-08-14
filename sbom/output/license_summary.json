@@ -8,14 +8,14 @@
     "(MPL-2.0 OR Apache-2.0)": 1,
     "(Unlicense OR Apache-2.0)": 1,
     "0BSD": 3,
-    "Apache-2.0": 38,
+    "Apache-2.0": 30,
     "BSD": 1,
     "BSD-2-Clause": 22,
     "BSD-3-Clause": 43,
     "BlueOak-1.0.0": 14,
     "CC-BY-4.0": 2,
     "ISC": 107,
-    "MIT": 1531,
+    "MIT": 1510,
     "MIT AND ISC": 1,
     "MIT OR SEE LICENSE IN FEEL-FREE.md": 1,
     "MIT-0": 1,
@@ -23,7 +23,7 @@
     "Python-2.0": 1,
     "Unlicense": 2
   },
-  "packages_with_license": 1799,
+  "packages_with_license": 1770,
   "packages_without_license": 111,
-  "total_packages": 1910
+  "total_packages": 1881
 }

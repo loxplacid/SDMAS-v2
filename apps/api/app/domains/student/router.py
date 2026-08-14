@@ -8,7 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.pagination import Page, PaginationParams
 from app.domains.auth.dependencies import require_permission
 from app.domains.auth.models import User
-from app.domains.auth.permissions import STUDENTS_CREATE, STUDENTS_DELETE, STUDENTS_UPDATE
+from app.domains.auth.permissions import (
+    STUDENTS_CREATE,
+    STUDENTS_DELETE,
+    STUDENTS_UPDATE,
+    STUDENTS_VIEW,
+)
 from app.domains.student.repository import StudentRepository
 from app.domains.student.schemas import (
     StudentCreate,
@@ -48,6 +53,7 @@ async def get_student(
     student_id: int,
     service: StudentService = Depends(get_student_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(STUDENTS_VIEW)),
 ) -> StudentResponse:
     student = await service.get_student(student_id)
     assert_tenant_scope(student, tenant, resource="student")
@@ -68,6 +74,7 @@ async def list_students(
     ),
     service: StudentService = Depends(get_student_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(STUDENTS_VIEW)),
 ) -> Page[StudentResponse]:
     effective_campus = effective_campus_id(tenant, campus_id)
     if search:

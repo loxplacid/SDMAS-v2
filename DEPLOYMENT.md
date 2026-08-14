@@ -300,53 +300,34 @@ Secrets are never stored in the repository. Production uses:
 
 ### Regular Audits
 
-- Dependency scanning: `pip audit` (Python), `npm audit` (Node)
-- Secret scanning: `trufflehog` or `git-secrets` in CI
+- Dependency scanning: `pip-audit` (Python, via the `evidence` CI job and
+  `make security-audit`), `npm audit` (Node)
+- Secret scanning: **Gitleaks** in CI (`.github/workflows/ci.yml` `security`
+  job) over the full git history, plus a hardcoded-credential pattern scan
+  and a tracked-`.env` guard
+- SBOM generation + schema validation + determinism gate
+  (`.github/workflows/sbom_validation.yml`)
 - Access log review: Monitor Nginx JSON logs for anomalies
 
 ## CI/CD Pipeline
 
-### GitHub Actions Workflow (Suggested)
+The repository ships **real CI/CD configuration** — see
+`.github/workflows/ci.yml` (8 jobs) and `.github/workflows/sbom_validation.yml`
+for the authoritative pipeline, and `docs/CI.md` / `docs/enterprise/CI-CD-AUDIT.md`
+for details. Summary:
 
-```yaml
-name: Deploy
+- **api** — lint/format/mypy on changed files, full non-integration pytest suite (SQLite)
+- **api-integration** — Testcontainers/PostgreSQL integration tests
+- **migrations** — single-head check + `alembic upgrade head` against fresh Postgres 16
+- **docker-build** — builds API/worker/web images and smoke-tests them
+- **web** — `npm ci`, `tsc --noEmit`, vitest, production build, `npm audit --audit-level=high`
+- **mobile** — `npm ci`, `tsc --noEmit`, jest
+- **security** — Gitleaks over full history, tracked-`.env` guard, credential pattern scan
+- **evidence** — Bandit (HIGH gate), pip-audit (waived IDs excluded), SBOM validate
 
-on:
-  push:
-    branches: [main]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run API tests
-        run: make test-api
-      - name: Run Web tests
-        run: make test-web
-      - name: Lint
-        run: make lint
-
-  build-and-deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build images
-        run: make build
-      - name: Push to registry
-        run: |
-          docker tag sdmas-api:latest registry.example.com/sdmas-api:${{ github.sha }}
-          docker push registry.example.com/sdmas-api:${{ github.sha }}
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          script: |
-            cd /opt/sdmas
-            docker compose pull
-            make deploy
-```
+Deployment itself is executed via `make deploy ENV=<env>` (wrapping
+`infrastructure/scripts/deploy.sh`) — CI is configured for the monorepo; a
+production deploy workflow can be added by the acquiring team.
 
 ## Troubleshooting
 
@@ -400,7 +381,7 @@ curl http://localhost:8000/metrics
 | Weekly | Review error logs | `make logs SERVICE=api \| grep ERROR` |
 | Weekly | Check disk usage | `df -h /var/lib/docker` |
 | Monthly | Rotate JWT secret | Generate new secret, restart API |
-| Monthly | Update dependencies | `cd apps/api && pip install --upgrade -r requirements.txt` |
+| Monthly | Update dependencies | `cd apps/api && uv lock --upgrade && uv sync --frozen` |
 | Quarterly | SSL certificate renewal | `certbot renew` (automatic if configured) |
 | As needed | Prune old Docker images | `docker image prune --force --filter "until=30d"` |
 

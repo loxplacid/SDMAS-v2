@@ -79,6 +79,12 @@ services:
       - db_password
       - razorpay_key_id
       - razorpay_key_secret
+    volumes:
+      # Shared local file storage: workers must read migration uploads
+      # and document blobs written by any API replica.  In production
+      # prefer an S3 backend for cross-host storage; this named volume
+      # covers single-host deployments.
+      - storage_prod_data:/app/storage
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
@@ -115,6 +121,8 @@ services:
     secrets:
       - db_password
       - jwt_secret
+    volumes:
+      - storage_prod_data:/app/storage
     depends_on:
       postgres:
         condition: service_healthy
@@ -259,3 +267,4 @@ volumes:
   prometheus_prod_data:
   grafana_prod_data:
   web_static:
+  storage_prod_data:

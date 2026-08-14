@@ -58,8 +58,20 @@ export const FinanceReportsPage: React.FC = () => {
     } catch (err: any) { showToast(err?.detail || 'Failed to generate report', 'error') }
   }
 
-  const handleDownload = (report: FinanceReportResponse) => {
-    window.open(`/api/school-finance/reports/${report.id}/download`, '_blank')
+  const handleDownload = async (report: FinanceReportResponse) => {
+    try {
+      const blob = await financeReportApi.download(report.id)
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `finance_report_${report.id}_${report.report_type}.csv`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (err: any) {
+      showToast(err?.detail || 'Failed to download report', 'error')
+    }
   }
 
   const actionCol = {

@@ -1,0 +1,19 @@
+# Local virtualenv / caches — never send to the builder (multi-GB).
+.venv
+venv
+__pycache__
+*.py[cod]
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Test suites and scripts are not part of the runtime image (the Dockerfile
+# COPYs only alembic/, alembic.ini and app/).
+tests
+scripts
+
+# Local env / editor noise
+.env
+.env.*
+!.env.example
+.DS_Store

@@ -1,6 +1,6 @@
 """create user_school_memberships table
 
-Revision ID: 030_create_user_school_memberships
+Revision ID: 030_user_school_memberships
 Revises: merge_multi_tenant_heads
 Create Date: 2026-08-01 00:00:00.000000
 
@@ -28,7 +28,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "030_create_user_school_memberships"
+revision: str = "030_user_school_memberships"
 down_revision: Union[str, None] = "merge_multi_tenant_heads"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -45,13 +45,13 @@ def upgrade() -> None:
             "is_default",
             sa.Boolean(),
             nullable=False,
-            server_default=sa.text("0"),
+            server_default=sa.false(),
         ),
         sa.Column(
             "is_active",
             sa.Boolean(),
             nullable=False,
-            server_default=sa.text("1"),
+            server_default=sa.true(),
         ),
         sa.Column(
             "created_at",
@@ -94,8 +94,8 @@ def upgrade() -> None:
                 u.id,
                 u.campus_id,
                 COALESCE(u.role, 'staff'),
-                1,
-                1
+                TRUE,
+                TRUE
             FROM users u
             WHERE u.campus_id IS NOT NULL
             """

@@ -62,11 +62,13 @@ class TestCycleEnqueue:
 
         rows = (await db_session.execute(select(Job))).scalars().all()
         types = [j.job_type for j in rows]
-        assert sorted(set(types)) == [
+        assert len(types) == 4
+        assert set(types) == {
             "billing.expire_past_due",
             "billing.period_end",
+            "cases.escalation",
             "communications.scheduled",
-        ]
+        }
         # Exactly one job per type.
         for t in set(types):
             assert types.count(t) == 1
@@ -80,8 +82,9 @@ class TestCycleEnqueue:
         await s2._enqueue_cycle()
 
         rows = (await db_session.execute(select(Job))).scalars().all()
-        assert len(rows) == 3
-        assert len({j.identity_key for j in rows}) == 3
+        assert len(rows) == 4
+        assert len({j.identity_key for j in rows}) == 4
+        assert "cases.escalation" in {j.job_type for j in rows}
 
     async def test_keys_roll_over_daily_and_five_minute(self):
         """Keys must be scoped to their cycle so the next cycle gets fresh

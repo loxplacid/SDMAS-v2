@@ -8,6 +8,7 @@ from app.core.pagination import Page, PaginationParams
 from app.core.security.rate_limiter import rate_limit
 from app.domains.auth.dependencies import get_current_user, get_user_service, require_role
 from app.domains.auth.models import User
+from app.domains.auth.permissions import TENANT_ROLES
 from app.domains.auth.schemas import (
     AdminUserUpdate,
     UserCreate,
@@ -100,6 +101,13 @@ async def update_user(
     return UserResponse.model_validate(updated)
 
 
+#: Roles a tenant admin may assign through the M2M endpoint.  Single
+#: source of truth is ``TENANT_ROLES`` in ``permissions.py``; platform
+#: roles (``platform_admin``) are deliberately excluded — a tenant admin
+#: must never be able to mint a cross-tenant account by granting one.
+_ASSIGNABLE_ROLES = TENANT_ROLES
+
+
 @router.post("/{user_id}/roles", response_model=UserResponse)
 @rate_limit("admin_user_roles", max_requests=30, window_seconds=60)
 async def set_user_roles(
@@ -113,7 +121,20 @@ async def set_user_roles(
     The user's ``role`` field (primary role) is *not* changed by this
     endpoint.  To change the primary role, use PATCH ``/admin/users/{id}``
     with ``{"role": "..."}``.
+
+    Role codes are validated server-side against the assignable tenant
+    set: unknown codes and platform roles (e.g. ``platform_admin``) are
+    rejected with 422 so a tenant admin cannot escalate a user to a
+    cross-tenant (platform) role.
     """
+    invalid = [c for c in role_codes if c not in _ASSIGNABLE_ROLES]
+    if invalid:
+        from app.core.exceptions import ValidationError
+
+        raise ValidationError(
+            "Invalid role(s) for assignment: " + ", ".join(sorted(set(invalid)))
+            + f". Assignable roles: {', '.join(sorted(_ASSIGNABLE_ROLES))}"
+        )
     service, tenant = _admin_ctx
     user = await service.get_user(user_id)
     assert_tenant_scope(user, tenant, resource="user")

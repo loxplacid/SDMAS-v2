@@ -9,12 +9,12 @@ from app.core.pagination import Page, PaginationParams
 from app.domains.academic.repository import (
     AcademicYearRepository,
     ClassRepository,
-    SectionRepository,
     EnrollmentRepository,
-    TermRepository,
+    SectionRepository,
     SubjectRepository,
-    TeacherRepository,
     TeacherAssignmentRepository,
+    TeacherRepository,
+    TermRepository,
 )
 from app.domains.academic.schemas import (
     AcademicYearCreate,
@@ -23,33 +23,45 @@ from app.domains.academic.schemas import (
     ClassCreate,
     ClassResponse,
     ClassUpdate,
-    SectionCreate,
-    SectionResponse,
-    SectionUpdate,
     EnrollmentCreate,
     EnrollmentResponse,
     EnrollmentUpdate,
-    TermCreate,
-    TermResponse,
-    TermUpdate,
+    SectionCreate,
+    SectionResponse,
+    SectionUpdate,
     SubjectCreate,
     SubjectResponse,
     SubjectUpdate,
+    TeacherAssignmentCreate,
+    TeacherAssignmentResponse,
     TeacherCreate,
     TeacherResponse,
     TeacherUpdate,
-    TeacherAssignmentCreate,
-    TeacherAssignmentResponse,
+    TermCreate,
+    TermResponse,
+    TermUpdate,
 )
 from app.domains.academic.service import (
     AcademicYearService,
     ClassService,
-    SectionService,
     EnrollmentService,
-    TermService,
+    SectionService,
     SubjectService,
-    TeacherService,
     TeacherAssignmentService,
+    TeacherService,
+    TermService,
+)
+from app.domains.auth.dependencies import require_permission
+from app.domains.auth.models import User
+from app.domains.auth.permissions import (
+    ACADEMIC_CREATE,
+    ACADEMIC_DELETE,
+    ACADEMIC_UPDATE,
+    SUBJECTS_CREATE,
+    SUBJECTS_DELETE,
+    SUBJECTS_UPDATE,
+    TEACHERS_CREATE,
+    TEACHERS_UPDATE,
 )
 from app.domains.student.repository import StudentRepository
 from app.infrastructure.database import get_session
@@ -152,6 +164,7 @@ async def create_academic_year(
     data: AcademicYearCreate,
     service: AcademicYearService = Depends(get_year_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ACADEMIC_CREATE)),
 ) -> AcademicYearResponse:
     year = await service.create_year(data)
     inject_campus(year, tenant)
@@ -202,6 +215,7 @@ async def update_academic_year(
     data: AcademicYearUpdate,
     service: AcademicYearService = Depends(get_year_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ACADEMIC_UPDATE)),
 ) -> AcademicYearResponse:
     year = await service.get_year(year_id)
     assert_tenant_scope(year, tenant, resource="academic_year")
@@ -214,6 +228,7 @@ async def delete_academic_year(
     year_id: int,
     service: AcademicYearService = Depends(get_year_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ACADEMIC_DELETE)),
 ) -> None:
     year = await service.get_year(year_id)
     assert_tenant_scope(year, tenant, resource="academic_year")
@@ -234,6 +249,7 @@ async def create_class(
     data: ClassCreate,
     service: ClassService = Depends(get_class_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ACADEMIC_CREATE)),
 ) -> ClassResponse:
     cls = await service.create_class(data)
     inject_campus(cls, tenant)
@@ -288,6 +304,7 @@ async def update_class(
     data: ClassUpdate,
     service: ClassService = Depends(get_class_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ACADEMIC_UPDATE)),
 ) -> ClassResponse:
     cls = await service.get_class(class_id)
     assert_tenant_scope(cls, tenant, resource="class")
@@ -300,6 +317,7 @@ async def delete_class(
     class_id: int,
     service: ClassService = Depends(get_class_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ACADEMIC_DELETE)),
 ) -> None:
     cls = await service.get_class(class_id)
     assert_tenant_scope(cls, tenant, resource="class")
@@ -320,6 +338,7 @@ async def create_section(
     data: SectionCreate,
     service: SectionService = Depends(get_section_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ACADEMIC_CREATE)),
 ) -> SectionResponse:
     section = await service.create_section(data)
     inject_campus(section, tenant)
@@ -374,6 +393,7 @@ async def update_section(
     data: SectionUpdate,
     service: SectionService = Depends(get_section_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ACADEMIC_UPDATE)),
 ) -> SectionResponse:
     section = await service.get_section(section_id)
     assert_tenant_scope(section, tenant, resource="section")
@@ -386,6 +406,7 @@ async def delete_section(
     section_id: int,
     service: SectionService = Depends(get_section_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ACADEMIC_DELETE)),
 ) -> None:
     section = await service.get_section(section_id)
     assert_tenant_scope(section, tenant, resource="section")
@@ -406,6 +427,7 @@ async def create_enrollment(
     data: EnrollmentCreate,
     service: EnrollmentService = Depends(get_enrollment_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ACADEMIC_CREATE)),
 ) -> EnrollmentResponse:
     enrollment = await service.create_enrollment(data)
     inject_campus(enrollment, tenant)
@@ -470,6 +492,7 @@ async def update_enrollment(
     data: EnrollmentUpdate,
     service: EnrollmentService = Depends(get_enrollment_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ACADEMIC_UPDATE)),
 ) -> EnrollmentResponse:
     enrollment = await service.get_enrollment(enrollment_id)
     assert_tenant_scope(enrollment, tenant, resource="enrollment")
@@ -484,6 +507,7 @@ async def delete_enrollment(
     enrollment_id: int,
     service: EnrollmentService = Depends(get_enrollment_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ACADEMIC_DELETE)),
 ) -> None:
     enrollment = await service.get_enrollment(enrollment_id)
     assert_tenant_scope(enrollment, tenant, resource="enrollment")
@@ -505,6 +529,7 @@ async def create_term(
     data: TermCreate,
     service: TermService = Depends(get_term_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ACADEMIC_CREATE)),
 ) -> TermResponse:
     term = await service.create_term(year_id, data)
     inject_campus(term, tenant)
@@ -552,6 +577,7 @@ async def update_term(
     data: TermUpdate,
     service: TermService = Depends(get_term_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ACADEMIC_UPDATE)),
 ) -> TermResponse:
     term = await service.get_term(term_id)
     assert_tenant_scope(term, tenant, resource="term")
@@ -573,6 +599,7 @@ async def create_subject(
     data: SubjectCreate,
     service: SubjectService = Depends(get_subject_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(SUBJECTS_CREATE)),
 ) -> SubjectResponse:
     subject = await service.create_subject(data)
     inject_campus(subject, tenant)
@@ -623,6 +650,7 @@ async def update_subject(
     data: SubjectUpdate,
     service: SubjectService = Depends(get_subject_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(SUBJECTS_UPDATE)),
 ) -> SubjectResponse:
     subject = await service.get_subject(subject_id)
     assert_tenant_scope(subject, tenant, resource="subject")
@@ -644,6 +672,7 @@ async def create_teacher(
     data: TeacherCreate,
     service: TeacherService = Depends(get_teacher_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(TEACHERS_CREATE)),
 ) -> TeacherResponse:
     teacher = await service.create_teacher(data)
     inject_campus(teacher, tenant)
@@ -694,6 +723,7 @@ async def update_teacher(
     data: TeacherUpdate,
     service: TeacherService = Depends(get_teacher_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(TEACHERS_UPDATE)),
 ) -> TeacherResponse:
     teacher = await service.get_teacher(teacher_id)
     assert_tenant_scope(teacher, tenant, resource="teacher")
@@ -715,6 +745,7 @@ async def assign_teacher(
     data: TeacherAssignmentCreate,
     service: TeacherAssignmentService = Depends(get_assignment_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ACADEMIC_CREATE)),
 ) -> TeacherAssignmentResponse:
     assignment = await service.assign_teacher(data)
     inject_campus(assignment, tenant)
@@ -780,6 +811,7 @@ async def unassign_teacher(
     assignment_id: int,
     service: TeacherAssignmentService = Depends(get_assignment_service),
     tenant: TenantContext = Depends(require_tenant_context),
+    _user: User = Depends(require_permission(ACADEMIC_DELETE)),
 ) -> None:
     assignment = await service.get_assignment(assignment_id)
     assert_tenant_scope(assignment, tenant, resource="teacher_assignment")

@@ -326,6 +326,35 @@ async def list_transactions(
     )
 
 
+@router.get("/transactions/export/csv")
+async def export_transactions_csv(
+    student_id: Optional[int] = Query(None, alias="student_id"),
+    transaction_type: Optional[str] = Query(None, alias="transaction_type"),
+    payment_id: Optional[int] = Query(None, alias="payment_id"),
+    campus_id: Optional[int] = Query(None, alias="campus_id"),
+    from_date: Optional[str] = Query(None, alias="from_date"),
+    to_date: Optional[str] = Query(None, alias="to_date"),
+    min_amount: Optional[int] = Query(None, alias="min_amount"),
+    max_amount: Optional[int] = Query(None, alias="max_amount"),
+    q: Optional[str] = Query(None, alias="q"),
+    svc: TransactionLogService = Depends(get_tx_svc),
+    _actor: User = Depends(require_permission(FEES_EXPORT)),
+    tenant: TenantContext = Depends(require_tenant_context),
+):
+    csv_content = await svc.export_transactions_csv(
+        student_id=student_id, transaction_type=transaction_type,
+        payment_id=payment_id, campus_id=effective_campus_id(tenant, campus_id),
+        from_date=from_date, to_date=to_date,
+        min_amount=min_amount, max_amount=max_amount,
+        q=q,
+    )
+    return StreamingResponse(
+        iter([csv_content]),
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="transactions.csv"'},
+    )
+
+
 @router.get("/transactions/student/{student_id}/balance", response_model=dict)
 async def get_student_balance(
     student_id: int,
@@ -641,4 +670,41 @@ async def export_collection_summary_csv(
         iter([csv_content]),
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=collection_summary.csv"},
+    )
+
+
+@router.get("/reports/{report_id}/download")
+async def download_finance_report(
+    report_id: int,
+    svc: FinanceReportService = Depends(get_fr_svc),
+    _actor: User = Depends(require_permission(REPORTS_EXPORT)),
+    tenant: TenantContext = Depends(require_tenant_context),
+):
+    """Download a previously generated finance report as CSV.
+
+    Only report types with a real generator are downloadable; the stored
+    ``parameters`` (academic year / campus captured at generation time) are
+    re-applied so the download matches what was generated. Unsupported types
+    return a deliberate 409 rather than a fake or empty file.
+    """
+    report = await svc.get_report(report_id)
+    assert_tenant_scope(report, tenant, resource="finance report")
+    if report.status != "completed":
+        from app.core.exceptions import ConflictError
+        raise ConflictError("Report is not yet completed")
+    if report.report_type != "collection_summary":
+        from app.core.exceptions import ConflictError
+        raise ConflictError(
+            f"Report type '{report.report_type}' has no CSV generator yet"
+        )
+    params = report.parameters or {}
+    csv_content = await svc.generate_collection_summary_csv(
+        academic_year_id=params.get("academic_year_id"),
+        campus_id=report.campus_id or params.get("campus_id"),
+    )
+    filename = f"finance_report_{report.id}_{report.report_type}.csv"
+    return StreamingResponse(
+        iter([csv_content]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )

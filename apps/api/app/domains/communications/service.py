@@ -81,17 +81,45 @@ class MessageTemplateService:
         await self.session.refresh(tpl)
         return tpl
 
-    async def list(self, skip: int = 0, limit: int = 20) -> tuple[Sequence[MessageTemplate], int]:
-        query = select(MessageTemplate).offset(skip).limit(limit).order_by(MessageTemplate.name)
+    @staticmethod
+    def _campus_scope(campus_id: int | None, *, include_global: bool = True) -> Any:
+        """Tenant filter for templates.
+
+        Read paths (``include_global=True``) also expose global templates
+        (``campus_id IS NULL``).  Write paths pass ``include_global=False``
+        so a tenant admin can never mutate or delete a shared/global
+        template that other tenants rely on.
+        """
+        if campus_id is None:
+            return None
+        cond = MessageTemplate.campus_id == campus_id
+        if include_global:
+            cond = or_(cond, MessageTemplate.campus_id.is_(None))
+        return cond
+
+    async def list(
+        self, skip: int = 0, limit: int = 20, campus_id: int | None = None
+    ) -> tuple[Sequence[MessageTemplate], int]:
+        scope = self._campus_scope(campus_id)
+        query = select(MessageTemplate)
+        count_query = select(func.count(MessageTemplate.id))
+        if scope is not None:
+            query = query.where(scope)
+            count_query = count_query.where(scope)
+        query = query.offset(skip).limit(limit).order_by(MessageTemplate.name)
         result = await self.session.execute(query)
         items = list(result.scalars().all())
 
-        count_result = await self.session.execute(select(func.count(MessageTemplate.id)))
-        total = count_result.scalar() or 0
+        total = (await self.session.execute(count_query)).scalar() or 0
         return items, total
 
-    async def get(self, template_id: int) -> MessageTemplate:
-        tpl = await self.session.get(MessageTemplate, template_id)
+    async def get(self, template_id: int, campus_id: int | None = None) -> MessageTemplate:
+        query = select(MessageTemplate).where(MessageTemplate.id == template_id)
+        scope = self._campus_scope(campus_id)
+        if scope is not None:
+            query = query.where(scope)
+        result = await self.session.execute(query)
+        tpl = result.scalar_one_or_none()
         if not tpl:
             raise NotFoundError("Message template not found")
         return tpl
@@ -105,8 +133,11 @@ class MessageTemplateService:
             raise NotFoundError(f"Template '{code}' not found")
         return tpl
 
-    async def update(self, template_id: int, data: Any) -> MessageTemplate:
-        tpl = await self.get(template_id)
+    async def update(
+        self, template_id: int, data: Any, campus_id: int | None = None
+    ) -> MessageTemplate:
+        # Writes must not touch global templates owned by the platform.
+        tpl = await self._get_owned(template_id, campus_id)
         update_data = data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(tpl, key, value)
@@ -114,18 +145,38 @@ class MessageTemplateService:
         await self.session.refresh(tpl)
         return tpl
 
-    async def delete(self, template_id: int) -> None:
-        tpl = await self.get(template_id)
+    async def delete(self, template_id: int, campus_id: int | None = None) -> None:
+        # Writes must not touch global templates owned by the platform.
+        tpl = await self._get_owned(template_id, campus_id)
         await self.session.delete(tpl)
         await self.session.commit()
 
-    async def render(self, template_id: int, variables: dict[str, Any]) -> dict[str, str]:
+    async def _get_owned(
+        self, template_id: int, campus_id: int | None
+    ) -> MessageTemplate:
+        """Fetch a template the caller may write: own campus only (never a
+        global ``campus_id IS NULL`` row)."""
+        query = select(MessageTemplate).where(
+            MessageTemplate.id == template_id
+        )
+        scope = self._campus_scope(campus_id, include_global=False)
+        if scope is not None:
+            query = query.where(scope)
+        result = await self.session.execute(query)
+        tpl = result.scalar_one_or_none()
+        if not tpl:
+            raise NotFoundError("Message template not found")
+        return tpl
+
+    async def render(
+        self, template_id: int, variables: dict[str, Any], campus_id: int | None = None
+    ) -> dict[str, str]:
         """Render a template with the P15 bounded variable resolver.
 
         Only ``{name}`` / ``{name.path}`` placeholders are substituted — no
         Python format specs, no attribute access, no arbitrary code.
         """
-        tpl = await self.get(template_id)
+        tpl = await self.get(template_id, campus_id=campus_id)
         subject = render_template_variables(tpl.subject, variables, escape=True) if tpl.subject else None
         body = render_template_variables(tpl.body, variables, escape=True)
         return {"subject": subject or "", "body": body}
@@ -140,6 +191,7 @@ class RecipientResolver:
         recipients: Optional[list[dict]] = None,
         class_ids: Optional[list[int]] = None,
         section_ids: Optional[list[int]] = None,
+        campus_id: int | None = None,
     ) -> list[dict[str, Any]]:
         resolved: list[dict[str, Any]] = []
 
@@ -149,15 +201,25 @@ class RecipientResolver:
                     "recipient_type": r["recipient_type"],
                     "recipient_id": r["recipient_id"],
                 })
+            # Explicit student/user/parent recipients must belong to the
+            # caller's campus — otherwise send_message could target (and
+            # deliver in-app notifications to) another tenant's people.
+            if campus_id is not None:
+                await self._validate_explicit_recipients_campus(
+                    recipients, campus_id
+                )
 
         if class_ids:
-            from app.domains.academic.models import Enrollment
-            result = await self.session.execute(
-                select(Enrollment.student_id).where(
-                    Enrollment.class_id.in_(class_ids),
-                    Enrollment.status == "active",
-                )
+            from app.domains.academic.models import Class, Enrollment
+            query = select(Enrollment.student_id).where(
+                Enrollment.class_id.in_(class_ids),
+                Enrollment.status == "active",
             )
+            if campus_id is not None:
+                query = query.join(
+                    Class, Enrollment.class_id == Class.id
+                ).where(Class.campus_id == campus_id)
+            result = await self.session.execute(query)
             for (student_id,) in result.all():
                 resolved.append({
                     "recipient_type": RECIPIENT_TYPE_STUDENT,
@@ -165,13 +227,16 @@ class RecipientResolver:
                 })
 
         if section_ids:
-            from app.domains.academic.models import Enrollment
-            result = await self.session.execute(
-                select(Enrollment.student_id).where(
-                    Enrollment.section_id.in_(section_ids),
-                    Enrollment.status == "active",
-                )
+            from app.domains.academic.models import Enrollment, Section
+            query = select(Enrollment.student_id).where(
+                Enrollment.section_id.in_(section_ids),
+                Enrollment.status == "active",
             )
+            if campus_id is not None:
+                query = query.join(
+                    Section, Enrollment.section_id == Section.id
+                ).where(Section.campus_id == campus_id)
+            result = await self.session.execute(query)
             for (student_id,) in result.all():
                 resolved.append({
                     "recipient_type": RECIPIENT_TYPE_STUDENT,
@@ -181,13 +246,59 @@ class RecipientResolver:
         seen = {(r["recipient_type"], r["recipient_id"]) for r in resolved}
         return [{"recipient_type": t, "recipient_id": i} for t, i in seen]
 
+    async def _validate_explicit_recipients_campus(
+        self, recipients: list[dict], campus_id: int
+    ) -> None:
+        """Reject explicit recipients that reference another campus.
+
+        Lookups are done per entity type so a caller can neither message
+        nor probe the existence of another tenant's students/users.
+        """
+        from app.domains.student.models import Student
+
+        student_ids = [
+            r["recipient_id"] for r in recipients
+            if r["recipient_type"] == RECIPIENT_TYPE_STUDENT
+        ]
+        user_ids = [
+            r["recipient_id"] for r in recipients
+            if r["recipient_type"] in (RECIPIENT_TYPE_USER, RECIPIENT_TYPE_PARENT, RECIPIENT_TYPE_TEACHER)
+        ]
+
+        if student_ids:
+            rows = await self.session.execute(
+                select(Student.id).where(
+                    Student.id.in_(student_ids), Student.campus_id == campus_id
+                )
+            )
+            allowed = {row[0] for row in rows.all()}
+            foreign = [sid for sid in student_ids if sid not in allowed]
+            if foreign:
+                raise ValidationError(
+                    f"Student recipient(s) {foreign} do not belong to this campus"
+                )
+
+        if user_ids:
+            rows = await self.session.execute(
+                select(User.id).where(
+                    User.id.in_(user_ids), User.campus_id == campus_id
+                )
+            )
+            allowed = {row[0] for row in rows.all()}
+            foreign = [uid for uid in user_ids if uid not in allowed]
+            if foreign:
+                raise ValidationError(
+                    f"User recipient(s) {foreign} do not belong to this campus"
+                )
+
     async def resolve_with_details(
         self,
         recipients: Optional[list[dict]] = None,
         class_ids: Optional[list[int]] = None,
         section_ids: Optional[list[int]] = None,
+        campus_id: int | None = None,
     ) -> list[dict[str, Any]]:
-        raw = await self.resolve(recipients, class_ids, section_ids)
+        raw = await self.resolve(recipients, class_ids, section_ids, campus_id=campus_id)
         result: list[dict[str, Any]] = []
 
         student_ids = [r["recipient_id"] for r in raw if r["recipient_type"] == RECIPIENT_TYPE_STUDENT]
@@ -198,9 +309,10 @@ class RecipientResolver:
 
         if student_ids:
             from app.domains.student.models import Student
-            rows = await self.session.execute(
-                select(Student).where(Student.id.in_(student_ids))
-            )
+            query = select(Student).where(Student.id.in_(student_ids))
+            if campus_id is not None:
+                query = query.where(Student.campus_id == campus_id)
+            rows = await self.session.execute(query)
             for s in rows.scalars().all():
                 students_map[s.id] = {
                     "id": s.id,
@@ -209,9 +321,10 @@ class RecipientResolver:
                 }
 
         if user_ids:
-            rows = await self.session.execute(
-                select(User).where(User.id.in_(user_ids))
-            )
+            query = select(User).where(User.id.in_(user_ids))
+            if campus_id is not None:
+                query = query.where(User.campus_id == campus_id)
+            rows = await self.session.execute(query)
             for u in rows.scalars().all():
                 users_map[u.id] = {
                     "id": u.id,
@@ -271,6 +384,7 @@ class CommunicationService:
             recipients=[r.model_dump() for r in data.recipients] if data.recipients else None,
             class_ids=data.class_ids,
             section_ids=data.section_ids,
+            campus_id=getattr(user, "campus_id", None),
         )
 
         if data.recipient_groups:
@@ -308,7 +422,8 @@ class CommunicationService:
                 effective_vars[key] = value
         if data.template_id and effective_vars:
             rendered = await self.template_service.render(
-                data.template_id, effective_vars
+                data.template_id, effective_vars,
+                campus_id=getattr(user, "campus_id", None),
             )
             body = rendered["body"] or data.body
             subject = rendered["subject"] or data.subject
@@ -661,6 +776,9 @@ class CommunicationService:
         student / case / fee due" on the sent-messages surface.
         """
         conditions = [CommunicationMessage.sender_id == user.id]
+        campus_id = getattr(user, "campus_id", None)
+        if campus_id is not None:
+            conditions.append(CommunicationMessage.campus_id == campus_id)
 
         if message_type:
             conditions.append(CommunicationMessage.message_type == message_type)
@@ -691,9 +809,25 @@ class CommunicationService:
         return items, total
 
     async def get_message(self, msg_id: int, user: User) -> CommunicationMessage:
+        """Fetch a message within the caller's campus.
+
+        The old lookup was unscoped (any authenticated staff/admin could read
+        any message by ID — a cross-tenant IDOR).  Messages are now pinned to
+        the caller's campus; within that campus, admins/principals may manage
+        any message (e.g. retry a failed broadcast sent by staff) while
+        staff/teachers see only their own messages.
+        """
+        campus_id = getattr(user, "campus_id", None)
+        conditions = [
+            CommunicationMessage.id == msg_id,
+            CommunicationMessage.campus_id == campus_id,
+        ]
+        if user.role not in ("admin", "principal"):
+            conditions.append(CommunicationMessage.sender_id == user.id)
+
         result = await self.session.execute(
             select(CommunicationMessage)
-            .where(CommunicationMessage.id == msg_id)
+            .where(*conditions)
             .options(
                 selectinload(CommunicationMessage.recipients),
                 selectinload(CommunicationMessage.attachments),

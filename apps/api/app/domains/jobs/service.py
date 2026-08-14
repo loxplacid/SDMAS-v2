@@ -166,9 +166,31 @@ class JobService:
             school_id=job.campus_id,
         ):
             try:
-                await job_instance.before_run(job, self.session)
-                result = await job_instance.run(job, self.session)
-                await job_instance.after_run(job, self.session, result)
+                # Job work is a SAVEPOINT: if the job raises, its partial
+                # writes roll back so a retry starts clean — a crashed run
+                # never leaves half-applied side effects (e.g. an orphan
+                # ledger row) that a retry would duplicate.  Jobs that commit
+                # internally (progress checkpoints) close the savepoint; the
+                # rollback is then a no-op and their own commit defines
+                # durability.
+                savepoint = await self.session.begin_nested()
+                try:
+                    await job_instance.before_run(job, self.session)
+                    result = await job_instance.run(job, self.session)
+                    await job_instance.after_run(job, self.session, result)
+                except BaseException:
+                    # BaseException (not just Exception): a worker shutdown
+                    # cancel mid-job must still roll the savepoint back.
+                    try:
+                        await savepoint.rollback()
+                    except Exception:
+                        pass
+                    raise
+                else:
+                    try:
+                        await savepoint.commit()
+                    except Exception:
+                        pass
                 await self.repo.complete(job_id, result)
                 logger.info("Job %d [type=%s] completed successfully", job_id, job.job_type)
                 await self._audit_run(job_id, success=True)

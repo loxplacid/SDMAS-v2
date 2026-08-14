@@ -78,6 +78,10 @@ services:
       CORS_ORIGINS: '["http://localhost:80","http://localhost:8080","http://localhost:5173","http://localhost:3000"]'
     ports:
       - "8000:8000"
+    volumes:
+      # Shared local file storage: the worker must read migration
+      # uploads and document blobs written by the API container.
+      - storage_data:/app/storage
     depends_on:
       migration-init:
         condition: service_completed_successfully
@@ -107,6 +111,8 @@ services:
       OUTBOX_MAX_ATTEMPTS: "10"
       OUTBOX_REAP_INTERVAL: "60.0"
       OUTBOX_STALE_AFTER: "600.0"
+    volumes:
+      - storage_data:/app/storage
     depends_on:
       migration-init:
         condition: service_completed_successfully
@@ -139,3 +145,4 @@ services:
 
 volumes:
   postgres_data:
+  storage_data:

@@ -53,10 +53,10 @@ class RollbackService:
         self.log_repo = MigrationLogRepository(session)
 
     async def plan_rollback(
-        self, run_id: int, *, dry_run: bool = True
+        self, run_id: int, *, dry_run: bool = True, campus_id: int | None = None
     ) -> RollbackPlan:
         """Preview a rollback without executing it."""
-        run = await self.run_repo.get_by_id(run_id)
+        run = await self.run_repo.get_by_id(run_id, campus_id=campus_id)
         if run is None:
             raise ValueError(f"Migration run {run_id} not found")
 
@@ -78,15 +78,17 @@ class RollbackService:
             tables_affected=tables,
         )
 
-    async def execute_rollback(self, run_id: int) -> int:
+    async def execute_rollback(self, run_id: int, campus_id: int | None = None) -> int:
         """Execute a full rollback for a single migration run.
 
+        ``campus_id`` (tenant boundary) is forwarded so a run owned by
+        another campus resolves to "not found" and is never rolled back.
         Returns total records removed across all affected tables.
         """
         from app.domains.migration.engine import MigrationEngine
 
         engine = MigrationEngine(self.session)
-        return await engine.rollback(run_id)
+        return await engine.rollback(run_id, campus_id=campus_id)
 
     async def bulk_rollback(
         self, run_ids: list[int], *, dry_run: bool = True

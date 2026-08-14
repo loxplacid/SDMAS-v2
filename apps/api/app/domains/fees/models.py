@@ -176,6 +176,13 @@ class Payment(Base):
             "refunded_amount >= 0 AND refunded_amount <= amount",
             name="ck_payment_refunded_amount_range",
         ),
+        # Idempotency keys are unique *per campus* — two independent tenants
+        # may legitimately use the same client-supplied key.  (NULL keys are
+        # distinct in PostgreSQL, so legacy rows without a key are unaffected.)
+        UniqueConstraint(
+            "campus_id", "idempotency_key",
+            name="uq_payment_idempotency_key",
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -199,8 +206,9 @@ class Payment(Base):
         String(100), nullable=True, unique=True
     )
     #: Client/gateway-supplied idempotency key for duplicate request handling.
+    #: Unique per campus (see ``uq_payment_idempotency_key`` in table args).
     idempotency_key: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, unique=True
+        String(255), nullable=True
     )
     #: Explicit payment state (completed / partially_refunded / refunded).
     status: Mapped[str] = mapped_column(

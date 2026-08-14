@@ -36,7 +36,8 @@ export const OutstandingBalancesPage: React.FC = () => {
     setLoading(true); setError(null)
     try {
       const params: any = {}
-      if (classFilter) params.class_id = Number(classFilter)
+      if (/^\d+$/.test(classFilter)) params.class_id = Number(classFilter)
+      if (/^\d+$/.test(academicYearFilter)) params.academic_year_id = Number(academicYearFilter)
       const result = await outstandingBalanceApi.getOutstanding(params)
       if (fetchId === fetchIdRef.current) {
         setData(result.items)
@@ -46,7 +47,7 @@ export const OutstandingBalancesPage: React.FC = () => {
     } catch (err: any) {
       if (fetchId === fetchIdRef.current) setError(err?.detail || 'Failed to load outstanding balances')
     } finally { if (fetchId === fetchIdRef.current) setLoading(false) }
-  }, [classFilter])
+  }, [classFilter, academicYearFilter])
 
   useEffect(() => { fetch() }, [fetch])
 

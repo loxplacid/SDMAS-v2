@@ -15,25 +15,24 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.domains.academic.models import AcademicYear, Class, Enrollment, Section  # noqa: F401
 from app.domains.communications.context import (
-    load_context_variables,
     load_context_summary,
+    load_context_variables,
     render_template_variables,
 )
-from app.domains.communications.schemas import MessageSend
-from app.domains.communications.service import CommunicationService
-
-# Register tables for the in-memory test DB (Base.metadata.create_all).
-from app.domains.student.models import Student  # noqa: F401
-from app.domains.academic.models import AcademicYear, Class, Enrollment, Section  # noqa: F401
-from app.domains.fees.models import FeeDue  # noqa: F401
-from app.domains.parent.models import Guardian  # noqa: F401 — registers guardian_links
 from app.domains.communications.models import (  # noqa: F401
     CommunicationMessage,
     MessageRecipient,
     MessageTemplate,
 )
+from app.domains.communications.schemas import MessageSend
+from app.domains.communications.service import CommunicationService
+from app.domains.fees.models import FeeDue  # noqa: F401
+from app.domains.parent.models import Guardian  # noqa: F401 — registers guardian_links
 
+# Register tables for the in-memory test DB (Base.metadata.create_all).
+from app.domains.student.models import Student  # noqa: F401
 
 # ── Bounded template resolver ──────────────────────────────────────────
 
@@ -399,3 +398,225 @@ class TestContextTenantScoping:
         tenant = TenantContext(campus_id=1, institution_id=1, user_id=7)
         with pytest.raises(AuthorizationError, match="Cross-tenant access denied"):
             await load_context_variables(db_session, "fee_due", due.id, tenant=tenant)
+
+
+# ── Multi-tenant audit regression: templates, messages and recipient
+# ── resolution must be campus-scoped (cross-tenant IDOR + PII leaks).
+# ── These were proven live against a 3-tenant stack and fixed here.
+
+
+async def _seed_template(
+    db_session: AsyncSession, campus_id: int, code: str = "tpl"
+) -> MessageTemplate:
+    from app.domains.auth.models import User
+    from app.domains.auth.security import hash_password
+
+    creator = User(
+        username=f"{code}_creator",
+        email=f"{code}@test.local",
+        display_name="Creator",
+        role="admin",
+        campus_id=campus_id,
+        is_active=True,
+        password_hash=hash_password("Pass123!"),
+    )
+    db_session.add(creator)
+    await db_session.flush()
+
+    tpl = MessageTemplate(
+        code=code,
+        name=code.title(),
+        subject="Subj",
+        body="Body",
+        message_type="announcement",
+        channels=["in_app"],
+        campus_id=campus_id,
+        created_by=creator.id,
+    )
+    db_session.add(tpl)
+    await db_session.flush()
+    return tpl
+
+
+class TestTemplateCampusScoping:
+    """Regression: ``GET/PATCH/DELETE/render /templates/{id}`` used unscoped
+    lookups — any tenant's admin could read, mutate, delete or render
+    another campus's templates."""
+
+    async def test_get_is_campus_scoped(self, db_session: AsyncSession) -> None:
+        from app.core.exceptions import NotFoundError
+        from app.domains.communications.service import MessageTemplateService
+
+        tpl = await _seed_template(db_session, 1, "scoped-get")
+        svc = MessageTemplateService(db_session)
+
+        # Owner campus sees it.
+        assert (await svc.get(tpl.id, campus_id=1)).id == tpl.id
+        # Other campus → 404-equivalent (NotFoundError), not the row.
+        with pytest.raises(NotFoundError):
+            await svc.get(tpl.id, campus_id=2)
+
+    async def test_update_and_delete_are_campus_scoped(
+        self, db_session: AsyncSession
+    ) -> None:
+        from app.core.exceptions import NotFoundError
+        from app.domains.communications.schemas import MessageTemplateUpdate
+        from app.domains.communications.service import MessageTemplateService
+
+        tpl = await _seed_template(db_session, 1, "scoped-write")
+        svc = MessageTemplateService(db_session)
+
+        with pytest.raises(NotFoundError):
+            await svc.update(tpl.id, MessageTemplateUpdate(body="x"), campus_id=2)
+        with pytest.raises(NotFoundError):
+            await svc.delete(tpl.id, campus_id=2)
+
+        # The row is untouched by the denied writes.
+        fresh = (await db_session.execute(
+            select(MessageTemplate).where(MessageTemplate.id == tpl.id)
+        )).scalar_one()
+        assert fresh.body == "Body"
+
+    async def test_render_is_campus_scoped(self, db_session: AsyncSession) -> None:
+        from app.core.exceptions import NotFoundError
+        from app.domains.communications.service import MessageTemplateService
+
+        tpl = await _seed_template(db_session, 1, "scoped-render")
+        svc = MessageTemplateService(db_session)
+
+        assert (await svc.render(tpl.id, {"student": {"name": "A"}}, campus_id=1))["body"] == "Body"
+        with pytest.raises(NotFoundError):
+            await svc.render(tpl.id, {"student": {"name": "A"}}, campus_id=2)
+
+    async def test_list_is_campus_scoped(self, db_session: AsyncSession) -> None:
+        from app.domains.communications.service import MessageTemplateService
+
+        await _seed_template(db_session, 1, "scoped-list-a")
+        await _seed_template(db_session, 2, "scoped-list-b")
+        svc = MessageTemplateService(db_session)
+
+        items, total = await svc.list(campus_id=1)
+        assert total == 1
+        assert items[0].campus_id == 1
+
+
+class TestMessageAccessScoping:
+    """Regression: ``get/update/delete message`` used an unscoped by-id
+    lookup — any authenticated user could read/mutate another campus's or
+    another user's messages."""
+
+    async def _seed_message_owner(self, db_session: AsyncSession, campus_id: int) -> None:
+        from app.domains.auth.models import User
+        from app.domains.auth.security import hash_password
+
+        user = User(
+            username=f"owner{campus_id}",
+            email=f"owner{campus_id}@test.local",
+            display_name="Owner",
+            role="staff",
+            campus_id=campus_id,
+            is_active=True,
+            password_hash=hash_password("Pass123!"),
+        )
+        db_session.add(user)
+        await db_session.flush()
+
+    async def test_get_message_is_sender_and_campus_scoped(
+        self, db_session: AsyncSession
+    ) -> None:
+        from app.core.exceptions import NotFoundError
+        from app.domains.auth.models import User
+        from app.domains.communications.service import CommunicationService
+
+        await self._seed_message_owner(db_session, 1)
+        await self._seed_message_owner(db_session, 2)
+        owner1 = (await db_session.execute(
+            select(User).where(User.username == "owner1")
+        )).scalar_one()
+        owner2 = (await db_session.execute(
+            select(User).where(User.username == "owner2")
+        )).scalar_one()
+
+        msg = CommunicationMessage(
+            subject="S", body="B", message_type="announcement",
+            priority="normal", channels=["in_app"], status="sent",
+            campus_id=1, sender_id=owner1.id,
+            created_at=datetime.datetime.now(datetime.timezone.utc),
+            updated_at=datetime.datetime.now(datetime.timezone.utc),
+        )
+        db_session.add(msg)
+        await db_session.flush()
+
+        svc = CommunicationService(db_session)
+        # Owner + same campus → visible.
+        assert (await svc.get_message(msg.id, owner1)).id == msg.id
+        # Other user, even same campus → not visible.
+        with pytest.raises(NotFoundError):
+            await svc.get_message(msg.id, owner2)
+
+    async def test_message_send_resolution_is_campus_scoped(
+        self, db_session: AsyncSession
+    ) -> None:
+        """Class/section recipient expansion must not resolve students from
+        another campus (cross-tenant enumeration)."""
+        from app.domains.communications.service import RecipientResolver
+
+        student = await _seed_student(db_session)  # campus 1
+        # Campus-2 class that happens to enroll the same student id is
+        # irrelevant: the resolver joins through Class.campus_id.
+        db_session.add(
+            Class(
+                name="X-A", academic_year_id=1, campus_id=2,
+                created_at=datetime.datetime.now(datetime.timezone.utc),
+                updated_at=datetime.datetime.now(datetime.timezone.utc),
+            )
+        )
+        db_session.add(
+            Enrollment(
+                student_id=student.id, class_id=1, section_id=1,
+                academic_year_id=1, campus_id=2, status="active",
+            )
+        )
+        await db_session.flush()
+
+        resolver = RecipientResolver(db_session)
+        # The class belongs to campus 2 → campus-1 caller must see nothing.
+        out = await resolver.resolve(class_ids=[1], campus_id=1)
+        assert out == []
+
+        # The same class from campus 2 resolves.
+        out2 = await resolver.resolve(class_ids=[1], campus_id=2)
+        assert len(out2) == 1 and out2[0]["recipient_id"] == student.id
+
+    async def test_resolve_with_details_filters_cross_campus_pii(
+        self, db_session: AsyncSession
+    ) -> None:
+        """Cross-campus explicit recipients are rejected outright — the
+        cross-tenant PII leak proven live (names/emails of another campus's
+        students) cannot even be probed."""
+        from app.core.exceptions import ValidationError
+        from app.domains.communications.service import RecipientResolver
+
+        st = await _seed_student(db_session)  # campus 1
+        st2 = Student(
+            first_name="Zainab", last_name="Abdullahi",
+            student_number="STJ-1", email="z@stjude.demo",
+            campus_id=2, status="active",
+        )
+        db_session.add(st2)
+        await db_session.flush()
+
+        resolver = RecipientResolver(db_session)
+        # Own-campus recipient resolves with full details.
+        out = await resolver.resolve_with_details(
+            recipients=[{"recipient_type": "student", "recipient_id": st.id}],
+            campus_id=1,
+        )
+        assert out[0]["name"] == "Rahul Sharma"
+
+        # Any recipient id from another campus is rejected before PII loads.
+        with pytest.raises(ValidationError, match="do not belong to this campus"):
+            await resolver.resolve_with_details(
+                recipients=[{"recipient_type": "student", "recipient_id": st2.id}],
+                campus_id=1,
+            )

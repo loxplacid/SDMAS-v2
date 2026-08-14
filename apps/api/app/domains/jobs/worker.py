@@ -7,14 +7,13 @@ import os
 import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.jobs.repository import JobRepository
 from app.domains.jobs.service import JobService
-from app.multi_tenant.models import platform_context
 from app.infrastructure.database import async_session_factory
+from app.multi_tenant.models import platform_context
 
 logger = logging.getLogger(__name__)
 
@@ -65,8 +64,13 @@ def main() -> None:
     reap_interval = _env_float("WORKER_REAP_INTERVAL", _DEFAULT_REAP_INTERVAL_S)
     stale_after = _env_float("WORKER_STALE_AFTER", _DEFAULT_STALE_AFTER_S)
 
+    # Register every ORM model on Base.metadata first.  The worker imports
+    # only its narrow execution graph, so cross-domain FK targets (e.g.
+    # notifications.campus_id -> campuses) would otherwise be missing and
+    # flushes would fail with NoReferencedTableError.
     # Load every job implementation so the registry resolves all job types.
     from app.domains.jobs.loader import load_all_jobs
+    from app.infrastructure import models as _all_models  # noqa: F401
     load_all_jobs()
 
     # Register durable outbox handlers (delivery happens only here).
@@ -143,10 +147,6 @@ def main() -> None:
             logger.info("Worker entrypoint exited cleanly")
 
     asyncio.run(_run())
-
-
-if __name__ == "__main__":
-    main()
 
 
 class JobWorker:
@@ -289,3 +289,10 @@ async def _worker_session() -> AsyncGenerator[AsyncSession, None]:
         except Exception:
             await session.rollback()
             raise
+
+
+if __name__ == "__main__":
+    # The entry guard must live at the END of the module: `main()` references
+    # `JobWorker`, which is defined above this point.  Placed earlier it would
+    # raise NameError when run as `python -m app.domains.jobs.worker`.
+    main()
