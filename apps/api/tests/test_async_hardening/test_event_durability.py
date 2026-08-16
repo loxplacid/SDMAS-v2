@@ -18,7 +18,6 @@ import pytest
 from sqlalchemy import select, update
 
 from app.domains.events.outbox import (
-    OUTBOX_STATUS_COMPLETED,
     OUTBOX_STATUS_DEAD_LETTER,
     OUTBOX_STATUS_PENDING,
     OUTBOX_STATUS_PROCESSING,
@@ -158,6 +157,126 @@ class TestReplayIdempotency:
             assert len(items) == 1  # still exactly one
         finally:
             outbox_dispatcher.clear()
+
+    async def test_crash_reclaim_redeliver_exactly_once(
+        self, session_factory
+    ):
+        """End-to-end recovery loop: worker claims → dies mid-delivery →
+        reaper requeues → fresh worker delivers → exactly one side effect.
+
+        This is the full crash-recovery path in one test: a delivery that
+        was claimed but never completed must be redelivered exactly once
+        (not zero — the effect would be lost — and not twice — the
+        consumer dedups on ``event_key``).
+        """
+        from app.domains.events.outbox import outbox_dispatcher
+
+        register_outbox_handlers(outbox_dispatcher)
+        try:
+            # Worker A: publish + claim, then "crash" (row stuck in
+            # processing, stale updated_at).
+            async with session_factory() as s1:
+                await publish_durable(
+                    _due_event(student_id=401),
+                    session=s1,
+                    event_id="crash-loop:401",
+                )
+                await s1.commit()
+
+                repo = OutboxRepository(s1)
+                claimed = await repo.claim_next(max_attempts=10)
+                assert claimed is not None
+                assert claimed.status == OUTBOX_STATUS_PROCESSING
+
+                await s1.execute(
+                    update(OutboxEvent)
+                    .where(OutboxEvent.event_id == "crash-loop:401")
+                    .values(updated_at=NOW - datetime.timedelta(hours=2))
+                )
+                await s1.commit()
+
+            # Reaper: reclaims the stale delivery.
+            async with session_factory() as s2:
+                repo2 = OutboxRepository(s2)
+                requeued, dead_lettered = await repo2.reclaim_stale_processing(
+                    NOW, max_attempts=10
+                )
+                assert requeued == 1
+                assert dead_lettered == 0
+
+                # Observable: the reclaim recorded WHY it happened.
+                row = await repo2.get_by_event_id("crash-loop:401")
+                assert row.status == OUTBOX_STATUS_PENDING
+                assert "Reclaimed: worker stopped" in (row.last_error or "")
+                await s2.commit()
+
+            # Worker B: fresh session claims and delivers to completion.
+            async with session_factory() as s3:
+                repo3 = OutboxRepository(s3)
+                re_claimed = await repo3.claim_next(max_attempts=10)
+                assert re_claimed is not None
+                assert re_claimed.event_id == "crash-loop:401"
+                await outbox_dispatcher.deliver(re_claimed, s3)
+                await repo3.complete(re_claimed.event_id)
+                await s3.commit()
+
+                notif_repo = NotificationRepository(s3, platform_context())
+                items, _ = await notif_repo.find_by_user(401)
+                assert len(items) == 1, "crash recovery lost or duplicated the effect"
+        finally:
+            outbox_dispatcher.clear()
+
+    async def test_reaper_records_observable_reasons(self, session_factory):
+        """Recovery is observable: reclaim and reaper-dead-letter write a
+        distinct ``last_error`` reason so operators can tell why a delivery
+        was requeued versus abandoned."""
+        async with session_factory() as s:
+            repo = OutboxRepository(s)
+            await publish_durable(
+                _due_event(student_id=501), session=s, event_id="reap:501"
+            )
+            await publish_durable(
+                _due_event(student_id=502), session=s, event_id="reap:502"
+            )
+            await s.commit()
+
+            # Both stuck in processing (two crashed workers); the second is
+            # past its retry budget.
+            await s.execute(
+                update(OutboxEvent)
+                .where(OutboxEvent.event_id == "reap:501")
+                .values(
+                    status=OUTBOX_STATUS_PROCESSING, attempts=1,
+                    updated_at=NOW - datetime.timedelta(hours=2),
+                )
+            )
+            await s.execute(
+                update(OutboxEvent)
+                .where(OutboxEvent.event_id == "reap:502")
+                .values(
+                    status=OUTBOX_STATUS_PROCESSING, attempts=10,
+                    updated_at=NOW - datetime.timedelta(hours=2),
+                )
+            )
+            await s.commit()
+
+            requeued, dead_lettered = await repo.reclaim_stale_processing(
+                NOW, max_attempts=10
+            )
+            assert requeued == 1
+            assert dead_lettered == 1
+
+            requeued_row = await repo.get_by_event_id("reap:501")
+            assert requeued_row.status == OUTBOX_STATUS_PENDING
+            assert requeued_row.last_error == (
+                "Reclaimed: worker stopped before completion"
+            )
+
+            dead_row = await repo.get_by_event_id("reap:502")
+            assert dead_row.status == OUTBOX_STATUS_DEAD_LETTER
+            assert dead_row.last_error == (
+                "Reclaimed after max attempts: worker stopped before completion"
+            )
 
     async def test_dead_letter_after_max_attempts(self, session_factory):
         """A handler that always fails dead-letters the event after

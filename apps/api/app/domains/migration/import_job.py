@@ -36,6 +36,27 @@ logger = logging.getLogger(__name__)
 
 MIGRATION_IMPORT_JOB_TYPE = "migration.import"
 
+# (completed_entities, num_entities, row_count) — see _scale_progress.
+_ProgressCtx = tuple[int, int, int]
+
+
+def _scale_progress(ctx: _ProgressCtx, *, within: int, entity_total: int) -> int:
+    """Map per-entity progress onto the project's source-row budget.
+
+    Multi-entity imports derive several records from each source row
+    (students, academic, attendance, fees all read the same CSV rows), so
+    summing per-stream record counts over-counts ``records_processed`` — e.g.
+    425 student rows + 425 academic rows would report 850 processed against
+    a ``row_count`` of 425.  Each detected entity is instead an equal share
+    of the work, so the value stays within ``[0, row_count]`` and the
+    frontend's ``processed / row_count`` percentage is truthful.
+    """
+    completed, num_entities, row_count = ctx
+    fraction = completed / max(num_entities, 1)
+    if entity_total > 0:
+        fraction += (within / entity_total) / max(num_entities, 1)
+    return round(row_count * min(fraction, 1.0))
+
 
 @register_job
 class MigrationImportJob(BaseJob):
@@ -112,9 +133,10 @@ async def run_project_import(
     for record in transformed:
         record["campus_id"] = project.campus_id
     total = len(transformed)
+    num_entities = len(entities)
+    completed = 0
 
     totals = {"imported": 0, "updated": 0, "skipped": 0, "errors": 0, "warnings": 0}
-    processed = 0
     entity_results: dict[str, dict[str, int]] = {}
 
     try:
@@ -126,12 +148,16 @@ async def run_project_import(
             # stream keeps re-runs a true no-op.
             existing_run = await _get_or_create_run(session, run_repo, project, entity)
             if existing_run.status.startswith("completed"):
+                completed += 1
                 logger.info(
                     "Migration import project=%s entity=%s already completed — skipping",
                     project_id,
                     entity,
                 )
                 continue
+
+            # Per-entity share of the project's row budget.
+            ctx: _ProgressCtx = (completed, num_entities, total)
 
             result: Any
             if entity == "students":
@@ -146,7 +172,7 @@ async def run_project_import(
                     mapping_repo,
                     job_id=job_id,
                     totals=totals,
-                    processed=processed,
+                    ctx=ctx,
                 )
             elif entity == "academic":
                 from app.domains.migration.engine import get_migrator
@@ -176,7 +202,7 @@ async def run_project_import(
                     mapping_repo,
                     job_id=job_id,
                     totals=totals,
-                    processed=processed,
+                    ctx=ctx,
                 )
                 # Every unresolvable reference is an explicit, logged error.
                 # Log-once: a resumed stream regenerates the same unresolved
@@ -216,7 +242,8 @@ async def run_project_import(
             totals["skipped"] += result.skipped
             totals["errors"] += result.errors
             totals["warnings"] += result.warnings
-            processed += result.total
+            completed += 1
+            processed = _scale_progress((completed, num_entities, total), within=0, entity_total=0)
             entity_results[entity] = {
                 "total": result.total,
                 "imported": result.imported,
@@ -356,14 +383,15 @@ async def _import_flat_entity(
     *,
     job_id: int | None,
     totals: dict[str, int],
-    processed: int,
+    ctx: _ProgressCtx,
 ) -> tuple[Any, MigrationRun]:
     """Chunked, resumable, idempotent import for a flat-record stream.
 
-    ``processed`` is the number of rows already consumed by earlier
-    entities — used only for job progress math.  ``totals`` is reserved for
-    the caller; this function never mutates it (the outer loop folds the
-    returned result into project-level counters exactly once).
+    ``ctx`` carries the entity share of the project's row budget (see
+    ``_scale_progress``) so per-chunk progress stays truthful.  ``totals``
+    is reserved for the caller; this function never mutates it (the outer
+    loop folds the returned result into project-level counters exactly
+    once).
     """
     from app.domains.migration.engine import get_migrator
 
@@ -388,7 +416,7 @@ async def _import_flat_entity(
             if not str(rec.get("legacy_id", "")) or str(rec.get("legacy_id", "")) not in committed
         ]
         if not fresh:
-            await _progress(session, tenant, project, job_id, processed, start + len(chunk))
+            await _progress(session, tenant, project, job_id, ctx, start + len(chunk), total)
             await session.commit()
             continue
 
@@ -413,7 +441,7 @@ async def _import_flat_entity(
         errors += result.errors + rejected
         warnings += result.warnings
 
-        await _progress(session, tenant, project, job_id, processed, start + len(chunk))
+        await _progress(session, tenant, project, job_id, ctx, start + len(chunk), total)
         # Per-chunk commit: the resumability boundary.
         await session.commit()
 
@@ -430,10 +458,11 @@ async def _progress(
     tenant: TenantContext,
     project: Any,
     job_id: int | None,
-    base: int,
+    ctx: _ProgressCtx,
     within: int,
+    entity_total: int,
 ) -> None:
-    processed = base + within
+    processed = _scale_progress(ctx, within=within, entity_total=entity_total)
     await MigrationProjectRepository(session, tenant).touch(project.id, records_processed=processed)
     await _update_job_progress(session, job_id, project.row_count, processed)
 

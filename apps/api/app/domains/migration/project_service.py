@@ -24,10 +24,12 @@ from app.domains.migration.discovery import (
 )
 from app.domains.migration.models import (
     MIGRATION_STATUS_CANCELLED,
+    MIGRATION_STATUS_COMPLETED,
     MIGRATION_STATUS_DISCOVERING,
     MIGRATION_STATUS_DRAFT,
     MIGRATION_STATUS_IMPORTING,
     MIGRATION_STATUS_MAPPING,
+    MIGRATION_STATUS_RECONCILING,
     MIGRATION_STATUS_READY,
     MIGRATION_STATUS_ROLLED_BACK,
     MIGRATION_STATUS_VALIDATING,
@@ -541,6 +543,14 @@ class MigrationProjectService:
             "entities": [r.entity_type for r in runs],
             "reconciled_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         }
+        # RECONCILING → COMPLETED: reconciliation is the terminal step of the
+        # project lifecycle (D2.1).  Without this transition the project would
+        # sit in RECONCILING forever, and the COMPLETED → ROLLED_BACK state
+        # machine edge (which ``rollback()`` requires) would be unreachable.
+        if project.status == MIGRATION_STATUS_RECONCILING:
+            self._assert_transition(project, MIGRATION_STATUS_COMPLETED)
+            await self.repo.update_status(project_id, MIGRATION_STATUS_COMPLETED)
+            project.status = MIGRATION_STATUS_COMPLETED
         await self.repo.touch(project_id, reconciliation=report)
         return report
 
@@ -675,10 +685,34 @@ class MigrationProjectService:
         if not project.run_id:
             raise ConflictError("Nothing to roll back — no import run exists")
 
+        from sqlalchemy import select as sa_select
+
+        from app.domains.migration.models import MigrationRun
         from app.domains.migration.rollback import RollbackService
 
+        # A multi-entity import produced one run per stream (students,
+        # academic, attendance, fees).  Rolling back only ``project.run_id``
+        # (the first run) would orphan every other stream's rows — e.g.
+        # deleting students while their enrollments, attendance and payments
+        # remain.  Roll back EVERY run owned by the project, in reverse
+        # dependency order (fees/attendance first, then academic, then
+        # students) so FK constraints never break.
+        runs = (
+            await self.session.execute(
+                sa_select(MigrationRun).where(MigrationRun.project_id == project.id)
+            )
+        ).scalars().all()
+        if not runs:
+            raise ConflictError("No migration runs to roll back — import first")
+
         svc = RollbackService(self.session)
-        count = await svc.execute_rollback(project.run_id)
+        ordered = sorted(
+            runs,
+            key=lambda r: RollbackService.ROLLBACK_ORDER.get(r.entity_type, 5),
+        )
+        total = 0
+        for run in ordered:
+            total += await svc.execute_rollback(run.id, campus_id=project.campus_id)
         await self.repo.touch(
             project_id,
             status=MIGRATION_STATUS_ROLLED_BACK,
@@ -687,9 +721,9 @@ class MigrationProjectService:
         await self._audit(
             "MIGRATION_PROJECT_ROLLED_BACK",
             str(project_id),
-            details={"records_removed": count},
+            details={"records_removed": total, "runs_rolled_back": len(ordered)},
         )
-        return {"records_removed": count}
+        return {"records_removed": total, "runs_rolled_back": len(ordered)}
 
 
 def _preview_record(record: dict[str, Any]) -> dict[str, Any]:

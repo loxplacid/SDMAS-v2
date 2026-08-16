@@ -12,7 +12,6 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    Time,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -120,28 +119,28 @@ class TimetableEntry(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     academic_year_id: Mapped[int] = mapped_column(
-        ForeignKey("academic_years.id"), nullable=False
+        ForeignKey("academic_years.id", ondelete="CASCADE"), nullable=False
     )
     term_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("terms.id"), nullable=True
+        ForeignKey("terms.id", ondelete="SET NULL"), nullable=True
     )
     class_id: Mapped[int] = mapped_column(
-        ForeignKey("classes.id"), nullable=False
+        ForeignKey("classes.id", ondelete="CASCADE"), nullable=False
     )
     section_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("sections.id"), nullable=True
+        ForeignKey("sections.id", ondelete="SET NULL"), nullable=True
     )
     subject_id: Mapped[int] = mapped_column(
-        ForeignKey("subjects.id"), nullable=False
+        ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False
     )
     teacher_id: Mapped[int] = mapped_column(
-        ForeignKey("teachers.id"), nullable=False
+        ForeignKey("teachers.id", ondelete="CASCADE"), nullable=False
     )
     room_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("rooms.id"), nullable=True
+        ForeignKey("rooms.id", ondelete="SET NULL"), nullable=True
     )
     time_slot_id: Mapped[int] = mapped_column(
-        ForeignKey("time_slots.id"), nullable=False
+        ForeignKey("time_slots.id", ondelete="CASCADE"), nullable=False
     )
     day_of_week: Mapped[int] = mapped_column(Integer, nullable=False)
     campus_id: Mapped[int | None] = mapped_column(
@@ -181,13 +180,13 @@ class Substitution(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     timetable_entry_id: Mapped[int] = mapped_column(
-        ForeignKey("timetable_entries.id"), nullable=False
+        ForeignKey("timetable_entries.id", ondelete="CASCADE"), nullable=False
     )
     original_teacher_id: Mapped[int] = mapped_column(
-        ForeignKey("teachers.id"), nullable=False
+        ForeignKey("teachers.id", ondelete="CASCADE"), nullable=False
     )
     substitute_teacher_id: Mapped[int] = mapped_column(
-        ForeignKey("teachers.id"), nullable=False
+        ForeignKey("teachers.id", ondelete="CASCADE"), nullable=False
     )
     substitution_date: Mapped[datetime.date] = mapped_column(
         Date, nullable=False
@@ -228,28 +227,28 @@ class ExamSchedule(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     academic_year_id: Mapped[int] = mapped_column(
-        ForeignKey("academic_years.id"), nullable=False
+        ForeignKey("academic_years.id", ondelete="CASCADE"), nullable=False
     )
     term_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("terms.id"), nullable=True
+        ForeignKey("terms.id", ondelete="SET NULL"), nullable=True
     )
     class_id: Mapped[int] = mapped_column(
-        ForeignKey("classes.id"), nullable=False
+        ForeignKey("classes.id", ondelete="CASCADE"), nullable=False
     )
     section_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("sections.id"), nullable=True
+        ForeignKey("sections.id", ondelete="SET NULL"), nullable=True
     )
     subject_id: Mapped[int] = mapped_column(
-        ForeignKey("subjects.id"), nullable=False
+        ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False
     )
     exam_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
     start_time: Mapped[str] = mapped_column(String(5), nullable=False)
     end_time: Mapped[str] = mapped_column(String(5), nullable=False)
     room_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("rooms.id"), nullable=True
+        ForeignKey("rooms.id", ondelete="SET NULL"), nullable=True
     )
     invigilator_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("teachers.id"), nullable=True
+        ForeignKey("teachers.id", ondelete="SET NULL"), nullable=True
     )
     max_marks: Mapped[int] = mapped_column(Integer, nullable=False, default=100)
     pass_marks: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
@@ -289,13 +288,13 @@ class GradingStructure(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     academic_year_id: Mapped[int] = mapped_column(
-        ForeignKey("academic_years.id"), nullable=False
+        ForeignKey("academic_years.id", ondelete="CASCADE"), nullable=False
     )
     class_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("classes.id"), nullable=True
+        ForeignKey("classes.id", ondelete="SET NULL"), nullable=True
     )
     subject_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("subjects.id"), nullable=True
+        ForeignKey("subjects.id", ondelete="SET NULL"), nullable=True
     )
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     min_percentage: Mapped[float] = mapped_column(Float, nullable=False)
@@ -338,20 +337,20 @@ class GradeRecord(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     enrollment_id: Mapped[int] = mapped_column(
-        ForeignKey("enrollments.id"), nullable=False
+        ForeignKey("enrollments.id", ondelete="CASCADE"), nullable=False
     )
     subject_id: Mapped[int] = mapped_column(
-        ForeignKey("subjects.id"), nullable=False
+        ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False
     )
     grading_structure_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("grading_structures.id"), nullable=True
+        ForeignKey("grading_structures.id", ondelete="SET NULL"), nullable=True
     )
     marks_obtained: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     max_marks: Mapped[int] = mapped_column(Integer, nullable=False, default=100)
     grade: Mapped[Optional[str]] = mapped_column(String(5), nullable=True)
     grade_point: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     term_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("terms.id"), nullable=True
+        ForeignKey("terms.id", ondelete="SET NULL"), nullable=True
     )
     remarks: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     campus_id: Mapped[int | None] = mapped_column(
@@ -391,16 +390,16 @@ class Curriculum(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     academic_year_id: Mapped[int] = mapped_column(
-        ForeignKey("academic_years.id"), nullable=False
+        ForeignKey("academic_years.id", ondelete="CASCADE"), nullable=False
     )
     class_id: Mapped[int] = mapped_column(
-        ForeignKey("classes.id"), nullable=False
+        ForeignKey("classes.id", ondelete="CASCADE"), nullable=False
     )
     subject_id: Mapped[int] = mapped_column(
-        ForeignKey("subjects.id"), nullable=False
+        ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False
     )
     term_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("terms.id"), nullable=True
+        ForeignKey("terms.id", ondelete="SET NULL"), nullable=True
     )
     topics: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     objectives: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

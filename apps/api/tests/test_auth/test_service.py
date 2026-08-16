@@ -68,7 +68,9 @@ class TestRegister:
         assert user.email == "new@test.com"
         assert user.username == "newuser"
         assert user.password_hash != "Str0ng!Pass"
-        assert user.role == "staff"
+        # Public self-registration must mint the least-privileged role
+        # (never staff/admin) — see API hardening.
+        assert user.role == "parent"
         assert user.is_active is True
 
     @pytest.mark.asyncio

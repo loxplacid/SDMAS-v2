@@ -55,6 +55,38 @@ class FeeMigrator(BaseMigrator):
 
         return result
 
+    async def rollback(self, run_id, session, mapping_repo):
+        """Delete every fee row this run created, in FK-safe order.
+
+        The fee migrator records mappings per *subtype* (``fee_type``,
+        ``fee_structure``, ``fee_due``, ``payment``) — the base rollback
+        looks them up by run entity type (``fees``) and finds nothing.
+        Group the run's whole mapping set by subtype and delete
+        children-first: payments → fee_dues → fee_structures → fee_types.
+        """
+        from sqlalchemy import delete
+
+        mappings = await mapping_repo.list_by_run(run_id)
+        by_type: dict[str, list[int]] = {}
+        for m in mappings:
+            by_type.setdefault(m.entity_type, []).append(m.sdmas_id)
+
+        table_by_type = [
+            ("payment", Payment),
+            ("fee_due", FeeDue),
+            ("fee_structure", FeeStructure),
+            ("fee_type", FeeType),
+        ]
+        total = 0
+        for entity_type, model in table_by_type:
+            ids = by_type.get(entity_type)
+            if not ids:
+                continue
+            result = await session.execute(delete(model).where(model.id.in_(ids)))
+            total += result.rowcount
+        await session.flush()
+        return total
+
     async def _import_fee_type(self, rec, session, run_id, mapping_repo, log_repo, result):
         lid = str(rec.get("legacy_id", ""))
         try:
@@ -164,6 +196,10 @@ class FeeMigrator(BaseMigrator):
             )
             session.add(entity)
             await session.flush()
+            # Track the payment in the run's mapping table so rollback can
+            # remove it (payments reference fee_dues, so they must be
+            # deleted before the dues they point at).
+            await mapping_repo.record(run_id, "payment", lid, entity.id)
             result.imported += 1
             await log_repo.log(run_id, "imported", "fees", lid, "payment",
                                f"Payment imported as SDMAS ID {entity.id}")

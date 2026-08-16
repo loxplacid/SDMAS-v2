@@ -1,0 +1,496 @@
+method,path,domain,authentication,role_permission,tenant_scope,success_status,expected_failures,audit_required,idempotency,test_coverage,endpoint
+GET|/admin/users|auth|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.auth.admin_router.list_users
+POST|/admin/users|auth|auth|'admin'|dep|201|401,403,404,409,422,402|Y|refresh token rotation + reuse detection|DIRECT|app.domains.auth.admin_router.create_user
+GET|/admin/users/{user_id}|auth|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.auth.admin_router.get_user
+PATCH|/admin/users/{user_id}|auth|auth|'admin'|dep|200|401,403,404,409,422,402|Y|refresh token rotation + reuse detection|DIRECT|app.domains.auth.admin_router.update_user
+POST|/admin/users/{user_id}/roles|auth|auth|'admin'|dep|200|401,403,404,409,422,402|Y|refresh token rotation + reuse detection|DIRECT|app.domains.auth.admin_router.set_user_roles
+GET|/api/academic-years|academic|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.academic.router.list_academic_years
+POST|/api/academic-years|academic|auth|perm:'academic.create'|dep|201|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.create_academic_year
+DELETE|/api/academic-years/{year_id}|academic|auth|perm:'academic.delete'|dep|204|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.delete_academic_year
+GET|/api/academic-years/{year_id}|academic|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.academic.router.get_academic_year
+PATCH|/api/academic-years/{year_id}|academic|auth|perm:'academic.update'|dep|200|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.update_academic_year
+GET|/api/academic-years/{year_id}/terms|academic|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.academic.router.list_terms
+POST|/api/academic-years/{year_id}/terms|academic|auth|perm:'academic.create'|dep|201|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.create_term
+GET|/api/academic/curricula|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.academic_ops.router.list_curricula
+POST|/api/academic/curricula|academic_ops|auth|perm:'academic.create'|dep|201|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.create_curriculum
+DELETE|/api/academic/curricula/{curr_id}|academic_ops|auth|perm:'academic.delete'|dep|204|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.delete_curriculum
+GET|/api/academic/curricula/{curr_id}|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.academic_ops.router.get_curriculum
+PATCH|/api/academic/curricula/{curr_id}|academic_ops|auth|perm:'academic.update'|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.update_curriculum
+GET|/api/academic/exam-schedules|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.academic_ops.router.list_exam_schedules
+POST|/api/academic/exam-schedules|academic_ops|auth|perm:'academic.create'|dep|201|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.create_exam_schedule
+DELETE|/api/academic/exam-schedules/{exam_id}|academic_ops|auth|perm:'academic.delete'|dep|204|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.delete_exam_schedule
+GET|/api/academic/exam-schedules/{exam_id}|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.academic_ops.router.get_exam_schedule
+PATCH|/api/academic/exam-schedules/{exam_id}|academic_ops|auth|perm:'academic.update'|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.update_exam_schedule
+GET|/api/academic/grade-records|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.academic_ops.router.list_grade_records
+POST|/api/academic/grade-records|academic_ops|auth|perm:'academic.update'|dep|201|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.create_grade_record
+DELETE|/api/academic/grade-records/{rec_id}|academic_ops|auth|perm:'academic.delete'|dep|204|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.delete_grade_record
+GET|/api/academic/grade-records/{rec_id}|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.academic_ops.router.get_grade_record
+PATCH|/api/academic/grade-records/{rec_id}|academic_ops|auth|perm:'academic.update'|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.update_grade_record
+GET|/api/academic/grading-structures|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.academic_ops.router.list_grading_structures
+POST|/api/academic/grading-structures|academic_ops|auth|perm:'academic.create'|dep|201|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.create_grading_structure
+DELETE|/api/academic/grading-structures/{gs_id}|academic_ops|auth|perm:'academic.delete'|dep|204|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.delete_grading_structure
+GET|/api/academic/grading-structures/{gs_id}|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.academic_ops.router.get_grading_structure
+PATCH|/api/academic/grading-structures/{gs_id}|academic_ops|auth|perm:'academic.update'|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.update_grading_structure
+GET|/api/academic/rooms|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.academic_ops.router.list_rooms
+POST|/api/academic/rooms|academic_ops|auth|perm:'academic.create'|dep|201|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.create_room
+DELETE|/api/academic/rooms/{room_id}|academic_ops|auth|perm:'academic.delete'|dep|204|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.delete_room
+GET|/api/academic/rooms/{room_id}|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.academic_ops.router.get_room
+PATCH|/api/academic/rooms/{room_id}|academic_ops|auth|perm:'academic.update'|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.update_room
+GET|/api/academic/substitutions|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.academic_ops.router.list_substitutions
+POST|/api/academic/substitutions|academic_ops|auth|perm:'academic.create'|dep|201|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.create_substitution
+DELETE|/api/academic/substitutions/{sub_id}|academic_ops|auth|perm:'academic.delete'|dep|204|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.delete_substitution
+GET|/api/academic/substitutions/{sub_id}|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.academic_ops.router.get_substitution
+PATCH|/api/academic/substitutions/{sub_id}|academic_ops|auth|perm:'academic.update'|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.update_substitution
+POST|/api/academic/substitutions/{sub_id}/approve|academic_ops|auth|perm:'academic.update'|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.approve_substitution
+POST|/api/academic/substitutions/{sub_id}/decline|academic_ops|auth|perm:'academic.update'|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.decline_substitution
+GET|/api/academic/time-slots|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.academic_ops.router.list_time_slots
+POST|/api/academic/time-slots|academic_ops|auth|perm:'academic.create'|dep|201|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.create_time_slot
+DELETE|/api/academic/time-slots/{slot_id}|academic_ops|auth|perm:'academic.delete'|dep|204|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.delete_time_slot
+GET|/api/academic/time-slots/{slot_id}|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.academic_ops.router.get_time_slot
+PATCH|/api/academic/time-slots/{slot_id}|academic_ops|auth|perm:'academic.update'|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.update_time_slot
+GET|/api/academic/timetable|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.academic_ops.router.list_timetable_entries
+POST|/api/academic/timetable|academic_ops|auth|perm:'academic.create'|dep|201|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.create_timetable_entry
+POST|/api/academic/timetable/check|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.check_timetable_conflicts
+GET|/api/academic/timetable/week/class/{class_id}|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.academic_ops.router.get_class_timetable_week
+GET|/api/academic/timetable/week/room/{room_id}|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.academic_ops.router.get_room_timetable_week
+GET|/api/academic/timetable/week/teacher/{teacher_id}|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.academic_ops.router.get_teacher_timetable_week
+DELETE|/api/academic/timetable/{entry_id}|academic_ops|auth|perm:'academic.delete'|dep|204|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.delete_timetable_entry
+GET|/api/academic/timetable/{entry_id}|academic_ops|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.academic_ops.router.get_timetable_entry
+PATCH|/api/academic/timetable/{entry_id}|academic_ops|auth|perm:'academic.update'|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.academic_ops.router.update_timetable_entry
+GET|/api/admin/audit-logs|audit|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.audit.router.list_audit_logs
+GET|/api/admin/audit-logs/export|audit|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.audit.export.export_audit_logs
+GET|/api/admin/audit-logs/{entry_id}|audit|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.audit.router.get_audit_log
+GET|/api/admissions/applications|admission|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.admission.router.list_applications
+POST|/api/admissions/applications|admission|auth|-|dep|201|401,403,404,409,422,402|Y|application_number unique per campus|PARTIAL|app.domains.admission.router.create_application
+DELETE|/api/admissions/applications/{application_id}|admission|auth|-|dep|204|401,403,404,409,422,402|Y|application_number unique per campus|PARTIAL|app.domains.admission.router.delete_application
+GET|/api/admissions/applications/{application_id}|admission|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.admission.router.get_application
+PATCH|/api/admissions/applications/{application_id}|admission|auth|-|dep|200|401,403,404,409,422,402|Y|application_number unique per campus|PARTIAL|app.domains.admission.router.update_application
+GET|/api/admissions/applications/{application_id}/documents|admission|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.admission.router.list_application_documents
+POST|/api/admissions/applications/{application_id}/documents|admission|auth|-|dep|201|401,403,404,409,422,402|Y|application_number unique per campus|PARTIAL|app.domains.admission.router.upload_document
+GET|/api/admissions/applications/{application_id}/interviews|admission|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.admission.router.list_application_interviews
+POST|/api/admissions/applications/{application_id}/interviews|admission|auth|-|dep|201|401,403,404,409,422,402|Y|application_number unique per campus|PARTIAL|app.domains.admission.router.schedule_interview
+GET|/api/admissions/applications/{application_id}/seat-allocations|admission|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.admission.router.list_application_allocations
+POST|/api/admissions/applications/{application_id}/transition|admission|auth|perm:'admissions.approve'|dep|200|401,403,404,409,422,402|Y|application_number unique per campus|PARTIAL|app.domains.admission.router.transition_application_status
+DELETE|/api/admissions/documents/{document_id}|admission|auth|-|dep|204|401,403,404,409,422,402|Y|application_number unique per campus|PARTIAL|app.domains.admission.router.delete_document
+GET|/api/admissions/documents/{document_id}|admission|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.admission.router.get_document
+PATCH|/api/admissions/documents/{document_id}/verify|admission|auth|perm:'admissions.approve'|dep|200|401,403,404,409,422,402|Y|application_number unique per campus|PARTIAL|app.domains.admission.router.verify_document
+GET|/api/admissions/interviews/{interview_id}|admission|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.admission.router.get_interview
+PATCH|/api/admissions/interviews/{interview_id}|admission|auth|-|dep|200|401,403,404,409,422,402|Y|application_number unique per campus|PARTIAL|app.domains.admission.router.update_interview
+GET|/api/admissions/merit-entries|admission|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.admission.router.list_merit_entries
+POST|/api/admissions/merit-entries|admission|auth|-|dep|201|401,403,404,409,422,402|Y|application_number unique per campus|PARTIAL|app.domains.admission.router.create_merit_entry
+GET|/api/admissions/merit-entries/{entry_id}|admission|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.admission.router.get_merit_entry
+PATCH|/api/admissions/merit-entries/{entry_id}|admission|auth|-|dep|200|401,403,404,409,422,402|Y|application_number unique per campus|PARTIAL|app.domains.admission.router.update_merit_entry
+POST|/api/admissions/seat-allocations|admission|auth|-|dep|201|401,403,404,409,422,402|Y|application_number unique per campus|PARTIAL|app.domains.admission.router.create_seat_allocation
+GET|/api/admissions/seat-allocations/{allocation_id}|admission|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.admission.router.get_seat_allocation
+PATCH|/api/admissions/seat-allocations/{allocation_id}|admission|auth|-|dep|200|401,403,404,409,422,402|Y|application_number unique per campus|PARTIAL|app.domains.admission.router.update_seat_allocation
+GET|/api/analytics/academic/overview|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_academic_overview
+GET|/api/analytics/academic/subjects|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_subject_distribution
+GET|/api/analytics/academic/teacher-workload|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_teacher_workload
+GET|/api/analytics/attendance/classes|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_attendance_class_comparison
+GET|/api/analytics/attendance/low-attendance|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_low_attendance_students
+GET|/api/analytics/attendance/overview|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_attendance_overview
+GET|/api/analytics/attendance/sections|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_attendance_section_comparison
+GET|/api/analytics/attendance/terms|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_term_attendance
+GET|/api/analytics/attendance/trends|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_attendance_trends
+GET|/api/analytics/finance/classes|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_finance_class_collection
+GET|/api/analytics/finance/fee-types|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_fee_type_collection
+GET|/api/analytics/finance/overview|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_finance_overview
+GET|/api/analytics/finance/payment-methods|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_payment_method_distribution
+GET|/api/analytics/finance/status|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_fee_status_distribution
+GET|/api/analytics/finance/trends|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_finance_trends
+GET|/api/analytics/overview|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_analytics_overview
+GET|/api/analytics/students/classes|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_students_by_class
+GET|/api/analytics/students/enrollment-trends|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_enrollment_trends
+GET|/api/analytics/students/overview|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_student_overview
+GET|/api/analytics/students/sections|analytics|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.analytics.router.get_students_by_section
+GET|/api/attendance-intelligence/absence-reasons|attendance_intelligence|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|INDIRECT|app.domains.attendance_intelligence.router.list_absence_reasons
+POST|/api/attendance-intelligence/absence-reasons|attendance_intelligence|auth|perm:'attendance.update'|dep|201|401,403,404,409,422,402|N|n/a|INDIRECT|app.domains.attendance_intelligence.router.create_absence_reason
+DELETE|/api/attendance-intelligence/absence-reasons/{reason_id}|attendance_intelligence|auth|perm:'attendance.update'|dep|204|401,403,404,409,422,402|N|n/a|INDIRECT|app.domains.attendance_intelligence.router.delete_absence_reason
+GET|/api/attendance-intelligence/absence-reasons/{reason_id}|attendance_intelligence|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|INDIRECT|app.domains.attendance_intelligence.router.get_absence_reason
+PATCH|/api/attendance-intelligence/absence-reasons/{reason_id}|attendance_intelligence|auth|perm:'attendance.update'|dep|200|401,403,404,409,422,402|N|n/a|INDIRECT|app.domains.attendance_intelligence.router.update_absence_reason
+GET|/api/attendance-intelligence/analytics/chronic-absenteeism|attendance_intelligence|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|INDIRECT|app.domains.attendance_intelligence.router.get_chronic_absenteeism
+GET|/api/attendance-intelligence/analytics/class/{class_id}/trend|attendance_intelligence|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|INDIRECT|app.domains.attendance_intelligence.router.get_class_trend
+GET|/api/attendance-intelligence/analytics/low-attendance-alerts|attendance_intelligence|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|INDIRECT|app.domains.attendance_intelligence.router.get_low_attendance_alerts
+GET|/api/attendance-intelligence/analytics/section/{section_id}/trend|attendance_intelligence|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|INDIRECT|app.domains.attendance_intelligence.router.get_section_trend
+GET|/api/attendance-intelligence/analytics/student/{student_id}/trend|attendance_intelligence|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|INDIRECT|app.domains.attendance_intelligence.router.get_student_trend
+GET|/api/attendance-intelligence/corrections|attendance_intelligence|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|INDIRECT|app.domains.attendance_intelligence.router.list_corrections
+POST|/api/attendance-intelligence/corrections|attendance_intelligence|auth|perm:'attendance.record'|dep|201|401,403,404,409,422,402|N|n/a|INDIRECT|app.domains.attendance_intelligence.router.create_correction
+DELETE|/api/attendance-intelligence/corrections/{correction_id}|attendance_intelligence|auth|perm:'attendance.update'|dep|204|401,403,404,409,422,402|N|n/a|INDIRECT|app.domains.attendance_intelligence.router.delete_correction
+GET|/api/attendance-intelligence/corrections/{correction_id}|attendance_intelligence|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|INDIRECT|app.domains.attendance_intelligence.router.get_correction
+POST|/api/attendance-intelligence/corrections/{correction_id}/approve|attendance_intelligence|auth|perm:'attendance.approve'|dep|200|401,403,404,409,422,402|N|n/a|INDIRECT|app.domains.attendance_intelligence.router.approve_correction
+POST|/api/attendance-intelligence/corrections/{correction_id}/decline|attendance_intelligence|auth|perm:'attendance.approve'|dep|200|401,403,404,409,422,402|N|n/a|INDIRECT|app.domains.attendance_intelligence.router.decline_correction
+GET|/api/attendance-intelligence/dashboard|attendance_intelligence|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|INDIRECT|app.domains.attendance_intelligence.router.get_dashboard
+GET|/api/attendance-intelligence/period-attendance|attendance_intelligence|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|INDIRECT|app.domains.attendance_intelligence.router.list_period_attendance
+POST|/api/attendance-intelligence/period-attendance|attendance_intelligence|auth|perm:'attendance.record'|dep|201|401,403,404,409,422,402|N|n/a|INDIRECT|app.domains.attendance_intelligence.router.create_period_attendance
+PATCH|/api/attendance-intelligence/period-attendance/records/{record_id}|attendance_intelligence|auth|perm:'attendance.update'|dep|200|401,403,404,409,422,402|N|n/a|INDIRECT|app.domains.attendance_intelligence.router.update_period_record
+GET|/api/attendance-intelligence/period-attendance/student/{student_id}|attendance_intelligence|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|INDIRECT|app.domains.attendance_intelligence.router.get_student_period_records
+GET|/api/attendance-intelligence/period-attendance/{period_id}|attendance_intelligence|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|INDIRECT|app.domains.attendance_intelligence.router.get_period_attendance
+GET|/api/attendance-intelligence/thresholds|attendance_intelligence|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|INDIRECT|app.domains.attendance_intelligence.router.list_thresholds
+POST|/api/attendance-intelligence/thresholds|attendance_intelligence|auth|perm:'attendance.approve'|dep|201|401,403,404,409,422,402|N|n/a|INDIRECT|app.domains.attendance_intelligence.router.create_threshold
+DELETE|/api/attendance-intelligence/thresholds/{threshold_id}|attendance_intelligence|auth|perm:'attendance.approve'|dep|204|401,403,404,409,422,402|N|n/a|INDIRECT|app.domains.attendance_intelligence.router.delete_threshold
+GET|/api/attendance-intelligence/thresholds/{threshold_id}|attendance_intelligence|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|INDIRECT|app.domains.attendance_intelligence.router.get_threshold
+PATCH|/api/attendance-intelligence/thresholds/{threshold_id}|attendance_intelligence|auth|perm:'attendance.approve'|dep|200|401,403,404,409,422,402|N|n/a|INDIRECT|app.domains.attendance_intelligence.router.update_threshold
+GET|/api/cases|cases|auth|'admin', 'principal', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.cases.router.list_cases
+POST|/api/cases|cases|auth|'admin', 'principal', 'staff'|dep|201|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.cases.router.create_case
+GET|/api/cases/assignable|cases|auth|'admin', 'principal', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.cases.router.case_assignable
+POST|/api/cases/bulk/assign|cases|auth|'admin', 'principal'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.cases.router.bulk_assign
+POST|/api/cases/bulk/due-date|cases|auth|'admin', 'principal'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.cases.router.bulk_due_date
+POST|/api/cases/bulk/priority|cases|auth|'admin', 'principal'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.cases.router.bulk_priority
+POST|/api/cases/bulk/status|cases|auth|'admin', 'principal'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.cases.router.bulk_status
+POST|/api/cases/escalate|cases|auth|'admin', 'principal'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.cases.router.escalate
+GET|/api/cases/metrics|cases|auth|'admin', 'principal', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.cases.router.case_metrics
+GET|/api/cases/overview|cases|auth|'admin', 'principal', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.cases.router.case_overview
+GET|/api/cases/workload|cases|auth|'admin', 'principal', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.cases.router.case_workload
+GET|/api/cases/{case_id:int}|cases|auth|'admin', 'principal', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.cases.router.case_detail
+POST|/api/cases/{case_id:int}/assign|cases|auth|'admin', 'principal', 'staff'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.cases.router.assign_case
+POST|/api/cases/{case_id:int}/comment|cases|auth|'admin', 'principal', 'staff'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.cases.router.add_comment
+POST|/api/cases/{case_id:int}/due-date|cases|auth|'admin', 'principal'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.cases.router.set_due_date
+POST|/api/cases/{case_id:int}/evidence|cases|auth|'admin', 'principal', 'staff'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.cases.router.add_evidence
+POST|/api/cases/{case_id:int}/priority|cases|auth|'admin', 'principal'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.cases.router.change_priority
+POST|/api/cases/{case_id:int}/transition|cases|auth|'admin', 'principal', 'staff'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.cases.router.transition_case
+GET|/api/classes|academic|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.academic.router.list_classes
+POST|/api/classes|academic|auth|perm:'academic.create'|dep|201|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.create_class
+DELETE|/api/classes/{class_id}|academic|auth|perm:'academic.delete'|dep|204|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.delete_class
+GET|/api/classes/{class_id}|academic|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.academic.router.get_class
+PATCH|/api/classes/{class_id}|academic|auth|perm:'academic.update'|dep|200|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.update_class
+GET|/api/command-center/overview|command_center|auth|'admin', 'principal', 'accountant', 'staff', 'teacher'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.command_center.router.get_command_center_overview
+GET|/api/communications/context/{context_type}/{context_id}|communications|auth|'admin', 'staff', 'teacher', 'principal'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.communications.router.get_context
+GET|/api/communications/inbox|communications|auth|-|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.communications.router.get_inbox
+POST|/api/communications/inbox/{recipient_id}/read|communications|auth|-|user|200|401,403,404,409,422,402|Y|n/a|PARTIAL|app.domains.communications.router.mark_as_read
+GET|/api/communications/messages|communications|auth|'admin', 'staff', 'teacher', 'principal'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.communications.router.list_messages
+DELETE|/api/communications/messages/{msg_id}|communications|auth|'admin', 'staff'|user|204|401,403,404,409,422,402|Y|n/a|PARTIAL|app.domains.communications.router.delete_message
+GET|/api/communications/messages/{msg_id}|communications|auth|'admin', 'staff', 'teacher', 'principal'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.communications.router.get_message
+PATCH|/api/communications/messages/{msg_id}|communications|auth|'admin', 'staff'|user|200|401,403,404,409,422,402|Y|n/a|PARTIAL|app.domains.communications.router.update_message
+POST|/api/communications/messages/{msg_id}/retry|communications|auth|'admin', 'staff'|user|200|401,403,404,409,422,402|Y|n/a|PARTIAL|app.domains.communications.router.retry_delivery
+POST|/api/communications/messages/{msg_id}/send-now|communications|auth|'admin', 'staff'|user|200|401,403,404,409,422,402|Y|n/a|PARTIAL|app.domains.communications.router.send_scheduled_now
+GET|/api/communications/meta/channels|communications|public|-|user|200|401(n/a-public)|N|read-only|PARTIAL|app.domains.communications.router.get_channels
+GET|/api/communications/meta/message-types|communications|public|-|user|200|401(n/a-public)|N|read-only|PARTIAL|app.domains.communications.router.get_message_types
+GET|/api/communications/preferences|communications|auth|-|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.communications.router.get_preferences
+PATCH|/api/communications/preferences/{channel}|communications|auth|-|user|200|401,403,404,409,422,402|Y|n/a|PARTIAL|app.domains.communications.router.update_preference
+POST|/api/communications/resolve-recipients|communications|auth|'admin', 'staff', 'teacher'|dep|200|401,403,404,409,422,402|Y|n/a|PARTIAL|app.domains.communications.router.resolve_recipients
+GET|/api/communications/schedules/pending|communications|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.communications.router.get_pending_schedules
+POST|/api/communications/send|communications|auth|'admin', 'staff', 'teacher', 'principal'|dep|201|401,403,404,409,422,402|Y|n/a|PARTIAL|app.domains.communications.router.send_message
+GET|/api/communications/stats|communications|auth|'admin', 'staff'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.communications.router.get_stats
+GET|/api/communications/templates|communications|auth|'admin', 'staff', 'teacher', 'principal'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.communications.router.list_templates
+POST|/api/communications/templates|communications|auth|'admin', 'staff'|user|201|401,403,404,409,422,402|Y|n/a|PARTIAL|app.domains.communications.router.create_template
+POST|/api/communications/templates/render|communications|auth|'admin', 'staff', 'teacher', 'principal'|dep|200|401,403,404,409,422,402|Y|n/a|PARTIAL|app.domains.communications.router.render_template
+POST|/api/communications/templates/render-context|communications|auth|'admin', 'staff', 'teacher', 'principal'|dep|200|401,403,404,409,422,402|Y|n/a|PARTIAL|app.domains.communications.router.render_template_with_context
+DELETE|/api/communications/templates/{template_id}|communications|auth|'admin'|dep|204|401,403,404,409,422,402|Y|n/a|PARTIAL|app.domains.communications.router.delete_template
+GET|/api/communications/templates/{template_id}|communications|auth|'admin', 'staff', 'teacher', 'principal'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.communications.router.get_template
+PATCH|/api/communications/templates/{template_id}|communications|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|Y|n/a|PARTIAL|app.domains.communications.router.update_template
+GET|/api/data-quality/findings|data_quality|auth|'admin', 'principal', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.data_quality.router.list_findings
+GET|/api/data-quality/findings/{finding_id}|data_quality|auth|'admin', 'principal', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.data_quality.router.get_finding
+POST|/api/data-quality/findings/{finding_id}/ignore|data_quality|auth|'admin', 'principal'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.data_quality.router.ignore_finding
+POST|/api/data-quality/findings/{finding_id}/resolve|data_quality|auth|'admin', 'principal'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.data_quality.router.resolve_finding
+GET|/api/data-quality/overview|data_quality|auth|'admin', 'principal', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.data_quality.router.data_quality_overview
+POST|/api/data-quality/run|data_quality|auth|'admin', 'principal'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.data_quality.router.run_checks
+GET|/api/documents|documents|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.documents.router.list_documents
+GET|/api/documents/categories|documents|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.documents.router.list_categories
+POST|/api/documents/shares/{share_id}/revoke|documents|auth|'admin', 'staff', 'teacher', 'accountant'|dep|200|401,403,404,409,422,402|Y|n/a|PARTIAL|app.domains.documents.router.revoke_document_share
+POST|/api/documents/upload|documents|auth|'admin', 'staff', 'teacher', 'accountant'|dep|201|401,403,404,409,422,402|Y|n/a|PARTIAL|app.domains.documents.router.upload_document
+DELETE|/api/documents/{doc_id}|documents|auth|'admin', 'staff', 'teacher', 'accountant'|dep|204|401,403,404,409,422,402|Y|n/a|PARTIAL|app.domains.documents.router.delete_document
+GET|/api/documents/{doc_id}|documents|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.documents.router.get_document
+PATCH|/api/documents/{doc_id}|documents|auth|'admin', 'staff', 'teacher', 'accountant'|dep|200|401,403,404,409,422,402|Y|n/a|PARTIAL|app.domains.documents.router.update_document
+GET|/api/documents/{doc_id}/download|documents|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.documents.router.download_document
+GET|/api/documents/{doc_id}/shares|documents|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.documents.router.list_document_shares
+POST|/api/documents/{doc_id}/shares|documents|auth|'admin', 'staff', 'teacher', 'accountant'|dep|201|401,403,404,409,422,402|Y|n/a|PARTIAL|app.domains.documents.router.create_document_share
+GET|/api/documents/{doc_id}/versions|documents|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.documents.router.list_document_versions
+POST|/api/documents/{doc_id}/versions|documents|auth|'admin', 'staff', 'teacher', 'accountant'|dep|201|401,403,404,409,422,402|Y|n/a|PARTIAL|app.domains.documents.router.add_document_version
+GET|/api/enrollments|academic|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.academic.router.list_enrollments
+POST|/api/enrollments|academic|auth|perm:'academic.create'|dep|201|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.create_enrollment
+DELETE|/api/enrollments/{enrollment_id}|academic|auth|perm:'academic.delete'|dep|204|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.delete_enrollment
+GET|/api/enrollments/{enrollment_id}|academic|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.academic.router.get_enrollment
+PATCH|/api/enrollments/{enrollment_id}|academic|auth|perm:'academic.update'|dep|200|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.update_enrollment
+GET|/api/fees/classes/{class_id}/summary|fees|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.fees.router.get_class_financial_summary
+GET|/api/fees/dues|fees|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.fees.router.list_fee_dues
+POST|/api/fees/dues|fees|auth|perm:'fees.create'|dep|201|401,403,404,409,422,402|Y|campus-scoped idempotency_key (047); receipt_number unique|DIRECT|app.domains.fees.router.create_fee_dues
+GET|/api/fees/dues/{due_id}|fees|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.fees.router.get_fee_due
+GET|/api/fees/dues/{fee_due_id}/payments|fees|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.fees.router.get_fee_due_payments
+GET|/api/fees/fee-types|fees|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.fees.router.list_fee_types
+POST|/api/fees/fee-types|fees|auth|perm:'fees.create'|dep|201|401,403,404,409,422,402|Y|campus-scoped idempotency_key (047); receipt_number unique|DIRECT|app.domains.fees.router.create_fee_type
+GET|/api/fees/fee-types/{type_id}|fees|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.fees.router.get_fee_type
+PATCH|/api/fees/fee-types/{type_id}|fees|auth|perm:'fees.update'|dep|200|401,403,404,409,422,402|Y|campus-scoped idempotency_key (047); receipt_number unique|DIRECT|app.domains.fees.router.update_fee_type
+POST|/api/fees/fee-types/{type_id}/deactivate|fees|auth|perm:'fees.update'|dep|200|401,403,404,409,422,402|Y|campus-scoped idempotency_key (047); receipt_number unique|DIRECT|app.domains.fees.router.deactivate_fee_type
+GET|/api/fees/payments|fees|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.fees.router.list_payments
+POST|/api/fees/payments|fees|auth|perm:'fees.record_payment'|dep|201|401,403,404,409,422,402|Y|campus-scoped idempotency_key (047); receipt_number unique|DIRECT|app.domains.fees.router.record_payment
+GET|/api/fees/payments/by-date-range|fees|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.fees.router.get_payments_by_date_range
+GET|/api/fees/payments/by-receipt/{receipt_number}|fees|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.fees.router.get_payment_by_receipt_number
+GET|/api/fees/payments/{payment_id}|fees|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.fees.router.get_payment
+POST|/api/fees/payments/{payment_id}/refund|fees|auth|perm:'fees.refund'|dep|200|401,403,404,409,422,402|Y|campus-scoped idempotency_key (047); receipt_number unique|DIRECT|app.domains.fees.router.refund_payment
+GET|/api/fees/structures|fees|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.fees.router.list_fee_structures
+POST|/api/fees/structures|fees|auth|perm:'fees.create'|dep|201|401,403,404,409,422,402|Y|campus-scoped idempotency_key (047); receipt_number unique|DIRECT|app.domains.fees.router.create_fee_structure
+GET|/api/fees/structures/{structure_id}|fees|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.fees.router.get_fee_structure
+PATCH|/api/fees/structures/{structure_id}|fees|auth|perm:'fees.update'|dep|200|401,403,404,409,422,402|Y|campus-scoped idempotency_key (047); receipt_number unique|DIRECT|app.domains.fees.router.update_fee_structure
+GET|/api/fees/students/{student_id}/dues|fees|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.fees.router.get_student_dues
+GET|/api/fees/students/{student_id}/fees|fees|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.fees.router.get_student_fees
+GET|/api/fees/students/{student_id}/payments|fees|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.fees.router.get_student_payments
+GET|/api/fees/students/{student_id}/summary|fees|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.fees.router.get_student_financial_summary
+GET|/api/institution/branches|institution|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.institution.router.list_branches
+POST|/api/institution/branches|institution|auth|'admin'|dep|201|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.create_branch
+DELETE|/api/institution/branches/{entity_id}|institution|auth|'admin'|dep|204|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.delete_branch
+GET|/api/institution/branches/{entity_id}|institution|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.institution.router.get_branch
+PATCH|/api/institution/branches/{entity_id}|institution|auth|'admin'|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.update_branch
+GET|/api/institution/campuses|institution|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.institution.router.list_campuses
+POST|/api/institution/campuses|institution|auth|'admin'|dep|201|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.create_campus
+DELETE|/api/institution/campuses/{entity_id}|institution|auth|'admin'|dep|204|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.delete_campus
+GET|/api/institution/campuses/{entity_id}|institution|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.institution.router.get_campus
+PATCH|/api/institution/campuses/{entity_id}|institution|auth|'admin'|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.update_campus
+GET|/api/institution/departments|institution|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.institution.router.list_departments
+POST|/api/institution/departments|institution|auth|'admin'|dep|201|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.create_department
+DELETE|/api/institution/departments/{entity_id}|institution|auth|'admin'|dep|204|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.delete_department
+GET|/api/institution/departments/{entity_id}|institution|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.institution.router.get_department
+PATCH|/api/institution/departments/{entity_id}|institution|auth|'admin'|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.update_department
+GET|/api/institution/institutions|institution|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.institution.router.list_institutions
+POST|/api/institution/institutions|institution|auth|'admin'|dep|201|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.create_institution
+DELETE|/api/institution/institutions/{entity_id}|institution|auth|'admin'|dep|204|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.delete_institution
+GET|/api/institution/institutions/{entity_id}|institution|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.institution.router.get_institution
+PATCH|/api/institution/institutions/{entity_id}|institution|auth|'admin'|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.update_institution
+GET|/api/institution/programs|institution|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.institution.router.list_programs
+POST|/api/institution/programs|institution|auth|'admin'|dep|201|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.create_program
+DELETE|/api/institution/programs/{entity_id}|institution|auth|'admin'|dep|204|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.delete_program
+GET|/api/institution/programs/{entity_id}|institution|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.institution.router.get_program
+PATCH|/api/institution/programs/{entity_id}|institution|auth|'admin'|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.update_program
+GET|/api/institution/schools|institution|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.institution.router.list_schools
+POST|/api/institution/schools|institution|auth|'admin'|dep|201|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.create_school
+DELETE|/api/institution/schools/{entity_id}|institution|auth|'admin'|dep|204|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.delete_school
+GET|/api/institution/schools/{entity_id}|institution|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.institution.router.get_school
+PATCH|/api/institution/schools/{entity_id}|institution|auth|'admin'|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.update_school
+GET|/api/institution/semesters|institution|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.institution.router.list_semesters
+POST|/api/institution/semesters|institution|auth|'admin'|dep|201|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.create_semester
+DELETE|/api/institution/semesters/{entity_id}|institution|auth|'admin'|dep|204|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.delete_semester
+GET|/api/institution/semesters/{entity_id}|institution|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.institution.router.get_semester
+PATCH|/api/institution/semesters/{entity_id}|institution|auth|'admin'|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.institution.router.update_semester
+GET|/api/leave|leave|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.leave.router.list_leave
+POST|/api/leave|leave|auth|-|dep|201|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.leave.router.create_leave
+GET|/api/leave/{leave_id}|leave|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.leave.router.get_leave
+PATCH|/api/leave/{leave_id}|leave|auth|-|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.leave.router.update_leave
+GET|/api/notifications|notifications|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.notifications.router.list_notifications
+DELETE|/api/notifications/device-tokens|notifications|auth|-|dep|204|401,403,404,409,422,402|N|event_key dedup on notifications|DIRECT|app.domains.notifications.push_router.unregister_all_device_tokens
+POST|/api/notifications/device-tokens|notifications|auth|-|dep|201|401,403,404,409,422,402|N|event_key dedup on notifications|DIRECT|app.domains.notifications.push_router.register_device_token
+DELETE|/api/notifications/device-tokens/{token:path}|notifications|auth|-|dep|204|401,403,404,409,422,402|N|event_key dedup on notifications|DIRECT|app.domains.notifications.push_router.unregister_device_token
+GET|/api/notifications/events|notifications|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.notifications.router.notification_events
+GET|/api/notifications/preferences|notifications|auth|-|user|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.notifications.router.list_preferences
+PUT|/api/notifications/preferences|notifications|auth|-|user|200|401,403,404,409,422,402|N|event_key dedup on notifications|DIRECT|app.domains.notifications.router.update_preferences
+PUT|/api/notifications/preferences/{event_type}|notifications|auth|-|user|200|401,403,404,409,422,402|N|event_key dedup on notifications|DIRECT|app.domains.notifications.router.update_preference
+PATCH|/api/notifications/read-all|notifications|auth|-|dep|200|401,403,404,409,422,402|N|event_key dedup on notifications|DIRECT|app.domains.notifications.router.mark_all_notifications_read
+POST|/api/notifications/send-push|notifications|auth|'admin', 'staff'|dep|200|401,403,404,409,422,402|N|event_key dedup on notifications|DIRECT|app.domains.notifications.push_router.send_push_notification
+GET|/api/notifications/unread-count|notifications|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.notifications.router.get_unread_count
+DELETE|/api/notifications/{notification_id}|notifications|auth|-|dep|204|401,403,404,409,422,402|N|event_key dedup on notifications|DIRECT|app.domains.notifications.router.delete_notification
+PATCH|/api/notifications/{notification_id}/read|notifications|auth|-|dep|200|401,403,404,409,422,402|N|event_key dedup on notifications|DIRECT|app.domains.notifications.router.mark_notification_read
+GET|/api/parent/announcements|parent|auth|'parent'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.parent.router.get_announcements
+GET|/api/parent/children|parent|auth|'parent'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.parent.router.list_children
+POST|/api/parent/children/link|parent|auth|'parent'|dep|201|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.parent.router.link_child
+DELETE|/api/parent/children/{student_id}|parent|auth|'parent'|dep|204|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.parent.router.unlink_child
+GET|/api/parent/children/{student_id}|parent|auth|'parent'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.parent.router.get_child
+GET|/api/parent/children/{student_id}/academic|parent|auth|'parent'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.parent.router.get_child_academic
+GET|/api/parent/children/{student_id}/attendance|parent|auth|'parent'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.parent.router.get_child_attendance
+GET|/api/parent/children/{student_id}/documents|parent|auth|'parent'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.parent.router.get_child_documents
+GET|/api/parent/children/{student_id}/fees|parent|auth|'parent'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.parent.router.get_child_fees
+GET|/api/parent/communications|parent|auth|'parent'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.parent.router.get_communications
+GET|/api/parent/dashboard|parent|auth|'parent'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.parent.router.get_dashboard
+GET|/api/report-builder/categories|report_builder|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.report_builder.router.list_report_categories
+GET|/api/report-builder/definitions|report_builder|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.report_builder.router.list_report_definitions
+GET|/api/report-builder/definitions/{code}|report_builder|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.report_builder.router.get_report_definition
+POST|/api/report-builder/execute|report_builder|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|user|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.report_builder.router.execute_report
+GET|/api/report-builder/exports|report_builder|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.report_builder.router.list_export_jobs
+POST|/api/report-builder/exports|report_builder|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|user|201|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.report_builder.router.create_export_job
+GET|/api/report-builder/exports/{job_id}|report_builder|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.report_builder.router.get_export_job
+GET|/api/report-builder/exports/{job_id}/download|report_builder|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.report_builder.router.download_export
+GET|/api/report-builder/registry|report_builder|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.report_builder.router.list_registry
+GET|/api/report-builder/saved|report_builder|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.report_builder.router.list_saved_reports
+POST|/api/report-builder/saved|report_builder|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|user|201|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.report_builder.router.create_saved_report
+GET|/api/report-builder/saved/by-definition/{definition_id}|report_builder|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.report_builder.router.list_saved_reports_by_definition
+DELETE|/api/report-builder/saved/{report_id}|report_builder|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|user|204|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.report_builder.router.delete_saved_report
+GET|/api/report-builder/saved/{report_id}|report_builder|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.report_builder.router.get_saved_report
+PATCH|/api/report-builder/saved/{report_id}|report_builder|auth|'admin', 'staff', 'teacher', 'accountant', 'principal'|user|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.report_builder.router.update_saved_report
+GET|/api/report-cards/classes/{class_id}|report_cards|auth|'admin', 'principal', 'staff', 'teacher', 'accountant'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.report_cards.router.get_class_marksheet
+GET|/api/report-cards/classes/{class_id}/pdf|report_cards|auth|'admin', 'principal', 'staff', 'teacher', 'accountant'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.report_cards.router.get_class_marksheet_pdf
+GET|/api/report-cards/students/{student_id}|report_cards|auth|'admin', 'principal', 'staff', 'teacher', 'accountant'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.report_cards.router.get_student_report_card
+GET|/api/report-cards/students/{student_id}/pdf|report_cards|auth|'admin', 'principal', 'staff', 'teacher', 'accountant'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.report_cards.router.get_student_report_card_pdf
+GET|/api/reports/attendance/class/{class_id}|reports|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.reports.router.get_class_attendance_report
+GET|/api/reports/attendance/section/{section_id}|reports|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.reports.router.get_section_attendance_report
+POST|/api/reports/batch/enroll|reports|auth|perm:'academic.create'|dep|201|401,403,404,409,422,402|N|report definition codes unique|DIRECT|app.domains.reports.router.batch_enroll
+POST|/api/reports/batch/fee-dues|reports|auth|perm:'fees.create'|dep|201|401,403,404,409,422,402|N|report definition codes unique|DIRECT|app.domains.reports.router.batch_create_fee_dues
+GET|/api/reports/export/attendance|reports|auth|perm:'attendance.export'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.reports.router.export_attendance
+GET|/api/reports/export/payments|reports|auth|perm:'fees.export'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.reports.router.export_payments
+GET|/api/reports/export/students|reports|auth|perm:'students.export'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.reports.router.export_students
+GET|/api/reports/fees/collection|reports|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.reports.router.get_collection_report
+GET|/api/reports/fees/outstanding|reports|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.reports.router.get_outstanding_report
+GET|/api/reports/receipts/{payment_id}|reports|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.reports.router.get_detailed_receipt
+POST|/api/reports/rollover/execute|reports|auth|'admin'|dep|201|401,403,404,409,422,402|N|report definition codes unique|DIRECT|app.domains.reports.router.execute_rollover
+POST|/api/reports/rollover/preview|reports|auth|'admin'|dep|200|401,403,404,409,422,402|N|report definition codes unique|DIRECT|app.domains.reports.router.preview_rollover
+GET|/api/risk/config|risk|auth|'admin', 'principal'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.risk.router.get_config
+PUT|/api/risk/config/{rule_code}|risk|auth|'admin'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.risk.router.update_config
+GET|/api/risk/findings|risk|auth|'admin', 'principal', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.risk.router.list_findings
+GET|/api/risk/findings/{finding_id}|risk|auth|'admin', 'principal', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.risk.router.get_finding
+POST|/api/risk/findings/{finding_id}/acknowledge|risk|auth|'admin', 'principal', 'staff'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.risk.router.acknowledge_finding
+POST|/api/risk/findings/{finding_id}/resolve|risk|auth|'admin', 'principal'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.risk.router.resolve_finding
+GET|/api/risk/overview|risk|auth|'admin', 'principal', 'staff'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.risk.router.risk_overview
+POST|/api/risk/recompute|risk|auth|'admin', 'principal'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.risk.router.recompute
+GET|/api/risk/teacher-findings|risk|auth|'admin', 'principal', 'staff', 'teacher'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.risk.router.teacher_findings
+GET|/api/school-finance/dashboard|school_finance|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.get_dashboard
+GET|/api/school-finance/exceptions|school_finance|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.list_financial_exceptions
+GET|/api/school-finance/fee-schedules|school_finance|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.list_fee_schedules
+POST|/api/school-finance/fee-schedules|school_finance|auth|perm:'fees.create'|dep|201|401,403,404,409,422,402|Y|ledger entries via idempotent payment flow|PARTIAL|app.domains.school_finance.router.create_fee_schedule
+DELETE|/api/school-finance/fee-schedules/{schedule_id}|school_finance|auth|perm:'fees.delete'|dep|204|401,403,404,409,422,402|Y|ledger entries via idempotent payment flow|PARTIAL|app.domains.school_finance.router.delete_fee_schedule
+GET|/api/school-finance/fee-schedules/{schedule_id}|school_finance|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.get_fee_schedule
+PATCH|/api/school-finance/fee-schedules/{schedule_id}|school_finance|auth|perm:'fees.update'|dep|200|401,403,404,409,422,402|Y|ledger entries via idempotent payment flow|PARTIAL|app.domains.school_finance.router.update_fee_schedule
+GET|/api/school-finance/fee-structures/{structure_id}/schedules|school_finance|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.get_fee_structure_schedules
+GET|/api/school-finance/outstanding-balances|school_finance|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.get_outstanding_balances
+GET|/api/school-finance/payment-methods|school_finance|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.list_payment_methods
+POST|/api/school-finance/payment-methods|school_finance|auth|perm:'fees.create'|dep|201|401,403,404,409,422,402|Y|ledger entries via idempotent payment flow|PARTIAL|app.domains.school_finance.router.create_payment_method
+DELETE|/api/school-finance/payment-methods/{pm_id}|school_finance|auth|perm:'fees.delete'|dep|204|401,403,404,409,422,402|Y|ledger entries via idempotent payment flow|PARTIAL|app.domains.school_finance.router.delete_payment_method
+GET|/api/school-finance/payment-methods/{pm_id}|school_finance|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.get_payment_method
+PATCH|/api/school-finance/payment-methods/{pm_id}|school_finance|auth|perm:'fees.update'|dep|200|401,403,404,409,422,402|Y|ledger entries via idempotent payment flow|PARTIAL|app.domains.school_finance.router.update_payment_method
+GET|/api/school-finance/receipts|school_finance|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.list_receipts
+GET|/api/school-finance/receipts/by-number/{receipt_number}|school_finance|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.get_receipt_by_number
+GET|/api/school-finance/receipts/export/csv|school_finance|auth|perm:'fees.export'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.export_receipts_csv
+POST|/api/school-finance/receipts/generate|school_finance|auth|perm:'fees.record_payment'|dep|201|401,403,404,409,422,402|Y|ledger entries via idempotent payment flow|PARTIAL|app.domains.school_finance.router.generate_receipt
+GET|/api/school-finance/receipts/{receipt_id}|school_finance|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.get_receipt
+GET|/api/school-finance/receipts/{receipt_id}/detail|school_finance|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.get_receipt_detail
+GET|/api/school-finance/receipts/{receipt_id}/print|school_finance|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.print_receipt
+GET|/api/school-finance/reconciliations|school_finance|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.list_reconciliations
+POST|/api/school-finance/reconciliations|school_finance|auth|perm:'fees.update'|dep|201|401,403,404,409,422,402|Y|ledger entries via idempotent payment flow|PARTIAL|app.domains.school_finance.router.create_reconciliation
+GET|/api/school-finance/reconciliations/{rec_id}|school_finance|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.get_reconciliation
+POST|/api/school-finance/reconciliations/{rec_id}/approve|school_finance|auth|perm:'fees.update'|dep|200|401,403,404,409,422,402|Y|ledger entries via idempotent payment flow|PARTIAL|app.domains.school_finance.router.approve_reconciliation
+POST|/api/school-finance/reconciliations/{rec_id}/verify|school_finance|auth|perm:'fees.update'|dep|200|401,403,404,409,422,402|Y|ledger entries via idempotent payment flow|PARTIAL|app.domains.school_finance.router.verify_reconciliation
+GET|/api/school-finance/reports|school_finance|auth|perm:'reports.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.list_finance_reports
+GET|/api/school-finance/reports/collection-summary/csv|school_finance|auth|perm:'reports.export'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.export_collection_summary_csv
+POST|/api/school-finance/reports/generate|school_finance|auth|perm:'reports.create'|dep|201|401,403,404,409,422,402|Y|ledger entries via idempotent payment flow|PARTIAL|app.domains.school_finance.router.generate_finance_report
+GET|/api/school-finance/reports/{report_id}/download|school_finance|auth|perm:'reports.export'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.download_finance_report
+GET|/api/school-finance/transactions|school_finance|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.list_transactions
+GET|/api/school-finance/transactions/export/csv|school_finance|auth|perm:'fees.export'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.export_transactions_csv
+GET|/api/school-finance/transactions/student/{student_id}/balance|school_finance|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.get_student_balance
+GET|/api/school-finance/transactions/{log_id}|school_finance|auth|perm:'fees.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.school_finance.router.get_transaction
+POST|/api/search|search|auth|-|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.search.router.global_search
+GET|/api/search/frequent|search|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.search.router.frequent_searches
+GET|/api/search/index/sync|search|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.search.router.index_sync
+DELETE|/api/search/recent|search|auth|-|dep|200|401,403,404,409,422,402|N|n/a|PARTIAL|app.domains.search.router.clear_recent_searches
+GET|/api/search/recent|search|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.search.router.recent_searches
+GET|/api/sections|academic|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.academic.router.list_sections
+POST|/api/sections|academic|auth|perm:'academic.create'|dep|201|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.create_section
+DELETE|/api/sections/{section_id}|academic|auth|perm:'academic.delete'|dep|204|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.delete_section
+GET|/api/sections/{section_id}|academic|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.academic.router.get_section
+PATCH|/api/sections/{section_id}|academic|auth|perm:'academic.update'|dep|200|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.update_section
+GET|/api/student/portal/announcements|student_portal|auth|'student'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.student_portal.router.get_announcements
+GET|/api/student/portal/assignments|student_portal|auth|'student'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.student_portal.router.get_assignments
+GET|/api/student/portal/attendance|student_portal|auth|'student'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.student_portal.router.get_attendance
+GET|/api/student/portal/dashboard|student_portal|auth|'student'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.student_portal.router.get_dashboard
+GET|/api/student/portal/documents|student_portal|auth|'student'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.student_portal.router.get_documents
+GET|/api/student/portal/results|student_portal|auth|'student'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.student_portal.router.get_results
+GET|/api/student/portal/subjects|student_portal|auth|'student'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.student_portal.router.get_subjects
+GET|/api/student/portal/timetable|student_portal|auth|'student'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.student_portal.router.get_timetable
+GET|/api/subjects|academic|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.academic.router.list_subjects
+POST|/api/subjects|academic|auth|perm:'subjects.create'|dep|201|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.create_subject
+GET|/api/subjects/{subject_id}|academic|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.academic.router.get_subject
+PATCH|/api/subjects/{subject_id}|academic|auth|perm:'subjects.update'|dep|200|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.update_subject
+GET|/api/teacher-assignments|academic|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.academic.router.list_teacher_assignments
+POST|/api/teacher-assignments|academic|auth|perm:'academic.create'|dep|201|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.assign_teacher
+DELETE|/api/teacher-assignments/{assignment_id}|academic|auth|perm:'academic.delete'|dep|204|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.unassign_teacher
+GET|/api/teacher-assignments/{assignment_id}|academic|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.academic.router.get_teacher_assignment
+GET|/api/teachers|academic|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.academic.router.list_teachers
+POST|/api/teachers|academic|auth|perm:'teachers.create'|dep|201|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.create_teacher
+GET|/api/teachers/{teacher_id}|academic|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.academic.router.get_teacher
+PATCH|/api/teachers/{teacher_id}|academic|auth|perm:'teachers.update'|dep|200|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.update_teacher
+GET|/api/terms/{term_id}|academic|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.academic.router.get_term
+PATCH|/api/terms/{term_id}|academic|auth|perm:'academic.update'|dep|200|401,403,404,409,422,402|N|n/a|DIRECT|app.domains.academic.router.update_term
+GET|/api/timeline|timeline|auth|'admin', 'principal', 'accountant', 'staff', 'teacher'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.timeline.router.get_timeline
+GET|/api/workflows|workflow|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.workflow.router.list_workflows
+POST|/api/workflows|workflow|auth|'admin'|dep|201|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.workflow.router.create_workflow
+POST|/api/workflows/actions|workflow|auth|'admin'|dep|201|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.workflow.router.create_action
+DELETE|/api/workflows/actions/{action_id}|workflow|auth|'admin'|dep|204|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.workflow.router.delete_action
+GET|/api/workflows/instances|workflow|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.workflow.router.list_instances
+POST|/api/workflows/instances|workflow|auth|-|dep|201|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.workflow.router.start_workflow
+GET|/api/workflows/instances/by-entity/{entity_type}/{entity_id}|workflow|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.workflow.router.get_instance_by_entity
+GET|/api/workflows/instances/{instance_id}|workflow|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.workflow.router.get_instance
+POST|/api/workflows/instances/{instance_id}/actions|workflow|auth|-|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.workflow.router.perform_action
+GET|/api/workflows/instances/{instance_id}/transitions|workflow|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.workflow.router.get_available_transitions
+POST|/api/workflows/steps|workflow|auth|'admin'|dep|201|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.workflow.router.create_step
+DELETE|/api/workflows/steps/{step_id}|workflow|auth|'admin'|dep|204|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.workflow.router.delete_step
+PATCH|/api/workflows/steps/{step_id}|workflow|auth|'admin'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.workflow.router.update_step
+POST|/api/workflows/transitions|workflow|auth|'admin'|dep|201|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.workflow.router.create_transition
+DELETE|/api/workflows/transitions/{transition_id}|workflow|auth|'admin'|dep|204|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.workflow.router.delete_transition
+DELETE|/api/workflows/{workflow_id}|workflow|auth|'admin'|dep|204|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.workflow.router.delete_workflow
+GET|/api/workflows/{workflow_id}|workflow|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.workflow.router.get_workflow
+PATCH|/api/workflows/{workflow_id}|workflow|auth|'admin'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.workflow.router.update_workflow
+GET|/attendance|attendance|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.attendance.router.list_attendance
+POST|/attendance|attendance|auth|perm:'attendance.record'|dep|201|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.attendance.router.record_attendance
+POST|/attendance/daily|attendance|auth|perm:'attendance.record'|dep|201|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.attendance.router.record_daily_attendance
+GET|/attendance/section/{section_id}|attendance|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.attendance.router.get_section_attendance
+GET|/attendance/section/{section_id}/summary|attendance|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.attendance.router.get_section_summary
+GET|/attendance/student/{student_id}|attendance|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.attendance.router.get_student_attendance
+GET|/attendance/student/{student_id}/summary|attendance|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.attendance.router.get_student_summary
+GET|/attendance/{record_id}|attendance|auth|perm:'attendance.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.attendance.router.get_attendance
+PATCH|/attendance/{record_id}|attendance|auth|perm:'attendance.update'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.attendance.router.update_attendance
+POST|/auth/login|auth|public|-|user|200|401(n/a-public)|Y|refresh token rotation + reuse detection|DIRECT|app.domains.auth.router.login
+POST|/auth/logout|auth|auth|-|user|204|401,403,404,409,422,402|Y|refresh token rotation + reuse detection|DIRECT|app.domains.auth.router.logout
+GET|/auth/me|auth|auth|-|user|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.auth.router.get_me
+PATCH|/auth/me|auth|auth|-|user|200|401,403,404,409,422,402|Y|refresh token rotation + reuse detection|DIRECT|app.domains.auth.router.update_me
+PATCH|/auth/me/password|auth|auth|-|user|200|401,403,404,409,422,402|Y|refresh token rotation + reuse detection|DIRECT|app.domains.auth.router.change_my_password
+POST|/auth/refresh|auth|public|-|user|200|401(n/a-public)|Y|refresh token rotation + reuse detection|DIRECT|app.domains.auth.router.refresh
+POST|/auth/register|auth|public|-|user|201|401(n/a-public)|Y|refresh token rotation + reuse detection|DIRECT|app.domains.auth.router.register
+GET|/auth/schools|auth|auth|-|user|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.auth.router.list_my_schools
+POST|/auth/schools/switch|auth|auth|-|user|200|401,403,404,409,422,402|Y|refresh token rotation + reuse detection|DIRECT|app.domains.auth.router.switch_school
+GET|/billing/admin/plans|billing|auth|'admin'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.billing.admin_router.list_all_plans
+POST|/billing/admin/plans|billing|auth|perm:'platform.manage'|platform|200|401,403,404,409,422,402|N|webhook event_id dedup (outbox unique)|PARTIAL|app.domains.billing.router.create_plan
+PATCH|/billing/admin/plans/{plan_id}|billing|auth|perm:'platform.manage'|platform|200|401,403,404,409,422,402|N|webhook event_id dedup (outbox unique)|PARTIAL|app.domains.billing.router.update_plan
+GET|/billing/admin/subscriptions|billing|auth|'admin'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.billing.admin_router.list_subscriptions
+POST|/billing/admin/subscriptions/{sub_id}/expire|billing|auth|'admin'|user|200|401,403,404,409,422,402|N|webhook event_id dedup (outbox unique)|PARTIAL|app.domains.billing.admin_router.expire_subscription
+POST|/billing/admin/subscriptions/{sub_id}/reactivate|billing|auth|'admin'|user|200|401,403,404,409,422,402|N|webhook event_id dedup (outbox unique)|PARTIAL|app.domains.billing.admin_router.reactivate_subscription
+GET|/billing/invoices|billing|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.billing.router.list_invoices
+GET|/billing/invoices/{invoice_id}|billing|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.billing.router.get_invoice
+POST|/billing/payment-link|billing|auth|-|dep|200|401,403,404,409,422,402|N|webhook event_id dedup (outbox unique)|PARTIAL|app.domains.billing.router.create_payment_link
+GET|/billing/plans|billing|public|-|user|200|401(n/a-public)|N|read-only|PARTIAL|app.domains.billing.router.list_plans
+GET|/billing/plans/{code}|billing|public|-|user|200|401(n/a-public)|N|read-only|PARTIAL|app.domains.billing.router.get_plan
+GET|/billing/subscription|billing|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.billing.router.get_subscription
+POST|/billing/subscription/cancel|billing|auth|-|dep|200|401,403,404,409,422,402|N|webhook event_id dedup (outbox unique)|PARTIAL|app.domains.billing.router.cancel_subscription
+POST|/billing/subscription/change|billing|auth|-|dep|200|401,403,404,409,422,402|N|webhook event_id dedup (outbox unique)|PARTIAL|app.domains.billing.router.change_plan
+POST|/billing/subscription/renew|billing|auth|-|dep|200|401,403,404,409,422,402|N|webhook event_id dedup (outbox unique)|PARTIAL|app.domains.billing.router.renew_subscription
+GET|/billing/usage|billing|auth|-|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.billing.router.get_usage
+POST|/billing/webhook/{provider_name}|billing|public|-|user|200|401(n/a-public)|N|webhook event_id dedup (outbox unique)|PARTIAL|app.domains.billing.router.payment_webhook
+GET|/classes/{class_id}/360|class_360|auth|perm:'academic.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.class_360.router.get_class_360
+GET|/health|core|public|-|user|200|401(n/a-public)|N|read-only|PARTIAL|app.core.observability.routes.health
+GET|/jobs|jobs|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.jobs.router.list_jobs
+POST|/jobs|jobs|auth|-|dep|201|401,403,404,409,422,402|Y|job idempotency (status-machine, dedup on create)|DIRECT|app.domains.jobs.router.create_job
+GET|/jobs/all|jobs|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.jobs.router.list_all_jobs
+GET|/jobs/stats/queue|jobs|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.jobs.router.queue_stats
+GET|/jobs/{job_id}|jobs|auth|-|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.jobs.router.get_job
+PATCH|/jobs/{job_id}|jobs|auth|-|dep|200|401,403,404,409,422,402|Y|job idempotency (status-machine, dedup on create)|DIRECT|app.domains.jobs.router.update_job
+POST|/jobs/{job_id}/cancel|jobs|auth|-|dep|200|401,403,404,409,422,402|Y|job idempotency (status-machine, dedup on create)|DIRECT|app.domains.jobs.router.cancel_job
+POST|/jobs/{job_id}/retry|jobs|auth|-|dep|200|401,403,404,409,422,402|Y|job idempotency (status-machine, dedup on create)|DIRECT|app.domains.jobs.router.retry_job
+GET|/metrics|core|public|-|user|200|401(n/a-public)|N|read-only|PARTIAL|app.core.observability.routes.metrics
+GET|/migration/entities|migration|auth|'admin'|user|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.migration.router.list_entities
+POST|/migration/import|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|project idempotency key; run resume/retry|PARTIAL|app.domains.migration.router.import_from_source
+GET|/migration/projects|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.migration.router.list_projects
+POST|/migration/projects|migration|auth|'admin'|dep|201|401,403,404,409,422,402|N|project idempotency key; run resume/retry|PARTIAL|app.domains.migration.router.create_project
+GET|/migration/projects/{project_id}|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.migration.router.get_project
+POST|/migration/projects/{project_id}/cancel|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|project idempotency key; run resume/retry|PARTIAL|app.domains.migration.router.cancel_project
+POST|/migration/projects/{project_id}/import|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|project idempotency key; run resume/retry|PARTIAL|app.domains.migration.router.start_project_import
+PUT|/migration/projects/{project_id}/mapping|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|project idempotency key; run resume/retry|PARTIAL|app.domains.migration.router.save_project_mapping
+GET|/migration/projects/{project_id}/preview|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.migration.router.preview_project
+GET|/migration/projects/{project_id}/progress|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.migration.router.project_progress
+GET|/migration/projects/{project_id}/reconcile|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.migration.router.reconcile_project
+GET|/migration/projects/{project_id}/report|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.migration.router.project_report
+GET|/migration/projects/{project_id}/report.csv|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.migration.router.project_report_csv
+GET|/migration/projects/{project_id}/report.json|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.migration.router.project_report_json
+POST|/migration/projects/{project_id}/rollback|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|project idempotency key; run resume/retry|PARTIAL|app.domains.migration.router.rollback_project
+POST|/migration/projects/{project_id}/validate|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|project idempotency key; run resume/retry|PARTIAL|app.domains.migration.router.validate_project
+POST|/migration/run|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|project idempotency key; run resume/retry|PARTIAL|app.domains.migration.router.run_migration
+GET|/migration/runs|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.migration.router.list_runs
+GET|/migration/runs/{run_id}|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.migration.router.get_run
+GET|/migration/runs/{run_id}/logs|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.migration.router.get_run_logs
+GET|/migration/runs/{run_id}/report|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.migration.router.get_run_report
+GET|/migration/runs/{run_id}/report/text|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.migration.router.get_run_report_text
+POST|/migration/runs/{run_id}/rollback|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|project idempotency key; run resume/retry|PARTIAL|app.domains.migration.router.execute_rollback
+POST|/migration/runs/{run_id}/rollback/plan|migration|auth|'admin'|dep|200|401,403,404,409,422,402|N|project idempotency key; run resume/retry|PARTIAL|app.domains.migration.router.plan_rollback
+GET|/ready|core|public|-|user|200|401(n/a-public)|N|read-only|PARTIAL|app.core.observability.routes.ready
+GET|/students|student|auth|perm:'students.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.student.router.list_students
+POST|/students|student|auth|perm:'students.create'|dep|201|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.student.router.create_student
+DELETE|/students/{student_id}|student|auth|perm:'students.delete'|dep|204|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.student.router.delete_student
+GET|/students/{student_id}|student|auth|perm:'students.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.student.router.get_student
+PATCH|/students/{student_id}|student|auth|perm:'students.update'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.student.router.update_student
+GET|/students/{student_id}/360|student_360|auth|perm:'students.view'|dep|200|401,403,404,409,422,402|N|read-only|PARTIAL|app.domains.student_360.router.get_student_360
+GET|/students/{student_id}/lifecycle|student|auth|perm:'students.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.student.lifecycle_router.get_lifecycle_state
+GET|/students/{student_id}/lifecycle/events|student|auth|perm:'students.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.student.lifecycle_router.list_lifecycle_events
+POST|/students/{student_id}/lifecycle/transitions|student|auth|perm:'students.update'|dep|200|401,403,404,409,422,402|Y|n/a|DIRECT|app.domains.student.lifecycle_router.transition_student
+GET|/teachers/{teacher_id}/360|teacher_360|auth|perm:'teachers.view'|dep|200|401,403,404,409,422,402|N|read-only|DIRECT|app.domains.teacher_360.router.get_teacher_360

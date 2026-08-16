@@ -5,13 +5,12 @@ from datetime import timezone
 from typing import List, Optional
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     Date,
     DateTime,
-    Float,
     ForeignKey,
     Integer,
-    JSON,
     String,
     Text,
     UniqueConstraint,
@@ -179,10 +178,10 @@ class PaymentReconciliation(Base):
         ForeignKey("users.id"), nullable=True
     )
     verified_by: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("users.id"), nullable=True
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     approved_by: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("users.id"), nullable=True
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     campus_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("campuses.id", ondelete="SET NULL"), nullable=True

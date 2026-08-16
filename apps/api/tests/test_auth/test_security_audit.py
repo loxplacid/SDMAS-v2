@@ -18,7 +18,6 @@ never a generic 500.
 
 from __future__ import annotations
 
-import secrets
 from datetime import timedelta
 
 from httpx import AsyncClient
@@ -363,6 +362,101 @@ class TestLogout:
         me = await api_client.get("/auth/me", headers={"Authorization": f"Bearer {access}"})
         assert me.status_code == 200, me.text
         assert me.json()["username"] == "logout3"
+
+
+# =====================================================================
+# Public registration — least-privilege default (no staff minting)
+# =====================================================================
+
+
+class TestPublicRegistrationPrivilege:
+    async def test_registered_user_defaults_to_parent_role(
+        self, api_client: AsyncClient
+    ) -> None:
+        """Public self-registration must never mint a staff/admin account.
+
+        Regression: ``register`` previously created users with
+        ``role="staff"`` — a privileged role — so any anonymous caller
+        got a staff-grade account for free.  Least-privilege default is
+        ``parent``; privileged roles are granted only via /admin/users.
+        """
+        resp = await api_client.post(
+            "/auth/register",
+            json={
+                "email": "parentrole@audit.test",
+                "username": "parentrole",
+                "password": "Str0ng!Pass",
+                "display_name": "Parent Role",
+            },
+        )
+        assert resp.status_code == 201, resp.text
+        assert resp.json()["role"] == "parent"
+
+    async def test_registered_parent_cannot_reach_staff_or_tenant_routes(
+        self, api_client: AsyncClient
+    ) -> None:
+        """A self-registered (parent, no campus) user gets 403 on both
+        staff-gated routes and tenant-scoped routes."""
+        email = await _register(api_client, "parentgate")
+        access, _ = await _login(api_client, email)
+        headers = {"Authorization": f"Bearer {access}"}
+
+        # staff-gated route (require_role("admin", "staff", ...)) -> 403
+        resp = await api_client.get("/api/communications/messages", headers=headers)
+        assert resp.status_code == 403, resp.text
+
+        # tenant-scoped route, no campus membership -> 403
+        resp = await api_client.get("/students", headers=headers)
+        assert resp.status_code == 403, resp.text
+
+
+# =====================================================================
+# Role escalation via admin user mutation — P0 vertical escalation
+# =====================================================================
+
+
+class TestAdminRoleEscalation:
+    async def test_admin_patch_cannot_set_platform_primary_role(
+        self, api_client: AsyncClient, admin_headers: dict[str, str]
+    ) -> None:
+        """A tenant admin must not be able to self-escalate to a platform
+        role by patching the previously-unvalidated primary ``role``
+        field (``platform_admin`` -> ``platform.access`` grants
+        cross-tenant access).  Must be a deliberate 422."""
+        user_id, _ = await _create_campus_user(api_client, admin_headers, "escalate")
+        resp = await api_client.patch(
+            f"/admin/users/{user_id}",
+            json={"role": "platform_admin"},
+            headers=admin_headers,
+        )
+        assert resp.status_code == 422, resp.text
+
+    async def test_admin_patch_cannot_assign_platform_m2m_role(
+        self, api_client: AsyncClient, admin_headers: dict[str, str]
+    ) -> None:
+        """The M2M ``roles`` list in the PATCH body bypasses the
+        dedicated /roles endpoint's whitelist — it must be blocked here
+        too (service layer, so every caller is covered)."""
+        user_id, _ = await _create_campus_user(api_client, admin_headers, "escm2m")
+        resp = await api_client.patch(
+            f"/admin/users/{user_id}",
+            json={"roles": ["platform_admin"]},
+            headers=admin_headers,
+        )
+        assert resp.status_code == 422, resp.text
+
+    async def test_admin_patch_valid_role_still_works(
+        self, api_client: AsyncClient, admin_headers: dict[str, str]
+    ) -> None:
+        """Legitimate tenant-role changes keep working after the guard."""
+        user_id, _ = await _create_campus_user(api_client, admin_headers, "escclean")
+        resp = await api_client.patch(
+            f"/admin/users/{user_id}",
+            json={"role": "teacher"},
+            headers=admin_headers,
+        )
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["role"] == "teacher"
 
 
 # =====================================================================

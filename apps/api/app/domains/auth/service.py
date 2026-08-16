@@ -8,7 +8,6 @@ from typing import Optional, Sequence
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.config import settings
@@ -32,6 +31,7 @@ from app.domains.audit.constants import (
 from app.domains.audit.service import AuditService
 from app.domains.audit.utils import safe_details
 from app.domains.auth.models import RefreshToken, Role, User
+from app.domains.auth.permissions import TENANT_ROLES
 from app.domains.auth.repository import UserRepository
 from app.domains.auth.schemas import (
     AdminUserUpdate,
@@ -90,7 +90,14 @@ class UserService:
             username=data.username,
             password_hash=password_hash,
             display_name=data.display_name,
-            role="staff",
+            # Security: public self-registration must never mint a
+            # privileged account.  ``staff``/``admin``/etc. are granted
+            # only by a tenant admin through /admin/users.  ``parent`` is
+            # the least-privileged tenant role — a self-registered user
+            # has no campus membership, so require_tenant_context still
+            # denies every tenant-scoped route (403) until an admin
+            # links them to a campus.
+            role="parent",
             is_active=True,
             campus_id=campus_id,
         )
@@ -474,6 +481,16 @@ class UserService:
                     )
             user.email = data.email
         if data.role is not None:
+            # Security: the primary role must stay inside the tenant role
+            # set.  A tenant admin must never be able to self-escalate to
+            # a platform role (e.g. ``platform_admin`` -> ``platform.access``)
+            # by patching their own primary role.  Mirrors the assignable
+            # set enforced on the M2M endpoint (``_ASSIGNABLE_ROLES``).
+            if data.role not in TENANT_ROLES:
+                raise ValidationError(
+                    f"Invalid role '{data.role}'. Roles must be one of: "
+                    f"{', '.join(sorted(TENANT_ROLES))}"
+                )
             user.role = data.role
         if data.is_active is not None:
             was_active = user.is_active
@@ -484,6 +501,9 @@ class UserService:
                 # be minted after the account is disabled.
                 await self.repo.revoke_all_user_tokens(user.id)
         if data.roles is not None:
+            # Whitelist enforced inside _sync_user_roles — the single
+            # M2M mutation point (the /roles endpoint and this PATCH
+            # body both funnel through it).
             await self._sync_user_roles(user, data.roles)
 
         updated = await self.repo.update(user)
@@ -546,7 +566,20 @@ class UserService:
     async def _sync_user_roles(
         self, user: User, role_codes: list[str]
     ) -> None:
-        """Replace M2M role assignments without touching the primary role."""
+        """Replace M2M role assignments without touching the primary role.
+
+        Security: role codes are whitelisted against ``TENANT_ROLES`` at
+        this single mutation point, so no caller (router or service) can
+        assign a platform role (``platform_admin``) that would escalate
+        a tenant user to cross-tenant access.
+        """
+        invalid = [c for c in role_codes if c not in TENANT_ROLES]
+        if invalid:
+            raise ValidationError(
+                "Invalid role(s) for assignment: "
+                + ", ".join(sorted(set(invalid)))
+                + f". Assignable roles: {', '.join(sorted(TENANT_ROLES))}"
+            )
         result = await self.repo.session.execute(
             select(Role).where(Role.code.in_(role_codes))
         )

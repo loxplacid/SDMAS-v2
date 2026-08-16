@@ -167,3 +167,85 @@ def test_factory_returns_memory_limiter_without_redis(monkeypatch):
     monkeypatch.setattr(settings, "redis_url", None)
     limiter = get_rate_limiter()
     assert isinstance(limiter, RateLimiter)
+
+
+# ---------------------------------------------------------------------------
+# Endpoint-level Redis outage behaviour (the "Redis restart" scenario)
+# ---------------------------------------------------------------------------
+
+
+class _BrokenStore:
+    """A Redis-compatible store that is completely unavailable."""
+
+    async def incr(self, key):  # noqa: ARG002
+        raise ConnectionError("redis down")
+
+    async def expire(self, key, seconds):  # noqa: ARG002
+        raise ConnectionError("redis down")
+
+    async def ttl(self, key):  # noqa: ARG002
+        raise ConnectionError("redis down")
+
+
+async def _replace_login_limiter_with_broken_redis(monkeypatch) -> None:
+    """Point the auth router's login limiter at a broken Redis store.
+
+    ``_login_limiter`` is a module-level singleton in ``auth/router.py``;
+    replacing it simulates a production process whose Redis backend went
+    down after startup (the connection exists, the store is unreachable).
+    """
+    from app.core.security.rate_limiter import RedisRateLimiter
+    from app.domains.auth import router as auth_router
+
+    monkeypatch.setattr(
+        auth_router, "_login_limiter", RedisRateLimiter(_BrokenStore())
+    )
+
+
+async def test_login_fails_open_when_redis_down(api_client, monkeypatch):
+    """Default policy: a Redis outage must NOT take down login — the
+    request proceeds (limiter allows) and never returns 500."""
+    monkeypatch.setattr(settings, "rate_limit_fail_closed", False)
+    await _replace_login_limiter_with_broken_redis(monkeypatch)
+
+    # The seeded admin logs in successfully despite the broken store.
+    resp = await api_client.post(
+        "/auth/login",
+        json={"login": "admin", "password": "AdminPass123!"},
+    )
+    assert resp.status_code == 200, resp.text
+
+
+async def test_login_fails_closed_when_redis_down(api_client, monkeypatch):
+    """With RATE_LIMIT_FAIL_CLOSED=true, a Redis outage rejects login
+    with a deliberate 503 — never a 500."""
+    monkeypatch.setattr(settings, "rate_limit_fail_closed", True)
+    await _replace_login_limiter_with_broken_redis(monkeypatch)
+
+    resp = await api_client.post(
+        "/auth/login",
+        json={"login": "admin", "password": "AdminPass123!"},
+    )
+    assert resp.status_code == 503, resp.text
+    assert resp.json()["detail"]["fail_closed"] is True
+
+
+async def test_login_other_endpoints_unaffected_by_limiter_outage(api_client, monkeypatch):
+    """Only limiter-guarded paths depend on the store: an unguarded
+    endpoint (e.g. ``/auth/me``) keeps working during a Redis outage."""
+    monkeypatch.setattr(settings, "rate_limit_fail_closed", False)
+    await _replace_login_limiter_with_broken_redis(monkeypatch)
+
+    # Login succeeds (fail-open), then the authenticated identity works.
+    resp = await api_client.post(
+        "/auth/login",
+        json={"login": "admin", "password": "AdminPass123!"},
+    )
+    assert resp.status_code == 200, resp.text
+    token = resp.json()["access_token"]
+
+    resp = await api_client.get(
+        "/auth/me", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["username"] == "admin"

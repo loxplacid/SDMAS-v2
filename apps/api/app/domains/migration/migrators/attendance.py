@@ -105,6 +105,9 @@ class AttendanceMigrator(BaseMigrator):
                 )
                 session.add(rec)
                 await session.flush()
+                # Track the record in the run's mapping table so rollback
+                # can remove exactly the rows this run created.
+                await mapping_repo.record(run_id, "attendance", legacy_id, rec.id)
 
                 result.imported += 1
                 await log_repo.log(

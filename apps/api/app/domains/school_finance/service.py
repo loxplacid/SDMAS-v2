@@ -584,7 +584,10 @@ class ReconciliationService:
             .where(PaymentReconciliation.id == rec_id)
             .options(joinedload(PaymentReconciliation.items))
         )
-        rec = result.scalar_one_or_none()
+        # ``joinedload`` on a collection requires ``unique()`` before
+        # extracting a single scalar — otherwise SQLAlchemy raises
+        # ``InvalidRequestError`` whenever the reconciliation has items.
+        rec = result.scalars().unique().one_or_none()
         if rec is None:
             raise NotFoundError(f"Reconciliation {rec_id} not found")
         return rec

@@ -546,3 +546,220 @@ async def test_payment_writes_audit_entry(seeded_finance):
     ).scalars().first()
     assert entry is not None
     assert entry.resource_id == str(result["payment"].id)
+
+
+# ---------------------------------------------------------------------------
+# Partial-failure atomicity: a REJECTED payment/refund must leave zero state
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_rejected_payment_leaves_no_side_effects(seeded_finance):
+    """A payment rejected by a business rule (already-paid due) must leave
+    no payment row, no ledger journal, and no audit entry — the fee due is
+    untouched."""
+    from sqlalchemy.exc import IntegrityError as SqlaIntegrityError
+
+    from app.domains.audit.actors import AuditActor
+    from app.domains.audit.models import AuditLog
+
+    db_session = seeded_finance["db_session"]
+    svc = seeded_finance["payment_svc"]
+    s1 = seeded_finance["student"]
+    fee_due = seeded_finance["fee_due"]
+
+    # Pay the full due first so any further payment is rejected. Commit so
+    # the later IntegrityError probe's rollback cannot unwind this payment.
+    await svc.record_payment(
+        PaymentCreate(
+            student_id=s1.id, fee_due_id=fee_due.id, amount=fee_due.original_amount,
+            idempotency_key="pay-full",
+        ),
+        actor=AuditActor.user(1, "admin"),
+    )
+    await db_session.commit()
+
+    before_ledger = len(
+        (await db_session.execute(select(TransactionLog))).scalars().all()
+    )
+    before_audit = len(
+        (await db_session.execute(select(AuditLog))).scalars().all()
+    )
+
+    # Rejected: the due is already fully paid (ConflictError, raised before
+    # the savepoint — nothing may be written).
+    with pytest.raises(ConflictError, match="already fully paid"):
+        await svc.record_payment(
+            PaymentCreate(
+                student_id=s1.id, fee_due_id=fee_due.id, amount=1000,
+                idempotency_key="pay-rejected",
+            ),
+            actor=AuditActor.user(1, "admin"),
+        )
+    await db_session.flush()
+
+    # Also probe the DB-constraint path: a direct out-of-range mutation must be
+    # rejected by ``ck_fee_due_amount_paid_range`` (the concurrent-race
+    # backstop) without touching anything else.
+    original_amount = fee_due.original_amount
+    with pytest.raises(SqlaIntegrityError):
+        fee_due.amount_paid = original_amount + 1
+        await db_session.flush()
+    await db_session.rollback()
+    await db_session.refresh(fee_due)
+
+    after_ledger = len(
+        (await db_session.execute(select(TransactionLog))).scalars().all()
+    )
+    after_audit = len(
+        (await db_session.execute(select(AuditLog))).scalars().all()
+    )
+    assert after_ledger == before_ledger, "rejected payment journaled a ledger row"
+    assert after_audit == before_audit, "rejected payment wrote an audit entry"
+
+    due = await db_session.get(FeeDue, fee_due.id)
+    assert due.amount_paid == fee_due.original_amount
+    assert due.status == "paid"
+
+
+@pytest.mark.asyncio
+async def test_rejected_refund_leaves_no_side_effects(seeded_finance):
+    """A refund rejected by a business rule (exceeds refundable balance) must
+    leave no refund ledger row, no audit entry, and an unchanged payment."""
+    from app.domains.audit.actors import AuditActor
+    from app.domains.audit.models import AuditLog
+
+    db_session = seeded_finance["db_session"]
+    svc = seeded_finance["payment_svc"]
+    s1 = seeded_finance["student"]
+    fee_due = seeded_finance["fee_due"]
+
+    result = await svc.record_payment(
+        PaymentCreate(
+            student_id=s1.id, fee_due_id=fee_due.id, amount=50000,
+            idempotency_key="refund-base",
+        ),
+        actor=AuditActor.user(1, "admin"),
+    )
+    await db_session.flush()
+    payment_id = result["payment"].id
+
+    before_refund_logs = len(
+        (await db_session.execute(
+            select(TransactionLog).where(TransactionLog.transaction_type == "refund")
+        )).scalars().all()
+    )
+    before_audit = len(
+        (await db_session.execute(select(AuditLog))).scalars().all()
+    )
+
+    with pytest.raises(ValidationError, match="exceeds the refundable"):
+        await svc.record_refund(
+            payment_id,
+            amount=50001,  # one paisa more than paid → rejected
+            idempotency_key="refund-over",
+            actor=AuditActor.user(1, "admin"),
+        )
+    await db_session.flush()
+
+    after_refund_logs = len(
+        (await db_session.execute(
+            select(TransactionLog).where(TransactionLog.transaction_type == "refund")
+        )).scalars().all()
+    )
+    after_audit = len(
+        (await db_session.execute(select(AuditLog))).scalars().all()
+    )
+    assert after_refund_logs == before_refund_logs, "rejected refund journaled a row"
+    assert after_audit == before_audit, "rejected refund wrote an audit entry"
+
+    payment = await db_session.get(Payment, payment_id)
+    assert payment.refunded_amount == 0
+    assert payment.status == "completed"
+    due = await db_session.get(FeeDue, fee_due.id)
+    assert due.amount_paid == 50000
+
+
+@pytest.mark.asyncio
+async def test_db_rejects_fee_due_amount_out_of_range(seeded_finance):
+    """``ck_fee_due_amount_paid_range`` is enforced at the database: a direct
+    update pushing amount_paid beyond original_amount fails with
+    IntegrityError even when no service-layer code is involved."""
+    from sqlalchemy.exc import IntegrityError as SqlaIntegrityError
+
+    db_session = seeded_finance["db_session"]
+    fee_due = seeded_finance["fee_due"]
+
+    original_amount = fee_due.original_amount
+    with pytest.raises(SqlaIntegrityError):
+        fee_due.amount_paid = original_amount + 1
+        await db_session.flush()
+
+
+@pytest.mark.asyncio
+async def test_db_rejects_non_positive_payment_amount(seeded_finance):
+    """``ck_payment_amount_positive`` is enforced at the database: a direct
+    insert of a zero/negative amount fails with IntegrityError."""
+    from sqlalchemy.exc import IntegrityError as SqlaIntegrityError
+
+    db_session = seeded_finance["db_session"]
+    s1 = seeded_finance["student"]
+    fee_due = seeded_finance["fee_due"]
+
+    with pytest.raises(SqlaIntegrityError):
+        db_session.add(
+            Payment(
+                student_id=s1.id, fee_due_id=fee_due.id, amount=0,
+                status="completed",
+            )
+        )
+        await db_session.flush()
+
+
+@pytest.mark.asyncio
+async def test_concurrent_different_keys_cannot_overpay_due(seeded_finance):
+    """Two *different* idempotency keys racing on the same fee due cannot
+    jointly overpay.  The row lock (``get_by_id_for_update``) forces the
+    loser to re-read the committed balance, so the app pre-check rejects
+    the second payment before it can write anything."""
+    db_session = seeded_finance["db_session"]
+    svc = seeded_finance["payment_svc"]
+    s1 = seeded_finance["student"]
+    fee_due = seeded_finance["fee_due"]
+
+    # Fee due is 50000; two payments of 40000 each must NOT both land.
+    # First payment commits normally.
+    await svc.record_payment(
+        PaymentCreate(
+            student_id=s1.id, fee_due_id=fee_due.id, amount=40000,
+            idempotency_key="race-a",
+        )
+    )
+    await db_session.commit()
+
+    # Second request, DIFFERENT key: under the row lock it re-reads the
+    # committed amount_paid=40000, so amount_paid+40000 = 80000 > 50000 is
+    # rejected by the pre-check before any write.  This is the PostgreSQL
+    # behavior (SELECT ... FOR UPDATE serialises the readers); the DB CHECK
+    # ``ck_fee_due_amount_paid_range`` is the backstop for the pathological
+    # stale-read case (probed separately by
+    # ``test_db_rejects_fee_due_amount_out_of_range``).
+    due_id = fee_due.id
+    with pytest.raises(ValidationError, match="exceed outstanding"):
+        await svc.record_payment(
+            PaymentCreate(
+                student_id=s1.id, fee_due_id=due_id, amount=40000,
+                idempotency_key="race-b",
+            )
+        )
+    await db_session.rollback()
+
+    payments, _ = await seeded_finance["pmt_repo"].list(
+        fee_due_id=due_id
+    )
+    assert len(payments) == 1, "both racing payments were recorded!"
+    assert payments[0].amount == 40000
+
+    due = await db_session.get(FeeDue, due_id)
+    assert due.amount_paid == 40000
+    assert due.status == "partially_paid"

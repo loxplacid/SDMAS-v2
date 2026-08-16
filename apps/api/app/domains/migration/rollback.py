@@ -64,11 +64,14 @@ class RollbackService:
         if migrator is None:
             raise ValueError(f"No migrator for '{run.entity_type}'")
 
-        mappings = await self.mapping_repo.list_by_entity(
-            run.entity_type, run_id=run_id
-        )
+        # Container migrators (academic, fees) record mappings per subtype,
+        # so the run's WHOLE mapping set is the accurate record count — not
+        # ``list_by_entity(run.entity_type)`` which is empty for those runs.
+        mappings = await self.mapping_repo.list_by_run(run_id)
         table = migrator._get_table()
-        tables = [table.name] if table else [run.entity_type]
+        # ``if table`` is a TypeError on a SQLAlchemy Table (ClauseElement
+        # has no truthiness) — test for None explicitly.
+        tables = [table.name] if table is not None else [run.entity_type]
 
         return RollbackPlan(
             run_id=run_id,

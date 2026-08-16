@@ -359,9 +359,19 @@ async def export_transactions_csv(
 async def get_student_balance(
     student_id: int,
     svc: TransactionLogService = Depends(get_tx_svc),
+    session: AsyncSession = Depends(get_session),
     _actor: User = Depends(require_permission(FEES_VIEW)),
     tenant: TenantContext = Depends(require_tenant_context),
 ) -> dict:
+    # Verify the student belongs to the current tenant before computing a
+    # balance. The SUM below is campus-scoped, so it cannot leak another
+    # campus's money — but returning a fabricated 0 for a foreign student
+    # would silently mislead callers, so we enforce the same ownership
+    # contract as every other student-scoped endpoint (403/404).
+    from app.domains.student.repository import StudentRepository
+
+    student = await StudentRepository(session, tenant).get_by_id(student_id)
+    assert_tenant_scope(student, tenant, resource="student")
     balance = await svc.get_student_balance(student_id, campus_id=effective_campus_id(tenant, None))
     return {"student_id": student_id, "balance": balance}
 

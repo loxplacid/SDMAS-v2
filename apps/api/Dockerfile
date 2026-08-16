@@ -12,7 +12,10 @@ COPY requirements.txt .
 # 0700 root:root on Debian slim — no chown can grant the runtime user
 # traversal through /root.  /opt/sdmas is world-readable by default, so
 # the runtime user can import every package and run every console script.
-RUN pip install --no-cache-dir --prefix=/opt/sdmas -r requirements.txt
+# requirements.txt is generated from uv.lock (pinned + hashed), so
+# --require-hashes makes every build install byte-identical wheels and
+# rejects any package that lacks a recorded hash.
+RUN pip install --no-cache-dir --require-hashes --prefix=/opt/sdmas -r requirements.txt
 
 # ---- Runtime Stage ----
 FROM python:3.11-slim

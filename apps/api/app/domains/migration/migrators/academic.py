@@ -259,6 +259,44 @@ class AcademicMigrator(BaseMigrator):
             result.error_details.append({"legacy_id": lid, "subtype": "enrollment", "error": str(exc)})
             await log_repo.log(run_id, "error", "academic", lid, "enrollment", f"Failed: {exc}")
 
+    async def rollback(self, run_id, session, mapping_repo):
+        """Delete every academic row this run created, in FK-safe order.
+
+        The academic migrator records mappings per *subtype* (``academic_year``,
+        ``class``, ``section``, ``enrollment``, …) — the base rollback looks
+        them up by run entity type and would find nothing.  Here the run's
+        whole mapping set is grouped by subtype and deleted children-first so
+        FK constraints never break.
+        """
+        from sqlalchemy import delete
+
+        mappings = await mapping_repo.list_by_run(run_id)
+        by_type: dict[str, list[int]] = {}
+        for m in mappings:
+            by_type.setdefault(m.entity_type, []).append(m.sdmas_id)
+
+        # Child tables before parents: assignments → enrollments → terms →
+        # sections → subjects → classes → teachers → academic_years.
+        table_by_type = [
+            ("teacher_assignment", TeacherAssignment),
+            ("enrollment", Enrollment),
+            ("term", Term),
+            ("section", Section),
+            ("subject", Subject),
+            ("class", Class),
+            ("teacher", Teacher),
+            ("academic_year", AcademicYear),
+        ]
+        total = 0
+        for entity_type, model in table_by_type:
+            ids = by_type.get(entity_type)
+            if not ids:
+                continue
+            result = await session.execute(delete(model).where(model.id.in_(ids)))
+            total += result.rowcount
+        await session.flush()
+        return total
+
     async def _import_assignment(self, rec, session, run_id, mapping_repo, log_repo, result):
         lid = str(rec.get("legacy_id", ""))
         try:

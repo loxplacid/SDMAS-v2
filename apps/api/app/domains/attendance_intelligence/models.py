@@ -12,7 +12,6 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    Time,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -25,19 +24,19 @@ class PeriodAttendance(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     academic_year_id: Mapped[int] = mapped_column(
-        ForeignKey("academic_years.id"), nullable=False
+        ForeignKey("academic_years.id", ondelete="CASCADE"), nullable=False
     )
     class_id: Mapped[int] = mapped_column(
-        ForeignKey("classes.id"), nullable=False
+        ForeignKey("classes.id", ondelete="CASCADE"), nullable=False
     )
     section_id: Mapped[int] = mapped_column(
-        ForeignKey("sections.id"), nullable=False
+        ForeignKey("sections.id", ondelete="CASCADE"), nullable=False
     )
     subject_id: Mapped[int] = mapped_column(
-        ForeignKey("subjects.id"), nullable=False
+        ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False
     )
     teacher_id: Mapped[int] = mapped_column(
-        ForeignKey("teachers.id"), nullable=False
+        ForeignKey("teachers.id", ondelete="CASCADE"), nullable=False
     )
     attendance_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
     period_number: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -82,10 +81,10 @@ class PeriodAttendanceRecord(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     period_attendance_id: Mapped[int] = mapped_column(
-        ForeignKey("period_attendances.id"), nullable=False
+        ForeignKey("period_attendances.id", ondelete="CASCADE"), nullable=False
     )
     student_id: Mapped[int] = mapped_column(
-        ForeignKey("students.id"), nullable=False
+        ForeignKey("students.id", ondelete="CASCADE"), nullable=False
     )
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="present"
@@ -101,7 +100,7 @@ class PeriodAttendanceRecord(Base):
         Integer, nullable=True
     )
     absence_reason_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("absence_reasons.id"), nullable=True
+        ForeignKey("absence_reasons.id", ondelete="SET NULL"), nullable=True
     )
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(
@@ -171,7 +170,7 @@ class AttendanceCorrection(Base):
     )
     record_id: Mapped[int] = mapped_column(Integer, nullable=False)
     requested_by: Mapped[int] = mapped_column(
-        ForeignKey("users.id"), nullable=False
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     requested_status: Mapped[str] = mapped_column(
         String(20), nullable=False
@@ -180,14 +179,14 @@ class AttendanceCorrection(Base):
         String(20), nullable=True
     )
     absence_reason_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("absence_reasons.id"), nullable=True
+        ForeignKey("absence_reasons.id", ondelete="SET NULL"), nullable=True
     )
     reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="pending"
     )
     reviewed_by: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("users.id"), nullable=True
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     reviewed_at: Mapped[Optional[datetime.datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
@@ -231,7 +230,7 @@ class AttendanceThreshold(Base):
         Integer, ForeignKey("campuses.id", ondelete="CASCADE"), nullable=True
     )
     academic_year_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("academic_years.id"), nullable=True
+        ForeignKey("academic_years.id", ondelete="SET NULL"), nullable=True
     )
     name: Mapped[str] = mapped_column(
         String(50), nullable=False

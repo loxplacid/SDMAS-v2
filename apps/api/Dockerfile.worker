@@ -10,7 +10,10 @@ COPY requirements.txt .
 # --prefix (not --user): pip --user lands in /root/.local, and /root is
 # 0700 root:root on Debian slim — the runtime user could never traverse
 # into it.  /opt/sdmas is world-readable by default.
-RUN pip install --no-cache-dir --prefix=/opt/sdmas -r requirements.txt
+# requirements.txt is generated from uv.lock (pinned + hashed), so
+# --require-hashes makes every build install byte-identical wheels and
+# rejects any package that lacks a recorded hash.
+RUN pip install --no-cache-dir --require-hashes --prefix=/opt/sdmas -r requirements.txt
 
 FROM python:3.11-slim
 

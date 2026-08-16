@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from app.domains.auth.permissions import TENANT_ROLES
 
@@ -110,9 +110,10 @@ class AdminUserUpdate(BaseModel):
     def valid_role(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
-        allowed = {"admin", "staff"}
-        if v not in allowed:
-            raise ValueError(f"Role must be one of: {', '.join(sorted(allowed))}")
+        if v not in TENANT_ROLES:
+            raise ValueError(
+                f"Role must be one of: {', '.join(sorted(TENANT_ROLES))}"
+            )
         return v
 
     @field_validator("roles")

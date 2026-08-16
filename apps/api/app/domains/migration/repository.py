@@ -182,6 +182,21 @@ class MigrationMappingRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
+    async def list_by_run(
+        self,
+        run_id: int,
+    ) -> Sequence[MigrationMapping]:
+        """Every mapping row produced by one run.
+
+        Container migrators (academic, fees) record mappings per subtype
+        (``academic_year``, ``class``, ``fee_due``, …), so rollback/planning
+        must see the run's *whole* mapping set, not one subtype.
+        """
+        result = await self.session.execute(
+            select(MigrationMapping).where(MigrationMapping.run_id == run_id)
+        )
+        return list(result.scalars().all())
+
     async def delete_by_run(self, run_id: int) -> None:
         from sqlalchemy import delete
 
