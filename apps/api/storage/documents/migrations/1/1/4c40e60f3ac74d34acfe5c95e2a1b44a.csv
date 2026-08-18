@@ -1,0 +1,4 @@
+Admission No,Student Fullname,DOB,Gender,E-mail,Class,Sec,Academic Year,Att Date,Attendance Status,Fee Type,Fees Paid,Payment Date,Rcpt No,Guardian Phone
+ST-2001,John  Doe ,2005-08-14,M,john.doe@example.com,10-A,Sec 1,2025-2026,2026-08-10,Present,Tuition,45000,2026-01-10,RCT-2001,+254 700 123456
+ST-2002,Jane  Smith ,2006-03-22,F,jane.smith@example.com,10-A,Sec 1,2025-2026,2026-08-10,Absent,Tuition,30000,2026-01-11,RCT-2002,0700123456
+ST-2003,Alex Brown,2007-01-30,M,alex.brown@example.com,9-B,Sec 1,2025-2026,2026-08-11,Present,Library,5000,2026-02-20,RCT-2003,0711555999

@@ -7,6 +7,12 @@ from app.domains.migration.discovery import (
     profile_columns,
     suggest_mappings,
 )
+from app.domains.migration.factory import (
+    classify_rows,
+    format_verification,
+    match_identity,
+    profile_source,
+)
 from app.domains.migration.engine import (
     MigrationEngine,
     get_migrator,
@@ -81,4 +87,9 @@ __all__ = [
     "apply_mapping",
     "apply_transforms",
     "TRANSFORM_REGISTRY",
+    "profile_source",
+    "match_identity",
+    "classify_rows",
+    "format_verification",
+    "MigrationSnapshot",
 ]

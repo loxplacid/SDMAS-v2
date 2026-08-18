@@ -29,10 +29,10 @@ from app.domains.events.catalog import (
     EVENT_CATALOG,
     EventDefinition,
     all_event_definitions,
-    get_event_definition,
     get_definition_for_event,
+    get_event_definition,
 )
-from app.domains.events.context import event_context
+from app.domains.events.context import event_context, get_causation_id
 from app.domains.events.dispatcher import DomainEventDispatcher
 
 # Global in-process event bus. Services publish domain events through this
@@ -62,6 +62,7 @@ __all__ = [
     "EventDefinition",
     "event_bus",
     "event_context",
+    "get_causation_id",
     "publish_event",
     "serialize_event",
     "get_event_definition",

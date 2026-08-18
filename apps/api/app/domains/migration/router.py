@@ -19,7 +19,13 @@ from app.domains.migration.repository import (
 )
 from app.domains.migration.rollback import RollbackService
 from app.domains.migration.schemas import (
+    ApprovalDecision,
+    ApprovalReject,
+    ApprovalRequest,
     BulkMigrationRequest,
+    CutoverRequest,
+    DryRunResult,
+    IdentityMatchResult,
     ImportProgress,
     MappingUpdate,
     MigrationLogResponse,
@@ -27,10 +33,14 @@ from app.domains.migration.schemas import (
     MigrationProjectResponse,
     MigrationRunCreate,
     MigrationRunResponse,
+    MigrationSnapshotResponse,
     MigrationSummary,
     PreviewResult,
+    ProfileResult,
     ReconcileResult,
+    RollbackPlanItem,
     ValidationResult,
+    VerifyResult,
 )
 from app.infrastructure.database import get_session
 from app.multi_tenant.dependencies import get_school_context
@@ -401,6 +411,120 @@ async def project_progress(
     service: MigrationProjectService = Depends(_project_service),
 ) -> ImportProgress:
     return ImportProgress(**await service.get_progress(project_id))
+
+
+@router.get("/projects/{project_id}/profile", response_model=ProfileResult)
+async def profile_project(
+    project_id: int,
+    service: MigrationProjectService = Depends(_project_service),
+) -> ProfileResult:
+    """TASK 15 — source profiling (entity distribution, quality scorecard,
+    PII/contact columns, duplicate-key candidates)."""
+    return ProfileResult(**await service.profile(project_id))
+
+
+@router.post("/projects/{project_id}/identity-match", response_model=IdentityMatchResult)
+async def identity_match_project(
+    project_id: int,
+    service: MigrationProjectService = Depends(_project_service),
+) -> IdentityMatchResult:
+    """TASK 15 — deterministic legacy→SDMAS identity matching."""
+    return IdentityMatchResult(**await service.identity_match(project_id))
+
+
+@router.post("/projects/{project_id}/dry-run", response_model=DryRunResult)
+async def dry_run_project(
+    project_id: int,
+    service: MigrationProjectService = Depends(_project_service),
+) -> DryRunResult:
+    """TASK 15 — full pipeline dry run (transform → validate → classify)
+    without touching target tables; persisted as an immutable snapshot."""
+    return DryRunResult(**await service.dry_run(project_id))
+
+
+@router.get("/projects/{project_id}/snapshots", response_model=list[MigrationSnapshotResponse])
+async def list_project_snapshots(
+    project_id: int,
+    kind: str | None = Query(None),
+    limit: int = Query(20, ge=1, le=100),
+    service: MigrationProjectService = Depends(_project_service),
+) -> list[MigrationSnapshotResponse]:
+    return await service.list_snapshots(project_id, kind=kind, limit=limit)
+
+
+@router.get("/projects/{project_id}/snapshots/{snapshot_id}", response_model=MigrationSnapshotResponse)
+async def get_project_snapshot(
+    project_id: int,
+    snapshot_id: int,
+    service: MigrationProjectService = Depends(_project_service),
+) -> MigrationSnapshotResponse:
+    return MigrationSnapshotResponse(**await service.get_snapshot(project_id, snapshot_id))
+
+
+@router.post("/projects/{project_id}/approval/request", response_model=MigrationProjectResponse)
+async def request_project_approval(
+    project_id: int,
+    data: ApprovalRequest | None = None,
+    service: MigrationProjectService = Depends(_project_service),
+) -> MigrationProjectResponse:
+    """TASK 15 — move a READY project into the approval gate."""
+    project = await service.request_approval(project_id, note=(data.note if data else None))
+    return MigrationProjectResponse.model_validate(project)
+
+
+@router.post("/projects/{project_id}/approval/approve", response_model=MigrationProjectResponse)
+async def approve_project(
+    project_id: int,
+    data: ApprovalDecision | None = None,
+    service: MigrationProjectService = Depends(_project_service),
+) -> MigrationProjectResponse:
+    """TASK 15 — approve a migration pending review."""
+    project = await service.approve(
+        project_id,
+        note=(data.note if data else None),
+        approver_id=(data.approver_id if data else None),
+    )
+    return MigrationProjectResponse.model_validate(project)
+
+
+@router.post("/projects/{project_id}/approval/reject", response_model=MigrationProjectResponse)
+async def reject_project_approval(
+    project_id: int,
+    data: ApprovalReject | None = None,
+    service: MigrationProjectService = Depends(_project_service),
+) -> MigrationProjectResponse:
+    """TASK 15 — reject a migration during review (back to VALIDATING)."""
+    project = await service.reject_approval(project_id, reason=(data.reason if data else None))
+    return MigrationProjectResponse.model_validate(project)
+
+
+@router.post("/projects/{project_id}/verify", response_model=VerifyResult)
+async def verify_project(
+    project_id: int,
+    service: MigrationProjectService = Depends(_project_service),
+) -> VerifyResult:
+    """TASK 15 — post-import verification (source vs target counts)."""
+    return VerifyResult(**await service.verify(project_id))
+
+
+@router.post("/projects/{project_id}/cutover", response_model=MigrationProjectResponse)
+async def cutover_project(
+    project_id: int,
+    data: CutoverRequest | None = None,
+    service: MigrationProjectService = Depends(_project_service),
+) -> MigrationProjectResponse:
+    """TASK 15 — cut over a completed migration (source of truth)."""
+    project = await service.cutover(project_id, note=(data.note if data else None))
+    return MigrationProjectResponse.model_validate(project)
+
+
+@router.get("/projects/{project_id}/rollback/plan", response_model=list[RollbackPlanItem])
+async def rollback_plan_project(
+    project_id: int,
+    service: MigrationProjectService = Depends(_project_service),
+) -> list[RollbackPlanItem]:
+    """TASK 15 — dry-run rollback preview (no changes)."""
+    return await service.rollback_plan(project_id)
 
 
 @router.get("/projects/{project_id}/reconcile", response_model=ReconcileResult)

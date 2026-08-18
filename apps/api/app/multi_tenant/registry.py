@@ -22,6 +22,10 @@ from __future__ import annotations
 import importlib
 from typing import Any, Optional
 
+from sqlalchemy import select
+
+from app.multi_tenant.models import TenantContext, TenantScopeLevel
+
 # ---------------------------------------------------------------------------
 # Scope classifications
 # ---------------------------------------------------------------------------
@@ -211,6 +215,88 @@ def apply_tenant_filter(query: Any, model: Any, campus_id: int) -> Any:
     for resolving the effective scope first (see ``guards.effective_campus_id``).
     """
     spec = tenant_filter_for(model, campus_id)
+    if spec is None:
+        return query
+    predicate, join_spec = spec
+    if join_spec is not None:
+        parent_cls, onclause = join_spec
+        query = query.join(parent_cls, onclause)
+    return query.where(predicate)
+
+
+# ---------------------------------------------------------------------------
+# Hierarchy-scope aware filtering (organization → group → region → campus)
+#
+# These are the query-construction filters used by ``TenantScopedRepository``
+# for enterprise administrators.  A hierarchy-scoped caller may query across
+# the campuses *inside* their subtree — and only those.  The predicate is
+# built as ``campus_id IN (SELECT id FROM campuses WHERE …)`` so the
+# isolation boundary is enforced in the SQL, exactly like the classic
+# per-campus predicate.
+# ---------------------------------------------------------------------------
+
+
+def _campus_predicate_for_scope(campus_col: Any, tenant: TenantContext) -> Optional[Any]:
+    """Return the predicate that restricts ``campus_col`` to the caller's
+    hierarchy subtree, or ``None`` when the caller is not hierarchy-scoped.
+
+    Lazy-imports ``Campus`` to avoid an import cycle between the multi-tenant
+    package and the institution domain.
+    """
+    from app.domains.institution.models import Campus
+
+    level = tenant.scope_level
+    if level == TenantScopeLevel.CAMPUS:
+        return campus_col == tenant.campus_id
+    if level == TenantScopeLevel.REGION:
+        return campus_col.in_(select(Campus.id).where(Campus.region_id == tenant.region_id))
+    if level == TenantScopeLevel.GROUP:
+        return campus_col.in_(
+            select(Campus.id).where(Campus.school_group_id == tenant.school_group_id)
+        )
+    if level == TenantScopeLevel.ORGANIZATION:
+        return campus_col.in_(
+            select(Campus.id).where(Campus.institution_id == tenant.institution_id)
+        )
+    return None
+
+
+def tenant_filter_for_scope(
+    model: Any, tenant: TenantContext
+) -> Optional[tuple[Any, ...]]:
+    """Return ``(predicate, join_spec)`` scoping ``model`` to the caller's
+    hierarchy subtree, or ``None`` for platform data / non-hierarchy callers.
+
+    Mirrors :func:`tenant_filter_for` but resolves the scope from a
+    :class:`TenantContext` (campus, region, group or organization) instead
+    of a single campus id.
+    """
+    scope = tenant_scope_of(model)
+    if scope == PLATFORM:
+        return None
+    if not tenant.is_hierarchy_scoped:
+        return None
+    if scope == TENANT_DIRECT:
+        predicate = _campus_predicate_for_scope(getattr(model, "campus_id"), tenant)
+        if predicate is None:
+            return None
+        return (predicate, None)
+    if scope == TENANT_PARENT:
+        parent_cls, onclause, parent_tenant_attr = tenant_join_spec(model)  # type: ignore[misc]
+        predicate = _campus_predicate_for_scope(
+            getattr(parent_cls, parent_tenant_attr), tenant
+        )
+        if predicate is None:
+            return None
+        return (predicate, (parent_cls, onclause))
+    return None
+
+
+def apply_tenant_filter_for_scope(query: Any, model: Any, tenant: TenantContext) -> Any:
+    """Apply the hierarchy-scope filter to a SELECT query using the caller's
+    :class:`TenantContext`.  Returns the query unchanged for platform data
+    or non-hierarchy callers."""
+    spec = tenant_filter_for_scope(model, tenant)
     if spec is None:
         return query
     predicate, join_spec = spec

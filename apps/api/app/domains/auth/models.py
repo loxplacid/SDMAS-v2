@@ -1,14 +1,21 @@
 from __future__ import annotations
 
 import datetime
-from typing import Optional
+import enum
 
-from sqlalchemy import String, Boolean, DateTime, BigInteger, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from sqlalchemy import Integer, ForeignKey, Table, Column
 from app.infrastructure.database import Base
-
 
 # =====================================================================
 # Association table: role ⇄ permission (many-to-many)
@@ -17,8 +24,15 @@ from app.infrastructure.database import Base
 role_permissions = Table(
     "role_permissions",
     Base.metadata,
-    Column("role_id", Integer, ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
-    Column("permission_id", Integer, ForeignKey("permissions.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "role_id", Integer, ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True
+    ),
+    Column(
+        "permission_id",
+        Integer,
+        ForeignKey("permissions.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
 )
 
 
@@ -93,6 +107,86 @@ class UserSchoolMembership(Base):
         return (
             f"<UserSchoolMembership user={self.user_id} "
             f"campus={self.campus_id} default={self.is_default}>"
+        )
+
+
+class AssignmentNodeType(str, enum.Enum):
+    """The organization-hierarchy node a user may be administratively
+    assigned to.
+
+    Distinct from :class:`UserSchoolMembership`, which models the active
+    *school* a user operates in.  An assignment authorizes administration
+    over a whole subtree of the enterprise hierarchy:
+
+    - ``ORGANIZATION`` — organization administrator (all groups/regions/
+      campuses/departments under one legal organization).
+    - ``GROUP`` — school-group administrator (all regions/campuses under
+      one school group).
+    - ``REGION`` — region administrator (all campuses under one region).
+    - ``CAMPUS`` — campus administrator (one campus).  Kept here so the
+      same assignment flow can express campus-level administration
+      explicitly.
+    """
+
+    ORGANIZATION = "organization"
+    GROUP = "group"
+    REGION = "region"
+    CAMPUS = "campus"
+
+
+class OrganizationAssignment(Base):
+    """Administrative assignment of a user to a node of the enterprise
+    organization hierarchy (organization → school group → region → campus).
+
+    A hierarchy assignment grants cross-campus administration **within the
+    assigned subtree only**.  It is the *only* sanctioned way an admin may
+    operate across campuses without an explicit platform grant: the
+    resolved tenant context is scoped to the subtree (see
+    ``multi_tenant.dependencies.resolve_tenant_context``), and the
+    repository filters every query to the subtree's campuses.  A user with
+    no assignment remains strictly campus-scoped.
+
+    Cross-subtree and cross-organization access is denied even for
+    organization administrators.
+    """
+
+    __tablename__ = "organization_assignments"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id", "node_type", "node_id", name="uq_org_assignment"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    node_type: Mapped[str] = mapped_column(
+        String(20), nullable=False, default=AssignmentNodeType.CAMPUS.value
+    )
+    node_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    role: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="admin"
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.datetime.now(datetime.timezone.utc),
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.datetime.now(datetime.timezone.utc),
+        onupdate=lambda: datetime.datetime.now(datetime.timezone.utc),
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<OrganizationAssignment user={self.user_id} "
+            f"node={self.node_type}:{self.node_id} role={self.role}>"
         )
 
 

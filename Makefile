@@ -99,19 +99,19 @@ restore:  ## Restore database (FILE=<path>)
 
 .PHONY: test
 test:  ## Run unit/security/async tests (fast; no Docker needed)
-	cd apps/api && python -m pytest tests/ -v --tb=short -m "not integration"
+	cd apps/api && uv run pytest tests/ -q -m "not integration"
 
 .PHONY: test-all
 test-all:  ## Run the full test suite including Docker-dependent integration tests
-	cd apps/api && python -m pytest tests/ -v --tb=short
+	cd apps/api && uv run pytest tests/ -q
 
 .PHONY: test-api
 test-api:  ## Run API tests (alias for test)
-	cd apps/api && python -m pytest tests/ -v --tb=short -m "not integration"
+	cd apps/api && uv run pytest tests/ -q -m "not integration"
 
 .PHONY: test-integration
 test-integration:  ## Run integration tests only (requires Docker)
-	cd apps/api && python -m pytest tests/ -v --tb=short -m integration
+	cd apps/api && uv run pytest tests/ -q -m integration
 
 .PHONY: test-web
 test-web:  ## Run frontend tests
@@ -121,8 +121,8 @@ test-web:  ## Run frontend tests
 
 .PHONY: lint
 lint:  ## Run linters
-	cd apps/api && ruff check .
-	cd apps/api && ruff format --check .
+	cd apps/api && uv run ruff check .
+	cd apps/api && uv run ruff format --check .
 
 .PHONY: format
 format:  ## Format code

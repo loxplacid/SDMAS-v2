@@ -23,6 +23,7 @@ class StudentMigrator(BaseMigrator):
     """
 
     entity_type = "students"
+    table_name = "students"
     dependencies = ["users"]
 
     def _rules(self) -> list[ValidationRule]:
@@ -54,8 +55,10 @@ class StudentMigrator(BaseMigrator):
                 validated.append(record)
             else:
                 await log_repo.log(
-                    run_id=run_id, level="error",
-                    entity_type="students", legacy_id=record.get("legacy_id"),
+                    run_id=run_id,
+                    level="error",
+                    entity_type="students",
+                    legacy_id=record.get("legacy_id"),
                     message="Validation failed",
                     details={"errors": result.errors},
                 )
@@ -69,8 +72,9 @@ class StudentMigrator(BaseMigrator):
         mapping_repo: Any,
         log_repo: Any,
     ) -> MigratorResult:
-        from app.domains.student.models import Student
         from sqlalchemy import select
+
+        from app.domains.student.models import Student
 
         result = MigratorResult(entity_type="students", total=len(records))
 
@@ -80,15 +84,15 @@ class StudentMigrator(BaseMigrator):
 
             try:
                 existing = await session.execute(
-                    select(Student).where(
-                        Student.student_number == student_number
-                    )
+                    select(Student).where(Student.student_number == student_number)
                 )
                 if existing.scalar_one_or_none() is not None:
                     result.skipped += 1
                     await log_repo.log(
-                        run_id=run_id, level="skipped",
-                        entity_type="students", legacy_id=legacy_id,
+                        run_id=run_id,
+                        level="skipped",
+                        entity_type="students",
+                        legacy_id=legacy_id,
                         message=f"Student '{student_number}' already exists — skipped",
                     )
                     continue
@@ -116,20 +120,26 @@ class StudentMigrator(BaseMigrator):
                 await mapping_repo.record(run_id, "students", legacy_id, student.id)
                 result.imported += 1
                 await log_repo.log(
-                    run_id=run_id, level="imported",
-                    entity_type="students", legacy_id=legacy_id,
+                    run_id=run_id,
+                    level="imported",
+                    entity_type="students",
+                    legacy_id=legacy_id,
                     message=f"Student '{student_number}' imported as SDMAS ID {student.id}",
                 )
             except Exception as exc:
                 result.errors += 1
-                result.error_details.append({
-                    "legacy_id": legacy_id,
-                    "student_number": student_number,
-                    "error": str(exc),
-                })
+                result.error_details.append(
+                    {
+                        "legacy_id": legacy_id,
+                        "student_number": student_number,
+                        "error": str(exc),
+                    }
+                )
                 await log_repo.log(
-                    run_id=run_id, level="error",
-                    entity_type="students", legacy_id=legacy_id,
+                    run_id=run_id,
+                    level="error",
+                    entity_type="students",
+                    legacy_id=legacy_id,
                     message=f"Failed to import student: {exc}",
                     details={"error": str(exc)},
                 )

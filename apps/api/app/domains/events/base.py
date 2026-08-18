@@ -52,6 +52,9 @@ ENVELOPE_FIELDS = frozenset(
         "actor_user_id",
         "occurred_at",
         "correlation_id",
+        "causation_id",
+        "event_version",
+        "source",
         "payload",
     }
 )
@@ -87,11 +90,18 @@ class DomainEvent:
     actor_user_id: int | None = None
     occurred_at: datetime = field(default_factory=now_utc)
     correlation_id: str = ""
+    causation_id: str = ""
+    # ``None`` means "use the class-level EVENT_VERSION" — resolved at
+    # serialization time so subclasses can bump their version without
+    # touching every construction site.
+    event_version: int | None = None
+    source: str = ""
     payload: dict[str, Any] = field(default_factory=dict)
 
     # Class-level metadata (not dataclass fields).
     EVENT_TYPE: ClassVar[str] = ""
     ENTITY_TYPE: ClassVar[str] = ""
+    EVENT_VERSION: ClassVar[int] = 1
 
     def __post_init__(self) -> None:
         if not self.event_type:
@@ -107,6 +117,14 @@ class DomainEvent:
     def to_dict(self) -> dict[str, Any]:
         """Serialize this event to the canonical envelope dict."""
         return serialize_event(self)
+
+    def to_canonical(self) -> dict[str, Any]:
+        """Serialize this event to the platform canonical envelope dict
+        (see ``app.platform.events``) — the versioned, integrity-protected
+        representation used across process boundaries."""
+        from app.platform.events import to_canonical_dict
+
+        return to_canonical_dict(self)
 
 
 def event_type_of(event: Any) -> str:

@@ -84,6 +84,16 @@ class DomainEventDispatcher(EventDispatcher):
             event.school_id = get_school_id()
         if not getattr(event, "correlation_id", None):
             event.correlation_id = get_correlation_id() or new_correlation_id()
+        # Causation chain: when dispatched from inside another event's
+        # handler, the parent event id becomes this event's causation id.
+        if not getattr(event, "causation_id", None):
+            from app.domains.events.context import get_causation_id
+
+            event.causation_id = get_causation_id() or ""
+        # Producer source: ``api`` (HTTP request) by default, unless the
+        # event already declares one (e.g. ``worker`` / ``scheduler``).
+        if not getattr(event, "source", None):
+            event.source = "api"
 
     def _is_duplicate(self, event_id: str) -> bool:
         now = time.time()
@@ -137,12 +147,13 @@ class DomainEventDispatcher(EventDispatcher):
             logger.debug("Duplicate domain event %s skipped", event_id)
             return
 
-        # Propagate correlation/actor/tenant context to handlers (and any
-        # events they emit) for the duration of this dispatch.
+        # Propagate correlation/actor/tenant/causation context to handlers
+        # (and any events they emit) for the duration of this dispatch.
         with event_context(
             correlation_id=event.correlation_id,
             actor_user_id=event.actor_user_id,
             school_id=event.school_id,
+            causation_id=event.event_id,
         ):
             await super().dispatch(event, session=session)  # type: ignore[arg-type]
 

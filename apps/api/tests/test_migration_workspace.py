@@ -476,7 +476,15 @@ class TestAuthAndAudit:
 
         # Staff has no campus membership yet — resolve to a campus first so
         # the request reaches the role gate (not the tenant gate).
-        async for session in get_session():
+        #
+        # Query through the app's dependency override (the same in-memory
+        # database the api_client uses) rather than the raw get_session,
+        # which would hit the live dev database.
+        from app.main import app
+
+        override = app.dependency_overrides.get(get_session)
+        session_source = override() if override is not None else get_session()
+        async for session in session_source:
             campus = (await session.execute(sa_select(Campus).limit(1))).scalar_one_or_none()
             user = (
                 await session.execute(sa_select(User).where(User.username == "staff1"))

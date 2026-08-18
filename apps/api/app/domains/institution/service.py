@@ -3,21 +3,25 @@ from __future__ import annotations
 from typing import Optional
 
 from app.domains.institution.models import (
-    Institution,
-    Campus,
-    School,
-    Department,
-    Program,
     Branch,
+    Campus,
+    Department,
+    Institution,
+    Program,
+    Region,
+    School,
+    SchoolGroup,
     Semester,
 )
 from app.domains.institution.repository import (
-    InstitutionRepository,
-    CampusRepository,
-    SchoolRepository,
-    DepartmentRepository,
-    ProgramRepository,
     BranchRepository,
+    CampusRepository,
+    DepartmentRepository,
+    InstitutionRepository,
+    ProgramRepository,
+    RegionRepository,
+    SchoolGroupRepository,
+    SchoolRepository,
     SemesterRepository,
 )
 
@@ -52,6 +56,75 @@ class InstitutionService:
         await self.repo.delete(entity_id)
 
 
+class SchoolGroupService:
+    def __init__(self, repo: SchoolGroupRepository) -> None:
+        self.repo = repo
+
+    async def create(
+        self, institution_id: int, name: str, code: str,
+        description: Optional[str] = None,
+    ) -> SchoolGroup:
+        entity = SchoolGroup(
+            institution_id=institution_id, name=name, code=code,
+            description=description,
+        )
+        return await self.repo.create(entity)
+
+    async def get(self, entity_id: int) -> SchoolGroup:
+        return await self.repo.get_by_id(entity_id)
+
+    async def list(
+        self, institution_id: Optional[int] = None,
+        status: Optional[str] = None, ids: Optional[list[int]] = None,
+        skip: int = 0, limit: int = 100,
+    ) -> tuple[list[SchoolGroup], int]:
+        return await self.repo.list(
+            parent_column="institution_id", parent_id=institution_id,
+            status=status, ids=ids, skip=skip, limit=limit,
+        )
+
+    async def update(self, entity_id: int, **kwargs) -> SchoolGroup:
+        return await self.repo.update(entity_id, **kwargs)
+
+    async def delete(self, entity_id: int) -> None:
+        await self.repo.delete(entity_id)
+
+
+class RegionService:
+    def __init__(self, repo: RegionRepository) -> None:
+        self.repo = repo
+
+    async def create(
+        self, institution_id: int, name: str, code: str,
+        school_group_id: Optional[int] = None,
+        description: Optional[str] = None,
+    ) -> Region:
+        entity = Region(
+            institution_id=institution_id, name=name, code=code,
+            school_group_id=school_group_id, description=description,
+        )
+        return await self.repo.create(entity)
+
+    async def get(self, entity_id: int) -> Region:
+        return await self.repo.get_by_id(entity_id)
+
+    async def list(
+        self, school_group_id: Optional[int] = None,
+        status: Optional[str] = None, ids: Optional[list[int]] = None,
+        skip: int = 0, limit: int = 100,
+    ) -> tuple[list[Region], int]:
+        return await self.repo.list(
+            parent_column="school_group_id", parent_id=school_group_id,
+            status=status, ids=ids, skip=skip, limit=limit,
+        )
+
+    async def update(self, entity_id: int, **kwargs) -> Region:
+        return await self.repo.update(entity_id, **kwargs)
+
+    async def delete(self, entity_id: int) -> None:
+        await self.repo.delete(entity_id)
+
+
 class CampusService:
     def __init__(self, repo: CampusRepository) -> None:
         self.repo = repo
@@ -60,10 +133,13 @@ class CampusService:
         self, institution_id: int, name: str, code: str,
         address: Optional[str] = None, phone: Optional[str] = None,
         email: Optional[str] = None,
+        school_group_id: Optional[int] = None,
+        region_id: Optional[int] = None,
     ) -> Campus:
         entity = Campus(
             institution_id=institution_id, name=name, code=code,
             address=address, phone=phone, email=email,
+            school_group_id=school_group_id, region_id=region_id,
         )
         return await self.repo.create(entity)
 
@@ -72,11 +148,12 @@ class CampusService:
 
     async def list(
         self, institution_id: Optional[int] = None,
-        status: Optional[str] = None, skip: int = 0, limit: int = 100,
+        status: Optional[str] = None, ids: Optional[list[int]] = None,
+        skip: int = 0, limit: int = 100,
     ) -> tuple[list[Campus], int]:
         return await self.repo.list(
             parent_column="institution_id", parent_id=institution_id,
-            status=status, skip=skip, limit=limit,
+            status=status, ids=ids, skip=skip, limit=limit,
         )
 
     async def update(
@@ -104,11 +181,12 @@ class SchoolService:
 
     async def list(
         self, campus_id: Optional[int] = None,
-        status: Optional[str] = None, skip: int = 0, limit: int = 100,
+        status: Optional[str] = None, ids: Optional[list[int]] = None,
+        skip: int = 0, limit: int = 100,
     ) -> tuple[list[School], int]:
         return await self.repo.list(
             parent_column="campus_id", parent_id=campus_id,
-            status=status, skip=skip, limit=limit,
+            status=status, ids=ids, skip=skip, limit=limit,
         )
 
     async def update(self, entity_id: int, **kwargs) -> School:
@@ -124,10 +202,11 @@ class DepartmentService:
 
     async def create(
         self, school_id: int, name: str, code: str,
-        description: Optional[str] = None,
+        description: Optional[str] = None, campus_id: Optional[int] = None,
     ) -> Department:
         entity = Department(
-            school_id=school_id, name=name, code=code, description=description,
+            school_id=school_id, name=name, code=code,
+            description=description, campus_id=campus_id,
         )
         return await self.repo.create(entity)
 

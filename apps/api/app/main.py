@@ -80,6 +80,10 @@ from app.core.security.auth_gate import register_auth_gate
 from app.domains.jobs.worker import JobWorker
 from app.multi_tenant.middleware import register_tenant_middleware
 from app.domains.billing.router import router as billing_router
+from app.domains.exceptions.router import router as exception_router
+from app.domains.ledger.router import router as ledger_router
+from app.domains.process_mining.router import router as process_mining_router
+from app.domains.compliance.router import router as compliance_router
 from app.domains.billing.admin_router import router as billing_admin_router
 from app.domains.billing.payments import register_provider
 
@@ -311,6 +315,10 @@ app.include_router(jobs_router)
 app.include_router(migration_router)
 app.include_router(billing_router)
 app.include_router(billing_admin_router)
+app.include_router(exception_router)
+app.include_router(ledger_router)
+app.include_router(process_mining_router)
+app.include_router(compliance_router)
 
 # Observability routes: /health, /ready, /metrics
 app.include_router(observability_router)

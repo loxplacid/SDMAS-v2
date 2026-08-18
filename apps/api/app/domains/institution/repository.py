@@ -2,17 +2,19 @@ from __future__ import annotations
 
 from typing import Generic, Optional, TypeVar
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
 from app.domains.institution.models import (
-    Institution,
-    Campus,
-    School,
-    Department,
-    Program,
     Branch,
+    Campus,
+    Department,
+    Institution,
+    Program,
+    Region,
+    School,
+    SchoolGroup,
     Semester,
 )
 
@@ -101,6 +103,16 @@ class BaseRepository(Generic[T]):
 class InstitutionRepository(BaseRepository[Institution]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, Institution)
+
+
+class SchoolGroupRepository(BaseRepository[SchoolGroup]):
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(session, SchoolGroup)
+
+
+class RegionRepository(BaseRepository[Region]):
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(session, Region)
 
 
 class CampusRepository(BaseRepository[Campus]):

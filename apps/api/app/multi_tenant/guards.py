@@ -22,7 +22,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AuthorizationError
-from app.multi_tenant.models import TenantContext
+from app.multi_tenant.models import TenantContext, TenantScopeLevel
 
 
 def effective_campus_id(
@@ -146,4 +146,247 @@ async def assert_tenant_scope_by_parent_id(
     raise AuthorizationError(
         f"Cross-tenant access denied to {resource}: "
         "caller has no tenant context and no platform permission."
+    )
+
+
+# ---------------------------------------------------------------------------
+# Enterprise hierarchy guards (organization → school group → region → campus)
+#
+# These guards verify that a target campus / hierarchy node lies INSIDE the
+# caller's subtree.  Campus-scoped callers must match exactly; hierarchy
+# administrators (region / group / organization) must be able to reach the
+# campus through their subtree; platform callers may reach anything; and an
+# unscoped non-platform caller is denied by default.
+# ---------------------------------------------------------------------------
+
+
+def _scope_error(resource: str, detail: str) -> AuthorizationError:
+    return AuthorizationError(
+        f"Cross-tenant access denied to {resource}: {detail}"
+    )
+
+
+async def _resolve_campus_scope(
+    session: AsyncSession,
+    campus_id: int,
+) -> tuple[int, int | None, int | None] | None:
+    """Return ``(institution_id, school_group_id, region_id)`` for a campus,
+    resolving the group through the region when the campus is not directly
+    linked to a group.  Returns ``None`` when the campus does not exist."""
+    from app.domains.institution.models import Campus, Region
+
+    result = await session.execute(
+        select(Campus.institution_id, Campus.school_group_id, Campus.region_id).where(
+            Campus.id == campus_id
+        )
+    )
+    row = result.one_or_none()
+    if row is None:
+        return None
+    institution_id, school_group_id, region_id = row
+    if school_group_id is None and region_id is not None:
+        region_result = await session.execute(
+            select(Region.school_group_id).where(Region.id == region_id)
+        )
+        school_group_id = region_result.scalar_one_or_none()
+    return institution_id, school_group_id, region_id
+
+
+async def assert_campus_in_scope(
+    session: AsyncSession,
+    tenant: TenantContext,
+    campus_id: Optional[int],
+    resource: str = "resource",
+) -> None:
+    """Raise ``AuthorizationError`` (403) when ``campus_id`` lies outside the
+    caller's hierarchy subtree.
+
+    * Platform callers may reach any campus.
+    * Campus-scoped callers must match ``tenant.campus_id`` exactly.
+    * Region administrators may reach campuses in their region.
+    * Group administrators may reach campuses in their group.
+    * Organization administrators may reach any campus of their institution.
+    * An unscoped non-platform caller is denied by default.
+    """
+    if tenant.scope_level == TenantScopeLevel.PLATFORM:
+        return
+    if campus_id is None:
+        raise _scope_error(resource, "entity is not assigned to a campus")
+    if tenant.is_tenant_scoped:
+        if campus_id != tenant.campus_id:
+            raise _scope_error(
+                resource,
+                f"entity belongs to campus {campus_id}, "
+                f"current tenant is campus {tenant.campus_id}.",
+            )
+        return
+
+    resolved = await _resolve_campus_scope(session, campus_id)
+    if resolved is None:
+        raise _scope_error(resource, f"campus {campus_id} does not exist")
+    institution_id, school_group_id, region_id = resolved
+
+    if tenant.scope_level == TenantScopeLevel.ORGANIZATION:
+        if institution_id != tenant.institution_id:
+            raise _scope_error(
+                resource,
+                f"campus {campus_id} belongs to institution {institution_id}, "
+                f"current tenant is institution {tenant.institution_id}.",
+            )
+        return
+    if tenant.scope_level == TenantScopeLevel.GROUP:
+        if school_group_id != tenant.school_group_id:
+            raise _scope_error(
+                resource,
+                f"campus {campus_id} does not belong to the caller's "
+                f"school group {tenant.school_group_id}.",
+            )
+        return
+    if tenant.scope_level == TenantScopeLevel.REGION:
+        if region_id != tenant.region_id:
+            raise _scope_error(
+                resource,
+                f"campus {campus_id} does not belong to the caller's "
+                f"region {tenant.region_id}.",
+            )
+        return
+    raise _scope_error(resource, "caller has no tenant context and no platform permission.")
+
+
+async def assert_tenant_scope_async(
+    session: AsyncSession,
+    entity: Any,
+    tenant: TenantContext,
+    resource: str = "resource",
+) -> None:
+    """Async variant of :func:`assert_tenant_scope` that additionally
+    verifies hierarchy administrators (region / group / organization) may
+    reach the entity's campus.
+
+    Falls back to the synchronous check for campus-scoped and platform
+    callers; a non-hierarchy unscoped caller is denied by default.
+    """
+    if tenant.is_tenant_scoped or tenant.platform:
+        assert_tenant_scope(entity, tenant, resource=resource)
+        return
+    if tenant.is_hierarchy_scoped:
+        await assert_campus_in_scope(
+            session, tenant, getattr(entity, "campus_id", None), resource=resource
+        )
+        return
+    raise _scope_error(resource, "caller has no tenant context and no platform permission.")
+
+
+async def assert_institution_in_scope(
+    session: AsyncSession,
+    tenant: TenantContext,
+    institution_id: int,
+    resource: str = "resource",
+) -> None:
+    """Raise 403 when ``institution_id`` (a legal organization) is outside
+    the caller's scope.
+
+    Only organization administrators may manage their own institution;
+    group/region/campus administrators and unscoped callers are denied.
+    Platform callers may reach any institution.
+    """
+    if tenant.scope_level == TenantScopeLevel.PLATFORM:
+        return
+    if tenant.scope_level == TenantScopeLevel.ORGANIZATION:
+        if institution_id != tenant.institution_id:
+            raise _scope_error(
+                resource,
+                f"institution {institution_id} is outside the caller's "
+                f"organization {tenant.institution_id}.",
+            )
+        return
+    raise _scope_error(
+        resource,
+        "only platform or organization administrators may access institutions.",
+    )
+
+
+async def assert_school_group_in_scope(
+    session: AsyncSession,
+    tenant: TenantContext,
+    school_group: Any,
+    resource: str = "school_group",
+) -> None:
+    """Raise 403 when ``school_group`` is outside the caller's scope.
+
+    * Platform callers may reach any group.
+    * Organization administrators may reach any group of their institution.
+    * Group administrators may reach only their own group.
+    * Everyone else is denied.
+    """
+    if tenant.scope_level == TenantScopeLevel.PLATFORM:
+        return
+    if tenant.scope_level == TenantScopeLevel.ORGANIZATION:
+        if getattr(school_group, "institution_id", None) != tenant.institution_id:
+            raise _scope_error(
+                resource,
+                f"group {getattr(school_group, 'id', None)} belongs to "
+                f"institution {getattr(school_group, 'institution_id', None)}, "
+                f"caller is organization {tenant.institution_id}.",
+            )
+        return
+    if tenant.scope_level == TenantScopeLevel.GROUP:
+        if getattr(school_group, "id", None) != tenant.school_group_id:
+            raise _scope_error(
+                resource,
+                f"group {getattr(school_group, 'id', None)} is not the "
+                f"caller's group {tenant.school_group_id}.",
+            )
+        return
+    raise _scope_error(
+        resource,
+        "only platform, organization or group administrators may access school groups.",
+    )
+
+
+async def assert_region_in_scope(
+    session: AsyncSession,
+    tenant: TenantContext,
+    region: Any,
+    resource: str = "region",
+) -> None:
+    """Raise 403 when ``region`` is outside the caller's scope.
+
+    * Platform callers may reach any region.
+    * Organization administrators may reach any region of their institution.
+    * Group administrators may reach any region of their group.
+    * Region administrators may reach only their own region.
+    * Everyone else is denied.
+    """
+    if tenant.scope_level == TenantScopeLevel.PLATFORM:
+        return
+    if tenant.scope_level == TenantScopeLevel.ORGANIZATION:
+        if getattr(region, "institution_id", None) != tenant.institution_id:
+            raise _scope_error(
+                resource,
+                f"region {getattr(region, 'id', None)} belongs to institution "
+                f"{getattr(region, 'institution_id', None)}, "
+                f"caller is organization {tenant.institution_id}.",
+            )
+        return
+    if tenant.scope_level == TenantScopeLevel.GROUP:
+        region_group_id = getattr(region, "school_group_id", None)
+        if region_group_id != tenant.school_group_id:
+            raise _scope_error(
+                resource,
+                f"region {getattr(region, 'id', None)} does not belong to the "
+                f"caller's group {tenant.school_group_id}.",
+            )
+        return
+    if tenant.scope_level == TenantScopeLevel.REGION:
+        if getattr(region, "id", None) != tenant.region_id:
+            raise _scope_error(
+                resource,
+                f"region {getattr(region, 'id', None)} is not the caller's "
+                f"region {tenant.region_id}.",
+            )
+        return
+    raise _scope_error(
+        resource,
+        "only platform, organization, group or region administrators may access regions.",
     )

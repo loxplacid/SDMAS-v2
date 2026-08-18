@@ -15,8 +15,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.domains.jobs.models import JSONType
 from app.infrastructure.database import Base
+from app.infrastructure.types import JSONType
 
 
 class Plan(Base):

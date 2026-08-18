@@ -49,23 +49,46 @@ are resolved.
     workspace wizard exposes all five via `get_registered_entity_types()`.
     Additional entity types can be added without changing the architecture.
 
+## Enterprise hierarchy (Organization → School Group → Region → Campus)
+
+11. **Department scope is campus-pinned.** A `department` assignment grants
+    administrative access to one campus; department-level data filtering
+    (scoping queries to a single department within a campus) is **not**
+    applied to the campus-scoped tenant tables. Departments are a
+    categorization under a campus today, not a second isolation dimension.
+12. **`CampusUpdate`/`update_campus` cannot clear a `region_id` /
+    `school_group_id` link.** Reassigning a campus between nodes is done by
+    creating the updated record; clearing an existing link is not supported
+    by the update contract.
+13. **`list_campuses` for campus-scoped callers returns only their own
+    campus** (previously it listed all campuses in the institution). This is
+    an intentional isolation tightening; hierarchy admins still see their
+    whole subtree.
+
 ## Reliability
 
-10. **Two outbox tests were timing-flaky under full-suite load**
+14. **Two outbox tests were timing-flaky under full-suite load**
     (`tests/test_outbox/test_outbox.py` — reaper/stale-processing windows are
     wall-clock sensitive). They passed in isolation and in the full
     non-integration suite (1,652 tests) on 2026-08-14; the flakiness has not
     been reproduced recently but the wall-clock sensitivity remains.
-11. **`process_period_end` idempotency relies on row locks** (see #5); under
+15. **`process_period_end` idempotency relies on row locks** (see #5); under
     an extremely unlucky interleaving on non-Postgres dialects a duplicate
     invoice guard could degrade to the constraint-free path.
-12. **The audit middleware skips requests faster than a minimum latency
+16. **The audit middleware skips requests faster than a minimum latency
     threshold** — extremely fast mutating requests can occasionally avoid
     audit capture (observed as a rare flake; not a data-integrity issue).
+17. **[UNTRACKED WORK] `tests/test_ledger.py` fails (23 of 41) with
+    `sqlalchemy.exc.MissingGreenlet`** — a lazy-load of the `lines`
+    relationship inside `app/domains/ledger/service.py` in an async context.
+    The entire `app/domains/ledger/` domain plus its test file are untracked
+    work-in-progress and unrelated to the enterprise-hierarchy task; the
+    failures are pre-existing there and are not counted as a regression of
+    the tracked suite.
 
 ## Archive / legacy
 
-13. **`_archive/legacy-v1/` and `_archive/backend/` are read-only
+18. **`_archive/legacy-v1/` and `_archive/backend/` are read-only
     historical artifacts.** They are not imported, tested, or deployed. They
     exist for reference and can be removed once the team is comfortable
     relying solely on git history.

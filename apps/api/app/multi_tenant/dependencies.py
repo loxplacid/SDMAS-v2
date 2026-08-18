@@ -11,12 +11,16 @@ from app.domains.auth.dependencies import (
     get_current_user,
     get_optional_current_user,
 )
-from app.domains.auth.models import User, UserSchoolMembership
+from app.domains.auth.models import (
+    AssignmentNodeType,
+    OrganizationAssignment,
+    User,
+    UserSchoolMembership,
+)
 from app.domains.auth.permissions import PLATFORM_ACCESS
 from app.domains.institution.models import Campus
 from app.infrastructure.database import get_session
 from app.multi_tenant.models import TenantContext
-
 
 # ---------------------------------------------------------------------------
 # Membership resolution helpers
@@ -34,6 +38,46 @@ async def _load_memberships(
         )
     )
     return list(result.scalars().all())
+
+
+async def _load_assignments(
+    session: AsyncSession,
+    user_id: int,
+) -> list[OrganizationAssignment]:
+    """Load the user's active organization-hierarchy assignments.
+
+    An assignment pins the user to an organization / group / region /
+    campus subtree for enterprise administration (TASK 21).  A user with
+    no assignment is resolved exactly as before (campus membership /
+    legacy column / platform permission).
+    """
+    result = await session.execute(
+        select(OrganizationAssignment).where(
+            OrganizationAssignment.user_id == user_id,
+            OrganizationAssignment.is_active == True,  # noqa: E712
+        )
+    )
+    return list(result.scalars().all())
+
+
+async def _assignment_institution_id(
+    session: AsyncSession,
+    assignment: OrganizationAssignment,
+) -> int | None:
+    """Resolve the top-level institution for an assignment's node."""
+    from app.domains.institution.models import Region, SchoolGroup
+
+    if assignment.node_type == AssignmentNodeType.ORGANIZATION.value:
+        return assignment.node_id
+    if assignment.node_type == AssignmentNodeType.GROUP.value:
+        group = await session.get(SchoolGroup, assignment.node_id)
+        return group.institution_id if group else None
+    if assignment.node_type == AssignmentNodeType.REGION.value:
+        region = await session.get(Region, assignment.node_id)
+        return region.institution_id if region else None
+    if assignment.node_type == AssignmentNodeType.CAMPUS.value:
+        return await _campus_institution_id(session, assignment.node_id)
+    return None
 
 
 async def _campus_institution_id(
@@ -66,10 +110,15 @@ async def resolve_tenant_context(
     require_school: bool = False,
 ) -> TenantContext:
     """Resolve the tenant context for a user from their *active* school
-    membership.
+    membership or, for enterprise administrators, from their organization
+    hierarchy assignment.
 
     Resolution order:
 
+    0. **Organization hierarchy assignment** (org / group / region / campus
+       administrator): the tenant context is pinned to the assigned
+       subtree.  This is the sanctioned cross-campus scope for enterprise
+       administrators — it never grants platform access.
     1. If the user holds school membership rows, the active campus is
        ``user.campus_id`` — but only when it is one of the user's active
        memberships; otherwise ``AuthorizationError`` (403) is raised.
@@ -89,6 +138,40 @@ async def resolve_tenant_context(
     """
     if current_user is None:
         return TenantContext(user_id=None)
+
+    assignments = await _load_assignments(session, current_user.id)
+    if assignments:
+        assignment = assignments[0]
+        node_type = assignment.node_type
+        if node_type == AssignmentNodeType.CAMPUS.value:
+            institution_id = await _campus_institution_id(session, assignment.node_id)
+            if institution_id is None and require_school:
+                raise AuthorizationError(
+                    f"Active campus {assignment.node_id} no longer exists"
+                )
+            return TenantContext(
+                campus_id=assignment.node_id,
+                institution_id=institution_id,
+                user_id=current_user.id,
+            )
+        institution_id = await _assignment_institution_id(session, assignment)
+        if node_type == AssignmentNodeType.REGION.value:
+            return TenantContext(
+                region_id=assignment.node_id,
+                institution_id=institution_id,
+                user_id=current_user.id,
+            )
+        if node_type == AssignmentNodeType.GROUP.value:
+            return TenantContext(
+                school_group_id=assignment.node_id,
+                institution_id=institution_id,
+                user_id=current_user.id,
+            )
+        if node_type == AssignmentNodeType.ORGANIZATION.value:
+            return TenantContext(
+                institution_id=assignment.node_id,
+                user_id=current_user.id,
+            )
 
     memberships = await _load_memberships(session, current_user.id)
 
@@ -130,7 +213,9 @@ async def resolve_tenant_context(
             campus_id=current_user.campus_id,
             institution_id=institution_id,
             user_id=current_user.id,
-        )    # No campus at all.  Default-deny: only an explicit platform
+        )
+
+    # No campus at all.  Default-deny: only an explicit platform
     # permission converts this into cross-tenant access.  A plain
     # authenticated user without any tenant membership and without
     # platform permission is denied.
@@ -204,6 +289,8 @@ async def require_tenant_context(
     Enforces default-deny:
     * authenticated user with a campus (membership or legacy) → scoped
       ``TenantContext``
+    * authenticated user with an organization-hierarchy assignment
+      (org / group / region administrator) → subtree-scoped ``TenantContext``
     * platform user (explicit ``platform.access``) → platform context
     * authenticated user with NO tenant → 403 (never global access)
     """

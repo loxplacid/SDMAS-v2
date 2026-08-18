@@ -8,46 +8,20 @@ and, in tests, by ``Base.metadata.create_all``.
 
 from __future__ import annotations
 
-import json
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import DateTime, Index, Integer, String, Text, TypeDecorator
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import DateTime, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.database import Base
+from app.infrastructure.types import JSONType
 
 
 def _json_default(obj: Any) -> Any:
     if isinstance(obj, datetime):
         return obj.isoformat()
     raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
-
-
-class _JSON(TypeDecorator):
-    """Portable JSON — JSONB on PostgreSQL, JSON on every other dialect."""
-
-    impl = JSONB
-
-    def load_dialect_impl(self, dialect):
-        if dialect.name == "postgresql":
-            from sqlalchemy.dialects.postgresql import JSONB as _PG_JSONB
-
-            return dialect.type_descriptor(_PG_JSONB())
-        from sqlalchemy import JSON as _SA_JSON
-
-        return dialect.type_descriptor(_SA_JSON())
-
-    def process_bind_param(self, value: Any, dialect) -> str | None:
-        if value is not None:
-            return json.dumps(value, default=_json_default)
-        return None
-
-    def process_result_value(self, value: Any, dialect) -> Any:
-        if isinstance(value, str):
-            return json.loads(value)
-        return value
 
 
 class TxnLog(Base):
@@ -72,7 +46,9 @@ class TxnLog(Base):
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     tenant_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     campus_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    change: Mapped[dict[str, Any] | None] = mapped_column(_JSON(), nullable=True)
+    change: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONType(json_default=_json_default), nullable=True
+    )
 
     __table_args__ = (
         Index("ix_txn_log_entity", "entity_type", "entity_id", "txn_ts"),

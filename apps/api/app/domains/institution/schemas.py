@@ -5,7 +5,6 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
-
 # ---------------------------------------------------------------------------
 # Institution
 # ---------------------------------------------------------------------------
@@ -47,6 +46,70 @@ class InstitutionResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# School Group (enterprise hierarchy: Organization → Group → Region → Campus)
+# ---------------------------------------------------------------------------
+
+
+class SchoolGroupCreate(BaseModel):
+    institution_id: int
+    name: str
+    code: str
+    description: Optional[str] = None
+
+
+class SchoolGroupUpdate(BaseModel):
+    name: Optional[str] = None
+    code: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+
+
+class SchoolGroupResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    institution_id: int
+    name: str
+    code: str
+    description: Optional[str] = None
+    status: str
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+
+
+# ---------------------------------------------------------------------------
+# Region (enterprise hierarchy)
+# ---------------------------------------------------------------------------
+
+
+class RegionCreate(BaseModel):
+    school_group_id: Optional[int] = None
+    institution_id: int
+    name: str
+    code: str
+    description: Optional[str] = None
+
+
+class RegionUpdate(BaseModel):
+    name: Optional[str] = None
+    code: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+
+
+class RegionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    school_group_id: Optional[int] = None
+    institution_id: int
+    name: str
+    code: str
+    description: Optional[str] = None
+    status: str
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+
+
+# ---------------------------------------------------------------------------
 # Campus
 # ---------------------------------------------------------------------------
 
@@ -58,6 +121,8 @@ class CampusCreate(BaseModel):
     address: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
+    school_group_id: Optional[int] = None
+    region_id: Optional[int] = None
 
     @field_validator("name", "code")
     @classmethod
@@ -74,12 +139,16 @@ class CampusUpdate(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     status: Optional[str] = None
+    school_group_id: Optional[int] = None
+    region_id: Optional[int] = None
 
 
 class CampusResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     institution_id: int
+    school_group_id: Optional[int] = None
+    region_id: Optional[int] = None
     name: str
     code: str
     address: Optional[str] = None
@@ -144,6 +213,7 @@ class DepartmentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     school_id: int
+    campus_id: Optional[int] = None
     name: str
     code: str
     description: Optional[str] = None

@@ -8,7 +8,7 @@ from sqlalchemy import select
 from app.domains.attendance.models import AttendanceRecord
 from app.domains.migration.base import BaseMigrator, MigratorResult
 from app.domains.migration.engine import register_migrator
-from app.domains.migration.validators import ValidationRule, max_length, one_of, required
+from app.domains.migration.validators import ValidationRule, one_of, required
 
 
 @register_migrator
@@ -21,6 +21,7 @@ class AttendanceMigrator(BaseMigrator):
     """
 
     entity_type = "attendance"
+    table_name = "attendance_records"
     dependencies = ["students", "academic"]
 
     def _rules(self) -> list[ValidationRule]:
@@ -51,8 +52,10 @@ class AttendanceMigrator(BaseMigrator):
                 validated.append(record)
             else:
                 await log_repo.log(
-                    run_id=run_id, level="error",
-                    entity_type="attendance", legacy_id=record.get("legacy_id"),
+                    run_id=run_id,
+                    level="error",
+                    entity_type="attendance",
+                    legacy_id=record.get("legacy_id"),
                     message="Validation failed",
                     details={"errors": result.errors},
                 )
@@ -85,8 +88,10 @@ class AttendanceMigrator(BaseMigrator):
                 if existing.scalar_one_or_none() is not None:
                     result.skipped += 1
                     await log_repo.log(
-                        run_id=run_id, level="skipped",
-                        entity_type="attendance", legacy_id=legacy_id,
+                        run_id=run_id,
+                        level="skipped",
+                        entity_type="attendance",
+                        legacy_id=legacy_id,
                         message=f"Attendance for student {student_id} on {att_date} already exists",
                     )
                     continue
@@ -111,22 +116,29 @@ class AttendanceMigrator(BaseMigrator):
 
                 result.imported += 1
                 await log_repo.log(
-                    run_id=run_id, level="imported",
-                    entity_type="attendance", legacy_id=legacy_id,
+                    run_id=run_id,
+                    level="imported",
+                    entity_type="attendance",
+                    legacy_id=legacy_id,
                     message=f"Attendance record imported as SDMAS ID {rec.id}",
                 )
             except Exception as exc:
                 result.errors += 1
-                result.error_details.append({
-                    "legacy_id": legacy_id,
-                    "student_id": student_id,
-                    "date": att_date,
-                    "error": str(exc),
-                })
+                result.error_details.append(
+                    {
+                        "legacy_id": legacy_id,
+                        "student_id": student_id,
+                        "date": att_date,
+                        "error": str(exc),
+                    }
+                )
                 await log_repo.log(
-                    run_id=run_id, level="error",
-                    entity_type="attendance", legacy_id=legacy_id,
-                    message=f"Failed: {exc}", details={"error": str(exc)},
+                    run_id=run_id,
+                    level="error",
+                    entity_type="attendance",
+                    legacy_id=legacy_id,
+                    message=f"Failed: {exc}",
+                    details={"error": str(exc)},
                 )
 
         return result

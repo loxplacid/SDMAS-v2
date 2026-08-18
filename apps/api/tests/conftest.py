@@ -12,26 +12,82 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from app.infrastructure.database import Base, get_session
-
-# Import all models so Base.metadata can resolve cross-module foreign keys
-from app.domains.institution.models import (  # noqa: F401
-    Institution, Campus, School, Department, Program, Branch, Semester,
+from app.domains.audit.models import (  # noqa: F401
+    AuditLog,
 )
 from app.domains.auth.models import (  # noqa: F401
     User,
 )
+from app.domains.events.outbox import (  # noqa: F401
+    OutboxEvent,
+)
+
+# Import all models so Base.metadata can resolve cross-module foreign keys
+from app.domains.institution.models import (  # noqa: F401
+    Branch,
+    Campus,
+    Department,
+    Institution,
+    Program,
+    School,
+    Semester,
+)
 from app.domains.notifications.models import (  # noqa: F401
-    Notification, DeviceToken,
+    DeviceToken,
+    Notification,
 )
 from app.domains.notifications.preferences import (  # noqa: F401
     NotificationPreference,
 )
-from app.domains.audit.models import (  # noqa: F401
-    AuditLog,
+from app.infrastructure.database import Base, get_session
+
+# Platform layer models (Tasks 8–15) so Base.metadata creates their tables
+# in every test database — the audit-chain hook and migration/evidence
+# lineage writes depend on them.
+from app.platform.cryptography.models import (  # noqa: F401
+    AuditChainCheckpoint,
+    AuditChainEntry,
 )
-from app.domains.events.outbox import (  # noqa: F401
-    OutboxEvent,
+from app.platform.evidence.models import (  # noqa: F401
+    EvidenceApproval,
+    EvidenceHash,
+    EvidenceItem,
+    EvidencePackage,
+    EvidenceReference,
+    EvidenceSnapshot,
+)
+from app.platform.extensions.models import (  # noqa: F401
+    ExtensionConfig,
+    ExtensionDefinition,
+    ExtensionGrant,
+    ExtensionVersion,
+)
+from app.platform.identities.models import (  # noqa: F401
+    CanonicalPerson,
+    ExternalIdentity,
+    IdentityAlias,
+    IdentityHistory,
+    IdentityMatch,
+    IdentityMerge,
+)
+from app.platform.lineage.models import (  # noqa: F401
+    CalculationVersion,
+    DataAsset,
+    DataSource,
+    LineageEdge,
+    Transformation,
+)
+from app.platform.policy.models import (  # noqa: F401
+    PolicyDefinition,
+    PolicyEvaluation,
+    PolicyVersion,
+)
+from app.platform.reconciliation.models import (  # noqa: F401
+    ReconciliationApproval,
+    ReconciliationException,
+    ReconciliationMatch,
+    ReconciliationRuleConfig,
+    ReconciliationRun,
 )
 from app.temporal.models import (  # noqa: F401
     TxnLog,
@@ -47,9 +103,7 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    factory = async_sessionmaker(
-        engine, class_=AsyncSession, expire_on_commit=False
-    )
+    factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with factory() as session:
         yield session
@@ -79,9 +133,7 @@ async def api_client() -> AsyncGenerator[AsyncClient, None]:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    factory = async_sessionmaker(
-        engine, class_=AsyncSession, expire_on_commit=False
-    )
+    factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     # Seed a default admin so permission-gated endpoints (e.g.
     # DELETE /students requiring students.delete) can be exercised
@@ -92,9 +144,9 @@ async def api_client() -> AsyncGenerator[AsyncClient, None]:
     # the admin a default member of Campus A (id=1) so tenant-scoped
     # endpoints resolve to a concrete school context.
     from sqlalchemy import select as _select
-    from app.domains.auth.models import User, UserSchoolMembership
+
+    from app.domains.auth.models import UserSchoolMembership
     from app.domains.auth.security import hash_password
-    from app.domains.institution.models import Institution, Campus
 
     async with factory() as seed_session:
         institution = Institution(name="Test District", code="TST-DIST")
@@ -109,9 +161,7 @@ async def api_client() -> AsyncGenerator[AsyncClient, None]:
         seed_session.add_all([campus_a, campus_b])
         await seed_session.flush()
 
-        existing = await seed_session.execute(
-            _select(User).where(User.username == "admin")
-        )
+        existing = await seed_session.execute(_select(User).where(User.username == "admin"))
         admin = existing.scalar_one_or_none()
         if admin is None:
             admin = User(
@@ -199,8 +249,8 @@ def _reset_login_rate_limiter():
     IP, so without a reset the per-endpoint windows would 429 later tests
     in a full suite run.
     """
-    from app.domains.auth.router import _login_limiter
     from app.core.security.rate_limiter import _global_limiter
+    from app.domains.auth.router import _login_limiter
 
     _login_limiter.reset()
     _global_limiter.reset()
@@ -211,8 +261,10 @@ def _reset_login_rate_limiter():
 # PostgreSQL integration test fixture (requires Docker + Testcontainers)
 # ---------------------------------------------------------------------------
 
+
 def _is_docker_available() -> bool:
     import shutil
+
     return shutil.which("docker") is not None
 
 
@@ -241,9 +293,7 @@ async def postgres_session() -> AsyncGenerator[AsyncSession, None]:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
-        factory = async_sessionmaker(
-            engine, class_=AsyncSession, expire_on_commit=False
-        )
+        factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
         async with factory() as session:
             yield session

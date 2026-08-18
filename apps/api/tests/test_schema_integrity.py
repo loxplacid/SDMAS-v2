@@ -41,9 +41,7 @@ import app.infrastructure.models  # noqa: F401,E402
 def _migration_created_tables() -> set[str]:
     """Every table name any migration creates via op/batch create_table."""
     tables: set[str] = set()
-    pat = re.compile(
-        r"(?:op|batch)\.create_table\(\s*[\"']([A-Za-z_][A-Za-z0-9_]*)"
-    )
+    pat = re.compile(r"(?:op|batch)\.create_table\(\s*[\"']([A-Za-z_][A-Za-z0-9_]*)")
     for path in VERSIONS_DIR.glob("*.py"):
         text = path.read_text(encoding="utf-8")
         tables.update(pat.findall(text))
@@ -60,7 +58,7 @@ def test_single_canonical_alembic_head() -> None:
     """There must be exactly one alembic head (no divergence)."""
     heads = _alembic_heads()
     assert len(heads) == 1, f"expected 1 alembic head, got {heads}"
-    assert heads[0] == "051_add_missing_model_indexes"
+    assert heads[0] == "063_add_enterprise_hierarchy"
 
 
 def test_all_migration_tables_registered_in_metadata() -> None:
@@ -109,18 +107,14 @@ def test_tenant_fks_declared_on_assignments_and_guardian_links() -> None:
 
 def test_corrective_migrations_050_and_051_present() -> None:
     """The corrective migrations must exist and target the right objects."""
-    v050 = (VERSIONS_DIR / "050_add_missing_tenant_fks.py").read_text(
-        encoding="utf-8"
-    )
+    v050 = (VERSIONS_DIR / "050_add_missing_tenant_fks.py").read_text(encoding="utf-8")
     assert 'revision: str = "050_add_missing_tenant_fks"' in v050
     assert 'down_revision: str | None = "049_widen_audit_action"' in v050
     assert 'for table in ("assignments", "guardian_links"):' in v050
     assert "batch.create_foreign_key" in v050
     assert 'f"fk_{table}_campus_id"' in v050
 
-    v051 = (VERSIONS_DIR / "051_add_missing_model_indexes.py").read_text(
-        encoding="utf-8"
-    )
+    v051 = (VERSIONS_DIR / "051_add_missing_model_indexes.py").read_text(encoding="utf-8")
     assert 'revision: str = "051_add_missing_model_indexes"' in v051
     assert 'down_revision: str | None = "050_add_missing_tenant_fks"' in v051
     assert "ix_migration_projects_job_id" in v051
@@ -132,11 +126,9 @@ def test_model_declares_indexes_covered_by_migration_051() -> None:
     index=True so future drift is detectable."""
     migration_projects = Base.metadata.tables["migration_projects"]
     refresh_tokens = Base.metadata.tables["refresh_tokens"]
-    assert any(
-        idx.columns.keys() == ["job_id"]
-        for idx in migration_projects.indexes
-    ), "migration_projects.job_id must keep its index declaration"
-    assert any(
-        idx.columns.keys() == ["is_revoked"]
-        for idx in refresh_tokens.indexes
-    ), "refresh_tokens.is_revoked must keep its index declaration"
+    assert any(idx.columns.keys() == ["job_id"] for idx in migration_projects.indexes), (
+        "migration_projects.job_id must keep its index declaration"
+    )
+    assert any(idx.columns.keys() == ["is_revoked"] for idx in refresh_tokens.indexes), (
+        "refresh_tokens.is_revoked must keep its index declaration"
+    )

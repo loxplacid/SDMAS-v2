@@ -308,6 +308,16 @@ async def run_project_import(
             totals["errors"],
             entities=entity_results,
         )
+        await _record_import_lineage(
+            session,
+            tenant,
+            project.id,
+            project.run_id,
+            project.original_filename,
+            project.file_key,
+            entity_results,
+            operator_id=project.operator_id,
+        )
         return {
             "project_id": project.id,
             "run_id": project.run_id,
@@ -528,3 +538,49 @@ async def _audit_import(
         )
     except Exception:
         logger.warning("Failed to write audit for migration import (non-fatal)", exc_info=True)
+
+
+async def _record_import_lineage(
+    session: AsyncSession,
+    tenant: TenantContext,
+    project_id: int,
+    run_id: int | None,
+    original_filename: str | None,
+    file_key: str | None,
+    entity_results: dict[str, dict[str, int]],
+    *,
+    operator_id: int | None = None,
+) -> None:
+    """Record data lineage for a completed import (TASK 9).
+
+    Registered graph (per campus):
+
+        source file (data_source) -> import transform (transformation)
+                                     -> asset per entity (data_asset)
+                                     + evidence: migration run
+
+    This is an observability side effect: a failure here must never fail
+    the import itself, so it is guarded and logged (same policy as the
+    audit write above).
+    """
+    if not run_id or not file_key:
+        return
+    try:
+        from app.platform.lineage.service import LineageService
+
+        svc = LineageService(session, tenant)
+        await svc.register_migration_import(
+            project_id=project_id,
+            run_id=run_id,
+            source_filename=original_filename or "import.csv",
+            file_key=file_key,
+            entities={e: (r or {}).get("imported", 0) for e, r in entity_results.items()},
+            operator_id=operator_id,
+        )
+        logger.info("Recorded lineage for migration project=%s run=%s", project_id, run_id)
+    except Exception:
+        logger.warning(
+            "Failed to record lineage for migration project=%s (non-fatal)",
+            project_id,
+            exc_info=True,
+        )

@@ -43,6 +43,7 @@ from app.domains.documents import models as documents_models  # noqa: F401
 # Models defined outside their domain's models.py — import explicitly so
 # alembic autogenerate/check and the worker see them on Base.metadata.
 from app.domains.events.outbox import OutboxEvent  # noqa: F401
+from app.domains.exceptions import models as exception_models  # noqa: F401
 from app.domains.fees import models as fees_models  # noqa: F401
 from app.domains.institution import models as institution_models  # noqa: F401
 from app.domains.jobs import models as jobs_models  # noqa: F401
@@ -58,4 +59,13 @@ from app.domains.search import models as search_models  # noqa: F401
 from app.domains.student import models as student_models  # noqa: F401
 from app.domains.student_portal import models as student_portal_models  # noqa: F401
 from app.domains.workflow import models as workflow_models  # noqa: F401
+from app.domains.compliance import models as compliance_models  # noqa: F401
+from app.platform.identities import models as identity_models  # noqa: F401
+from app.platform.lineage import models as lineage_models  # noqa: F401
+from app.platform.reconciliation import models as reconciliation_models  # noqa: F401
+from app.platform.policy import models as policy_models  # noqa: F401
+from app.platform.evidence import models as evidence_models  # noqa: F401
+from app.platform.cryptography import models as cryptography_models  # noqa: F401
+from app.platform.extensions import models as extension_models  # noqa: F401
+from app.domains.ledger import models as ledger_models  # noqa: F401
 from app.temporal.models import TxnLog  # noqa: F401

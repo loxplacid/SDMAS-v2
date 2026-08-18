@@ -424,7 +424,15 @@ TARGET_FIELDS: dict[str, dict[str, Any]] = {
     "receipt_no": {
         "label": "Receipt Number",
         "required": False,
-        "synonyms": ["receipt_no", "receipt_number", "receipt", "receipt_id", "voucher_no"],
+        "synonyms": [
+            "receipt_no",
+            "receipt_number",
+            "receipt",
+            "receipt_id",
+            "voucher_no",
+            "rcpt_no",
+            "rcpt",
+        ],
     },
 }
 
@@ -462,18 +470,29 @@ def suggest_mappings(
         norm = norm_columns[source]
 
         # 1. Exact / fuzzy synonym match.
-        best: tuple[int, str, str, str] | None = None  # (score, target, confidence, reason)
+        # (score, -len(synonym), target, confidence, reason) — score first,
+        # then the LONGEST matching synonym wins the tie: a column literally
+        # containing "fullname" must map to ``full_name`` (not ``last_name``
+        # via the "lname" substring), and "admission_no" to
+        # ``student_number`` (not ``receipt_no`` via the bare "no").
+        best: tuple[int, int, str, str, str] | None = None
         for target, meta in TARGET_FIELDS.items():
             for synonym in meta["synonyms"]:
                 syn_norm = _normalise(synonym)
                 if norm == syn_norm:
-                    best = (3, target, "high", f"Matches SDMAS field '{meta['label']}'")
+                    best = (3, 0, target, "high", f"Matches SDMAS field '{meta['label']}'")
                     break
                 if syn_norm and syn_norm in norm:
                     # Fuzzy containment (e.g. "parent_phone_number" → phone).
                     score = 2
-                    if best is None or score > best[0]:
-                        best = (score, target, "medium", f"Contains '{synonym}' → {meta['label']}")
+                    if best is None or (score, -len(syn_norm)) > (best[0], best[1]):
+                        best = (
+                            score,
+                            -len(syn_norm),
+                            target,
+                            "medium",
+                            f"Contains '{synonym}' → {meta['label']}",
+                        )
             if best and best[0] == 3:
                 break
 
@@ -484,24 +503,31 @@ def suggest_mappings(
                 if prof.looks_like_identifier and "student_number" not in norm:
                     best = (
                         1,
+                        0,
                         "student_number",
                         "low",
                         "Column looks like an identifier (ID/no/code)",
                     )
                 elif prof.looks_like_email:
-                    best = (1, "email", "low", "Column contains email-format values")
+                    best = (1, 0, "email", "low", "Column contains email-format values")
                 elif prof.looks_like_phone:
-                    best = (1, "guardian_phone", "low", "Column contains phone-format values")
+                    best = (
+                        1,
+                        0,
+                        "guardian_phone",
+                        "low",
+                        "Column contains phone-format values",
+                    )
                 elif prof.looks_like_date:
-                    best = (1, "date_of_birth", "low", "Column contains date-format values")
+                    best = (1, 0, "date_of_birth", "low", "Column contains date-format values")
 
         if best is not None:
             suggestions.append(
                 MappingSuggestion(
                     source_field=source,
-                    target_field=best[1],
-                    confidence=best[2],
-                    reason=best[3],
+                    target_field=best[2],
+                    confidence=best[3],
+                    reason=best[4],
                 )
             )
             matched.add(source)

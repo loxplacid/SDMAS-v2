@@ -49,16 +49,15 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    TypeDecorator,
     UniqueConstraint,
     select,
     update,
 )
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.infrastructure.database import Base, async_session_factory
+from app.infrastructure.types import JSONType
 
 logger = logging.getLogger(__name__)
 
@@ -68,61 +67,26 @@ OUTBOX_STATUS_COMPLETED = "completed"
 OUTBOX_STATUS_DEAD_LETTER = "dead_letter"
 
 
-# Works with both PostgreSQL (JSONB) and SQLite (Text-based JSON) — mirrors
-# ``app.domains.jobs.models`` so the two durable queues share behaviour.
-class _JSON(TypeDecorator):
-    impl = JSONB
-
-    def load_dialect_impl(self, dialect):
-        if dialect.name == "postgresql":
-            from sqlalchemy.dialects.postgresql import JSONB as _PG_JSONB
-            return dialect.type_descriptor(_PG_JSONB())
-        from sqlalchemy import JSON as _SA_JSON
-        return dialect.type_descriptor(_SA_JSON())
-
-    def process_bind_param(self, value: Any, dialect) -> str | None:
-        import json
-        if value is not None:
-            return json.dumps(value)
-        return None
-
-    def process_result_value(self, value: Any, dialect) -> Any:
-        import json
-        if isinstance(value, str):
-            return json.loads(value)
-        return value
-
-
-JSONType = _JSON
-
-
 class OutboxEvent(Base):
     """A durable integration event awaiting delivery."""
 
     __tablename__ = "outbox_events"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    event_id: Mapped[str] = mapped_column(
-        String(64), nullable=False, unique=True, index=True
-    )
-    event_type: Mapped[str] = mapped_column(
-        String(128), nullable=False, index=True
-    )
+    event_id: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    event_type: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
     entity_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
     entity_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    school_id: Mapped[int | None] = mapped_column(
-        Integer, nullable=True, index=True
-    )
+    school_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     actor_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    correlation_id: Mapped[str | None] = mapped_column(
-        String(64), nullable=True
-    )
-    occurred_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    payload: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONType, nullable=True
-    )
+    correlation_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Canonical envelope fields (see app/platform/events/envelope.py): the
+    # durable copy of event version, causation chain, and producer source.
+    event_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    causation_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    source: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    occurred_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    payload: Mapped[dict[str, Any] | None] = mapped_column(JSONType, nullable=True)
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, index=True, default=OUTBOX_STATUS_PENDING
     )
@@ -135,16 +99,10 @@ class OutboxEvent(Base):
     processed_at: Mapped[datetime.datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    updated_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
-    __table_args__ = (
-        UniqueConstraint("event_id", name="uq_outbox_events_event_id"),
-    )
+    __table_args__ = (UniqueConstraint("event_id", name="uq_outbox_events_event_id"),)
 
     def __repr__(self) -> str:
         return (
@@ -182,6 +140,9 @@ class OutboxRepository:
         payload: dict[str, Any] | None,
         max_attempts: int,
         now: datetime.datetime,
+        event_version: int = 1,
+        causation_id: str | None = None,
+        source: str | None = None,
     ) -> OutboxEvent:
         """Insert a durable event, skipping a duplicate ``event_id``.
 
@@ -202,6 +163,9 @@ class OutboxRepository:
             school_id=school_id,
             actor_user_id=actor_user_id,
             correlation_id=correlation_id,
+            event_version=event_version,
+            causation_id=causation_id,
+            source=source,
             occurred_at=occurred_at,
             payload=payload,
             status=OUTBOX_STATUS_PENDING,
@@ -233,8 +197,7 @@ class OutboxRepository:
             select(OutboxEvent.id)
             .where(
                 OutboxEvent.status == OUTBOX_STATUS_PENDING,
-                (OutboxEvent.next_attempt_at.is_(None))
-                | (OutboxEvent.next_attempt_at <= now),
+                (OutboxEvent.next_attempt_at.is_(None)) | (OutboxEvent.next_attempt_at <= now),
             )
             .order_by(OutboxEvent.created_at.asc())
             .limit(1)
@@ -299,9 +262,7 @@ class OutboxRepository:
                 "updated_at": now,
             }
         await self.session.execute(
-            update(OutboxEvent)
-            .where(OutboxEvent.event_id == event_id)
-            .values(**values)
+            update(OutboxEvent).where(OutboxEvent.event_id == event_id).values(**values)
         )
         await self.session.flush()
 
@@ -343,9 +304,7 @@ class OutboxRepository:
             .where(*stale_conditions, OutboxEvent.attempts >= max_attempts)
             .values(
                 status=OUTBOX_STATUS_DEAD_LETTER,
-                last_error=(
-                    "Reclaimed after max attempts: worker stopped before completion"
-                ),
+                last_error=("Reclaimed after max attempts: worker stopped before completion"),
                 updated_at=now,
             )
             .returning(OutboxEvent.id)
@@ -358,11 +317,9 @@ class OutboxRepository:
     async def count_pending(self) -> int:
         now = _now()
         result = await self.session.execute(
-            select(OutboxEvent.id)
-            .where(
+            select(OutboxEvent.id).where(
                 OutboxEvent.status == OUTBOX_STATUS_PENDING,
-                (OutboxEvent.next_attempt_at.is_(None))
-                | (OutboxEvent.next_attempt_at <= now),
+                (OutboxEvent.next_attempt_at.is_(None)) | (OutboxEvent.next_attempt_at <= now),
             )
         )
         return len(result.all())
@@ -428,16 +385,10 @@ class OutboxDispatcher:
             get_school_id,
         )
 
-        event_id = (
-            context.get("event_id")
-            or getattr(event, "event_id", None)
-            or new_event_id()
-        )
+        event_id = context.get("event_id") or getattr(event, "event_id", None) or new_event_id()
         occurred_at = getattr(event, "occurred_at", None) or now_utc()
         event_type = event_type_of(event)
-        entity_type = getattr(event, "entity_type", None) or getattr(
-            type(event), "ENTITY_TYPE", ""
-        )
+        entity_type = getattr(event, "entity_type", None) or getattr(type(event), "ENTITY_TYPE", "")
         entity_id = getattr(event, "entity_id", None)
 
         school_id = context.get("school_id")
@@ -459,6 +410,11 @@ class OutboxDispatcher:
         )
 
         envelope = serialize_event(event)
+        # Canonical field resolution (event_version honors the class-level
+        # EVENT_VERSION; causation/source carry the causal chain + producer).
+        from app.platform.events import envelope_from_event
+
+        canonical = envelope_from_event(event)
         repo = OutboxRepository(session)
         return await repo.enqueue(
             event_id=event_id,
@@ -468,6 +424,9 @@ class OutboxDispatcher:
             school_id=school_id,
             actor_user_id=actor_user_id,
             correlation_id=correlation_id,
+            event_version=canonical.event_version,
+            causation_id=canonical.causation_id or None,
+            source=canonical.source or None,
             occurred_at=occurred_at,
             payload=envelope.get("payload"),
             max_attempts=int(getattr(self, "_max_attempts", 10) or 10),
@@ -493,7 +452,8 @@ class OutboxDispatcher:
         if not handlers:
             logger.error(
                 "No outbox handler registered for '%s' (event %s) — dead-lettering",
-                outbox_event.event_type, outbox_event.event_id,
+                outbox_event.event_type,
+                outbox_event.event_id,
             )
             raise ValueError(
                 f"No outbox handler registered for event type '{outbox_event.event_type}'"
@@ -507,6 +467,7 @@ class OutboxDispatcher:
             correlation_id=outbox_event.correlation_id or None,
             actor_user_id=outbox_event.actor_user_id,
             school_id=outbox_event.school_id,
+            causation_id=outbox_event.causation_id or None,
         ):
             for handler in handlers:
                 # Handler work is a SAVEPOINT: if the handler raises, its
@@ -537,9 +498,7 @@ class OutboxDispatcher:
 
         cls = EVENT_CLASS_MAP.get(outbox_event.event_type)
         if cls is None:
-            raise ValueError(
-                f"No event class for outbox event type '{outbox_event.event_type}'"
-            )
+            raise ValueError(f"No event class for outbox event type '{outbox_event.event_type}'")
         payload = dict(outbox_event.payload or {})
         event = cls(**payload)
 
@@ -552,6 +511,9 @@ class OutboxDispatcher:
             "actor_user_id",
             "occurred_at",
             "correlation_id",
+            "event_version",
+            "causation_id",
+            "source",
         ):
             if hasattr(event, attr):
                 setattr(event, attr, getattr(outbox_event, attr))
@@ -601,9 +563,7 @@ class OutboxWorker:
         self._poll_interval = poll_interval
         self._batch_size = batch_size
         self._max_attempts = max_attempts
-        self._reap_interval = (
-            reap_interval if reap_interval is not None else 60.0
-        )
+        self._reap_interval = reap_interval if reap_interval is not None else 60.0
         self._stale_after = stale_after if stale_after is not None else 600.0
         self._task: asyncio.Task[None] | None = None
         self._shutdown_event = asyncio.Event()
@@ -620,20 +580,23 @@ class OutboxWorker:
         self._shutdown_event.clear()
         self._task = asyncio.create_task(self._run_loop())
         logger.info(
-            "OutboxWorker started (poll=%ss batch=%d max_attempts=%d "
-            "reap=%ss stale=%ss)",
-            self._poll_interval, self._batch_size, self._max_attempts,
-            self._reap_interval, self._stale_after,
+            "OutboxWorker started (poll=%ss batch=%d max_attempts=%d reap=%ss stale=%ss)",
+            self._poll_interval,
+            self._batch_size,
+            self._max_attempts,
+            self._reap_interval,
+            self._stale_after,
         )
 
     async def stop(self) -> None:
-        if not self.is_running:
+        task = self._task
+        if task is None:
             return
         logger.info("OutboxWorker stopping…")
         self._shutdown_event.set()
-        self._task.cancel()
+        task.cancel()
         try:
-            await self._task
+            await task
         except asyncio.CancelledError:
             pass
         self._task = None
@@ -666,13 +629,13 @@ class OutboxWorker:
                 try:
                     await outbox_dispatcher.deliver(event, session)
                     await repo.complete(event.event_id)
-                    logger.info(
-                        "Outbox delivered %s [%s]", event.event_id, event.event_type
-                    )
+                    logger.info("Outbox delivered %s [%s]", event.event_id, event.event_type)
                 except Exception as exc:
                     logger.warning(
                         "Outbox delivery failed for %s [%s]: %s",
-                        event.event_id, event.event_type, exc,
+                        event.event_id,
+                        event.event_type,
+                        exc,
                     )
                     await repo.fail(
                         event.event_id,
@@ -699,7 +662,9 @@ class OutboxWorker:
                     logger.warning(
                         "Outbox reaper reclaimed %d stuck delivery(s): "
                         "%d requeued, %d dead-lettered",
-                        requeued + dead_lettered, requeued, dead_lettered,
+                        requeued + dead_lettered,
+                        requeued,
+                        dead_lettered,
                     )
         except Exception:
             logger.exception("Outbox reaper pass failed (non-fatal)")

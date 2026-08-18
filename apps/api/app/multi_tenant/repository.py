@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AuthorizationError, NotFoundError
 from app.multi_tenant import registry
 from app.multi_tenant.models import TenantContext
-from app.multi_tenant.models import platform_context
 
 
 class TenantScopedRepository:
@@ -79,7 +78,8 @@ class TenantScopedRepository:
 
     def require_tenant_scope(self, model: Any) -> None:
         """Raise when ``model`` is tenant-owned and the caller has neither
-        a concrete tenant scope nor explicit platform authorization.
+        a concrete tenant scope (campus / region / group / organization)
+        nor explicit platform authorization.
 
         This is the deny-by-default enforcement point: a tenant-owned
         model queried by an unscoped, non-platform caller is a cross-tenant
@@ -87,7 +87,7 @@ class TenantScopedRepository:
         """
         if registry.tenant_scope_of(model) == registry.PLATFORM:
             return
-        if self._effective_campus_id() is not None:
+        if self.tenant is not None and self.tenant.is_hierarchy_scoped:
             return
         if self._has_platform_access():
             return
@@ -105,16 +105,23 @@ class TenantScopedRepository:
         """Append the canonical tenant predicate (and join, if the model
         inherits tenancy) to ``query``.
 
+        Resolves the filter from the full hierarchy scope (campus, region,
+        group or organization) so enterprise administrators are pinned to
+        their subtree.
+
         Returns ``(modified_query, was_applied)`` so callers can decide
         whether a companion count query needs the same filter.
         """
-        campus_id = self._effective_campus_id()
-        if campus_id is None:
+        if self.tenant is None or not self.tenant.is_hierarchy_scoped:
             return query, False
-        spec = registry.tenant_filter_for(model, campus_id)
+        spec = registry.tenant_filter_for_scope(model, self.tenant)
         if spec is None:
             return query, False
-        return registry.apply_tenant_filter(query, model, campus_id), True
+        predicate, join_spec = spec
+        if join_spec is not None:
+            parent_cls, onclause = join_spec
+            query = query.join(parent_cls, onclause)
+        return query.where(predicate), True
 
     def _apply_tenant_to_count(self, query, model):
         """Convenience wrapper that applies the tenant filter to a
@@ -156,9 +163,8 @@ class TenantScopedRepository:
     def _tenant_conditions(self, model: Any, extra_filters: Optional[list] = None) -> list:
         """Return the full WHERE condition list (tenant predicate + extras)."""
         conditions: list = list(extra_filters or [])
-        campus_id = self._effective_campus_id()
-        if campus_id is not None:
-            spec = registry.tenant_filter_for(model, campus_id)
+        if self.tenant is not None and self.tenant.is_hierarchy_scoped:
+            spec = registry.tenant_filter_for_scope(model, self.tenant)
             if spec is not None:
                 conditions.append(spec[0])
         return conditions
@@ -190,9 +196,8 @@ class TenantScopedRepository:
     async def exists(self, model: Any, entity_id: int) -> bool:
         """Tenant-scoped existence check."""
         self.require_tenant_scope(model)
-        campus_id = self._effective_campus_id()
         count_query = select(func.count(model.id)).where(model.id == entity_id)
-        if campus_id is not None:
+        if self.tenant is not None and self.tenant.is_hierarchy_scoped:
             count_query = self._apply_tenant_to_count(count_query, model)
         result = await self.session.execute(count_query)
         return (result.scalar() or 0) > 0

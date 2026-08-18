@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import abc
-import datetime
 import logging
-from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -38,6 +36,17 @@ class BaseMigrator(abc.ABC):
 
     entity_type: str
     """Unique name for this migration stream (e.g. ``students``)."""
+
+    table_name: str | None = None
+    """Exact target table this migrator writes (e.g. ``attendance_records``).
+
+    Used by the base ``rollback`` to delete exactly the rows this run
+    created.  Must be set whenever the base rollback is used: the legacy
+    ``_get_table`` scan matches *substrings* and returns the first mapper,
+    which is import-order dependent — with the full app loaded,
+    ``attendance`` resolves to ``attendance_thresholds`` and rollback
+    silently deletes from the wrong table.
+    """
 
     dependencies: list[str] = []
     """Entity types that must be migrated before this one."""
@@ -101,9 +110,7 @@ class BaseMigrator(abc.ABC):
 
         from sqlalchemy import delete as sa_delete
 
-        result = await session.execute(
-            sa_delete(table).where(table.c.id.in_(sdmas_ids))
-        )
+        result = await session.execute(sa_delete(table).where(table.c.id.in_(sdmas_ids)))
         await session.flush()
         count = result.rowcount
         logger.info("Rolled back %d records for '%s'", count, self.entity_type)
@@ -112,10 +119,22 @@ class BaseMigrator(abc.ABC):
     def _get_table(self) -> Any:
         """Return the SQLAlchemy table for this entity type.
 
-        Override if the migrator manages multiple tables.
+        Prefers an exact match on ``table_name`` (deterministic regardless
+        of import order).  Falls back to the legacy substring scan only
+        for migrators that never declared a table — but every migrator
+        that relies on the base rollback must set ``table_name``.
         """
         from app.infrastructure.database import Base
 
+        if self.table_name:
+            for mapper in Base.registry.mappers:
+                cls = mapper.class_
+                if getattr(cls, "__tablename__", None) == self.table_name:
+                    return cls.__table__
+            return None
+
+        # Legacy fallback: first mapper whose tablename contains the
+        # entity type.  Import-order dependent — avoid for new migrators.
         for mapper in Base.registry.mappers:
             cls = mapper.class_
             if hasattr(cls, "__tablename__"):

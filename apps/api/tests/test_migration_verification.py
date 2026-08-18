@@ -56,8 +56,7 @@ from app.domains.migration.models import (
     MIGRATION_STATUS_ROLLED_BACK,
     MigrationProject,
 )
-from app.domains.migration.project_service import IMPORT_CHUNK_SIZE
-from app.domains.migration.project_service import MigrationProjectService
+from app.domains.migration.project_service import IMPORT_CHUNK_SIZE, MigrationProjectService
 from app.domains.student.models import Student  # noqa: F401
 from app.multi_tenant.models import TenantContext
 
@@ -217,8 +216,14 @@ class TestMultiRunRollback:
 
         # All runs moved to rolled_back.
         runs = (
-            await db_session.execute(select(MigrationRun).where(MigrationRun.project_id == project.id))
-        ).scalars().all()
+            (
+                await db_session.execute(
+                    select(MigrationRun).where(MigrationRun.project_id == project.id)
+                )
+            )
+            .scalars()
+            .all()
+        )
         assert {r.status for r in runs} == {"rolled_back"}
 
     async def test_rollback_preserves_pre_existing_rows(
@@ -227,7 +232,9 @@ class TestMultiRunRollback:
         """D2.12 invariant: rollback deletes only records whose origin is
         tracked in migration_mappings — never pre-existing data."""
         existing = Student(
-            first_name="Existing", last_name="Student", student_number="LEGACY-1",
+            first_name="Existing",
+            last_name="Student",
+            student_number="LEGACY-1",
             campus_id=1,
         )
         db_session.add(existing)
@@ -252,6 +259,37 @@ class TestMultiRunRollback:
         assert (await db_session.execute(select(Student))).scalars().all() == [existing]
         assert (await db_session.execute(select(AcademicYear))).scalars().all() == [existing_ay]
 
+    async def test_rollback_table_resolution_is_import_order_independent(
+        self, db_session, tenant_a, storage_root
+    ) -> None:
+        """Regression: base rollback must delete from the migrator's exact
+        table, never the first substring match in the mapper registry.
+
+        With the full app imported (as in production and API-level tests),
+        ``attendance_intelligence`` tables (``attendance_thresholds``,
+        ``period_attendances``, …) register before ``attendance_records``;
+        the old substring scan resolved ``attendance`` →
+        ``attendance_thresholds`` and rollback silently deleted nothing,
+        leaving imported attendance rows behind.  Importing the full app
+        here reproduces exactly that registry.
+        """
+        from app.domains.migration.engine import get_migrator
+        from app.main import app as _full_app  # noqa: F401  (register every model)
+
+        migrator = get_migrator("attendance")
+        assert migrator is not None
+        table = migrator._get_table()
+        assert table is not None
+        assert table.name == "attendance_records"
+
+        project = await _make_project(db_session, tenant_a)
+        await _import_and_reconcile(db_session, tenant_a, project)
+        svc = MigrationProjectService(db_session, tenant_a, user_id=99, username="admin")
+        result = await svc.rollback(project.id)
+        await db_session.commit()
+        assert result["records_removed"] == 15
+        assert (await db_session.execute(select(AttendanceRecord))).scalars().all() == []
+
     async def test_plan_rollback_counts_all_subtype_mappings(
         self, db_session, tenant_a, storage_root
     ) -> None:
@@ -265,8 +303,14 @@ class TestMultiRunRollback:
         await _import_and_reconcile(db_session, tenant_a, project)
 
         runs = (
-            await db_session.execute(select(MigrationRun).where(MigrationRun.project_id == project.id))
-        ).scalars().all()
+            (
+                await db_session.execute(
+                    select(MigrationRun).where(MigrationRun.project_id == project.id)
+                )
+            )
+            .scalars()
+            .all()
+        )
         svc = RollbackService(db_session)
         by_entity = {}
         for run in runs:
@@ -305,7 +349,9 @@ class TestScenarioCoverage:
         assert by_number["UN-02"].first_name == "José"
         assert by_number["UN-02"].last_name == "García"
 
-    async def test_inconsistent_columns_do_not_crash(self, db_session, tenant_a, storage_root) -> None:
+    async def test_inconsistent_columns_do_not_crash(
+        self, db_session, tenant_a, storage_root
+    ) -> None:
         """A ragged row (extra trailing column) must not crash discovery or
         import — the extra value is tolerated, the known columns still map."""
         csv = (
@@ -333,9 +379,7 @@ class TestScenarioCoverage:
             "Admission No,Student Name,DOB,Class,Section,Academic Year",
         ]
         for i in range(1, row_count + 1):
-            rows.append(
-                f"LF-{i:04d},Student  {i} ,2005-01-01,10-A,Sec 1,2025-2026"
-            )
+            rows.append(f"LF-{i:04d},Student  {i} ,2005-01-01,10-A,Sec 1,2025-2026")
         csv = "\n".join(rows) + "\n"
 
         project = await _make_project(db_session, tenant_a, csv=csv, name="Large import")
@@ -425,8 +469,14 @@ class TestScenarioCoverage:
         from app.domains.migration.models import MigrationRun
 
         runs = (
-            await db_session.execute(select(MigrationRun).where(MigrationRun.project_id == project.id))
-        ).scalars().all()
+            (
+                await db_session.execute(
+                    select(MigrationRun).where(MigrationRun.project_id == project.id)
+                )
+            )
+            .scalars()
+            .all()
+        )
         assert any(r.status == "failed" for r in runs)
 
         entries = (await db_session.execute(select(AuditLog))).scalars().all()
@@ -465,12 +515,16 @@ class TestMessyDemoFixture:
         same project imports cleanly."""
         csv = (
             "Admission No,Student Name,DOB,Gender,Email,Class,Section,Academic Year,"
-            "Attendance Date,Attendance Status,Fee Type,Fee Paid,Payment Date,Receipt No,Guardian Phone\n"
-            "ST-1001,John  Doe ,2005-08-14,M,john.doe@example.com,10-A,Sec 1,2025-2026,"
-            "2026-08-10,Present,Tuition,45000,2026-01-10,RCT-1001,+254 700 123456\n"
-            "ST-1002,Jane  Smith ,2006-03-22,F,jane.smith@example.com,10-A,Sec 1,2025-2026,"
-            "2026-08-10,Absent,Tuition,30000,2026-01-11,RCT-1002,0700123456\n"
-            "ST-1003,Alex  Brown ,2007-11-02,M,alex.brown@example.com,10-B,Sec 2,2025-2026,,,,,,0711 555 999\n"
+            "Attendance Date,Attendance Status,Fee Type,Fee Paid,"
+            "Payment Date,Receipt No,Guardian Phone\n"
+            "ST-1001,John  Doe ,2005-08-14,M,john.doe@example.com,"
+            "10-A,Sec 1,2025-2026,2026-08-10,Present,Tuition,45000,"
+            "2026-01-10,RCT-1001,+254 700 123456\n"
+            "ST-1002,Jane  Smith ,2006-03-22,F,jane.smith@example.com,"
+            "10-A,Sec 1,2025-2026,2026-08-10,Absent,Tuition,30000,"
+            "2026-01-11,RCT-1002,0700123456\n"
+            "ST-1003,Alex  Brown ,2007-11-02,M,alex.brown@example.com,"
+            "10-B,Sec 2,2025-2026,,,,,,0711 555 999\n"
         )
         project = await _make_project(db_session, tenant_a, csv=csv, name="Corrected demo")
         svc = MigrationProjectService(db_session, tenant_a, user_id=99, username="admin")

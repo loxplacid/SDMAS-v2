@@ -143,6 +143,20 @@ class AuditService:
             correlation_id=correlation_id,
         )
         created = await self.repo.create(entry)
+        # Tamper-evident chain (TASK 13): append the chain entry covering
+        # this event.  Deliberately **non-fatal** — the audit event itself
+        # must never be lost because chaining failed; failures are logged
+        # and the verifier reports such rows as uncovered.
+        try:
+            from app.platform.cryptography.service import AuditChainService
+
+            chain = AuditChainService(self.session, self.tenant)
+            await chain.append_for_audit(created)
+        except Exception:  # pragma: no cover - defensive
+            logger.exception(
+                "audit chain append failed for audit_log_id=%s (non-fatal)",
+                created.id,
+            )
         if commit:
             await self.session.commit()
         logger.debug(

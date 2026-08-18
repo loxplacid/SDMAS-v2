@@ -110,12 +110,22 @@ export default defineConfig({
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Embedder-Policy': 'require-corp',
     },
+    // Canonical API routing contract — every prefix below MUST mirror the
+    // nginx configs (infrastructure/nginx/dev.conf, infrastructure/nginx/nginx.conf)
+    // or the API is unreachable in one environment. The frontend calls BOTH
+    // `/api/...` paths and bare legacy prefixes (`/auth/login`, `/students`,
+    // `/attendance`, `/migration`, `/admin/users`, `/classes/{id}/360`,
+    // `/teachers/{id}/360`). The `api-contract.test.ts` guard test keeps this
+    // list in sync with every path the API clients actually fetch.
     proxy: {
       '/api': 'http://localhost:8000',
       '/auth': 'http://localhost:8000',
       '/students': 'http://localhost:8000',
       '/attendance': 'http://localhost:8000',
       '/migration': 'http://localhost:8000',
+      '/admin': 'http://localhost:8000',
+      '/classes': 'http://localhost:8000',
+      '/teachers': 'http://localhost:8000',
       '/health': 'http://localhost:8000',
       '/ready': 'http://localhost:8000',
     },

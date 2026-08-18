@@ -103,6 +103,13 @@ class MigrationProjectResponse(BaseModel):
     mapping: dict[str, Any] | None = None
     validation: dict[str, Any] | None = None
     reconciliation: dict[str, Any] | None = None
+    # TASK 15 — Migration Factory workspace state.
+    profile: dict[str, Any] | None = None
+    identity_match: dict[str, Any] | None = None
+    mapping_versions: list[dict[str, Any]] | None = None
+    verification: dict[str, Any] | None = None
+    approval: dict[str, Any] | None = None
+    cutover: dict[str, Any] | None = None
     records_processed: int = 0
     records_imported: int = 0
     records_updated: int = 0
@@ -189,3 +196,106 @@ class ReconcileResult(BaseModel):
     run_status: str | None = None
     entities: list[str] = []
     reconciled_at: str
+
+
+# ── TASK 15 — Migration Factory capability schemas ──────────────────────
+
+
+class ProfileResult(BaseModel):
+    """Source profile: entity distribution, quality scorecard, PII columns,
+    duplicate-key candidates."""
+
+    row_count: int
+    entities: dict[str, int]
+    scorecard: dict[str, Any]
+    pii_columns: list[str]
+    duplicate_candidates: list[dict[str, Any]]
+    profiled_at: str | None = None
+
+
+class IdentityMatchRow(BaseModel):
+    row: int
+    decision: str  # match | no_match | ambiguous
+    confidence: str
+    method: str | None = None
+    sdmas_id: int | None = None
+    matched_name: str | None = None
+    candidates: int = 0
+
+
+class IdentityMatchResult(BaseModel):
+    total: int
+    matched: int
+    no_match: int
+    ambiguous: int
+    matched_at: str | None = None
+    rows: list[IdentityMatchRow]
+
+
+class ClassifiedRow(BaseModel):
+    row: int
+    before: dict[str, Any]
+    after: dict[str, Any]
+    status: str
+    action: str  # CREATE | UPDATE | SKIP | ERROR
+    action_reason: str | None = None
+
+
+class DryRunSummary(BaseModel):
+    total: int
+    create: int
+    update: int
+    skip: int
+    error: int
+    blocking: int
+    warnings: int
+    dry_run_at: str
+
+
+class DryRunResult(BaseModel):
+    snapshot_id: int
+    summary: DryRunSummary
+    rows: list[ClassifiedRow]
+
+
+class MigrationSnapshotResponse(BaseModel):
+    id: int
+    project_id: int
+    kind: str
+    row_count: int
+    summary: dict[str, Any] | None = None
+    payload: dict[str, Any] | None = None
+    created_by: int | None = None
+    created_at: str
+
+
+class ApprovalRequest(BaseModel):
+    note: str | None = None
+
+
+class ApprovalDecision(BaseModel):
+    note: str | None = None
+    approver_id: int | None = None
+
+
+class ApprovalReject(BaseModel):
+    reason: str | None = None
+
+
+class CutoverRequest(BaseModel):
+    note: str | None = None
+
+
+class VerifyResult(BaseModel):
+    source_row_count: int
+    entities: list[dict[str, Any]]
+    spot_checks: list[dict[str, Any]]
+    passed: bool
+    verified_at: str | None = None
+
+
+class RollbackPlanItem(BaseModel):
+    run_id: int
+    entity_type: str
+    records_to_remove: int
+    tables_affected: list[str] = []

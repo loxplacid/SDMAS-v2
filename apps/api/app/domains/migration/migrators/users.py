@@ -26,6 +26,7 @@ class UserMigrator(BaseMigrator):
     """
 
     entity_type = "users"
+    table_name = "users"
     dependencies: list[str] = []
 
     def _rules(self) -> list[ValidationRule]:
@@ -83,15 +84,17 @@ class UserMigrator(BaseMigrator):
 
             try:
                 existing = await session.execute(
-                    __import__("sqlalchemy").select(User).where(
-                        (User.email == email) | (User.username == username)
-                    )
+                    __import__("sqlalchemy")
+                    .select(User)
+                    .where((User.email == email) | (User.username == username))
                 )
                 if existing.scalar_one_or_none() is not None:
                     result.skipped += 1
                     await log_repo.log(
-                        run_id=run_id, level="skipped",
-                        entity_type="users", legacy_id=legacy_id,
+                        run_id=run_id,
+                        level="skipped",
+                        entity_type="users",
+                        legacy_id=legacy_id,
                         message=f"User '{email}' already exists — skipped",
                     )
                     continue
@@ -114,20 +117,26 @@ class UserMigrator(BaseMigrator):
                 await mapping_repo.record(run_id, "users", legacy_id, user.id)
                 result.imported += 1
                 await log_repo.log(
-                    run_id=run_id, level="imported",
-                    entity_type="users", legacy_id=legacy_id,
+                    run_id=run_id,
+                    level="imported",
+                    entity_type="users",
+                    legacy_id=legacy_id,
                     message=f"User '{email}' imported as SDMAS ID {user.id}",
                 )
             except Exception as exc:
                 result.errors += 1
-                result.error_details.append({
-                    "legacy_id": legacy_id,
-                    "email": email,
-                    "error": str(exc),
-                })
+                result.error_details.append(
+                    {
+                        "legacy_id": legacy_id,
+                        "email": email,
+                        "error": str(exc),
+                    }
+                )
                 await log_repo.log(
-                    run_id=run_id, level="error",
-                    entity_type="users", legacy_id=legacy_id,
+                    run_id=run_id,
+                    level="error",
+                    entity_type="users",
+                    legacy_id=legacy_id,
                     message=f"Failed to import user: {exc}",
                     details={"error": str(exc)},
                 )

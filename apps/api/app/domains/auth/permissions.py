@@ -56,6 +56,28 @@ FEES_RECORD_PAYMENT: Final[str] = "fees.record_payment"
 FEES_REFUND: Final[str] = "fees.refund"
 FEES_EXPORT: Final[str] = "fees.export"
 
+# ── Ledger (double-entry) ─────────────────────────────────────────────
+# ``ledger.view``   — read the chart, periods, entries, trial balance
+# ``ledger.create`` — create draft journal entries
+# ``ledger.post``   — post and reverse entries (the books-changing actions)
+# ``ledger.manage`` — chart of accounts and accounting-period administration
+LEDGER_VIEW: Final[str] = "ledger.view"
+LEDGER_CREATE: Final[str] = "ledger.create"
+LEDGER_POST: Final[str] = "ledger.post"
+LEDGER_MANAGE: Final[str] = "ledger.manage"
+
+# ── Exceptions (universal exception management) ───────────────────────
+# ``exceptions.view``   — list/read system exceptions and their timelines
+# ``exceptions.manage`` — create, transition, resolve, assign, link evidence
+EXCEPTIONS_VIEW: Final[str] = "exceptions.view"
+EXCEPTIONS_MANAGE: Final[str] = "exceptions.manage"
+
+# ── Compliance (declarative compliance engine) ──────────────────────
+# ``compliance.view``   — read regulations, schemas, submissions, evaluations
+# ``compliance.manage`` — create/edit regulations, schemas, submit for review
+COMPLIANCE_VIEW: Final[str] = "compliance.view"
+COMPLIANCE_MANAGE: Final[str] = "compliance.manage"
+
 # ── Academic ──────────────────────────────────────────────────────────
 ACADEMIC_VIEW: Final[str] = "academic.view"
 ACADEMIC_CREATE: Final[str] = "academic.create"
@@ -141,6 +163,12 @@ ALL_PERMISSIONS: list[str] = [
     ATTENDANCE_VIEW, ATTENDANCE_RECORD, ATTENDANCE_UPDATE, ATTENDANCE_EXPORT, ATTENDANCE_APPROVE,
     # Fees
     FEES_VIEW, FEES_CREATE, FEES_UPDATE, FEES_DELETE, FEES_RECORD_PAYMENT, FEES_REFUND, FEES_EXPORT,
+    # Ledger
+    LEDGER_VIEW, LEDGER_CREATE, LEDGER_POST, LEDGER_MANAGE,
+    # Exceptions
+    EXCEPTIONS_VIEW, EXCEPTIONS_MANAGE,
+    # Compliance
+    COMPLIANCE_VIEW, COMPLIANCE_MANAGE,
     # Academic
     ACADEMIC_VIEW, ACADEMIC_CREATE, ACADEMIC_UPDATE, ACADEMIC_DELETE,
     # Subjects
@@ -180,8 +208,26 @@ ALL_PERMISSIONS: list[str] = [
 #: be added in one place and forgotten in another.  Platform roles
 #: (``platform_admin``) are deliberately excluded: a tenant admin must
 #: never be able to mint a cross-tenant account.
+#
+#: Role semantics in the enterprise hierarchy (TASK 21):
+#: - ``admin``       — campus administrator: full control inside ONE campus.
+#: - ``org_admin``   — organization administrator: full control inside ONE
+#:                     legal organization (never cross-organization).
+#: - ``group_admin`` — school-group administrator: full control inside ONE
+#:                     school group.
+#: - ``region_admin``— region administrator: full control inside ONE region.
+#: - ``department``  — department user: campus-scoped, limited permissions.
+#
+#: The cross-campus reach of ``org_admin`` / ``group_admin`` /
+#: ``region_admin`` is NOT granted by a permission bit — it comes from an
+#: ``OrganizationAssignment`` membership row that pins the tenant context to
+#: the admin's subtree (see ``multi_tenant.dependencies``).  The role only
+#: grants *operations*; the hierarchy scope is enforced by the framework.
 TENANT_ROLES: frozenset[str] = frozenset(
-    {"admin", "principal", "accountant", "staff", "teacher", "student", "parent"}
+    {
+        "admin", "org_admin", "group_admin", "region_admin", "department",
+        "principal", "accountant", "staff", "teacher", "student", "parent",
+    }
 )
 
 # Every permission EXCEPT the platform-gating ones.  ``admin`` is a
@@ -199,13 +245,42 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
     # platform grant (see multi_tenant.dependencies.resolve_tenant_context).
     "platform_admin": [PLATFORM_ACCESS, PLATFORM_MANAGE, *TENANT_ALL_PERMISSIONS],
 
-    "admin": TENANT_ALL_PERMISSIONS,  # tenant-level admin: everything within their campus
+    "admin": TENANT_ALL_PERMISSIONS,  # campus administrator: everything within their campus
+
+    # Enterprise hierarchy administrators (TASK 21).  Each role carries the
+    # full tenant permission set *within its assigned subtree*; the subtree
+    # boundary is enforced by the OrganizationAssignment + hierarchy-scoped
+    # tenant context, never by the role alone.  None of them ever grants a
+    # platform permission, so no hierarchy admin can escape their
+    # organization into platform scope.
+    "org_admin": TENANT_ALL_PERMISSIONS,     # organization administrator
+    "group_admin": TENANT_ALL_PERMISSIONS,   # school-group administrator
+    "region_admin": TENANT_ALL_PERMISSIONS,  # region administrator
+
+    # Department user: campus-scoped (membership) with a restricted,
+    # operational permission set.  Department-level data filtering is NOT
+    # applied to campus-scoped tenant tables — see KNOWN_LIMITATIONS.md.
+    "department": [
+        STUDENTS_VIEW,
+        TEACHERS_VIEW,
+        ATTENDANCE_VIEW,
+        FEES_VIEW,
+        LEDGER_VIEW,
+        ACADEMIC_VIEW, SUBJECTS_VIEW,
+        ADMISSIONS_VIEW,
+        REPORTS_VIEW,
+        ANALYTICS_VIEW,
+        NOTIFICATIONS_VIEW,
+        LEAVE_VIEW, LEAVE_CREATE,
+        EXCEPTIONS_VIEW,
+    ],
 
     "principal": [
         STUDENTS_VIEW, STUDENTS_UPDATE,
         TEACHERS_VIEW,
         ATTENDANCE_VIEW,
         FEES_VIEW,
+        LEDGER_VIEW,
         ACADEMIC_VIEW, SUBJECTS_VIEW, ACADEMIC_CREATE, ACADEMIC_UPDATE,
         ADMISSIONS_VIEW, ADMISSIONS_CREATE, ADMISSIONS_UPDATE, ADMISSIONS_APPROVE,
         REPORTS_VIEW, REPORTS_CREATE, REPORTS_EXPORT,
@@ -214,11 +289,14 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
         LEAVE_VIEW, LEAVE_APPROVE,
         AUDIT_VIEW,
         WORKFLOW_VIEW, WORKFLOW_MANAGE,
+        EXCEPTIONS_VIEW, EXCEPTIONS_MANAGE,
+        COMPLIANCE_VIEW, COMPLIANCE_MANAGE,
     ],
 
     "accountant": [
         STUDENTS_VIEW,
         FEES_VIEW, FEES_CREATE, FEES_UPDATE, FEES_RECORD_PAYMENT, FEES_REFUND, FEES_EXPORT,
+        LEDGER_VIEW, LEDGER_CREATE, LEDGER_POST, LEDGER_MANAGE,
         REPORTS_VIEW, REPORTS_CREATE, REPORTS_EXPORT,
         ANALYTICS_VIEW,
         NOTIFICATIONS_VIEW,
@@ -230,6 +308,7 @@ ROLE_PERMISSIONS: dict[str, list[str]] = {
         ATTENDANCE_VIEW, ATTENDANCE_RECORD, ATTENDANCE_UPDATE, ATTENDANCE_EXPORT,
         NOTIFICATIONS_VIEW, NOTIFICATIONS_CREATE,
         LEAVE_VIEW, LEAVE_CREATE, LEAVE_UPDATE,
+        EXCEPTIONS_VIEW,
     ],
 
     "teacher": [
