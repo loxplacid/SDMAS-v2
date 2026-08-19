@@ -66,7 +66,7 @@ export const OutstandingBalancesPage: React.FC = () => {
         }
       />
 
-      <Card className="text-center bg-gradient-to-br from-rose-50 to-red-50 dark:from-rose-950/20 dark:to-red-950/20">
+      <Card className="text-center bg-[var(--color-danger)]/5 border-[var(--color-danger)]/20">
         <p className="text-sm font-medium text-[var(--color-text-tertiary)] uppercase tracking-wider">Total Outstanding</p>
         <p className="text-4xl font-bold mt-2 text-red-500">{formatCurrency(totalOutstanding)}</p>
       </Card>

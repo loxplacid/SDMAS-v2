@@ -42,7 +42,7 @@ export function ParentCommunicationPage() {
       <div className="px-4 py-4 space-y-3">
         {communications.length === 0 ? (
           <Card className="p-8 text-center">
-            <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-[var(--color-surface-hover)] mx-auto mb-3">
+            <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-[var(--color-surface-hover)] mx-auto mb-3">
               <svg className="h-6 w-6 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>

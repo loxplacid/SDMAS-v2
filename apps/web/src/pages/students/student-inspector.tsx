@@ -113,7 +113,7 @@ export function StudentInspector({ open, studentId, onClose, onEdit }: StudentIn
       header={
         s && (
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--color-brand-accent)] to-[var(--color-brand-accent-hover)] text-sm font-bold text-white shadow">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-[var(--color-brand-accent)]/10 text-sm font-bold text-[var(--color-brand-accent)]">
               {s.first_name[0]}
               {s.last_name[0]}
             </div>

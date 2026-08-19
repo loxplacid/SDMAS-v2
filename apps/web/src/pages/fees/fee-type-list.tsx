@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { feeTypeApi, type FeeTypeListParams } from '../../api/fees/fee-type-api'
 import type { FeeTypeResponse, FeeTypeCreate, FeeTypeUpdate } from '../../api/generated/types'
-import { Card, Table, Pagination, Select, Button, Badge, Modal, Form, Alert, Input, ErrorState, useToast, PageHeader, ShortcutKey} from '../../components/ui'
+import { Card, Table, Pagination, Select, Button, Badge, Modal, Form, Alert, Input, ErrorState, useToast, PageHeader, ShortcutKey, ConfirmDialog} from '../../components/ui'
 import { useKeyboardShortcut } from '../../hooks/use-keyboard-shortcut'
 import { FEE_TYPE_STATUSES, capitalize, plural } from '../../lib/utils'
 
@@ -27,6 +27,8 @@ export function FeeTypeListPage() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
   const [apiError, setApiError] = useState<string | null>(null)
+  const [deactivateTarget, setDeactivateTarget] = useState<FeeTypeResponse | null>(null)
+  const [deactivating, setDeactivating] = useState(false)
 
   const fetchIdRef = useRef(0)
 
@@ -83,13 +85,19 @@ export function FeeTypeListPage() {
   }
 
   const handleDeactivate = async (ft: FeeTypeResponse) => {
-    if (!confirm(`Deactivate fee type "${ft.name}"?`)) return
+    setDeactivateTarget(ft)
+  }
+
+  const confirmDeactivate = async () => {
+    if (!deactivateTarget) return
+    setDeactivating(true)
     try {
-      await feeTypeApi.deactivate(ft.id)
-      const updated = await feeTypeApi.getById(ft.id)
+      await feeTypeApi.deactivate(deactivateTarget.id)
+      const updated = await feeTypeApi.getById(deactivateTarget.id)
       setData((prev) => prev.map((item) => (item.id === updated.id ? updated : item)))
       showToast('Fee type deactivated', 'success')
     } catch (err: any) { showToast(err?.detail || 'Failed to deactivate', 'error') }
+    finally { setDeactivating(false); setDeactivateTarget(null) }
   }
 
   return (
@@ -159,6 +167,17 @@ export function FeeTypeListPage() {
           <Input label="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
         </Form>
       </Modal>
+
+      <ConfirmDialog
+        open={deactivateTarget !== null}
+        onClose={() => setDeactivateTarget(null)}
+        onConfirm={confirmDeactivate}
+        title="Deactivate Fee Type"
+        message={`Are you sure you want to deactivate "${deactivateTarget?.name ?? ''}"? This fee type will no longer be available for new assignments.`}
+        confirmLabel="Deactivate"
+        variant="warning"
+        loading={deactivating}
+      />
     </div>
   )
 }

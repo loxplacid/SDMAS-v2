@@ -66,7 +66,7 @@ def upgrade() -> None:
         sa.Column("description", sa.String(1000), nullable=True),
         sa.Column("match_keys", _json_type(), nullable=True),
         sa.Column("comparison_fields", _json_type(), nullable=True),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default="1"),
+        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -161,7 +161,7 @@ def upgrade() -> None:
         sa.Column("target_payload", _json_type(), nullable=True),
         sa.Column("status", sa.String(20), nullable=False, server_default="matched"),
         sa.Column("differences", _json_type(), nullable=True),
-        sa.Column("within_tolerance", sa.Boolean(), nullable=False, server_default="1"),
+        sa.Column("within_tolerance", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column("exception_code", sa.String(80), nullable=True),
         sa.Column("exception_reason", sa.String(1000), nullable=True),
         sa.Column(

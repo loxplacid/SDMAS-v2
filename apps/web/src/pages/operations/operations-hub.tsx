@@ -1,44 +1,23 @@
-import { useNavigate } from 'react-router-dom'
-import { PageHeader, Card } from '../../components/ui'
+import { HubPage } from '../../components/ui/hub-page'
 
 const operationLinks = [
-  { path: '/operations/export/students', label: 'Export Students', description: 'Download student data as CSV', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', color: 'from-blue-500 to-blue-600' },
-  { path: '/operations/export/attendance', label: 'Export Attendance', description: 'Download attendance records as CSV', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01', color: 'from-emerald-500 to-emerald-600' },
-  { path: '/operations/export/payments', label: 'Export Payments', description: 'Download payment records as CSV', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', color: 'from-purple-500 to-purple-600' },
-  { path: '/operations/rollover', label: 'Academic Year Rollover', description: 'Roll over to a new academic year', icon: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15', color: 'from-amber-500 to-amber-600' },
-  { path: '/operations/batch/enroll', label: 'Batch Enroll', description: 'Enroll multiple students at once', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197', color: 'from-cyan-500 to-cyan-600' },
-  { path: '/operations/batch/fee-dues', label: 'Batch Fee Dues', description: 'Create fee dues for multiple students', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', color: 'from-rose-500 to-rose-600' },
+  { label: 'Export Students', description: 'Export student data to CSV', route: '/operations/export/students', icon: 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4' },
+  { label: 'Export Attendance', description: 'Export attendance records to CSV', route: '/operations/export/attendance', icon: 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4' },
+  { label: 'Export Payments', description: 'Export payment records to CSV', route: '/operations/export/payments', icon: 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4' },
+  { label: 'Academic Rollover', description: 'Roll over to the next academic year', route: '/operations/rollover', icon: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' },
+  { label: 'Batch Enrollment', description: 'Enroll multiple students at once', route: '/operations/batch/enroll', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
+  { label: 'Batch Fee Dues', description: 'Create fee dues for multiple students', route: '/operations/batch/fee-dues', icon: 'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z' },
 ]
 
 export function OperationsHubPage() {
-  const navigate = useNavigate()
-
   return (
-    <div className="space-y-6">
-      <PageHeader title="Data Operations" subtitle="Export data, rollover academic years, and batch operations" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {operationLinks.map((link, i) => (
-          <Card
-            key={link.path}
-            className="cursor-pointer group hover:shadow-lg hover:-translate-y-1 transition-all duration-[var(--motion-base)] ease-[var(--ease-standard)] overflow-hidden"
-            onClick={() => navigate(link.path)}
-            style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}
-          >
-            <div className="flex items-start gap-4">
-              <div className={`flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br ${link.color} text-white shadow-sm flex-shrink-0 group-hover:scale-110 group-hover:shadow-md transition-all duration-[var(--motion-fast)] ease-[var(--ease-spring)]`}>
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={link.icon} />
-                </svg>
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base font-semibold text-[var(--color-text-primary)] group-hover:text-[var(--color-brand-accent)] transition-colors duration-[var(--motion-fast)]">{link.label}</h3>
-                <p className="text-sm text-[var(--color-text-muted)] mt-0.5 leading-relaxed">{link.description}</p>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-    </div>
+    <HubPage
+      eyebrow="System"
+      title="Data Operations"
+      subtitle="Export data, run batch operations, and manage academic rollover"
+      stats={[]}
+      links={operationLinks}
+    />
   )
 }
 

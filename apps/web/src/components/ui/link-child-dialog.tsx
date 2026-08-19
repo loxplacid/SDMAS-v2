@@ -74,7 +74,7 @@ export function LinkChildDialog({ open, onClose, linkedIds, onLink, onLinkMultip
   return (
     <div className="fixed inset-0 z-[var(--z-dialog)] flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="fixed inset-0 bg-black/40 animate-fade-in" onClick={onClose} />
-      <div className="relative bg-[var(--color-surface)] rounded-2xl shadow-xl border border-[var(--color-border)] w-full max-w-lg max-h-[80vh] flex flex-col animate-fade-in-up">
+      <div className="relative bg-[var(--color-surface)] rounded-xl shadow-xl border border-[var(--color-border)] w-full max-w-lg max-h-[80vh] flex flex-col animate-fade-in-up">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
           <div>

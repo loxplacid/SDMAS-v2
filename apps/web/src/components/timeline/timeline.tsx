@@ -213,11 +213,11 @@ export function Timeline({
     return (
       <div
         className={cn(
-          'flex flex-col items-center justify-center py-12 text-center animate-fade-in rounded-2xl border border-[var(--color-danger)]/20 bg-[var(--color-danger)]/5',
+          'flex flex-col items-center justify-center py-12 text-center animate-fade-in rounded-xl border border-[var(--color-danger)]/20 bg-[var(--color-danger)]/5',
           className,
         )}
       >
-        <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-[var(--color-danger)]/10 mb-4">
+        <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-[var(--color-danger)]/10 mb-4">
           <svg className="h-6 w-6 text-[var(--color-danger)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
           </svg>
@@ -231,7 +231,7 @@ export function Timeline({
   }
 
   return (
-    <div className={cn('rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden', className)}>
+    <div className={cn('rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden', className)}>
       {/* Filter toolbar (hidden in compact mode) */}
       {!compact && (
         <div className="border-b border-[var(--color-border)] p-4 space-y-3">

@@ -83,7 +83,7 @@ function WorkQueueSkeleton() {
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-6 gap-3">
         {Array.from({ length: 6 }, (_, i) => (
-          <Skeleton key={i} className="h-20 rounded-2xl" />
+          <Skeleton key={i} className="h-20 rounded-xl" />
         ))}
       </div>
       <div className="space-y-2">
@@ -178,7 +178,7 @@ function CountCard({ label, value, tone, onClick }: { label: string; value: numb
       onClick={onClick}
       disabled={!onClick}
       className={cn(
-        'rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left',
+        'rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-left',
         'motion-safe:transition-all motion-safe:duration-[var(--motion-fast)]',
         onClick && 'hover:-translate-y-0.5 hover:shadow-md hover:border-[var(--color-brand-accent)]/30 cursor-pointer',
         'animate-fade-in-up'
@@ -365,51 +365,34 @@ export function WorkQueuePage() {
     : []
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Hero */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--color-brand-navy)] via-[var(--color-brand-navy-light)] to-[var(--color-brand-navy-mid)] p-7 lg:p-8">
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-          }}
-        />
-        <div className="relative">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-            <div className="space-y-1.5">
-              <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide">
-                Detect → Assign → Investigate → Act → Resolve → Audit
-              </p>
-              <h1 className="text-2xl lg:text-3xl font-extrabold text-white leading-tight tracking-tight">
-                Operational Work Queue
-              </h1>
-              <p className="text-white/50 text-sm max-w-xl leading-relaxed">
-                Cases from risk findings, data-quality issues and manual tasks — tracked against SLAs with a full audit trail.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => load(true)}
-                className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20 motion-safe:transition-colors"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Refresh
-              </button>
-              <button
-                onClick={() => setCreateOpen(true)}
-                className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-brand-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-brand-accent-hover)] motion-safe:transition-colors shadow-lg shadow-[var(--color-brand-accent)]/20"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                New Case
-              </button>
-            </div>
-          </div>
+    <div className="space-y-4">
+      {/* Page header — clean, no gradient */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-sm font-semibold text-[var(--color-text-primary)]">Work Queue</h1>
+          <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">
+            Detect → Assign → Investigate → Act → Resolve → Audit
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => load(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] motion-safe:transition-colors"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh
+          </button>
+          <button
+            onClick={() => setCreateOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-brand-accent)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--color-brand-accent-hover)] motion-safe:transition-colors"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            New Case
+          </button>
         </div>
       </div>
 
@@ -417,7 +400,7 @@ export function WorkQueuePage() {
         <WorkQueueSkeleton />
       ) : error ? (
         <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
-          <div className="h-14 w-14 rounded-2xl bg-[var(--color-danger-light)] flex items-center justify-center mb-5">
+          <div className="h-12 w-12 rounded-xl bg-[var(--color-danger)]/10 flex items-center justify-center mb-4">
             <svg className="h-7 w-7 text-[var(--color-danger)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
@@ -425,7 +408,7 @@ export function WorkQueuePage() {
           <h3 className="text-sm font-semibold text-[var(--color-danger-dark)]">{error}</h3>
           <button
             onClick={() => load(false)}
-            className="mt-5 inline-flex items-center rounded-[10px] bg-[var(--color-danger)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-danger-dark)] motion-safe:transition-colors"
+            className="mt-5 inline-flex items-center rounded-lg bg-[var(--color-danger)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-danger-dark)] motion-safe:transition-colors"
           >
             Try Again
           </button>
@@ -460,7 +443,7 @@ export function WorkQueuePage() {
           </div>
 
           {/* Filters */}
-          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 space-y-3">
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 space-y-2.5">
             <div className="flex flex-col sm:flex-row gap-2.5">
               <div className="flex-1 min-w-0">
                 <SearchInput
@@ -588,7 +571,7 @@ export function WorkQueuePage() {
             </div>
 
             {items.length === 0 ? (
-              <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-10 text-center">
+              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
                 <div className="flex items-center justify-center h-11 w-11 rounded-xl bg-[var(--color-surface-hover)] mx-auto mb-3">
                   <svg className="h-5 w-5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />

@@ -39,7 +39,7 @@ export function EmptyState({ title, description, action, icon, compact = false }
     <div className="flex flex-col items-center justify-center text-center animate-fade-in-up">
       <div className={compact ? 'py-8' : 'py-16'}>
         {icon || (
-          <div className={cn('mx-auto rounded-2xl bg-[var(--color-bg)] flex items-center justify-center', compact ? 'h-10 w-10' : 'h-14 w-14')}>
+          <div className={cn('mx-auto rounded-xl bg-[var(--color-bg)] flex items-center justify-center', compact ? 'h-10 w-10' : 'h-14 w-14')}>
             <svg className={compact ? 'h-5 w-5' : 'h-7 w-7'} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
@@ -56,7 +56,7 @@ export function EmptyState({ title, description, action, icon, compact = false }
         {action && (
           <button
             onClick={action.onClick}
-            className="inline-flex items-center gap-2 rounded-[10px] bg-[var(--color-brand-accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--color-brand-accent-hover)] motion-safe:transition-colors mt-6"
+            className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-brand-accent)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[var(--color-brand-accent-hover)] motion-safe:transition-colors mt-6"
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

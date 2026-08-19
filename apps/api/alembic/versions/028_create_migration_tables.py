@@ -30,7 +30,7 @@ def upgrade() -> None:
         sa.Column("skipped", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("errors", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("warnings", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("is_dry_run", sa.Boolean(), nullable=False, server_default="0"),
+        sa.Column("is_dry_run", sa.Boolean(), nullable=False, server_default=sa.text("false")),
         sa.Column("summary", sa.JSON(), nullable=True),
         sa.Column("started_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("completed_at", sa.DateTime(timezone=True), nullable=True),

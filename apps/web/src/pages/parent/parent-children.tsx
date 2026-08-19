@@ -111,7 +111,7 @@ export function ParentChildrenPage() {
         <div className="h-8 w-48 rounded-lg bg-[var(--color-border)] animate-skeleton" />
         <div className="space-y-4">
           {[1, 2].map((i) => (
-            <div key={i} className="h-32 rounded-2xl bg-[var(--color-border)] animate-skeleton" />
+            <div key={i} className="h-32 rounded-xl bg-[var(--color-border)] animate-skeleton" />
           ))}
         </div>
       </div>
@@ -161,7 +161,7 @@ export function ParentChildrenPage() {
             return (
               <div
                 key={student.id}
-                className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] p-5 hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"
+                className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] p-4 hover:shadow-sm transition-shadow duration-[var(--motion-fast)] motion-reduce:transition-none"
               >
                 {/* Student Header */}
                 <div className="flex items-center justify-between mb-4">

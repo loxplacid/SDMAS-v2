@@ -41,7 +41,7 @@ export function StudentSubjectsPage() {
           data.subjects.map((subj) => (
             <Card key={subj.id} className="p-4 group">
               <div className="flex items-start gap-3">
-                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 text-white text-xs font-bold shrink-0 shadow-sm">
+                <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-[var(--color-brand-accent)]/10 text-[var(--color-brand-accent)] text-xs font-bold shrink-0">
                   {subj.name.substring(0, 2).toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">

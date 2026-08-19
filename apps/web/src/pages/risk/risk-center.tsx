@@ -93,7 +93,7 @@ function drillDownFor(f: RiskFinding): string | null {
 
 function SeverityCard({ label, value, tone }: { label: string; value: number; tone: string }) {
   return (
-    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 animate-fade-in-up" style={{ animationFillMode: 'both' }}>
+    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 animate-fade-in-up" style={{ animationFillMode: 'both' }}>
       <div className="flex items-center gap-2 mb-1.5">
         <span className={cn('inline-block h-2 w-2 rounded-full', severityDot[tone])} aria-hidden="true" />
         <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">{label}</p>
@@ -372,7 +372,7 @@ function RiskCenterSkeleton() {
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {Array.from({ length: 4 }, (_, i) => (
-          <Skeleton key={i} className="h-20 rounded-2xl" />
+          <Skeleton key={i} className="h-20 rounded-xl" />
         ))}
       </div>
       <div className="space-y-2">
@@ -612,56 +612,43 @@ export function RiskCenterPage() {
   const visibleFindings = findings?.items ?? []
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* Hero */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--color-brand-navy)] via-[var(--color-brand-navy-light)] to-[var(--color-brand-navy-mid)] p-7 lg:p-8">
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-          }}
-        />
-        <div className="relative">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-            <div className="space-y-1.5">
-              <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide">Deterministic · Explainable · Auditable</p>
-              <h1 className="text-2xl lg:text-3xl font-extrabold text-white leading-tight tracking-tight">Risk &amp; Attention Engine</h1>
-              <p className="text-white/50 text-sm max-w-xl leading-relaxed">
-                Rule-based findings across attendance, finance, academics, documents, admissions and operations.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {recomputeResult && (
-                <span className="text-xs text-white/60 mr-1">
-                  {recomputeResult.created} new · {recomputeResult.resolved} resolved
-                </span>
+    <div className="space-y-4">
+      {/* Page header — clean, no gradient */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-sm font-semibold text-[var(--color-text-primary)]">Risk &amp; Attention Engine</h1>
+          <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">
+            Deterministic · Explainable · Auditable — rule-based findings across attendance, finance, academics, documents, admissions and operations
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {recomputeResult && (
+            <span className="text-xs text-[var(--color-text-tertiary)] mr-1">
+              {recomputeResult.created} new · {recomputeResult.resolved} resolved
+            </span>
+          )}
+          {canRecompute && (
+            <button
+              onClick={handleRecompute}
+              disabled={recomputing}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-brand-accent)] px-3 py-1.5 text-sm font-medium text-white',
+                'hover:bg-[var(--color-brand-accent-hover)] motion-safe:transition-colors',
+                recomputing && 'opacity-60 cursor-wait'
               )}
-              {canRecompute && (
-                <button
-                  onClick={handleRecompute}
-                  disabled={recomputing}
-                  className={cn(
-                    'inline-flex items-center gap-2 rounded-xl bg-[var(--color-brand-accent)] px-4 py-2 text-sm font-medium text-white',
-                    'hover:bg-[var(--color-brand-accent-hover)] motion-safe:transition-colors shadow-lg shadow-[var(--color-brand-accent)]/20',
-                    recomputing && 'opacity-60 cursor-wait'
-                  )}
-                >
-                  <svg className={cn('h-4 w-4', recomputing && 'animate-spin')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  {recomputing ? 'Running…' : 'Run Rules'}
-                </button>
-              )}
-              <button
-                onClick={() => setShowConfig((v) => !v)}
-                className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/20 motion-safe:transition-colors"
-              >
-                {showConfig ? 'Hide' : 'Configure'} Rules
-              </button>
-            </div>
-          </div>
+            >
+              <svg className={cn('h-3.5 w-3.5', recomputing && 'animate-spin')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              {recomputing ? 'Running…' : 'Run Rules'}
+            </button>
+          )}
+          <button
+            onClick={() => setShowConfig((v) => !v)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] motion-safe:transition-colors"
+          >
+            {showConfig ? 'Hide' : 'Configure'} Rules
+          </button>
         </div>
       </div>
 
@@ -669,7 +656,7 @@ export function RiskCenterPage() {
         <RiskCenterSkeleton />
       ) : error ? (
         <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
-          <div className="h-14 w-14 rounded-2xl bg-[var(--color-danger-light)] flex items-center justify-center mb-5">
+          <div className="h-12 w-12 rounded-xl bg-[var(--color-danger)]/10 flex items-center justify-center mb-4">
             <svg className="h-7 w-7 text-[var(--color-danger)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
@@ -677,7 +664,7 @@ export function RiskCenterPage() {
           <h3 className="text-sm font-semibold text-[var(--color-danger-dark)]">{error}</h3>
           <button
             onClick={() => window.location.reload()}
-            className="mt-5 inline-flex items-center rounded-[10px] bg-[var(--color-danger)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-danger-dark)] motion-safe:transition-colors"
+            className="mt-5 inline-flex items-center rounded-lg bg-[var(--color-danger)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-danger-dark)] motion-safe:transition-colors"
           >
             Try Again
           </button>
@@ -827,7 +814,7 @@ export function RiskCenterPage() {
             )}
 
             {visibleFindings.length === 0 ? (
-              <div className="rounded-2xl border border-[var(--color-success)]/20 bg-[var(--color-success)]/5 p-8 text-center">
+              <div className="rounded-xl border border-[var(--color-success)]/20 bg-[var(--color-success)]/5 p-6 text-center">
                 <p className="text-sm font-semibold text-[var(--color-success-dark)]">No findings</p>
                 <p className="text-xs text-[var(--color-success)]/70 mt-1">
                   {statusFilter === 'open' ? 'No open risk findings for this view.' : 'No findings match the current filters.'}

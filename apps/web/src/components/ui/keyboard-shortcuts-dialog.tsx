@@ -120,7 +120,7 @@ export function KeyboardShortcutsDialog({ open, onClose }: KeyboardShortcutsDial
         ref={dialogRef}
         tabIndex={-1}
         className={cn(
-          'relative w-full max-w-lg bg-[var(--color-surface)] rounded-2xl shadow-2xl border border-[var(--color-border)] overflow-hidden outline-none',
+          'relative w-full max-w-lg bg-[var(--color-surface)] rounded-xl shadow-2xl border border-[var(--color-border)] overflow-hidden outline-none',
           show ? 'animate-fade-in-scale' : 'animate-fade-out-scale'
         )}
         onClick={(e) => e.stopPropagation()}

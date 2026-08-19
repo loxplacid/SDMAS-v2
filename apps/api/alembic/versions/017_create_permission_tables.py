@@ -30,7 +30,7 @@ def upgrade() -> None:
         sa.Column("code", sa.String(50), nullable=False, unique=True),
         sa.Column("label", sa.String(100), nullable=False),
         sa.Column("description", sa.String(255), nullable=True),
-        sa.Column("is_system", sa.Boolean(), nullable=False, server_default="1"),
+        sa.Column("is_system", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )

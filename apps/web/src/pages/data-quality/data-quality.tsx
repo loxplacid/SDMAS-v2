@@ -85,7 +85,7 @@ function DataQualitySkeleton() {
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {Array.from({ length: 4 }, (_, i) => (
-          <Skeleton key={i} className="h-24 rounded-2xl" />
+          <Skeleton key={i} className="h-24 rounded-xl" />
         ))}
       </div>
       <div className="flex gap-2">
@@ -145,7 +145,7 @@ function OverviewCards({
           onClick={() => c.onClick && onNavigate(`/data-quality?severity=${c.onClick}`)}
           disabled={!c.onClick}
           className={cn(
-            'rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left',
+            'rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-left',
             'motion-safe:transition-all motion-safe:duration-[var(--motion-fast)]',
             c.onClick && 'hover:-translate-y-0.5 hover:shadow-md hover:border-[var(--color-brand-accent)]/30 cursor-pointer motion-reduce:hover:translate-y-0',
             'animate-fade-in-up'
@@ -513,61 +513,43 @@ export function DataQualityCenterPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Hero */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--color-brand-navy)] via-[var(--color-brand-navy-light)] to-[var(--color-brand-navy-mid)] p-7 lg:p-8">
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-          }}
-        />
-        <div className="relative">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-            <div className="space-y-1.5">
-              <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide">
-                Deterministic checks over real school data
-              </p>
-              <h1 className="text-2xl lg:text-3xl font-extrabold text-white leading-tight tracking-tight">
-                Data Quality Center
-              </h1>
-              <p className="text-white/50 text-sm max-w-xl leading-relaxed">
-                Duplicates, missing fields, invalid formats, impossible dates and inconsistent references.
-                Every finding points at the exact record that triggered it — nothing is inferred.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => load(true)}
-                disabled={refreshing}
-                className={cn(
-                  'inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-medium text-white',
-                  'hover:bg-white/20 motion-safe:transition-colors',
-                  refreshing && 'opacity-60 cursor-wait'
-                )}
-                aria-label="Refresh data quality"
-              >
-                <svg className={cn('h-4 w-4', refreshing && 'animate-spin')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                {refreshing ? 'Refreshing…' : 'Refresh'}
-              </button>
-              {canResolve && (
-                <button
-                  onClick={handleRunChecks}
-                  disabled={running}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-brand-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-brand-accent-hover)] motion-safe:transition-colors shadow-lg shadow-[var(--color-brand-accent)]/20 disabled:opacity-60 disabled:cursor-wait"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  {running ? 'Scanning…' : 'Run checks'}
-                </button>
-              )}
-            </div>
-          </div>
+    <div className="space-y-4">
+      {/* Page header — clean, no gradient */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-sm font-semibold text-[var(--color-text-primary)]">Data Quality Center</h1>
+          <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">
+            Duplicates, missing fields, invalid formats, impossible dates — every finding points at the exact record
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => load(true)}
+            disabled={refreshing}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-sm font-medium text-[var(--color-text-secondary)]',
+              'hover:bg-[var(--color-surface-hover)] motion-safe:transition-colors',
+              refreshing && 'opacity-60 cursor-wait'
+            )}
+            aria-label="Refresh data quality"
+          >
+            <svg className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {refreshing ? 'Refreshing…' : 'Refresh'}
+          </button>
+          {canResolve && (
+            <button
+              onClick={handleRunChecks}
+              disabled={running}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-brand-accent)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--color-brand-accent-hover)] motion-safe:transition-colors disabled:opacity-60 disabled:cursor-wait"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              {running ? 'Scanning…' : 'Run checks'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -575,7 +557,7 @@ export function DataQualityCenterPage() {
         <DataQualitySkeleton />
       ) : error && !overview ? (
         <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
-          <div className="h-14 w-14 rounded-2xl bg-[var(--color-danger-light)] flex items-center justify-center mb-5">
+          <div className="h-12 w-12 rounded-xl bg-[var(--color-danger)]/10 flex items-center justify-center mb-4">
             <svg className="h-7 w-7 text-[var(--color-danger)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
@@ -583,7 +565,7 @@ export function DataQualityCenterPage() {
           <h3 className="text-sm font-semibold text-[var(--color-danger-dark)]">{error}</h3>
           <button
             onClick={() => load(false)}
-            className="mt-5 inline-flex items-center rounded-[10px] bg-[var(--color-danger)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-danger-dark)] motion-safe:transition-colors"
+            className="mt-5 inline-flex items-center rounded-lg bg-[var(--color-danger)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-danger-dark)] motion-safe:transition-colors"
           >
             Try Again
           </button>
@@ -593,7 +575,7 @@ export function DataQualityCenterPage() {
           <OverviewCards overview={overview} onNavigate={navigate} />
 
           {/* Filters */}
-          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 space-y-3">
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 space-y-2.5">
             <TabGroup
               tabs={CATEGORY_TABS.map((t) => ({
                 id: t.id,

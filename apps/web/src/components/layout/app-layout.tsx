@@ -23,6 +23,7 @@ export function AppLayout() {
   const [commandOpen, setCommandOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const location = useLocation()
   const { user } = useAuth()
 
@@ -38,8 +39,7 @@ export function AppLayout() {
 
   // Command palette groups: route-aware contextual commands first (P8 §10),
   // then the visited-page "Recent" group (P8 §9), then the role-filtered
-  // static page/action groups (D1 §3 — never expose surfaces the role
-  // cannot reach). Rebuilt on route, role or history change only.
+  // static page/action groups. Rebuilt on route, role or history change only.
   const commandGroups = useMemo(() => {
     const contextual = buildContextualCommands(location.pathname, navigate)
     const recent = buildRecentCommands(navPersistence.recentItems, location.pathname, navigate)
@@ -54,10 +54,7 @@ export function AppLayout() {
   // `?` opens the keyboard shortcuts dialog
   useKeyboardShortcut({ '?': () => setShortcutsOpen(true) }, [])
 
-  // `Cmd+K` opens the command palette (P8 §9) — the header's ⌘K hint points
-  // at the same surface. The palette's own handler owns the close half of
-  // the toggle, so this only opens when closed. `Cmd+Shift+K` opens the
-  // universal search modal.
+  // `Cmd+K` opens the command palette; `Cmd+Shift+K` opens universal search
   useKeyboardShortcut(
     {
       'mod+k': () => {
@@ -67,6 +64,11 @@ export function AppLayout() {
     },
     [],
   )
+
+  // Close mobile nav on route change
+  useEffect(() => {
+    setMobileNavOpen(false)
+  }, [location.pathname])
 
   // Track page views for recent items
   useEffect(() => {
@@ -98,6 +100,7 @@ export function AppLayout() {
       '/operations': 'Operations',
       '/users': 'Users',
       '/profile': 'Profile',
+      '/admin': 'Admin Dashboard',
     }
     const label = pageLabels[location.pathname]
     if (label) {
@@ -110,12 +113,16 @@ export function AppLayout() {
       <Sidebar
         collapsed={navPersistence.sidebarCollapsed}
         onToggle={navPersistence.toggleSidebar}
+        mobileOpen={mobileNavOpen}
+        onMobileClose={() => setMobileNavOpen(false)}
+        onMobileOpen={() => setMobileNavOpen(true)}
       />
       <div className="flex-1 flex flex-col min-w-0">
         <Header
           onOpenCommandPalette={() => setCommandOpen(true)}
           onOpenSearch={() => setSearchOpen(true)}
           onOpenShortcuts={() => setShortcutsOpen(true)}
+          onOpenMobileNav={() => setMobileNavOpen(true)}
         />
         <main className="flex-1 overflow-y-auto">
           <div className="p-4 lg:p-6 xl:p-8 max-w-[1400px] mx-auto w-full min-h-full">
@@ -151,7 +158,7 @@ export function AppLayout() {
         onClose={() => setShortcutsOpen(false)}
       />
 
-      {/* Mobile ? shortcut button (visible below sm breakpoint) */}
+      {/* Mobile ? shortcut button */}
       <button
         onClick={() => setShortcutsOpen(true)}
         className="sm:hidden fixed bottom-6 left-6 z-[var(--z-nav)] flex items-center justify-center h-10 w-10 rounded-full bg-[var(--color-surface)] text-[var(--color-text-secondary)] shadow-lg border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] transition-all active:scale-95 motion-reduce:active:scale-100 text-base font-bold animate-fade-in-scale"

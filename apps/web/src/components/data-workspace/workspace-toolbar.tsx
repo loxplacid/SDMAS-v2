@@ -38,7 +38,7 @@ function ToolbarButton({
       onClick={onClick}
       aria-label={label}
       className={cn(
-        'inline-flex h-8 items-center gap-1.5 rounded-[10px] border px-2.5 text-xs font-medium',
+        'inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium',
         'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)]',
         'motion-safe:transition-colors motion-safe:duration-[var(--motion-fast)]',
         'hover:border-[var(--color-border-hover)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)]',

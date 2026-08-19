@@ -139,7 +139,7 @@ export function GlobalSearchModal({
 
       <div
         className={cn(
-          'relative w-full max-w-2xl bg-[var(--color-surface)] rounded-2xl shadow-2xl border border-[var(--color-border)] overflow-hidden',
+          'relative w-full max-w-2xl bg-[var(--color-surface)] rounded-xl shadow-2xl border border-[var(--color-border)] overflow-hidden',
           show ? 'animate-fade-in-scale' : 'animate-fade-out-scale',
         )}
         onClick={(e) => e.stopPropagation()}

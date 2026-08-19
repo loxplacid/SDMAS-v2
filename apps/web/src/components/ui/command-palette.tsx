@@ -280,7 +280,7 @@ export function CommandPalette({
       <div
         ref={panelRef}
         style={panelMove.style}
-        className="relative w-full max-w-xl bg-[var(--color-surface)] rounded-2xl shadow-2xl border border-[var(--color-border)] overflow-hidden"
+        className="relative w-full max-w-xl bg-[var(--color-surface)] rounded-xl shadow-2xl border border-[var(--color-border)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input */}

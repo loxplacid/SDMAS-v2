@@ -104,32 +104,42 @@ const NAV_ICONS = {
 
 /** Nav items visible to Admin role (full access) */
 const NAV_ICON_COMMUNICATIONS = 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'
+const NAV_ICON_ADMIN = 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z'
 
 const adminNav: NavItem[] = [
+  // OVERVIEW
   { to: '/command-center', label: 'Command Center', icon: NAV_ICONS.dashboard, matchPaths: ['/command-center'] },
   { to: '/action-center', label: 'Action Center', icon: NAV_ICONS.approvals, matchPaths: ['/action-center'] },
   { to: '/risk', label: 'Risk Center', icon: NAV_ICONS.analytics, matchPaths: ['/risk'] },
   { to: '/data-quality', label: 'Data Quality', icon: NAV_ICONS.reports, matchPaths: ['/data-quality'] },
   { to: '/work', label: 'Work Queue', icon: NAV_ICONS.approvals, matchPaths: ['/work', '/cases'] },
   { to: '/timeline', label: 'Timeline', icon: NAV_ICONS.operations, matchPaths: ['/timeline'] },
-  { to: '/leave', label: 'Leave', icon: NAV_ICONS.leave, matchPaths: ['/leave'] },
-  { to: '/admissions', label: 'Admissions', icon: NAV_ICONS.admissions, matchPaths: ['/admissions'] },
+  // PEOPLE
   { to: '/students', label: 'Students', icon: NAV_ICONS.students },
   { to: '/teachers', label: 'Teachers', icon: NAV_ICONS.teachers },
+  { to: '/admissions', label: 'Admissions', icon: NAV_ICONS.admissions, matchPaths: ['/admissions'] },
+  { to: '/leave', label: 'Leave', icon: NAV_ICONS.leave, matchPaths: ['/leave'] },
+  // ACADEMICS
   { to: '/academic', label: 'Academics', icon: NAV_ICONS.academic, matchPaths: ['/academic'] },
-  { to: '/attendance', label: 'Attendance', icon: NAV_ICONS.attendance, matchPaths: ['/attendance'] },
-  { to: '/fees', label: 'Fees', icon: NAV_ICONS.fees, matchPaths: ['/fees'] },
   { to: '/subjects', label: 'Subjects', icon: NAV_ICONS.academic },
+  // ATTENDANCE
+  { to: '/attendance', label: 'Attendance', icon: NAV_ICONS.attendance, matchPaths: ['/attendance'] },
+  // FINANCE
+  { to: '/fees', label: 'Fees', icon: NAV_ICONS.fees, matchPaths: ['/fees'] },
+  // COMMUNICATIONS
   { to: '/communications', label: 'Communications', icon: NAV_ICON_COMMUNICATIONS, matchPaths: ['/communications'] },
+  // REPORTING
   { to: '/reports', label: 'Reports', icon: NAV_ICONS.reports, matchPaths: ['/reports'] },
   { to: '/reports/cards', label: 'Report Cards', icon: NAV_ICONS.reports, matchPaths: ['/reports/cards'] },
   { to: '/analytics', label: 'Analytics', icon: NAV_ICONS.analytics, matchPaths: ['/analytics'] },
-  { to: '/notifications', label: 'Notifications', icon: NAV_ICONS.notifications },
-  { to: '/operations', label: 'Data Ops', icon: NAV_ICONS.operations },
-  { to: '/migration', label: 'Data Migration', icon: NAV_ICONS.operations, matchPaths: ['/migration'] },
-  { to: '/users', label: 'Users', icon: NAV_ICONS.users },
-  { to: '/admin/audit-logs', label: 'Audit Logs', icon: NAV_ICONS.operations, matchPaths: ['/admin/audit-logs'] },
+  // SYSTEM
+  { to: '/admin', label: 'Admin Dashboard', icon: NAV_ICON_ADMIN, matchPaths: ['/admin'] },
+  { to: '/users', label: 'Users & Roles', icon: NAV_ICONS.users },
+  { to: '/admin/audit-logs', label: 'Audit Log', icon: NAV_ICONS.operations, matchPaths: ['/admin/audit-logs'] },
   { to: '/admin/approvals', label: 'Approvals', icon: NAV_ICONS.approvals, matchPaths: ['/admin/approvals'] },
+  { to: '/migration', label: 'Data Migration', icon: NAV_ICONS.operations, matchPaths: ['/migration'] },
+  { to: '/operations', label: 'Data Operations', icon: NAV_ICONS.operations },
+  { to: '/notifications', label: 'Notifications', icon: NAV_ICONS.notifications },
 ]
 
 /** Nav items visible to Teacher role */
@@ -228,19 +238,27 @@ export function getNavSectionsForRole(role: string): NavSection[] {
     return [
       {
         label: 'Overview',
-        items: items.filter((i) => ['/command-center', '/action-center', '/risk', '/data-quality', '/work', '/timeline', '/leave', '/admissions', '/notifications'].includes(i.to)),
+        items: items.filter((i) => ['/command-center', '/action-center', '/risk', '/data-quality', '/work', '/timeline'].includes(i.to)),
       },
       {
-        label: 'Records',
-        items: items.filter((i) => ['/students', '/teachers', '/subjects', '/academic'].includes(i.to)),
+        label: 'People',
+        items: items.filter((i) => ['/students', '/teachers', '/admissions', '/leave'].includes(i.to)),
+      },
+      {
+        label: 'Academics',
+        items: items.filter((i) => ['/academic', '/subjects'].includes(i.to)),
       },
       {
         label: 'Operations',
-        items: items.filter((i) => ['/attendance', '/fees', '/communications', '/reports', '/reports/cards', '/analytics'].includes(i.to)),
+        items: items.filter((i) => ['/attendance', '/fees', '/communications'].includes(i.to)),
+      },
+      {
+        label: 'Reporting',
+        items: items.filter((i) => ['/reports', '/reports/cards', '/analytics'].includes(i.to)),
       },
       {
         label: 'System',
-        items: items.filter((i) => ['/operations', '/users', '/admin/audit-logs', '/admin/approvals'].includes(i.to)),
+        items: items.filter((i) => ['/admin', '/users', '/admin/audit-logs', '/admin/approvals', '/migration', '/operations', '/notifications'].includes(i.to)),
       },
     ].filter((s) => s.items.length > 0)
   }
@@ -428,7 +446,7 @@ function routeOrDescendant(path: string, base: string): boolean {
 
 /** Check if a role has access to a specific route pattern */
 export function hasRouteAccess(role: string, path: string): boolean {
-  // Admin has access to everything
+  // Admin has access to everything (including /admin dashboard)
   if (role === 'admin') return true
 
   // Principal, Accountant, Staff — role workspace + relevant domains

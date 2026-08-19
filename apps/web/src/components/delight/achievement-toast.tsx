@@ -50,7 +50,7 @@ export function AchievementToast({ label, caption, onDismiss }: AchievementToast
       style={style as CSSProperties}
       role="status"
       className={cn(
-        'pointer-events-auto relative flex items-center gap-4 overflow-hidden rounded-2xl',
+        'pointer-events-auto relative flex items-center gap-4 overflow-hidden rounded-xl',
         'bg-[var(--color-surface)] border border-[var(--color-border)] shadow-xl',
         'pl-4 pr-4 py-3.5'
       )}

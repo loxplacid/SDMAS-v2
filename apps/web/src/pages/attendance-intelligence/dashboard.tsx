@@ -57,7 +57,7 @@ export function AttendanceIntelligenceDashboardPage() {
         {kpiCards.map((kpi) => (
           <Card key={kpi.label} className="text-center">
             <p className="text-xs font-medium text-[var(--color-text-tertiary)] uppercase tracking-wider">{kpi.label}</p>
-            <p className={`text-2xl font-bold mt-1 bg-gradient-to-br ${kpi.color} bg-clip-text text-transparent`}>{kpi.value}</p>
+            <p className={`text-2xl font-bold mt-1 ${kpi.color}`}>{kpi.value}</p>
           </Card>
         ))}
       </div>

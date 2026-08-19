@@ -80,7 +80,7 @@ export function Button({
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center rounded-[10px] font-medium',
+        'inline-flex items-center justify-center rounded-lg font-medium',
         // Elastic press (Glint §2.1): press compresses on the spring easing,
         // release rebounds through the overshoot baked into --ease-spring.
         'motion-safe:transition-all motion-safe:duration-[var(--motion-fast)] motion-safe:ease-[var(--ease-spring)]',

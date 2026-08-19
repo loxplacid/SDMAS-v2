@@ -49,8 +49,8 @@ def upgrade() -> None:
         sa.Column("name", sa.String(100), nullable=False),
         sa.Column("label", sa.String(200), nullable=True),
         sa.Column("step_order", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("is_initial", sa.Boolean(), nullable=False, server_default="0"),
-        sa.Column("is_final", sa.Boolean(), nullable=False, server_default="0"),
+        sa.Column("is_initial", sa.Boolean(), nullable=False, server_default=sa.text("false")),
+        sa.Column("is_final", sa.Boolean(), nullable=False, server_default=sa.text("false")),
         sa.Column(
             "assigned_role", sa.String(50), nullable=True,
             comment="Role required to act on this step (null = any authenticated user)",

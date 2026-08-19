@@ -218,7 +218,7 @@ def upgrade() -> None:
         sa.Column("exception_type", sa.String(50), nullable=False),
         sa.Column("severity", sa.String(20), nullable=False),
         sa.Column("after_hours", sa.Float(), nullable=True),
-        sa.Column("enabled", sa.Boolean(), nullable=False, server_default=sa.text("1")),
+        sa.Column("enabled", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column(
             "updated_by",
             sa.Integer(),

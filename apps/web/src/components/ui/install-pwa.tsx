@@ -75,7 +75,7 @@ export function InstallPWA() {
       )}
       style={{ animationDuration: 'var(--motion-fast)' }}
     >
-      <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-xl backdrop-blur-sm">
+      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-xl backdrop-blur-sm">
         <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-[var(--color-brand-accent)] text-white font-bold text-xs flex-shrink-0 shadow-sm">
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v3m0 0l-3-3m3 3l3-3M5 12a7 7 0 1114 0" />

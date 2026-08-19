@@ -202,7 +202,7 @@ function ExceptionsSkeleton() {
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {Array.from({ length: 4 }, (_, i) => (
-          <Skeleton key={i} className="h-20 rounded-2xl" />
+          <Skeleton key={i} className="h-20 rounded-xl" />
         ))}
       </div>
       <div className="space-y-2">
@@ -304,7 +304,7 @@ export function FinancialExceptionsPage() {
         <ExceptionsSkeleton />
       ) : error ? (
         <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
-          <div className="h-14 w-14 rounded-2xl bg-[var(--color-danger-light)] flex items-center justify-center mb-5">
+          <div className="h-12 w-12 rounded-xl bg-[var(--color-danger)]/10 flex items-center justify-center mb-4">
             <svg className="h-7 w-7 text-[var(--color-danger)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
@@ -313,7 +313,7 @@ export function FinancialExceptionsPage() {
           <Button variant="danger" className="mt-5" onClick={load}>Try Again</Button>
         </div>
       ) : summary && summary.total === 0 ? (
-        <div className="rounded-2xl border border-[var(--color-success)]/20 bg-[var(--color-success)]/5 p-10 text-center">
+        <div className="rounded-xl border border-[var(--color-success)]/20 bg-[var(--color-success)]/5 p-8 text-center">
           <p className="text-sm font-semibold text-[var(--color-success-dark)]">No financial exceptions</p>
           <p className="text-xs text-[var(--color-success)]/70 mt-1">
             The ledger is clean — no reconciliation discrepancies, missing receipts, ledger gaps or duplicate-looking payments.
@@ -324,7 +324,7 @@ export function FinancialExceptionsPage() {
           {/* Severity overview */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {SEVERITY_ORDER.map((s) => (
-              <div key={s} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+              <div key={s} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className={cn('inline-block h-2 w-2 rounded-full', severityDot[s])} aria-hidden="true" />
                   <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">{s}</p>
@@ -360,7 +360,7 @@ export function FinancialExceptionsPage() {
 
           {/* Findings */}
           {items.length === 0 ? (
-            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center">
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center">
               <p className="text-sm font-medium text-[var(--color-text-secondary)]">
                 No {categoryFilter ? CATEGORY_LABELS[categoryFilter as FinancialExceptionCategory]?.toLowerCase() : ''} exceptions for this view.
               </p>

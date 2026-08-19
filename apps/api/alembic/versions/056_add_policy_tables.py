@@ -101,7 +101,7 @@ def upgrade() -> None:
         sa.Column("exceptions", _json_type(), nullable=True),
         sa.Column("applicability", _json_type(), nullable=True),
         sa.Column("status", sa.String(20), nullable=False, server_default="draft"),
-        sa.Column("is_current", sa.Boolean(), nullable=False, server_default="0"),
+        sa.Column("is_current", sa.Boolean(), nullable=False, server_default=sa.text("false")),
         sa.Column("effective_from", sa.DateTime(timezone=True), nullable=True),
         sa.Column("effective_until", sa.DateTime(timezone=True), nullable=True),
         sa.Column("created_by", sa.Integer(), nullable=True),

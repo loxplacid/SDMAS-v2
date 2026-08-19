@@ -164,9 +164,8 @@ function OverviewTab({ data, onTransitioned }: { data: Student360Response; onTra
     <div className="space-y-6">
       {/* Hero Identity */}
       <Card className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-brand-accent)]/5 to-transparent pointer-events-none" />
-        <div className="flex items-start gap-6 relative z-10">
-          <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-[var(--color-brand-accent)] to-[var(--color-brand-accent-hover)] flex items-center justify-center text-white text-3xl font-bold shadow-lg shrink-0">
+        <div className="flex items-start gap-5 relative z-10">
+          <div className="h-16 w-16 rounded-xl bg-[var(--color-brand-accent)]/10 flex items-center justify-center text-lg font-bold text-[var(--color-brand-accent)] shrink-0">
             {s.first_name[0]}{s.last_name[0]}
           </div>
           <div className="flex-1 min-w-0">
@@ -393,7 +392,7 @@ function FinanceTab({ data }: { data: Student360Response }) {
     <div className="space-y-6">
       {/* P13 — ledger deep-link: the full transaction workspace pre-filtered
           to this student, preserving workspace state on return. */}
-      <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-[var(--color-text-primary)]">Ledger</p>
           <p className="text-xs text-[var(--color-text-tertiary)]">
@@ -691,7 +690,7 @@ function RiskTab({ data }: { data: Student360Response }) {
   )
   return (
     <div className="space-y-6">
-      <div className="flex items-start gap-3 rounded-2xl border border-[var(--color-info)]/20 bg-[var(--color-info)]/5 p-4">
+      <div className="flex items-start gap-3 rounded-xl border border-[var(--color-info)]/20 bg-[var(--color-info)]/5 p-4">
         <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-[var(--color-info)]/10 flex-shrink-0">
           <svg className="h-4.5 w-4.5 text-[var(--color-info)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -706,7 +705,7 @@ function RiskTab({ data }: { data: Student360Response }) {
       </div>
 
       {findings.length === 0 ? (
-        <div className="rounded-2xl border border-[var(--color-success)]/20 bg-[var(--color-success)]/5 p-8 text-center">
+        <div className="rounded-xl border border-[var(--color-success)]/20 bg-[var(--color-success)]/5 p-6 text-center">
           <p className="text-sm font-semibold text-[var(--color-success-dark)]">No active risk findings</p>
           <p className="text-xs text-[var(--color-success)]/70 mt-1">This student has no open findings from the risk engine.</p>
         </div>
@@ -742,7 +741,7 @@ function RiskTab({ data }: { data: Student360Response }) {
 function TimelineTab({ data }: { data: Student360Response }) {
   return (
     <div className="space-y-3">
-      <div className="flex items-start gap-3 rounded-2xl border border-[var(--color-info)]/20 bg-[var(--color-info)]/5 p-4">
+      <div className="flex items-start gap-3 rounded-xl border border-[var(--color-info)]/20 bg-[var(--color-info)]/5 p-4">
         <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-[var(--color-info)]/10 flex-shrink-0">
           <svg className="h-4.5 w-4.5 text-[var(--color-info)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />

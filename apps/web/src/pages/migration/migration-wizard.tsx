@@ -18,6 +18,7 @@ import {
   Select,
   Skeleton,
   Alert,
+  ConfirmDialog,
 } from '../../components/ui'
 import { useToast } from '../../components/ui/toast'
 import { cn, formatDateTime, plural } from '../../lib/utils'
@@ -149,7 +150,7 @@ function SourceStep({ onCreated }: { onCreated: (p: MigrationProject) => void })
         </div>
       </div>
       <div className="lg:col-span-2">
-        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-sm text-[var(--color-text-muted)] space-y-3">
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm text-[var(--color-text-muted)] space-y-2.5">
           <p className="font-semibold text-[var(--color-text-primary)]">What happens next</p>
           <ul className="space-y-2 list-disc pl-4">
             <li>We inspect every column and infer its type, null rate and role.</li>
@@ -330,7 +331,7 @@ function MappingStep({
       </div>
       {error && <Alert variant="error">{error}</Alert>}
 
-      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
+      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -494,8 +495,7 @@ function ValidateStep({
             { label: 'Blocking', value: validation.blocking, color: validation.blocking > 0 ? 'text-[var(--color-danger)]' : 'text-[var(--color-success)]' },
             { label: 'Warnings', value: validation.warnings, color: 'text-[var(--color-warning)]' },
             { label: 'Ready', value: validation.is_ready ? 'Yes' : 'No', color: validation.is_ready ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]' },
-          ].map((item) => (
-            <div key={item.label} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+          ].map((item) => (             <div key={item.label} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
               <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">{item.label}</p>
               <p className={cn('mt-1.5 text-2xl font-bold tabular-nums leading-none', item.color)}>{item.value}</p>
             </div>
@@ -535,7 +535,7 @@ function ValidateStep({
         ) : preview.length === 0 ? (
           <EmptyState compact title="No preview" description="Run validation to load the preview." />
         ) : (
-          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -670,9 +670,7 @@ function ImportStep({ project, onProgress }: { project: MigrationProject; onProg
       {error && <Alert variant="error">{error}</Alert>}
       {project.status !== 'READY' && !isRunning && (
         <Alert variant="warning">This migration is not ready to import. Resolve blocking issues in the validation step.</Alert>
-      )}
-
-      <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 space-y-4">
+      )}       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 space-y-3">
         <div>
           <div className="flex justify-between text-xs text-[var(--color-text-muted)] mb-1.5">
             <span>{project.status === 'IMPORTING' ? 'Importing…' : project.status === 'RECONCILING' ? 'Reconciling…' : 'Not started'}</span>
@@ -712,6 +710,7 @@ function ReconcileStep({ project, onRolledBack }: { project: MigrationProject; o
   const [rollingBack, setRollingBack] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [rollbackConfirmOpen, setRollbackConfirmOpen] = useState(false)
 
   const [rec, setRec] = useState(project.reconciliation)
   useEffect(() => setRec(project.reconciliation), [project.reconciliation])
@@ -748,7 +747,6 @@ function ReconcileStep({ project, onRolledBack }: { project: MigrationProject; o
   }
 
   const rollback = async () => {
-    if (!window.confirm('Roll back all records created by this migration? Pre-existing records are never touched.')) return
     setRollingBack(true)
     try {
       const result = await migrationApi.rollback(project.id)
@@ -758,6 +756,7 @@ function ReconcileStep({ project, onRolledBack }: { project: MigrationProject; o
       setError(e?.detail || 'Rollback failed')
     } finally {
       setRollingBack(false)
+      setRollbackConfirmOpen(false)
     }
   }
 
@@ -792,7 +791,7 @@ function ReconcileStep({ project, onRolledBack }: { project: MigrationProject; o
             <Button variant="secondary" size="sm" onClick={() => downloadReport('json')} disabled={downloading}>JSON</Button>
           </span>
           {project.status === 'COMPLETED' && (
-            <Button variant="danger" onClick={rollback} disabled={rollingBack} loading={rollingBack}>Roll back</Button>
+            <Button variant="danger" onClick={() => setRollbackConfirmOpen(true)} disabled={rollingBack}>Roll back</Button>
           )}
         </div>
       </div>
@@ -801,8 +800,7 @@ function ReconcileStep({ project, onRolledBack }: { project: MigrationProject; o
       {rec ? (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {rows.map((row) => (
-              <div key={row.label} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            {rows.map((row) => (               <div key={row.label} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
                 <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">{row.label}</p>
                 <p className={cn('mt-1.5 text-2xl font-bold tabular-nums leading-none', row.color)}>{row.value.toLocaleString()}</p>
               </div>
@@ -831,6 +829,17 @@ function ReconcileStep({ project, onRolledBack }: { project: MigrationProject; o
           description="Run reconciliation after the import completes to verify the totals."
         />
       )}
+
+      <ConfirmDialog
+        open={rollbackConfirmOpen}
+        onClose={() => setRollbackConfirmOpen(false)}
+        onConfirm={rollback}
+        title="Roll Back Migration"
+        message="Roll back all records created by this migration? Pre-existing records are never touched. This action cannot be undone."
+        confirmLabel="Roll Back"
+        variant="danger"
+        loading={rollingBack}
+      />
     </div>
   )
 }
@@ -865,8 +874,8 @@ export function MigrationWizardPage() {
       <div className="space-y-6">
         <Skeleton className="h-9 w-72" />
         <Skeleton className="h-5 w-96" />
-        <Skeleton className="h-24 rounded-2xl" />
-        <Skeleton className="h-64 rounded-2xl" />
+        <Skeleton className="h-24 rounded-xl" />
+        <Skeleton className="h-64 rounded-xl" />
       </div>
     )
   }

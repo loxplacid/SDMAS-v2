@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../api/auth/auth-context'
 import { commandCenterApi, type CommandCenterOverview } from '../../api/command-center/command-center-api'
 import { Timeline } from '../../components/timeline/timeline'
-import { AnimatedCount, Badge, Skeleton } from '../../components/ui'
+import { AnimatedCount, Badge, PageHeader, Skeleton } from '../../components/ui'
 import { cn, formatDateTime } from '../../lib/utils'
 
 // ── Helpers ───────────────────────────────────────────────────────────
@@ -67,16 +67,16 @@ const quickActionIcons: Record<string, string> = {
 
 function SectionFallback({ label }: { label: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-10 text-center animate-fade-in">
-      <div className="flex items-center justify-center h-11 w-11 rounded-xl bg-[var(--color-surface-hover)] mb-3">
-        <svg className="h-5 w-5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="flex items-center gap-3 py-6 px-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+      <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[var(--color-surface-hover)] flex-shrink-0">
+        <svg className="h-4 w-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
         </svg>
       </div>
-      <p className="text-sm font-medium text-[var(--color-text-secondary)]">{label} unavailable</p>
-      <p className="text-xs text-[var(--color-text-tertiary)] mt-1 max-w-xs">
-        This data source could not be reached. The rest of your dashboard is still up to date.
-      </p>
+      <div>
+        <p className="text-xs font-medium text-[var(--color-text-secondary)]">{label} unavailable</p>
+        <p className="text-[11px] text-[var(--color-text-tertiary)]">Data source could not be reached.</p>
+      </div>
     </div>
   )
 }
@@ -88,8 +88,8 @@ function HealthSection({ data }: { data: CommandCenterOverview['school_health'] 
   if (!data.available) return <SectionFallback label="School health" />
 
   return (
-    <section className="animate-fade-in-up" style={{ animationFillMode: 'both' }}>
-      <div className="flex items-center justify-between mb-4">
+    <section>
+      <div className="flex items-center justify-between mb-3">
         <div>
           <h2 className="text-base font-semibold text-[var(--color-text-primary)]">School Health</h2>
           <p className="text-sm text-[var(--color-text-tertiary)] mt-0.5">Key indicators at a glance</p>
@@ -99,9 +99,8 @@ function HealthSection({ data }: { data: CommandCenterOverview['school_health'] 
 
       {/* Composite School Health Score — deterministic & explainable */}
       {data.score?.available && data.score.overall != null && (
-        <div
-          className={cn(
-            'mb-4 rounded-2xl border p-4 flex items-center gap-4 animate-fade-in-up',
+        <div            className={cn(
+              'mb-3 rounded-xl border p-4 flex items-center gap-4',
             data.score.overall >= 85
               ? 'border-[var(--color-success)]/25 bg-[var(--color-success)]/5'
               : data.score.overall >= 70
@@ -111,7 +110,7 @@ function HealthSection({ data }: { data: CommandCenterOverview['school_health'] 
         >
           <div
             className={cn(
-              'flex items-center justify-center h-16 w-16 rounded-2xl border text-xl font-extrabold tabular-nums flex-shrink-0',
+              'flex items-center justify-center h-14 w-14 rounded-xl border text-lg font-bold tabular-nums flex-shrink-0',
               data.score.overall >= 85
                 ? 'border-[var(--color-success)]/30 bg-[var(--color-success)]/10 text-[var(--color-success)]'
                 : data.score.overall >= 70
@@ -158,30 +157,26 @@ function HealthSection({ data }: { data: CommandCenterOverview['school_health'] 
         <p className="text-sm text-[var(--color-text-tertiary)] py-8 text-center">No metrics available yet.</p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
-          {data.metrics.map((m, i) => (
+          {data.metrics.map((m) => (
             <button
               key={m.key}
               onClick={() => m.drill_down && navigate(m.drill_down)}
               disabled={!m.drill_down}
               className={cn(
-                'group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left',
-                'motion-safe:transition-all motion-safe:duration-[var(--motion-fast)] motion-safe:ease-[var(--ease-standard)]',
-                'hover:-translate-y-0.5 hover:shadow-md hover:border-[var(--color-brand-accent)]/30 motion-reduce:hover:translate-y-0',
+                'group relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 text-left',
+                'motion-safe:transition-all motion-safe:duration-[var(--motion-fast)]',
+                'hover:border-[var(--color-brand-accent)]/30',
                 m.drill_down ? 'cursor-pointer' : 'cursor-default',
-                'animate-fade-in-up'
               )}
-              style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}
             >
               <div className={cn('absolute inset-x-0 top-0 h-0.5', metricRing[m.status])} aria-hidden="true" />
-              <div className="flex items-center gap-1.5 mb-2">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)] truncate">
-                  {m.label}
-                </p>
-              </div>
-              <p className={cn('text-xl font-bold tabular-nums leading-none', metricAccent[m.status] || 'text-[var(--color-text-primary)]')}>
-                <AnimatedCount value={m.value} duration={900 + i * 120} />
+              <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)] truncate">
+                {m.label}
               </p>
-              <p className="text-xs text-[var(--color-text-tertiary)] mt-1.5 truncate">
+              <p className={cn('mt-1.5 text-xl font-bold tabular-nums leading-none', metricAccent[m.status] || 'text-[var(--color-text-primary)]')}>
+                <AnimatedCount value={m.value} duration={600} />
+              </p>
+              <p className="text-xs text-[var(--color-text-tertiary)] mt-1 truncate">
                 {m.display}
                 {m.drill_down && (
                   <span className="inline-flex items-center gap-0.5 ml-1 text-[var(--color-brand-accent)] opacity-0 group-hover:opacity-100 motion-safe:transition-opacity">
@@ -200,7 +195,7 @@ function HealthSection({ data }: { data: CommandCenterOverview['school_health'] 
       {Object.keys(data.trends).length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
           {Object.entries(data.trends).map(([key, points]) => (
-            <div key={key} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <div key={key} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
               <p className="text-xs font-medium text-[var(--color-text-tertiary)] uppercase tracking-wider mb-3">
                 {key === 'attendance' ? 'Attendance Trend · 14 days' : 'Collection Trend · 30 days'}
               </p>
@@ -254,8 +249,8 @@ function AttentionSection({ data }: { data: CommandCenterOverview['needs_attenti
   if (!data.available) return <SectionFallback label="Alerts" />
 
   return (
-    <section className="animate-fade-in-up" style={{ animationFillMode: 'both' }}>
-      <div className="flex items-center justify-between mb-4">
+    <section>
+      <div className="flex items-center justify-between mb-3">
         <div>
           <h2 className="text-base font-semibold text-[var(--color-text-primary)]">Needs Attention</h2>
           <p className="text-sm text-[var(--color-text-tertiary)] mt-0.5">Actionable items for today</p>
@@ -268,7 +263,7 @@ function AttentionSection({ data }: { data: CommandCenterOverview['needs_attenti
       </div>
 
       {data.alerts.length === 0 ? (
-        <div className="rounded-2xl border border-[var(--color-success)]/20 bg-[var(--color-success)]/5 p-6 flex items-center gap-3">
+        <div className="rounded-xl border border-[var(--color-success)]/20 bg-[var(--color-success)]/5 p-4 flex items-center gap-3">
           <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-[var(--color-success)]/10">
             <svg className="h-4.5 w-4.5 text-[var(--color-success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -280,17 +275,14 @@ function AttentionSection({ data }: { data: CommandCenterOverview['needs_attenti
           </div>
         </div>
       ) : (
-        <div className="space-y-2.5">
-          {data.alerts.map((a, i) => (
+        <div className="space-y-2">
+          {data.alerts.map((a) => (
             <div
               key={a.id}
               className={cn(
-                'rounded-xl border p-4 motion-safe:transition-all motion-safe:duration-[var(--motion-fast)]',
-                'hover:shadow-sm hover:-translate-y-0.5 motion-reduce:hover:translate-y-0',
+                'rounded-xl border p-3',
                 severityStyles[a.severity],
-                'animate-fade-in-up'
               )}
-              style={{ animationDelay: `${i * 70}ms`, animationFillMode: 'both' }}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3 min-w-0">
@@ -327,8 +319,8 @@ function TodaySection({ data }: { data: CommandCenterOverview['today'] }) {
   if (!data.available) return <SectionFallback label="Today's activity" />
 
   return (
-    <section className="animate-fade-in-up" style={{ animationFillMode: 'both' }}>
-      <div className="flex items-center justify-between mb-4">
+    <section>
+      <div className="flex items-center justify-between mb-3">
         <div>
           <h2 className="text-base font-semibold text-[var(--color-text-primary)]">Today</h2>
           <p className="text-sm text-[var(--color-text-tertiary)] mt-0.5">What happened in your school today</p>
@@ -339,19 +331,17 @@ function TodaySection({ data }: { data: CommandCenterOverview['today'] }) {
       {data.events.length === 0 ? (
         <p className="text-sm text-[var(--color-text-tertiary)] py-8 text-center">No events recorded today yet.</p>
       ) : (
-        <div className="space-y-1">
-          {data.events.map((e, i) => (
+        <div className="space-y-0.5">
+          {data.events.map((e) => (
             <button
               key={e.id}
               onClick={() => e.drill_down && navigate(e.drill_down)}
               disabled={!e.drill_down}
               className={cn(
-                'w-full flex items-center gap-3 rounded-xl px-3 py-3 text-left',
+                'w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-left',
                 'motion-safe:transition-colors motion-safe:duration-[var(--motion-fast)]',
                 e.drill_down ? 'hover:bg-[var(--color-surface-hover)] cursor-pointer' : 'cursor-default',
-                'animate-fade-in-left'
               )}
-              style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}
             >
               <div className={cn('flex items-center justify-center h-9 w-9 rounded-xl flex-shrink-0', eventColors[e.type])}>
                 <svg className="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -380,34 +370,30 @@ function TodaySection({ data }: { data: CommandCenterOverview['today'] }) {
 function QuickActionsSection({ actions }: { actions: CommandCenterOverview['quick_actions'] }) {
   const navigate = useNavigate()
   return (
-    <section className="animate-fade-in-up" style={{ animationFillMode: 'both' }}>
-      <div className="mb-4">
+    <section>
+      <div className="mb-3">
         <h2 className="text-base font-semibold text-[var(--color-text-primary)]">Quick Actions</h2>
         <p className="text-sm text-[var(--color-text-tertiary)] mt-0.5">Jump straight to common tasks</p>
       </div>
       {actions.length === 0 ? (
         <p className="text-sm text-[var(--color-text-tertiary)] py-8 text-center">No quick actions for your role.</p>
       ) : (
-        <div className="grid grid-cols-2 gap-2.5">
-          {actions.map((a, i) => (
+        <div className="grid grid-cols-2 gap-2">
+          {actions.map((a) => (
             <button
               key={a.id}
               onClick={() => navigate(a.route)}
               className={cn(
-                'group flex flex-col gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 text-left',
-                'motion-safe:transition-all motion-safe:duration-[var(--motion-fast)] motion-safe:ease-[var(--ease-spring)]',
-                'hover:-translate-y-0.5 hover:shadow-md hover:border-[var(--color-brand-accent)]/30 motion-reduce:hover:translate-y-0',
-                'animate-fade-in-up'
+                'group flex items-center gap-2.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-left',
+                'motion-safe:transition-colors motion-safe:duration-[var(--motion-fast)]',
+                'hover:border-[var(--color-brand-accent)]/30',
               )}
-              style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}
             >
-              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[var(--color-brand-accent-subtle)] text-[var(--color-brand-accent)] group-hover:scale-110 motion-safe:transition-transform motion-safe:duration-[var(--motion-fast)]">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={quickActionIcons[a.icon] || quickActionIcons['user-plus']} />
-                </svg>
-              </div>
+              <svg className="h-4 w-4 flex-shrink-0 text-[var(--color-brand-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={quickActionIcons[a.icon] || quickActionIcons['user-plus']} />
+              </svg>
               <div className="min-w-0">
-                <p className="text-xs font-semibold text-[var(--color-text-primary)] truncate">{a.label}</p>
+                <p className="text-xs font-medium text-[var(--color-text-primary)] truncate">{a.label}</p>
                 <p className="text-[11px] text-[var(--color-text-tertiary)] truncate">{a.description}</p>
               </div>
             </button>
@@ -456,11 +442,11 @@ function WorkflowSection({ data }: { data: CommandCenterOverview['workflow'] | n
   ]
 
   return (
-    <section className="animate-fade-in-up" style={{ animationFillMode: 'both' }}>
-      <div className="flex items-center justify-between mb-4">
+    <section>
+      <div className="flex items-center justify-between mb-3">
         <div>
-          <h2 className="text-base font-semibold text-[var(--color-text-primary)]">Operational Work</h2>
-          <p className="text-sm text-[var(--color-text-tertiary)] mt-0.5">Cases that need action and who holds them</p>
+          <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Operational Work</h2>
+          <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">Cases that need action and who holds them</p>
         </div>
         <button
           onClick={() => navigate('/work')}
@@ -474,17 +460,15 @@ function WorkflowSection({ data }: { data: CommandCenterOverview['workflow'] | n
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {heroMetrics.map((m, i) => (
+        {heroMetrics.map((m) => (
           <button
             key={m.key}
             onClick={() => navigate(m.route)}
             className={cn(
-              'rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left',
-              'motion-safe:transition-all motion-safe:duration-[var(--motion-fast)]',
-              'hover:-translate-y-0.5 hover:shadow-md hover:border-[var(--color-brand-accent)]/30 motion-reduce:hover:translate-y-0',
-              'animate-fade-in-up'
+              'rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3.5 text-left',
+              'motion-safe:transition-colors motion-safe:duration-[var(--motion-fast)]',
+              'hover:border-[var(--color-brand-accent)]/30',
             )}
-            style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}
           >
             <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)] truncate">
               {m.label}
@@ -496,7 +480,7 @@ function WorkflowSection({ data }: { data: CommandCenterOverview['workflow'] | n
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">
         {data.workload.length > 0 && (
-          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
             <p className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-tertiary)] mb-3">
               Workload by assignee
             </p>
@@ -526,7 +510,7 @@ function WorkflowSection({ data }: { data: CommandCenterOverview['workflow'] | n
         )}
 
         {Object.keys(data.by_type).length > 0 && (
-          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
             <p className="text-xs font-medium uppercase tracking-wider text-[var(--color-text-tertiary)] mb-3">
               Cases by type
             </p>
@@ -557,11 +541,11 @@ function WorkflowSection({ data }: { data: CommandCenterOverview['workflow'] | n
 
 function ActivitySection() {
   return (
-    <section className="animate-fade-in-up" style={{ animationFillMode: 'both' }}>
-      <div className="mb-4 flex items-center justify-between">
+    <section>
+      <div className="mb-3 flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold text-[var(--color-text-primary)]">Recent Activity</h2>
-          <p className="text-sm text-[var(--color-text-tertiary)] mt-0.5">Latest changes across the school</p>
+          <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Recent Activity</h2>
+          <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">Latest changes across the school</p>
         </div>
       </div>
       <Timeline params={{ entity_type: 'school' }} compact pageSize={10} maxVisible={6} />
@@ -573,21 +557,22 @@ function ActivitySection() {
 
 function CommandCenterSkeleton() {
   return (
-    <div className="space-y-8 animate-fade-in" aria-busy="true" aria-label="Loading command center">
-      <div className="space-y-3">
-        <Skeleton className="h-8 w-72" />
-        <Skeleton className="h-4 w-96" />
+    <div className="space-y-6 animate-fade-in" aria-busy="true" aria-label="Loading command center">
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-7 w-56" />
+        <Skeleton className="h-3 w-80" />
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
         {Array.from({ length: 6 }, (_, i) => (
-          <Skeleton key={i} className="h-24 rounded-2xl" />
+          <Skeleton key={i} className="h-20 rounded-xl" />
         ))}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Skeleton className="h-64 rounded-2xl" />
-        <Skeleton className="h-64 rounded-2xl" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Skeleton className="h-52 rounded-xl" />
+        <Skeleton className="h-52 rounded-xl" />
       </div>
-      <Skeleton className="h-40 rounded-2xl" />
+      <Skeleton className="h-36 rounded-xl" />
     </div>
   )
 }
@@ -648,78 +633,59 @@ export function CommandCenterPage() {
     : ''
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* Hero */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--color-brand-navy)] via-[var(--color-brand-navy-light)] to-[var(--color-brand-navy-mid)] p-7 lg:p-8">
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-          }}
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <PageHeader
+          eyebrow="Command Center"
+          title={`${greeting}, ${user?.display_name || user?.username || 'Leader'}`}
+          subtitle={data?.academic_year ? `${roleLabel} overview · Academic year ${data.academic_year}` : `${roleLabel} overview`}
+          compact
         />
-        <div className="relative">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-            <div className="space-y-1.5">
-              <p className="text-sm font-medium text-[var(--color-brand-accent)] tracking-wide">
-                {greeting}, {user?.display_name || user?.username || 'Leader'}
-              </p>
-              <h1 className="text-2xl lg:text-3xl font-extrabold text-white leading-tight tracking-tight">
-                School Command Center
-              </h1>
-              <p className="text-white/50 text-sm max-w-xl leading-relaxed">
-                {data?.academic_year
-                  ? `${roleLabel} overview · Academic year ${data.academic_year}`
-                  : `${roleLabel} overview`}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {data && (
-                <span className="inline-flex items-center gap-1.5 text-xs text-white/40 mr-1">
-                  <span className={cn('inline-block h-1.5 w-1.5 rounded-full', refreshing ? 'bg-[var(--color-brand-accent)] animate-pulse-soft' : 'bg-[var(--color-success)]')} aria-hidden="true" />
-                  Updated {formatDateTime(data.generated_at)}
-                </span>
-              )}
-              <button
-                onClick={() => load(true)}
-                disabled={refreshing}
-                className={cn(
-                  'inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-medium text-white',
-                  'hover:bg-white/20 motion-safe:transition-colors',
-                  refreshing && 'opacity-60 cursor-wait'
-                )}
-                aria-label="Refresh command center"
-              >
-                <svg className={cn('h-4 w-4', refreshing && 'animate-spin')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Refresh
-              </button>
-              <button
-                onClick={() => navigate('/reports')}
-                className="inline-flex items-center gap-2 rounded-xl bg-[var(--color-brand-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-brand-accent-hover)] motion-safe:transition-colors shadow-lg shadow-[var(--color-brand-accent)]/20"
-              >
-                View Reports
-              </button>
-            </div>
-          </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {data && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-tertiary)]">
+              <span className={cn('inline-block h-1.5 w-1.5 rounded-full', refreshing ? 'bg-[var(--color-brand-accent)] animate-pulse-soft' : 'bg-[var(--color-success)]')} aria-hidden="true" />
+              {refreshing ? 'Refreshing…' : `Updated ${formatDateTime(data.generated_at)}`}
+            </span>
+          )}
+          <button
+            onClick={() => load(true)}
+            disabled={refreshing}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)]',
+              'hover:border-[var(--color-brand-accent)]/40 hover:text-[var(--color-brand-accent)] motion-safe:transition-colors',
+              refreshing && 'opacity-60 cursor-wait'
+            )}
+            aria-label="Refresh command center"
+          >
+            <svg className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh
+          </button>
+          <button
+            onClick={() => navigate('/reports')}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-brand-accent)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-brand-accent-hover)] motion-safe:transition-colors"
+          >
+            View Reports
+          </button>
         </div>
       </div>
 
       {loading ? (
         <CommandCenterSkeleton />
       ) : error ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
-          <div className="h-14 w-14 rounded-2xl bg-[var(--color-danger-light)] flex items-center justify-center mb-5">
-            <svg className="h-7 w-7 text-[var(--color-danger)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+        <div className="flex flex-col items-center justify-center py-12 text-center animate-fade-in">
+          <div className="h-12 w-12 rounded-xl bg-[var(--color-danger-light)] flex items-center justify-center mb-4">
+            <svg className="h-6 w-6 text-[var(--color-danger)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
           <h3 className="text-sm font-semibold text-[var(--color-danger-dark)]">{error}</h3>
           <button
             onClick={() => load(false)}
-            className="mt-5 inline-flex items-center rounded-[10px] bg-[var(--color-danger)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-danger-dark)] motion-safe:transition-colors"
+            className="mt-4 inline-flex items-center rounded-lg bg-[var(--color-danger)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-danger-dark)] motion-safe:transition-colors"
           >
             <svg className="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -729,13 +695,13 @@ export function CommandCenterPage() {
         </div>
       ) : data ? (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2 space-y-4">
               <HealthSection data={data.school_health} />
               <WorkflowSection data={data.workflow} />
               <TodaySection data={data.today} />
             </div>
-            <div className="space-y-8">
+            <div className="space-y-4">
               <AttentionSection data={data.needs_attention} />
               <QuickActionsSection actions={data.quick_actions} />
             </div>

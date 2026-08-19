@@ -61,7 +61,7 @@ def upgrade() -> None:
         sa.Column("event_id", sa.String(length=100), nullable=False),
         sa.Column("event_name", sa.String(length=100), nullable=False, server_default="unknown"),
         sa.Column("payload", sa.JSON(), nullable=True),
-        sa.Column("processed", sa.Boolean(), nullable=False, server_default="0"),
+        sa.Column("processed", sa.Boolean(), nullable=False, server_default=sa.text("false")),
         sa.Column("campus_id", sa.Integer(), nullable=True),
         sa.Column("received_at", sa.DateTime(timezone=True), nullable=False),
         sa.PrimaryKeyConstraint("id"),

@@ -85,7 +85,7 @@ export function ParentAcademicPage() {
         <div className="px-4 space-y-4">
           {/* Current enrollment */}
           {academicData.current_enrollment && (
-            <Card className="p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 border-indigo-200 dark:border-indigo-800">
+            <Card className="p-4">
               <div className="flex items-center gap-3">
                 <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-indigo-500/10">
                   <svg className="h-5 w-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

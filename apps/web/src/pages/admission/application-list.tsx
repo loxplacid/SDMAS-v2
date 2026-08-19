@@ -124,7 +124,7 @@ export function ApplicationListPage() {
       </div>
 
       {/* Data table area */}
-      <div className="bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] overflow-hidden">
+      <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] overflow-hidden">
         {loading ? (
           <Table columns={[]} data={[]} loading={true} keyExtractor={() => ''} emptyMessage="" />
         ) : error ? (

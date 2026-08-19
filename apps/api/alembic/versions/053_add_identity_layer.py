@@ -147,7 +147,7 @@ def upgrade() -> None:
         ),
         sa.Column("alias_type", sa.String(30), nullable=False, server_default="name"),
         sa.Column("alias_value", sa.String(255), nullable=False),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default="1"),
+        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),

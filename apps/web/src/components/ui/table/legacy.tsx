@@ -54,7 +54,7 @@ export function Table<T>({
   if (data.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
-        <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-[var(--color-bg)] mb-4">
+        <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-[var(--color-bg)] mb-4">
           <svg
             className="h-6 w-6 text-[var(--color-text-tertiary)]"
             fill="none"

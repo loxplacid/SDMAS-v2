@@ -36,7 +36,7 @@ function StatusTiles({ projects }: { projects: MigrationProject[] }) {
       {STATUS_TILES.map((tile, i) => (
         <div
           key={tile.status}
-          className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 animate-fade-in-up"
+          className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 animate-fade-in-up"
           style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'both' }}
         >
           <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)]">
@@ -59,7 +59,7 @@ function MigrationSkeleton() {
         <Skeleton className="h-4 w-96" />
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-20 rounded-2xl" />)}
+        {Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
       </div>
       <div className="space-y-2">
         {Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
@@ -146,7 +146,7 @@ export function MigrationCenterPage() {
           <StatusTiles projects={projects} />
 
           {/* Sales summary strip (D2.14) */}
-          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm text-[var(--color-text-muted)] flex flex-wrap gap-x-6 gap-y-2 animate-fade-in-up">
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-sm text-[var(--color-text-muted)] flex flex-wrap gap-x-6 gap-y-2 animate-fade-in-up">
             <span>
               <strong className="text-[var(--color-text-primary)] tabular-nums">
                 {plural(summary.rows, 'source record')}
@@ -170,7 +170,7 @@ export function MigrationCenterPage() {
           </div>
 
           {/* Projects table */}
-          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden animate-fade-in-up">
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden animate-fade-in-up">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { templateApi } from '../../api/communications/communications-api'
 import {
-  PageHeader, Card, Button, Input, Select, Modal, Loading, ErrorState, useToast,
+  PageHeader, Card, Button, Input, Select, Modal, Loading, ErrorState, useToast, ConfirmDialog,
 } from '../../components/ui'
 
 export function TemplatesPage() {
@@ -20,6 +20,8 @@ export function TemplatesPage() {
     code: '', name: '', subject: '', body: '', message_type: 'announcement', channels: ['in_app'] as string[],
   })
   const [saving, setSaving] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<any>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const loadTemplates = useCallback(() => {
     setLoading(true)
@@ -65,14 +67,20 @@ export function TemplatesPage() {
     finally { setSaving(false) }
   }, [editingTemplate, form, showToast, loadTemplates])
 
-  const handleDelete = useCallback(async (id: number) => {
-    if (!window.confirm('Delete this template?')) return
+  const handleDelete = useCallback(async (tpl: any) => {
+    setDeleteTarget(tpl)
+  }, [])
+
+  const confirmDelete = useCallback(async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
     try {
-      await templateApi.delete(id)
+      await templateApi.delete(deleteTarget.id)
       showToast('Template deleted', 'success')
       loadTemplates()
     } catch (err: any) { showToast(err?.detail || 'Failed to delete', 'error') }
-  }, [showToast, loadTemplates])
+    finally { setDeleting(false); setDeleteTarget(null) }
+  }, [deleteTarget, showToast, loadTemplates])
 
   const openEdit = (tpl: any) => {
     setEditingTemplate(tpl)
@@ -136,7 +144,7 @@ export function TemplatesPage() {
               </div>
               <div className="flex gap-2 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button variant="secondary" size="sm" onClick={() => openEdit(tpl)}>Edit</Button>
-                <Button variant="secondary" size="sm" onClick={() => handleDelete(tpl.id)}>Delete</Button>
+                <Button variant="secondary" size="sm" onClick={() => handleDelete(tpl)}>Delete</Button>
               </div>
             </Card>
           ))}
@@ -158,6 +166,17 @@ export function TemplatesPage() {
           <Button onClick={handleUpdate} loading={saving}>Update</Button>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title="Delete Template"
+        message={`Are you sure you want to delete "${deleteTarget?.name ?? ''}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleting}
+      />
     </div>
   )
 }

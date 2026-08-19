@@ -213,7 +213,7 @@ def upgrade() -> None:
             nullable=True,
         ),
         sa.Column("superseded_by", sa.Integer(), nullable=True),
-        sa.Column("is_current", sa.Boolean(), nullable=False, server_default="1"),
+        sa.Column("is_current", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),

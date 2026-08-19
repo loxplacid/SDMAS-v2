@@ -80,7 +80,7 @@ export function BatchEnrollPage() {
               value={entriesText}
               onChange={(e) => setEntriesText(e.target.value)}
               rows={10}
-              className="w-full rounded-[10px] border border-[var(--color-border)] px-3.5 py-2.5 text-sm font-mono bg-[var(--color-surface)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-accent-ring)] focus-visible:border-[var(--color-brand-accent)] motion-safe:transition-colors motion-safe:duration-[var(--motion-fast)]"
+              className="w-full rounded-lg border border-[var(--color-border)] px-3.5 py-2.5 text-sm font-mono bg-[var(--color-surface)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-accent-ring)] focus-visible:border-[var(--color-brand-accent)] motion-safe:transition-colors motion-safe:duration-[var(--motion-fast)]"
               placeholder={`1, 5, 10\n2, 5, 10\n3, 6`}
             />
             <p className="text-xs text-[var(--color-text-muted)] mt-1">{parseEntries().length} valid entries</p>

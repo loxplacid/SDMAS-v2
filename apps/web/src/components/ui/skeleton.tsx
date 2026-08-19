@@ -14,7 +14,7 @@ export function Skeleton({ className, variant = 'text', width, height, count = 1
     text: 'h-4 w-full',
     circular: 'rounded-full',
     rectangular: 'rounded-xl',
-    card: 'rounded-2xl h-32 w-full',
+    card: 'rounded-xl h-32 w-full',
   }
   const items = Array.from({ length: count }, (_, i) => (
     <div
@@ -51,7 +51,7 @@ export function TableSkeleton({ rows = 5, cols = 4 }: { rows?: number; cols?: nu
 
 export function CardSkeleton() {
   return (
-    <div className="rounded-2xl border border-[var(--color-border)] p-6 space-y-4">
+    <div className="rounded-xl border border-[var(--color-border)] p-5 space-y-3">
       <Skeleton className="h-5 w-1/3" />
       <Skeleton className="h-8 w-1/2" />
       <Skeleton className="h-3 w-2/3" />
@@ -67,7 +67,7 @@ export function PageSkeleton({ sections = 3 }: { sections?: number }) {
         <Skeleton className="h-4 w-80" />
       </div>
       {Array.from({ length: sections }, (_, i) => (
-        <div key={i} className="rounded-2xl border border-[var(--color-border)] p-7 space-y-4">
+        <div key={i} className="rounded-xl border border-[var(--color-border)] p-5 space-y-3">
           <Skeleton className="h-5 w-1/3" />
           <Skeleton className="h-24 w-full" />
           <div className="flex gap-4">
@@ -88,10 +88,10 @@ export function FormSkeleton({ fields = 4 }: { fields?: number }) {
       {Array.from({ length: fields }, (_, i) => (
         <div key={i} className="space-y-1.5">
           <Skeleton className="h-3 w-24" />
-          <Skeleton className="h-10 w-full rounded-[10px]" />
+          <Skeleton className="h-10 w-full rounded-lg" />
         </div>
       ))}
-      <div className="flex gap-3 pt-2"><Skeleton className="h-10 w-28 rounded-[10px]" /><Skeleton className="h-10 w-28 rounded-[10px]" /></div>
+      <div className="flex gap-3 pt-2"><Skeleton className="h-10 w-28 rounded-lg" /><Skeleton className="h-10 w-28 rounded-lg" /></div>
     </div>
   )
 }
@@ -100,7 +100,7 @@ export function KPISkeleton() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
       {Array.from({ length: 6 }, (_, i) => (
-        <div key={i} className="rounded-2xl border border-[var(--color-border)] p-5 space-y-2">
+        <div key={i} className="rounded-xl border border-[var(--color-border)] p-4 space-y-2">
           <Skeleton className="h-3 w-2/3" />
           <Skeleton className="h-7 w-1/2" />
           <Skeleton className="h-2 w-1/3" />

@@ -133,6 +133,7 @@ const NewInquiryPage = lazy(() => import('./pages/admission/new-inquiry').then((
 const MeritListPage = lazy(() => import('./pages/admission/merit-list').then((m) => ({ default: m.MeritListPage })))
 
 // Admin
+const AdminDashboardPage = lazy(() => import('./pages/admin/admin-dashboard').then((m) => ({ default: m.AdminDashboardPage })))
 const AuditLogViewerPage = lazy(() => import('./pages/admin/audit-log-viewer'))
 
 // Migration Center (D2)
@@ -451,6 +452,11 @@ export default function App() {
               <Route path="/operations/batch/fee-dues" element={<Suspense fallback={null}><BatchFeeDuesPage /></Suspense>} />
 
               {/* Admin */}
+              <Route path="/admin" element={
+                <RoleGuard roles={['admin']}>
+                  <Suspense fallback={<PageFallback />}><AdminDashboardPage /></Suspense>
+                </RoleGuard>
+              } />
               <Route path="/admin/audit-logs" element={
                 <RoleGuard roles={['admin']}>
                   <Suspense fallback={<PageFallback />}><AuditLogViewerPage /></Suspense>

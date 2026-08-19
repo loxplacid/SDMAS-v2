@@ -91,7 +91,7 @@ export function StudentResultsPage() {
         </div>
 
         {/* Term summary */}
-        <Card className="p-4 bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-900/20 dark:to-indigo-900/20 border-violet-200 dark:border-violet-800">
+        <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-violet-600 dark:text-violet-400 uppercase tracking-wide">{termData.term_name}</p>

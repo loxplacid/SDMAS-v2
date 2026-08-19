@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../api/auth/auth-context'
 import { useCampus } from '../../hooks/use-campus'
 import { NotificationBell } from '../notifications/notification-bell'
@@ -11,14 +12,10 @@ import { Skeleton } from '../ui/skeleton'
 import { cn, capitalize } from '../../lib/utils'
 import { BreadcrumbBar } from '../ui/breadcrumb-bar'
 import { ContextualPageActions } from './contextual-actions'
-
+import { QuickCreate } from './quick-create'
 import { ROLE_BADGE_COLORS } from '../../types/roles'
 
-/**
- * Persistent "DEMO ENVIRONMENT" marker (Step 5 §8). Rendered only when
- * the build is explicitly flagged as a demo (VITE_DEMO_MODE=1), so a
- * production deploy never shows it by accident.
- */
+/** Rendered only when VITE_DEMO_MODE=1 */
 const IS_DEMO = import.meta.env.VITE_DEMO_MODE === '1'
 
 function RoleBadge({ role, isPrimary = false }: { role?: string; isPrimary?: boolean }) {
@@ -42,11 +39,18 @@ interface HeaderProps {
   onOpenCommandPalette?: () => void
   onOpenSearch?: () => void
   onOpenShortcuts?: () => void
+  onOpenMobileNav?: () => void
 }
 
-export function Header({ onOpenCommandPalette, onOpenSearch, onOpenShortcuts }: HeaderProps) {
+export function Header({
+  onOpenCommandPalette,
+  onOpenSearch,
+  onOpenShortcuts,
+  onOpenMobileNav,
+}: HeaderProps) {
   const { user, logout } = useAuth()
   const { campusName, isLoading: campusLoading } = useCampus()
+  const navigate = useNavigate()
 
   const userDropdownItems: DropdownItem[] = [
     {
@@ -57,7 +61,7 @@ export function Header({ onOpenCommandPalette, onOpenSearch, onOpenShortcuts }: 
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
       ),
-      onClick: () => { window.location.href = '/profile' },
+      onClick: () => navigate('/profile'),
     },
     { id: 'divider-1', label: '', divider: true },
     {
@@ -85,51 +89,90 @@ export function Header({ onOpenCommandPalette, onOpenSearch, onOpenShortcuts }: 
   ]
 
   return (
-    <header className="h-[var(--header-height)] bg-[var(--color-surface)] border-b border-[var(--color-border)] flex items-center justify-between px-4 lg:px-6 flex-shrink-0 animate-fade-in-down">
-      {/* Left — contextual page hierarchy (P8 §7), via the shared BreadcrumbBar.
-          Hidden below sm: pages carry their own context and the controls would crowd. */}
-      <div className="hidden sm:flex items-center gap-1.5 min-w-0">
+    <header className="h-[var(--header-height)] bg-[var(--color-surface)] border-b border-[var(--color-border)] flex items-center justify-between px-3 lg:px-5 flex-shrink-0 gap-2">
+
+      {/* ── Left ── */}
+      <div className="flex items-center gap-2 min-w-0">
+        {/* Mobile hamburger — only visible below lg */}
+        <button
+          onClick={onOpenMobileNav}
+          className="lg:hidden flex items-center justify-center h-8 w-8 rounded-lg text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] transition-colors flex-shrink-0"
+          aria-label="Open navigation"
+        >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+
+        {/* Demo badge */}
         {IS_DEMO && (
           <span
-            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[9px] font-bold uppercase tracking-widest border border-amber-500/30 flex-shrink-0"
+            className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[9px] font-bold uppercase tracking-widest border border-amber-500/30 flex-shrink-0"
             title="This environment contains synthetic demonstration data"
           >
             <span className="h-1 w-1 rounded-full bg-current animate-pulse-soft" aria-hidden="true" />
             Demo
           </span>
         )}
-        <BreadcrumbBar variant="header" />
+
+        {/* Breadcrumbs — hidden on mobile */}
+        <div className="hidden sm:flex items-center min-w-0">
+          <BreadcrumbBar variant="header" />
+        </div>
       </div>
 
-      {/* Center / Right */}
-      <div className="flex items-center gap-1.5">
-        {/* Organization identity (D1 §1) — real campus name + role, always visible on desktop */}
-        <div className="hidden lg:block mr-0.5">
-          <OrganizationContext />
-        </div>
+      {/* ── Right ── */}
+      <div className="flex items-center gap-1 flex-shrink-0">
 
-        {/* Contextual page actions (P8 §8) — desktop only; pages keep their own */}
-        <div className="hidden lg:flex items-center mr-1">
-          <ContextualPageActions />
-        </div>
-
-        {/* Command Palette Trigger */}
+        {/* Global search trigger — premium search bar feel */}
         <button
           onClick={onOpenCommandPalette}
-          className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-secondary)] transition-colors border border-[var(--color-border)]"
-          aria-label="Open command palette"
+          className={cn(
+            'hidden sm:flex items-center gap-2 rounded-lg border border-[var(--color-border)]',
+            'bg-[var(--color-bg)] hover:bg-[var(--color-surface-hover)]',
+            'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]',
+            'transition-colors duration-[var(--motion-fast)]',
+            'px-3 py-1.5 h-8',
+          )}
+          aria-label="Search or jump to..."
         >
-          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-3.5 w-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <span className="hidden md:inline">Search or jump...</span>
-          <kbd className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[var(--color-bg)] text-[10px] font-medium text-[var(--color-text-muted)] border border-[var(--color-border)]">
-            <span>⌘K</span>
+          <span className="hidden md:inline text-xs">Search or jump...</span>
+          <kbd className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[var(--color-surface)] text-[10px] font-medium text-[var(--color-text-muted)] border border-[var(--color-border)] ml-1">
+            ⌘K
           </kbd>
         </button>
 
-        {/* Keyboard Shortcuts Hint */}
-        <Tooltip content="Keyboard shortcuts (⌘?)">
+        {/* Mobile search icon */}
+        <button
+          onClick={onOpenCommandPalette}
+          className="sm:hidden flex items-center justify-center h-8 w-8 rounded-lg text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-primary)] transition-colors"
+          aria-label="Search"
+        >
+          <svg className="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </button>
+
+        {/* Contextual page actions — desktop only */}
+        <div className="hidden lg:flex items-center">
+          <ContextualPageActions />
+        </div>
+
+        {/* Organization context — desktop only */}
+        <div className="hidden xl:block">
+          <OrganizationContext />
+        </div>
+
+        {/* Quick create */}
+        <div className="hidden sm:block">
+          <QuickCreate />
+        </div>
+
+        {/* Keyboard shortcuts hint */}
+        <Tooltip content="Keyboard shortcuts (?)">
           <button
             onClick={onOpenShortcuts}
             className="hidden sm:flex items-center justify-center h-7 w-7 rounded-lg text-xs font-semibold text-[var(--color-text-tertiary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text-secondary)] transition-colors border border-[var(--color-border)]"
@@ -141,14 +184,14 @@ export function Header({ onOpenCommandPalette, onOpenSearch, onOpenShortcuts }: 
 
         <ThemeToggle />
 
-        {/* Workspace Switcher (admin only) */}
+        {/* Workspace switcher (admin only) */}
         <WorkspaceSwitcher />
 
-        <div className="w-px h-5 bg-[var(--color-border)] mx-1 hidden sm:block" />
+        <div className="w-px h-5 bg-[var(--color-border)] mx-0.5 hidden sm:block" />
 
         <NotificationBell />
 
-        {/* User Menu via DropdownMenu */}
+        {/* User menu */}
         <DropdownMenu
           items={userDropdownItems}
           position="bottom-right"
@@ -161,7 +204,6 @@ export function Header({ onOpenCommandPalette, onOpenSearch, onOpenShortcuts }: 
                 <p className="text-sm font-semibold text-[var(--color-text-primary)] truncate leading-tight">
                   {user?.display_name || user?.username}
                 </p>
-                {/* Campus name */}
                 {campusLoading ? (
                   <Skeleton className="h-3 w-24 mt-1 mb-1.5" />
                 ) : campusName ? (
@@ -173,7 +215,6 @@ export function Header({ onOpenCommandPalette, onOpenSearch, onOpenShortcuts }: 
                 <p className="text-[10px] text-[var(--color-text-tertiary)] truncate mb-2">
                   {user?.email}
                 </p>
-                {/* Role badges */}
                 <div className="flex flex-wrap gap-1">
                   <RoleBadge role={user?.role} isPrimary />
                   {(user?.roles || [])
@@ -190,7 +231,7 @@ export function Header({ onOpenCommandPalette, onOpenSearch, onOpenShortcuts }: 
               <span className="flex items-center justify-center h-7 w-7 rounded-full bg-[var(--color-brand-accent)] text-[11px] font-bold text-white flex-shrink-0">
                 {(user?.display_name || user?.username || '?').charAt(0).toUpperCase()}
               </span>
-              <span className="hidden sm:inline text-sm font-medium text-[var(--color-text-primary)] max-w-[120px] truncate">
+              <span className="hidden sm:inline text-sm font-medium text-[var(--color-text-primary)] max-w-[100px] truncate">
                 {user?.display_name || user?.username}
               </span>
               <svg className="hidden sm:block h-3.5 w-3.5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -82,7 +82,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: M
         ref={dialogRef}
         tabIndex={-1}
         className={cn(
-          'relative bg-[var(--color-surface)] rounded-2xl shadow-xl w-full',
+          'relative bg-[var(--color-surface)] rounded-xl shadow-xl w-full',
           show ? 'animate-scale-in-spring' : 'animate-scale-out',
           'max-h-[85vh] overflow-y-auto',
           'focus-visible:outline-none',
@@ -110,7 +110,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }: M
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-7 py-4.5 border-t border-[var(--color-divider)] bg-[var(--color-bg)] rounded-b-2xl">
+          <div className="flex items-center justify-end gap-3 px-7 py-4.5 border-t border-[var(--color-divider)] bg-[var(--color-bg)] rounded-b-xl">
             {footer}
           </div>
         )}

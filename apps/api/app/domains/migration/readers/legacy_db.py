@@ -84,7 +84,7 @@ class LegacyJSONReader(LegacyReader):
         if os.path.isfile(self._path):
             try:
                 async with _async_open(self._path) as f:
-                    data = json.loads(f.read())
+                    data = json.loads(await f.read())
                     if not isinstance(data, dict):
                         issues.append("Root JSON must be an object (entity_type -> records)")
             except json.JSONDecodeError as e:
@@ -122,7 +122,7 @@ class LegacyJSONReader(LegacyReader):
         self, path: str
     ) -> dict[str, list[dict[str, Any]]]:
         async with _async_open(path) as f:
-            data = json.loads(f.read())
+            data = json.loads(await f.read())
         if isinstance(data, dict):
             return data
         raise ValueError(f"Expected JSON object at {path}, got {type(data).__name__}")
@@ -130,7 +130,7 @@ class LegacyJSONReader(LegacyReader):
     async def _read_jsonl(self, path: str) -> list[dict[str, Any]]:
         records: list[dict[str, Any]] = []
         async with _async_open(path) as f:
-            for line in f.read().strip().split("\n"):
+            for line in (await f.read()).strip().split("\n"):
                 line = line.strip()
                 if not line:
                     continue
@@ -143,7 +143,7 @@ class LegacyJSONReader(LegacyReader):
     async def _read_csv(self, path: str) -> list[dict[str, Any]]:
         records: list[dict[str, Any]] = []
         async with _async_open(path) as f:
-            reader = csv.DictReader(io.StringIO(f.read()))
+            reader = csv.DictReader(io.StringIO(await f.read()))
             for row in reader:
                 cleaned = {k.strip(): v.strip() if v else None for k, v in row.items()}
                 records.append(cleaned)
@@ -243,8 +243,16 @@ class LegacyAPIReader(LegacyReader):
         return issues
 
 
-async def _async_open(path: str, mode: str = "r") -> Any:
-    """Open a file for async reading."""
+def _async_open(path: str, mode: str = "r") -> Any:
+    """Return an aiofiles async context manager for the given path.
+
+    Callers use ``async with _async_open(path) as f: content = await f.read()``.
+    This must be a plain function — not ``async def`` — so it returns the
+    context manager object itself rather than a coroutine.  An ``async def``
+    version would ``await aiofiles.open()`` (resolving to the already-open
+    file handle) and callers doing ``async with _async_open(...)`` would
+    receive a coroutine with no ``__aenter__``, raising ``AttributeError``.
+    """
     import aiofiles
 
-    return await aiofiles.open(path, mode, encoding="utf-8")
+    return aiofiles.open(path, mode, encoding="utf-8")

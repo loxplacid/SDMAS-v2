@@ -103,7 +103,7 @@ export function StudentTimetablePage() {
 
         {(!dayGroups[day] || dayGroups[day].entries.length === 0) ? (
           <Card className="p-8 text-center">
-            <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-[var(--color-surface-hover)] mx-auto mb-3">
+            <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-[var(--color-surface-hover)] mx-auto mb-3">
               <svg className="h-6 w-6 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>

@@ -34,9 +34,8 @@ function OverviewTab({ data }: { data: Teacher360Response }) {
     <div className="space-y-6">
       {/* Hero Identity */}
       <Card className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-brand-accent)]/5 to-transparent pointer-events-none" />
-        <div className="flex items-start gap-6 relative z-10">
-          <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-[var(--color-brand-accent)] to-[var(--color-brand-accent-hover)] flex items-center justify-center text-white text-3xl font-bold shadow-lg shrink-0">
+        <div className="flex items-start gap-5 relative z-10">
+          <div className="h-16 w-16 rounded-xl bg-[var(--color-brand-accent)]/10 flex items-center justify-center text-lg font-bold text-[var(--color-brand-accent)] shrink-0">
             {t.first_name[0]}{t.last_name[0]}
           </div>
           <div className="flex-1 min-w-0">
@@ -202,7 +201,7 @@ function WorkflowTab({ data }: { data: Teacher360Response }) {
 function ActivityTab({ data }: { data: Teacher360Response }) {
   return (
     <div className="space-y-3">
-      <div className="flex items-start gap-3 rounded-2xl border border-[var(--color-info)]/20 bg-[var(--color-info)]/5 p-4">
+      <div className="flex items-start gap-3 rounded-xl border border-[var(--color-info)]/20 bg-[var(--color-info)]/5 p-4">
         <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-[var(--color-info)]/10 flex-shrink-0">
           <svg className="h-4.5 w-4.5 text-[var(--color-info)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />

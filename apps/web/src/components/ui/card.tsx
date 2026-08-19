@@ -58,7 +58,7 @@ export function Card({
     <div
       style={style}
       className={cn(
-        'rounded-2xl overflow-hidden',
+        'rounded-xl overflow-hidden',
         'motion-safe:transition-all motion-safe:duration-[var(--motion-base)] motion-safe:ease-[var(--ease-standard)]',
         variants[variant],
         onClick ? hoverDepths[depth] : '',

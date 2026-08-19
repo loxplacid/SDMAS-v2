@@ -135,7 +135,7 @@ export function UserListPage() {
 
       <div className="flex items-center gap-4">
         <Select
-          options={[{ value: 'admin', label: 'Admin' }, { value: 'staff', label: 'Staff' }]}
+          options={[{ value: 'admin', label: 'Admin' }, { value: 'principal', label: 'Principal' }, { value: 'accountant', label: 'Accountant' }, { value: 'staff', label: 'Staff' }, { value: 'teacher', label: 'Teacher' }, { value: 'student', label: 'Student' }, { value: 'parent', label: 'Parent' }]}
           placeholder="All roles"
           value={roleFilter}
           onChange={(e) => { setRoleFilter(e.target.value); setPage(1) }}

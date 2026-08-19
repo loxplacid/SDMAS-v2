@@ -110,10 +110,10 @@ function SkeletonPage() {
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
-          <Skeleton className="h-48 rounded-2xl" />
-          <Skeleton className="h-64 rounded-2xl" />
+          <Skeleton className="h-48 rounded-xl" />
+          <Skeleton className="h-64 rounded-xl" />
         </div>
-        <Skeleton className="h-96 rounded-2xl" />
+        <Skeleton className="h-96 rounded-xl" />
       </div>
     </div>
   )
@@ -251,8 +251,7 @@ export function CaseDetailPage() {
   if (loading) return <SkeletonPage />
   if (error || !detail) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
-        <div className="h-14 w-14 rounded-2xl bg-[var(--color-danger-light)] flex items-center justify-center mb-5">
+      <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">          <div className="h-12 w-12 rounded-xl bg-[var(--color-danger)]/10 flex items-center justify-center mb-4">
           <svg className="h-7 w-7 text-[var(--color-danger)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
           </svg>
@@ -260,7 +259,7 @@ export function CaseDetailPage() {
         <h3 className="text-sm font-semibold text-[var(--color-danger-dark)]">{error}</h3>
         <button
           onClick={() => navigate('/work')}
-          className="mt-5 inline-flex items-center rounded-[10px] bg-[var(--color-brand-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-brand-accent-hover)] motion-safe:transition-colors"
+          className="mt-5 inline-flex items-center rounded-lg bg-[var(--color-brand-accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-brand-accent-hover)] motion-safe:transition-colors"
         >
           Back to work queue
         </button>
@@ -316,7 +315,7 @@ export function CaseDetailPage() {
         {/* Left: source + timeline */}
         <div className="lg:col-span-2 space-y-6">
           {/* Source reference */}
-          <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+          <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
             <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Source</h2>
             {c.source_type === 'manual' ? (
               <p className="text-sm text-[var(--color-text-tertiary)]">Created manually by a user.</p>
@@ -357,7 +356,7 @@ export function CaseDetailPage() {
           </section>
 
           {/* Activity timeline */}
-          <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+          <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
             <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4">Activity</h2>
             {detail.events.length === 0 ? (
               <p className="text-sm text-[var(--color-text-tertiary)] py-6 text-center">No activity recorded yet.</p>
@@ -391,7 +390,7 @@ export function CaseDetailPage() {
           </section>
 
           {/* Evidence */}
-          <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+          <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
             <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Evidence</h2>
             {detail.evidence.length === 0 ? (
               <p className="text-sm text-[var(--color-text-tertiary)] py-4 text-center">No evidence attached.</p>
@@ -422,7 +421,7 @@ export function CaseDetailPage() {
         {/* Right: comments + actions */}
         <div className="space-y-6">
           {/* Comments */}
-          <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+          <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
             <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Comments</h2>
             <div className="space-y-3 mb-4 max-h-72 overflow-y-auto">
               {detail.comments.length === 0 ? (
@@ -454,7 +453,7 @@ export function CaseDetailPage() {
           </section>
 
           {/* Case facts */}
-          <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+          <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
             <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Details</h2>
             <dl className="space-y-2.5 text-sm">
               {[

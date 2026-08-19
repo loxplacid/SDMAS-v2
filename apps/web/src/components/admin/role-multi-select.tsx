@@ -84,7 +84,7 @@ export function RoleMultiSelect({
 
       <fieldset
         className={cn(
-          'rounded-[10px] border border-[var(--color-border)] p-3 space-y-1',
+          'rounded-lg border border-[var(--color-border)] p-3 space-y-1',
           'motion-safe:transition-colors motion-safe:duration-[var(--motion-fast)]',
           disabled && 'bg-[var(--color-surface-hover)] opacity-60 cursor-not-allowed',
           error && 'border-[var(--color-danger)]',

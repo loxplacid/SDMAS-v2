@@ -178,7 +178,7 @@ export function ParentAttendancePage() {
 
           {/* Days since last absence */}
           {attendanceData.days_since_last_absence > 0 && (
-            <Card className="p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 border-emerald-200 dark:border-emerald-800">
+            <Card className="p-4 bg-[var(--color-success)]/5 border-[var(--color-success)]/20">
               <div className="flex items-center gap-3">
                 <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-emerald-500/10">
                   <svg className="h-5 w-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

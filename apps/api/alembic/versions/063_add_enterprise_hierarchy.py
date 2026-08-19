@@ -172,7 +172,7 @@ def upgrade() -> None:
         sa.Column("node_type", sa.String(20), nullable=False, server_default="campus"),
         sa.Column("node_id", sa.Integer(), nullable=False),
         sa.Column("role", sa.String(50), nullable=False, server_default="admin"),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("1")),
+        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
